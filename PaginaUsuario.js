@@ -46,28 +46,40 @@ function mudarPagina(elemento) {
 }
 
 
-//----------TAREFAS--------------
 // ---------- TAREFAS ----------
-let tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+let tarefas = [];
+
+try {
+  tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+} catch (e) {
+  tarefas = [];
+}
 
 function salvar() {
   localStorage.setItem("tarefas", JSON.stringify(tarefas));
 }
 
-// ---------- DATA CORRETA (SEM BUG DE FUSO) ----------
 function hojeFormatado() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoje.getDate()).padStart(2, '0');
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
 }
 
-// ---------- ADICIONAR ----------
 function adicionarTarefa() {
-  const titulo = document.getElementById("titulo").value;
-  const prioridade = document.getElementById("prioridade").value;
-  const data = document.getElementById("data").value;
+  const tituloEl = document.getElementById("titulo");
+  const prioridadeEl = document.getElementById("prioridade");
+  const dataEl = document.getElementById("data");
+
+  if (!tituloEl || !prioridadeEl || !dataEl) {
+    alert("Os campos da tarefa não foram encontrados no HTML.");
+    return;
+  }
+
+  const titulo = tituloEl.value.trim();
+  const prioridade = prioridadeEl.value;
+  const data = dataEl.value;
 
   if (!titulo || !data) {
     alert("Preencha todos os campos!");
@@ -75,7 +87,7 @@ function adicionarTarefa() {
   }
 
   tarefas.push({
-    id: Date.now(), // 🔥 ID único (resolve bug do index)
+    id: Date.now(),
     titulo,
     prioridade,
     data,
@@ -85,17 +97,16 @@ function adicionarTarefa() {
   salvar();
   atualizarTudo();
 
-  document.getElementById("titulo").value = "";
-  document.getElementById("data").value = "";
+  tituloEl.value = "";
+  dataEl.value = "";
+  prioridadeEl.value = "alta";
 }
 
-// ---------- RENDER GERAL ----------
 function atualizarTudo() {
   renderizar();
   atualizarTabela();
 }
 
-// ---------- LISTAS ----------
 function renderizar() {
   const hojeLista = document.getElementById("tarefasHoje");
   const futurasLista = document.getElementById("tarefasFuturas");
@@ -110,19 +121,18 @@ function renderizar() {
   tarefas.forEach((tarefa) => {
     const li = document.createElement("li");
 
+    if (tarefa.concluida) {
+      li.classList.add("concluida");
+    }
+
     li.innerHTML = `
       <span style="color:${corPrioridade(tarefa.prioridade)}">
-        ${tarefa.titulo} (${tarefa.prioridade})
+        ${tarefa.titulo} (${tarefa.prioridade}) - ${tarefa.data}
       </span>
-      - ${tarefa.data}
       <button onclick="toggle(${tarefa.id})">
         ${tarefa.concluida ? "Desfazer" : "Concluir"}
       </button>
     `;
-
-    if (tarefa.concluida) {
-     li.classList.add("concluida");
-    }
 
     if (tarefa.data === hoje) {
       hojeLista.appendChild(li);
@@ -132,7 +142,6 @@ function renderizar() {
   });
 }
 
-// ---------- TABELA ----------
 function atualizarTabela() {
   const tabela = document.getElementById("tabelaTarefas");
   if (!tabela) return;
@@ -160,30 +169,30 @@ function atualizarTabela() {
     });
 }
 
-// ---------- TOGGLE (AGORA CORRETO) ----------
 function toggle(id) {
+  id = Number(id);
   const tarefa = tarefas.find(t => t.id === id);
 
   if (!tarefa) return;
 
   tarefa.concluida = !tarefa.concluida;
-
   salvar();
   atualizarTudo();
 }
 
-// ---------- CORES ----------
 function corPrioridade(prioridade) {
   if (prioridade === "alta") return "red";
   if (prioridade === "media") return "orange";
   return "green";
 }
 
-// ---------- INICIAR ----------
+// garante que os botões onclick encontrem as funções
+window.adicionarTarefa = adicionarTarefa;
+window.toggle = toggle;
+
 document.addEventListener("DOMContentLoaded", () => {
   atualizarTudo();
 });
-
 
 
 //--------TEMPORIZADORES--------------
