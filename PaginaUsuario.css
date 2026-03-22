@@ -240,13 +240,23 @@ html, body {
 
 
 /* ---------- TAREFAS GERAL ---------- */
+
 #tarefasSection {
+  position: fixed;        
+  top: 150px;             
+  left: 350px;            
+  right: 20px;            
+  bottom: 20px;           
   padding: 20px;
-  margin-top: 80px;
-  margin-left: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    
+  background: #f8f8f8;
+  overflow-y: auto;       
+  box-sizing: border-box;
 }
 
-/* FORMULÁRIO */
+/* Formulário */
 .tarefa-form {
   display: flex;
   flex-wrap: wrap;
@@ -276,16 +286,19 @@ html, body {
   background-color: #800020;
 }
 
-/* CONTAINER DE TAREFAS */
+/* Container de tarefas */
 .tarefas-container {
+  width: 100%;
+  max-width: 800px; /* limita largura máxima */
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 15px;
 }
 
-/* CARD DE TAREFA */
+/* Card de tarefa */
 .tarefa-card {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -297,7 +310,7 @@ html, body {
   font-size: 14px;
 }
 
-/* INFO DA TAREFA */
+/* Info da tarefa */
 .tarefa-info {
   display: flex;
   align-items: center;
@@ -308,7 +321,7 @@ html, body {
   font-weight: 500;
 }
 
-/* BADGES DE PRIORIDADE */
+/* Badges de prioridade */
 .tarefa-prioridade {
   padding: 3px 6px;
   border-radius: 10px;
@@ -321,7 +334,7 @@ html, body {
 .tarefa-media { background-color: orange; }
 .tarefa-baixa { background-color: green; }
 
-/* BOTÕES */
+/* Botões */
 .tarefa-card button {
   padding: 4px 8px;
   border: none;
@@ -349,30 +362,36 @@ html, body {
   background-color: #800020;
 }
 
-/* TAREFA CONCLUÍDA */
+/* Tarefa concluída */
 .concluida span {
   text-decoration: line-through;
   opacity: 0.6;
 }
 
-/* TITULOS DAS LISTAS */
+/* Títulos das listas */
 #tarefasSection h3 {
   margin-top: 15px;
   margin-bottom: 10px;
   font-size: 16px;
 }
 
-/* RESPONSIVO */
+/* ===== RESPONSIVO ===== */
 @media(max-width: 768px) {
   #tarefasSection {
-    margin-left: 15px;
-    margin-right: 15px;
+    left: 15px;
+    right: 15px;
+    top: 90px;
+    bottom: 15px;
     padding: 15px;
   }
 
   .tarefa-form {
     flex-direction: column;
-    gap: 8px;
+    align-items: stretch; /* ocupa toda largura */
+  }
+
+  .tarefas-container {
+    max-width: 100%;
   }
 
   .tarefa-card {
