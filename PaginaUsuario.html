@@ -240,7 +240,34 @@
 
 <section id="estatisticaSection" style="display:none;">ESTATÍSTICAS</section>
 
-<section id="cronogramaSection" style="display:none;">CRONOGRAMA</section>
+  <section id="cronogramaSection" style="display:none; margin-top:80px; margin-left:220px; padding:20px;">
+
+  <h2>📅 Cronograma</h2>
+
+  <!-- FORM -->
+  <input type="text" id="materiaCronograma" placeholder="Matéria">
+  
+  
+  <select id="dia">
+    <option value="segunda">Segunda</option>
+    <option value="terca">Terça</option>
+    <option value="quarta">Quarta</option>
+    <option value="quinta">Quinta</option>
+    <option value="sexta">Sexta</option>
+    <option value="sabado">Sábado</option>
+    <option value="domingo">Domingo</option>
+  </select>
+
+  <input type="time" id="inicio">
+  <input type="time" id="fim">
+
+  <button onclick="adicionarBloco()">Adicionar</button>
+
+  <h3 id="agora"></h3>
+
+  <div id="cronogramaLista"></div>
+
+</section>
 
 <section id="metodosSection" style="display:none;">MÉTODOS</section>
 </div>
