@@ -378,8 +378,6 @@ function adicionarEvento() {
 
 
 // NOTAS
-
-
 document.addEventListener("DOMContentLoaded", () => {
   let notas = JSON.parse(localStorage.getItem("notas")) || [];
   let notaAtual = null;
@@ -551,64 +549,66 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-
-
-function atualizarInicio() {
-  // --- TAREFAS ---
+// --------- RESUMO INÍCIO ---------
+function atualizarResumoInicio() {
+  // TAREFAS
   const hoje = hojeFormatado();
   const tarefasResumo = document.getElementById("tarefasResumo");
-  tarefasResumo.innerHTML = "";
+  if (tarefasResumo) {
+    tarefasResumo.innerHTML = "";
+    tarefas
+      .filter(t => t.data === hoje)
+      .forEach(tarefa => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span style="color:${corPrioridade(tarefa.prioridade)}">
+            ${tarefa.titulo} - prioridade ${tarefa.prioridade}
+          </span>
+        `;
+        tarefasResumo.appendChild(li);
+      });
+  }
 
-  tarefas
-    .filter(t => t.data === hoje)
-    .forEach(t => {
-      const li = document.createElement("li");
-      li.textContent = `${t.titulo} - Prioridade: ${t.prioridade}`;
-      li.style.color = corPrioridade(t.prioridade);
-      tarefasResumo.appendChild(li);
-    });
-
-  // --- EVENTOS ---
+  // EVENTOS CALENDÁRIO
   const eventosResumo = document.getElementById("eventosResumo");
-  eventosResumo.innerHTML = "";
-  const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
-  const proximosEventos = eventosSalvos.filter(e => e.date >= hoje).slice(0, 5); // mostrar só os próximos 5
-
-  proximosEventos.forEach(ev => {
-    const li = document.createElement("li");
-    li.textContent = `${ev.title} - ${ev.date} ${ev.extendedProps?.materia ? '- ' + ev.extendedProps.materia : ''}`;
-    li.style.color = ev.color || "black";
-    eventosResumo.appendChild(li);
-  });
-
-  // --- CRONOGRAMA ---
-  const cronogramaResumo = document.getElementById("cronogramaResumo");
-  cronogramaResumo.innerHTML = "";
-  const cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
-
-  cronograma
-    .filter(b => b.dia === new Date().toLocaleString('pt-BR', { weekday: 'long' }).toLowerCase())
-    .forEach(b => {
+  if (eventosResumo && calendar) {
+    eventosResumo.innerHTML = "";
+    const eventos = calendar.getEvents()
+      .filter(e => new Date(e.start).toDateString() >= new Date().toDateString())
+      .slice(0,5); // mostra só os 5 próximos
+    eventos.forEach(ev => {
       const li = document.createElement("li");
-      li.textContent = `${b.materia} - ${b.inicio} até ${b.fim}`;
-      cronogramaResumo.appendChild(li);
+      li.textContent = `${ev.title} - ${ev.start.toLocaleDateString()}`;
+      li.style.color = ev.backgroundColor || "black";
+      eventosResumo.appendChild(li);
     });
+  }
+
+  // CRONOGRAMA
+  const cronogramaResumo = document.getElementById("cronogramaResumo");
+  if (cronogramaResumo) {
+    cronogramaResumo.innerHTML = "";
+    const diasSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+    const hojeSemana = diasSemana[new Date().getDay()];
+    const blocosHoje = JSON.parse(localStorage.getItem("cronograma")) || [];
+    blocosHoje
+      .filter(b => b.dia === hojeSemana)
+      .forEach(bloco => {
+        const li = document.createElement("li");
+        li.textContent = `${bloco.materia} - ${bloco.inicio} às ${bloco.fim}`;
+        cronogramaResumo.appendChild(li);
+      });
+  }
 }
 
-// Atualizar toda vez que a tela "inicio" for mostrada
-function mostrarTela(tela) {
-  const telas = ["inicio","tarefas","notas","calendario","relogio","estatistica","cronograma","metodos","revisao","progressoEstudos"];
-  telas.forEach(t => { const el = document.getElementById(t+"Section"); if(el) el.style.display="none"; });
-
-  const ativa = document.getElementById(tela+"Section");
-  if(ativa) ativa.style.display="block";
-
-  if(tela === "inicio") atualizarInicio(); // <<< aqui chamamos o resumo
-
-  if(tela === "tarefas") atualizarTabela();
-  if(tela === "relogio") carregarHistorico();
-  if(tela === "cronograma") renderizarCronograma();
-  if(tela === "calendario") setTimeout(() => calendar.updateSize(),100);
+// chamar sempre que atualizar tarefas, eventos ou cronograma
+function atualizarTudo() {
+  renderizar();
+  atualizarTabela();
+  atualizarResumoInicio(); // <<< adiciona aqui
 }
+
+// também chama no DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+  atualizarResumoInicio();
+});
