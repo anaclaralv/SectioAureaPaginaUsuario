@@ -34,6 +34,10 @@ function mostrarTela(tela) {
   renderizarCronograma();
 }
 
+if (tela === "inicio") {
+  renderizarResumoHoje();  // cronograma de hoje
+  atualizarResumoInicio(); // resumo das tarefas, eventos e cronograma
+}
 
   // funções específicas
   if (tela === "tarefas") atualizarTabela();
@@ -106,10 +110,6 @@ function adicionarTarefa() {
   prioridadeEl.value = "alta";
 }
 
-function atualizarTudo() {
-  renderizar();
-  atualizarTabela();
-}
 
 function renderizar() {
   const hojeLista = document.getElementById("tarefasHoje");
@@ -194,22 +194,18 @@ function corPrioridade(prioridade) {
 window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
 
+
+
 document.addEventListener("DOMContentLoaded", () => {
-  atualizarTudo();
-});
+  // Carregar dados
+  tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+  cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
 
-
-//--------TEMPORIZADORES--------------
-// ---------- INICIAR ----------
-document.addEventListener("DOMContentLoaded", () => {
-  renderizar();
-  atualizarTabela();
-});
-
-
-// ---------- INICIAR ----------
-document.addEventListener("DOMContentLoaded", () => {
-  mostrarTela("inicio");
+  // Renderizar telas iniciais
+  mostrarTela("inicio");       // mostra a tela inicial
+  atualizarTudo();             // tarefas e resumo
+  carregarHistorico();         // histórico de estudos
+  renderizarCronograma();      // cronograma
 });
 
 let intervaloCronometro;
@@ -558,56 +554,56 @@ function atualizarResumoInicio() {
 
   // TAREFAS
   const tarefasResumo = document.getElementById("tarefasResumo");
-  if (tarefasResumo) {
-    tarefasResumo.innerHTML = "";
+if (tarefasResumo) {
+  tarefasResumo.innerHTML = "";
 
-    const tarefasHoje = tarefas.filter(t => t.data === hoje);
-    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+  const tarefasHoje = tarefas.filter(t => t.data === hoje);
+  const tarefasFuturas = tarefas.filter(t => t.data > hoje);
 
-    function criarLiTarefa(tarefa) {
-      const li = document.createElement("li");
+  function criarLiTarefa(tarefa) {
+    const li = document.createElement("li");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = tarefa.concluida || false;
 
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = tarefa.concluida || false;
+    const span = document.createElement("span");
+    span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
+    span.style.color = corPrioridade(tarefa.prioridade);
+    if(tarefa.concluida) span.classList.add("concluida");
 
-      const span = document.createElement("span");
-      span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
-      span.style.color = corPrioridade(tarefa.prioridade);
+    checkbox.addEventListener("change", () => {
+      tarefa.concluida = checkbox.checked;
       if(tarefa.concluida) span.classList.add("concluida");
+      else span.classList.remove("concluida");
+      salvar(); // <--- aqui salvamos no localStorage
+      atualizarResumoInicio(); // <--- e atualizamos o resumo
+    });
 
-      checkbox.addEventListener("change", () => {
-        tarefa.concluida = checkbox.checked;
-        if(tarefa.concluida) span.classList.add("concluida");
-        else span.classList.remove("concluida");
-        localStorage.setItem("tarefas", JSON.stringify(tarefas));
-      });
-
-      li.appendChild(checkbox);
-      li.appendChild(span);
-      return li;
-    }
-
-    if (tarefasHoje.length > 0) {
-      const titulo = document.createElement("li");
-      titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
-      tarefasResumo.appendChild(titulo);
-      tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
-    }
-
-    if (tarefasFuturas.length > 0) {
-      const titulo = document.createElement("li");
-      titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
-      tarefasResumo.appendChild(titulo);
-      tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
-    }
-
-    if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
-      const li = document.createElement("li");
-      li.textContent = "Nenhuma tarefa cadastrada!";
-      tarefasResumo.appendChild(li);
-    }
+    li.appendChild(checkbox);
+    li.appendChild(span);
+    return li;
   }
+
+  if (tarefasHoje.length > 0) {
+    const titulo = document.createElement("li");
+    titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
+    tarefasResumo.appendChild(titulo);
+    tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+  }
+
+  if (tarefasFuturas.length > 0) {
+    const titulo = document.createElement("li");
+    titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
+    tarefasResumo.appendChild(titulo);
+    tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+  }
+
+  if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
+    const li = document.createElement("li");
+    li.textContent = "Nenhuma tarefa cadastrada!";
+    tarefasResumo.appendChild(li);
+  }
+}
 
   // EVENTOS
   const eventosResumo = document.getElementById("eventosResumo");
@@ -630,7 +626,7 @@ function atualizarResumoInicio() {
     cronogramaResumo.innerHTML = "";
     const diasSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
     const hojeSemana = diasSemana[new Date().getDay()];
-    const blocosHoje = JSON.parse(localStorage.getItem("cronograma")) || [];
+    const blocosHoje = cronograma; // usa o array em memória
     blocosHoje
       .filter(b => b.dia === hojeSemana)
       .forEach(bloco => {
@@ -642,14 +638,11 @@ function atualizarResumoInicio() {
 }
 
 function atualizarTudo() {
-  renderizar();
-  atualizarTabela();
-  atualizarResumoInicio();
+  renderizar();            // lista de tarefas
+  atualizarTabela();       // tabela de hoje
+  atualizarResumoInicio(); // resumo do início
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  atualizarResumoInicio();
-});
 
 /**CRONOGRAMA JAVA SCRIPT*/
 // ---------- CRONOGRAMA ----------
@@ -740,6 +733,7 @@ function adicionarBloco() {
 
   salvarCronograma();
   renderizarCronograma();
+  atualizarResumoInicio();
 
   materiaEl.value = "";
   inicioEl.value = "";
@@ -784,11 +778,13 @@ function renderizarCronograma() {
   mostrarAgora();
 }
 
+
 // ---------- EXCLUIR ----------
 function excluirBloco(id) {
   cronograma = cronograma.filter(b => b.id !== id);
   salvarCronograma();
   renderizarCronograma();
+  atualizarResumoInicio();
 }
 
 // ---------- EDITAR ----------
@@ -808,6 +804,7 @@ function editarBloco(id) {
 
   salvarCronograma();
   renderizarCronograma();
+  atualizarResumoInicio();
 }
 
 // ---------- VER AGORA ----------
@@ -833,7 +830,26 @@ function mostrarAgora() {
   }
 }
 
-// ---------- INICIAR ----------
-document.addEventListener("DOMContentLoaded", () => {
-  renderizarCronograma();
-});
+
+function renderizarResumoHoje() {
+  const lista = document.getElementById("listaHojeCronograma");
+  if (!lista) return;
+
+  const hojeSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"][new Date().getDay()];
+  const cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
+
+  lista.innerHTML = "";
+
+  const blocosHoje = cronograma.filter(b => b.dia === hojeSemana);
+
+  if (blocosHoje.length === 0) {
+    lista.innerHTML = "<li>Sem atividades hoje 😊</li>";
+    return;
+  }
+
+  blocosHoje.forEach(bloco => {
+    const li = document.createElement("li");
+    li.textContent = `🕒 ${bloco.inicio} - ${bloco.fim} : ${bloco.materia}`;
+    lista.appendChild(li);
+  });
+}

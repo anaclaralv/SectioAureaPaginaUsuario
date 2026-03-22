@@ -1,38 +1,41 @@
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Minha Página</title>
+<!DOCTYPE html>
+<html lang="en">
 
-      <!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?...">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Página</title>
 
-<!-- Bootstrap -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?...">
 
-<!-- Bootstrap Icons -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-<!-- Seu CSS SEMPRE por último -->
-<link rel="stylesheet" href="PaginaUsuario.css">
-  </head>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-  <body>
+  <!-- Seu CSS SEMPRE por último -->
+  <link rel="stylesheet" href="PaginaUsuario.css">
+</head>
 
-      <nav class="navbar">
-      <div class="container-fluid d-flex justify-content-between align-items-center">
-        <a class="navbar-brand ms-3 text-center d-block" href="#"><img src="logo_sectio_vermelha.png" alt="logo" width="60" >
+<body>
+
+  <nav class="navbar">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <a class="navbar-brand ms-3 text-center d-block" href="#"><img src="logo_sectio_vermelha.png" alt="logo"
+          width="60">
         <span class="fw-bold mt-2" style="font-size:20px; color:#9f042c;">
-            Sectio Aurea
-          </span></a>
+          Sectio Aurea
+        </span></a>
 
-        <div class="d-flex align-items-center ms-2">
-        <img id="sidebarFoto" src="usuario.png" class="sidebar-avatar" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid #9f042c;">
-    <div class="ms-3 d-flex flex-column">
+      <div class="d-flex align-items-center ms-2">
+        <img id="sidebarFoto" src="usuario.png" class="sidebar-avatar"
+          style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid #9f042c;">
+        <div class="ms-3 d-flex flex-column">
           <span class="fw-bold" id="sidebarNome" style="font-size:18px;">
             Usuário
           </span>
@@ -40,320 +43,317 @@
             usuario@email.com
           </span>
         </div>
-        </div>
       </div>
-    </nav>
-
-
-    <div class="sidebar d-flex flex-column p-3 fw-bold">
-   <ul class="nav flex-column gap-2" id="menuLateral">
-
-  <li class="nav-item">
-    <a href="#" class="nav-link active"
-       onclick="event.preventDefault(); mostrarTela('inicio'); mudarPagina(this)">
-      <i class="bi bi-house-fill me-2"></i> Início
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('tarefas'); mudarPagina(this)">
-      <i class="bi bi-check2-square me-2"></i> Tarefas
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('notas'); mudarPagina(this)">
-      <i class="bi bi-journal-bookmark me-2"></i> Notas
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('calendario'); mudarPagina(this)">
-      <i class="bi bi-calendar-event me-2"></i> Calendário
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('relogio'); mudarPagina(this)">
-      <i class="bi bi-clock me-2"></i> Relógio
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('estatistica'); mudarPagina(this)">
-      <i class="bi bi-graph-up me-2"></i> Estatística
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('cronograma'); mudarPagina(this)">
-      <i class="bi bi-diagram-3 me-2"></i> Cronograma
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('metodos'); mudarPagina(this)">
-      <i class="bi bi-lightbulb me-2"></i> Métodos
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('revisao'); mudarPagina(this)">
-      <i class="bi bi-arrow-repeat me-2"></i> Revisão 
-    </a>
-
-  <li class="nav-item">
-    <a href="#" class="nav-link"
-       onclick="event.preventDefault(); mostrarTela('progressoEstudos'); mudarPagina(this)">
-      <i class="bi bi-trophy me-2"></i> Progressos
-    </a>
-  </li>
-  </li>
-
-</ul>
-</div>
-
-
-<div class="app-main">
-<section id="inicioSection">
-  <h2 style="margin-bottom: 20px;">Dashboard</h2>
-
-  <div class="dashboard-grid">
-    <!-- TAREFAS -->
-    <div class="card" id="inicioTarefas">
-      <h3>📋 Tarefas</h3>
-      <ul id="tarefasResumo"></ul>
     </div>
-
-    <!-- EVENTOS -->
-    <div class="card" id="inicioEventos">
-      <h3>📅 Próximos Eventos</h3>
-      <ul id="eventosResumo"></ul>
-    </div>
-
-    <!-- CRONOGRAMA -->
-    <div class="card" id="inicioCronograma">
-      <h3>⏰ Blocos de Estudo de Hoje</h3>
-      <ul id="cronogramaResumo"></ul>
-    </div>
-  </div>
-</section>
-
-<section id="tarefasSection" style="display:none;">
-
-  <input type="text" id="titulo" placeholder="Digite a tarefa">
-
-  <select id="prioridade">
-    <option value="alta">Alta</option>
-    <option value="media">Média</option>
-    <option value="baixa">Baixa</option>
-  </select>
-
-  <input type="date" id="data">
-
-  <button onclick="adicionarTarefa()">Adicionar</button>
-
-  <hr>
-
-  <h3>📅 Hoje</h3>
-  <ul id="tarefasHoje"></ul>
-
-  <h3>📆 Futuras</h3>
-  <ul id="tarefasFuturas"></ul>
-
-  <h3>📊 Tarefas de Hoje</h3>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Tarefa</th>
-        <th>Status</th>
-        <th>Ação</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaTarefas"></tbody>
-  </table>
-
-</section>
+  </nav>
 
 
+  <div class="sidebar d-flex flex-column p-3 fw-bold">
+    <ul class="nav flex-column gap-2" id="menuLateral">
 
+      <li class="nav-item">
+        <a href="#" class="nav-link active" onclick="event.preventDefault(); mostrarTela('inicio'); mudarPagina(this)">
+          <i class="bi bi-house-fill me-2"></i> Início
+        </a>
+      </li>
 
-<section id="notasSection">
-  <h1 class="mb-3">Minhas Notas</h1>
-  <div class="d-flex mb-3 justify-content-between">
-    <input type="text" id="search" class="form-control me-2" placeholder="Pesquisar...">
-    <button class="btn btn-primary" id="btnNova"><i class="fa fa-plus"></i> Nova</button>
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('tarefas'); mudarPagina(this)">
+          <i class="bi bi-check2-square me-2"></i> Tarefas
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('notas'); mudarPagina(this)">
+          <i class="bi bi-journal-bookmark me-2"></i> Notas
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('calendario'); mudarPagina(this)">
+          <i class="bi bi-calendar-event me-2"></i> Calendário
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('relogio'); mudarPagina(this)">
+          <i class="bi bi-clock me-2"></i> Relógio
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('estatistica'); mudarPagina(this)">
+          <i class="bi bi-graph-up me-2"></i> Estatística
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('cronograma'); mudarPagina(this)">
+          <i class="bi bi-diagram-3 me-2"></i> Cronograma
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('metodos'); mudarPagina(this)">
+          <i class="bi bi-lightbulb me-2"></i> Métodos
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('revisao'); mudarPagina(this)">
+          <i class="bi bi-arrow-repeat me-2"></i> Revisão
+        </a>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link"
+          onclick="event.preventDefault(); mostrarTela('progressoEstudos'); mudarPagina(this)">
+          <i class="bi bi-trophy me-2"></i> Progressos
+        </a>
+      </li>
+      </li>
+
+    </ul>
   </div>
 
-  <div id="notasContainer" class="row g-3"></div>
 
-  <!-- Modal -->
-<div class="modal fade" id="notaModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Nova Nota</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <label>Título</label>
-          <input type="text" id="notaTitulo" class="form-control mb-2">
-          
-          <label>Cor da nota</label>
-          <input type="color" id="notaCor" class="form-control form-control-color mb-2" value="#ffffff">
-          
-          <label>Texto <small style="color:gray;">(Selecione o texto antes de clicar em B/I/U)</small></label>
-          <div id="notaTextoToolbar" class="mb-1">
-            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('bold',false,null)">B</button>
-            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('italic',false,null)">I</button>
-            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('underline',false,null)">U</button>
+  <div class="app-main">
+    <section id="inicioSection">
+      <h2 style="margin-bottom: 20px;">Dashboard</h2>
+
+      <div class="dashboard-grid">
+        <!-- TAREFAS -->
+        <div class="row">
+          <div class="col-12 col-md-4 mb-3">
+            <div class="card p-3">
+              <h5>📋 Tarefas</h5>
+              <ul id="tarefasResumo" style="padding-left:15px; margin-top:10px;"></ul>
+            </div>
           </div>
-          <div id="notaTexto" class="form-control mb-2" contenteditable="true" style="height:150px; overflow:auto;"></div>
-          
-          <label>Checklist</label>
-          <div id="checklistContainer" class="mb-2"></div>
-          <button class="btn btn-success btn-sm" id="addCheck">Adicionar Item</button>
+          <div class="col-12 col-md-4 mb-3">
+            <div class="card p-3">📅 Próximos Eventos</div>
+          </div>
+          <div class="col-12 col-md-4 mb-3">
+            <div class="card p-3" id="resumoHojeCronograma">
+              <h5>📝 Hoje você tem:</h5>
+              <ul id="listaHojeCronograma" style="padding-left:15px; margin-top:10px;"></ul>
+            </div>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="btnSalvar">Salvar</button>
+    </section>
+
+    <section id="tarefasSection" style="display:none;">
+
+      <input type="text" id="titulo" placeholder="Digite a tarefa">
+
+      <select id="prioridade">
+        <option value="alta">Alta</option>
+        <option value="media">Média</option>
+        <option value="baixa">Baixa</option>
+      </select>
+
+      <input type="date" id="data">
+
+      <button onclick="adicionarTarefa()">Adicionar</button>
+
+      <hr>
+
+      <h3>📅 Hoje</h3>
+      <ul id="tarefasHoje"></ul>
+
+      <h3>📆 Futuras</h3>
+      <ul id="tarefasFuturas"></ul>
+
+      <h3>📊 Tarefas de Hoje</h3>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Tarefa</th>
+            <th>Status</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaTarefas"></tbody>
+      </table>
+
+    </section>
+
+
+
+
+    <section id="notasSection">
+      <h1 class="mb-3">Minhas Notas</h1>
+      <div class="d-flex mb-3 justify-content-between">
+        <input type="text" id="search" class="form-control me-2" placeholder="Pesquisar...">
+        <button class="btn btn-primary" id="btnNova"><i class="fa fa-plus"></i> Nova</button>
+      </div>
+
+      <div id="notasContainer" class="row g-3"></div>
+
+      <!-- Modal -->
+      <div class="modal fade" id="notaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Nova Nota</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label>Título</label>
+              <input type="text" id="notaTitulo" class="form-control mb-2">
+
+              <label>Cor da nota</label>
+              <input type="color" id="notaCor" class="form-control form-control-color mb-2" value="#ffffff">
+
+              <label>Texto <small style="color:gray;">(Selecione o texto antes de clicar em B/I/U)</small></label>
+              <div id="notaTextoToolbar" class="mb-1">
+                <button type="button" class="btn btn-sm btn-light"
+                  onclick="document.execCommand('bold',false,null)">B</button>
+                <button type="button" class="btn btn-sm btn-light"
+                  onclick="document.execCommand('italic',false,null)">I</button>
+                <button type="button" class="btn btn-sm btn-light"
+                  onclick="document.execCommand('underline',false,null)">U</button>
+              </div>
+              <div id="notaTexto" class="form-control mb-2" contenteditable="true" style="height:150px; overflow:auto;">
+              </div>
+
+              <label>Checklist</label>
+              <div id="checklistContainer" class="mb-2"></div>
+              <button class="btn btn-success btn-sm" id="addCheck">Adicionar Item</button>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="btnSalvar">Salvar</button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
 
 
 
-<section id="calendarioSection" style="display:none;">
+    <section id="calendarioSection" style="display:none;">
 
-  <div class="calendario-container">
-    <br>
-    <br><br>
+      <div class="calendario-container">
+        <br>
+        <br><br>
 
-    <h2>📅 Calendário</h2>
+        <h2>📅 Calendário</h2>
 
-    <!-- FORMULÁRIO -->
-    <div class="form-evento">
-      <input type="text" id="tituloEvento" placeholder="Nome do evento">
-      <input type="date" id="dataEvento">
-      <input type="text" id="materiaEvento" placeholder="Matéria">
-     <button onclick="adicionarEvento()">Adicionar</button>
-    </div>
+        <!-- FORMULÁRIO -->
+        <div class="form-evento">
+          <input type="text" id="tituloEvento" placeholder="Nome do evento">
+          <input type="date" id="dataEvento">
+          <input type="text" id="materiaEvento" placeholder="Matéria">
+          <button onclick="adicionarEvento()">Adicionar</button>
+        </div>
 
-    <!-- CALENDÁRIO -->
-    <div id="calendario"></div>
+        <!-- CALENDÁRIO -->
+        <div id="calendario"></div>
 
-  </div>
-
-</section>
-
-<section id="relogioSection" style="display:none;">
-  <h2>Relógio de Estudos</h2>
-
-  <div class="relogio-container">
-
-  
-  <br>
-  <br>
-  <br>
-
-  <div class="grid-relogio">
-
-    <!-- CRONÔMETRO -->
-    <div class="card-relogio">
-      <h3>Cronômetro</h3>
-
-      <input type="text" id="materia" placeholder="Digite a matéria">
-
-      <div class="tempo" id="tempoCronometro">00:00:00</div>
-
-      <div class="botoes">
-        <button onclick="iniciarCronometro()">Iniciar</button>
-        <button onclick="pararCronometro()">Parar</button>
       </div>
-    </div>
 
-    <!-- TIMER -->
-    <div class="card-relogio">
-      <h3>Timer</h3>
+    </section>
 
-      <input type="number" id="minutosTimer" placeholder="Minutos">
+    <section id="relogioSection" style="display:none;">
+      <h2>Relógio de Estudos</h2>
 
-      <div class="tempo" id="tempoTimer">00:00:00</div>
-
-      <button onclick="iniciarTimer()">Iniciar Timer</button>
-    </div>
-
-    <!-- POMODORO -->
-    <div class="card-relogio">
-      <h3>Pomodoro</h3>
-
-      <div class="tempo" id="tempoPomodoro">25:00</div>
-
-      <button onclick="iniciarPomodoro()">Iniciar Pomodoro</button>
-    </div>
-
-    <!-- HISTÓRICO -->
-    <div class="card-relogio">
-      <h3>Histórico</h3>
-
-      <ul id="historico"></ul>
-    </div>
-  <div></section>
-
-<section id="estatisticaSection" style="display:none;">ESTATÍSTICAS</section>
-
-  <section id="cronogramaSection" style="display:none; margin-top:80px; margin-left:220px; padding:20px;">
-
-  <h2>📅 Cronograma</h2>
-
-  <!-- FORM -->
-  <input type="text" id="materiaCronograma" placeholder="Matéria">
-  
-  
-  <select id="dia">
-    <option value="segunda">Segunda</option>
-    <option value="terca">Terça</option>
-    <option value="quarta">Quarta</option>
-    <option value="quinta">Quinta</option>
-    <option value="sexta">Sexta</option>
-    <option value="sabado">Sábado</option>
-    <option value="domingo">Domingo</option>
-  </select>
-
-  <input type="time" id="inicio">
-  <input type="time" id="fim">
-
-  <button onclick="adicionarBloco()">Adicionar</button>
-
-  <h3 id="agora"></h3>
-
-  <div id="cronogramaLista"></div>
-
-</section>
-
-<section id="metodosSection" style="display:none;">MÉTODOS</section>
-</div>
+      <div class="relogio-container">
 
 
+        <br>
+        <br>
+        <br>
+
+        <div class="grid-relogio">
+
+          <!-- CRONÔMETRO -->
+          <div class="card-relogio">
+            <h3>Cronômetro</h3>
+
+            <input type="text" id="materia" placeholder="Digite a matéria">
+
+            <div class="tempo" id="tempoCronometro">00:00:00</div>
+
+            <div class="botoes">
+              <button onclick="iniciarCronometro()">Iniciar</button>
+              <button onclick="pararCronometro()">Parar</button>
+            </div>
+          </div>
+
+          <!-- TIMER -->
+          <div class="card-relogio">
+            <h3>Timer</h3>
+
+            <input type="number" id="minutosTimer" placeholder="Minutos">
+
+            <div class="tempo" id="tempoTimer">00:00:00</div>
+
+            <button onclick="iniciarTimer()">Iniciar Timer</button>
+          </div>
+
+          <!-- POMODORO -->
+          <div class="card-relogio">
+            <h3>Pomodoro</h3>
+
+            <div class="tempo" id="tempoPomodoro">25:00</div>
+
+            <button onclick="iniciarPomodoro()">Iniciar Pomodoro</button>
+          </div>
+
+          <!-- HISTÓRICO -->
+          <div class="card-relogio">
+            <h3>Histórico</h3>
+
+            <ul id="historico"></ul>
+          </div>
+          <div>
+    </section>
+
+    <section id="estatisticaSection" style="display:none;">ESTATÍSTICAS</section>
+
+    <section id="cronogramaSection" style="display:none; margin-top:80px; margin-left:220px; padding:20px;">
+
+      <h2>📅 Cronograma</h2>
+
+      <!-- FORM -->
+      <input type="text" id="materiaCronograma" placeholder="Matéria">
+
+
+      <select id="dia">
+        <option value="segunda">Segunda</option>
+        <option value="terca">Terça</option>
+        <option value="quarta">Quarta</option>
+        <option value="quinta">Quinta</option>
+        <option value="sexta">Sexta</option>
+        <option value="sabado">Sábado</option>
+        <option value="domingo">Domingo</option>
+      </select>
+
+      <input type="time" id="inicio">
+      <input type="time" id="fim">
+
+      <button onclick="adicionarBloco()">Adicionar</button>
+
+      <h3 id="agora"></h3>
+
+      <div id="cronogramaLista"></div>
+
+    </section>
+
+    <section id="metodosSection" style="display:none;">MÉTODOS</section>
+  </div>
 
 
 
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-   
-  </body>
-   <script src="PaginaUsuario.js"></script>
-  </html>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+<script src="PaginaUsuario.js"></script>
+
+</html>

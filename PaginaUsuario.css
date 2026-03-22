@@ -15,6 +15,7 @@ html {
 }
 
 .navbar {
+  height: 80px; /* ajuste de acordo com sua navbar */
   position: fixed;
   top: 0;
   left: 0;
@@ -98,14 +99,6 @@ html {
   color: white !important;
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-
-  .linha-inferior {
-    flex-direction: column;
-  }
-
-}
 
 /*CONFIGURAÇÕES CALENDARIO*/
 .calendario-container {
@@ -132,7 +125,41 @@ html {
     flex-direction: column;
     gap: 10px;
   }
+
+  .app-main {
+    padding: 15px;
+     margin-left: 0;
+  }
+
+  .relogio-container {
+    padding: 10px;
+  }
+
+  .tempo {
+    font-size: 20px;
+  }
+
+  .linha-inferior {
+    flex-direction: column;
+  }
+
+    .sidebar {
+    position: fixed;
+    left: -250px; /* escondida por padrão */
+    top: 80px; /* abaixo da navbar */
+    width: 250px;
+    height: 100%;
+    background: #f8f9fa;
+    transition: left 0.3s;
+    z-index: 999;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
 }
+
 
 .fc a {
   color: black !important;
@@ -211,19 +238,6 @@ html {
   margin-bottom: 20px;
 }
 
-@media (max-width: 768px) {
-  .app-main {
-    padding: 15px;
-  }
-
-  .relogio-container {
-    padding: 10px;
-  }
-
-  .tempo {
-    font-size: 20px;
-  }
-}
 
 /* ---------- TAREFAS GERAL ---------- */
 #tarefasSection {
@@ -399,10 +413,9 @@ html {
 
 
 /* BLOCO DE NOTAS */
-
 .modal-dialog {
   z-index: 1050;
-  max-width: 800px; /* opcional, pra não ficar gigante */
+  max-width: 800px; 
   margin: auto;
 }
 
@@ -534,3 +547,13 @@ html {
       font-size: 1.5rem;
     }
   }
+
+
+  #resumoHojeCronograma ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+#resumoHojeCronograma li {
+  margin-bottom: 5px;
+}
