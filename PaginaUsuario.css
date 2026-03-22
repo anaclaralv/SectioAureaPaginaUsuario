@@ -386,7 +386,7 @@ html, body {
 /* ---------- CRONOGRAMA ---------- */
 #cronogramaSection {
   margin-top: 80px;
-  margin-left: 200px;
+  margin-left: 180px;
   padding: 20px;
   max-width: 1200px;
 }
@@ -544,6 +544,7 @@ html, body {
 
 .btn-excluir-check:hover {
   color: #a94442;
+
 }
 
 
@@ -615,6 +616,9 @@ html, body {
 
 #resumoHojeCronograma li {
   margin-bottom: 5px;
+
+
+  
 }
 
 
