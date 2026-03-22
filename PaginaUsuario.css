@@ -637,7 +637,10 @@ html, body {
   margin-bottom: 5px;
 
 
+<<<<<<< HEAD
+=======
   
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 }
 
 
@@ -752,4 +755,8 @@ html, body {
   object-fit: cover;       /* recorta se necessário */
   border: 4px solid #9f042c;
   margin-bottom: 10px;
+<<<<<<< HEAD
+
+=======
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 }
