@@ -549,34 +549,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-// --------- RESUMO INÍCIO ---------
+
+
+//INICIO
+
 function atualizarResumoInicio() {
-  // TAREFAS
   const hoje = hojeFormatado();
+
+  // TAREFAS
   const tarefasResumo = document.getElementById("tarefasResumo");
   if (tarefasResumo) {
     tarefasResumo.innerHTML = "";
-    tarefas
-      .filter(t => t.data === hoje)
-      .forEach(tarefa => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span style="color:${corPrioridade(tarefa.prioridade)}">
-            ${tarefa.titulo} - prioridade ${tarefa.prioridade}
-          </span>
-        `;
-        tarefasResumo.appendChild(li);
+
+    const tarefasHoje = tarefas.filter(t => t.data === hoje);
+    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+
+    function criarLiTarefa(tarefa) {
+      const li = document.createElement("li");
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = tarefa.concluida || false;
+
+      const span = document.createElement("span");
+      span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
+      span.style.color = corPrioridade(tarefa.prioridade);
+      if(tarefa.concluida) span.classList.add("concluida");
+
+      checkbox.addEventListener("change", () => {
+        tarefa.concluida = checkbox.checked;
+        if(tarefa.concluida) span.classList.add("concluida");
+        else span.classList.remove("concluida");
+        localStorage.setItem("tarefas", JSON.stringify(tarefas));
       });
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      return li;
+    }
+
+    if (tarefasHoje.length > 0) {
+      const titulo = document.createElement("li");
+      titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
+      tarefasResumo.appendChild(titulo);
+      tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+    }
+
+    if (tarefasFuturas.length > 0) {
+      const titulo = document.createElement("li");
+      titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
+      tarefasResumo.appendChild(titulo);
+      tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+    }
+
+    if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
+      const li = document.createElement("li");
+      li.textContent = "Nenhuma tarefa cadastrada!";
+      tarefasResumo.appendChild(li);
+    }
   }
 
-  // EVENTOS CALENDÁRIO
+  // EVENTOS
   const eventosResumo = document.getElementById("eventosResumo");
   if (eventosResumo && calendar) {
     eventosResumo.innerHTML = "";
-    const eventos = calendar.getEvents()
+    const proximosEventos = calendar.getEvents()
       .filter(e => new Date(e.start).toDateString() >= new Date().toDateString())
-      .slice(0,5); // mostra só os 5 próximos
-    eventos.forEach(ev => {
+      .slice(0,5);
+    proximosEventos.forEach(ev => {
       const li = document.createElement("li");
       li.textContent = `${ev.title} - ${ev.start.toLocaleDateString()}`;
       li.style.color = ev.backgroundColor || "black";
@@ -601,14 +641,12 @@ function atualizarResumoInicio() {
   }
 }
 
-// chamar sempre que atualizar tarefas, eventos ou cronograma
 function atualizarTudo() {
   renderizar();
   atualizarTabela();
-  atualizarResumoInicio(); // <<< adiciona aqui
+  atualizarResumoInicio();
 }
 
-// também chama no DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
   atualizarResumoInicio();
 });

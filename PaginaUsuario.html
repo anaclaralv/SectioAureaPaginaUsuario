@@ -123,25 +123,29 @@
 
 
 <div class="app-main">
-  <section id="inicioSection">
-  <h2>Dashboard</h2>
+<section id="inicioSection">
+  <h2 style="margin-bottom: 20px;">Dashboard</h2>
 
-  <div id="inicioTarefas" class="mb-4">
-    <h3>📋 Tarefas de Hoje</h3>
-    <ul id="tarefasResumo"></ul>
-  </div>
+  <div class="dashboard-grid">
+    <!-- TAREFAS -->
+    <div class="card" id="inicioTarefas">
+      <h3>📋 Tarefas</h3>
+      <ul id="tarefasResumo"></ul>
+    </div>
 
-  <div id="inicioEventos" class="mb-4">
-    <h3>📅 Próximos Eventos</h3>
-    <ul id="eventosResumo"></ul>
-  </div>
+    <!-- EVENTOS -->
+    <div class="card" id="inicioEventos">
+      <h3>📅 Próximos Eventos</h3>
+      <ul id="eventosResumo"></ul>
+    </div>
 
-  <div id="inicioCronograma" class="mb-4">
-    <h3>⏰ Blocos de Estudo de Hoje</h3>
-    <ul id="cronogramaResumo"></ul>
+    <!-- CRONOGRAMA -->
+    <div class="card" id="inicioCronograma">
+      <h3>⏰ Blocos de Estudo de Hoje</h3>
+      <ul id="cronogramaResumo"></ul>
+    </div>
   </div>
 </section>
-
 
 <section id="tarefasSection" style="display:none;">
 
