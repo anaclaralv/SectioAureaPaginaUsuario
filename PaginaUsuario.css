@@ -13,7 +13,6 @@
       scroll-behavior: smooth;
     }
 
-
     .navbar {
   position: fixed !important;
   top: 0;
@@ -27,13 +26,12 @@
   align-items: center;
 }
 
-
    .sidebar {
   position: fixed;
   top: 100px;
   left: 0;
   width: 250px;
- height: calc(100vh - 100px);
+  height: calc(100vh - 90px);
   background-color: #f2f2f2;
   font-weight: bold;
 }
@@ -197,7 +195,6 @@
   flex: 1;
   padding: 30px;
   margin-left: 250px;
-  margin-top: 100px; 
   background-color: #f8f9fa;
 }
 
@@ -221,6 +218,8 @@
 /* ---------- TAREFAS GERAL ---------- */
 #tarefasSection {
   padding: 20px;
+  margin-top: 80px;
+  margin-left: 220px;
 }
 
 /* INPUTS */
@@ -291,41 +290,4 @@
 .concluida {
   text-decoration: line-through;
   opacity: 0.6;
-}
-
-
-
-
-
-
-/* BLOCO DE NOTAS */.lista-notas {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.card-nota {
-  padding: 12px;
-  border-radius: 12px;
-  background: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.card-nota:hover {
-  transform: scale(1.02);
-}
-
-.conteudo-nota {
-  max-height: 0;
-  overflow: hidden;
-  transition: 0.3s ease;
-}
-
-.conteudo-nota.ativo {
-  max-height: 200px;
-}
-
-.dragging {
-  opacity: 0.5;
 }
