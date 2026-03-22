@@ -378,8 +378,6 @@ function adicionarEvento() {
 
 
 // NOTAS
-
-
 document.addEventListener("DOMContentLoaded", () => {
   let notas = JSON.parse(localStorage.getItem("notas")) || [];
   let notaAtual = null;
@@ -547,4 +545,191 @@ document.addEventListener("DOMContentLoaded", () => {
   searchInput.addEventListener("input", renderNotas);
 
   renderNotas();
+});
+
+/**CRONOGRAMA */
+// ---------- CRONOGRAMA ----------
+let cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
+
+function salvarCronograma() {
+  localStorage.setItem("cronograma", JSON.stringify(cronograma));
+}
+
+// ---------- CORES POR MATÉRIA ----------
+function corMateria(materia) {
+  const cores = {
+    matematica: "#4a90e2",
+    fisica: "#9b59b6",
+    quimica: "#27ae60",
+    historia: "#e67e22",
+    portugues: "#e74c3c"
+  };
+
+  return cores[materia.toLowerCase()] || "#555";
+}
+
+function converterParaMinutos(hora) {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function adicionarBloco() {
+  const materiaEl = document.getElementById("materiaCronograma");
+  const diaEl = document.getElementById("dia");
+  const inicioEl = document.getElementById("inicio");
+  const fimEl = document.getElementById("fim");
+
+  if (!materiaEl || !diaEl || !inicioEl || !fimEl) {
+    alert("Erro nos campos!");
+    return;
+  }
+
+  const materia = materiaEl.value.trim();
+  const dia = diaEl.value;
+  const inicio = inicioEl.value;
+  const fim = fimEl.value;
+
+  if (!materia) {
+    alert("Digite a matéria!");
+    return;
+  }
+
+  if (!inicio || !fim) {
+    alert("Preencha os horários!");
+    return;
+  }
+
+  const inicioMin = converterParaMinutos(inicio);
+  const fimMin = converterParaMinutos(fim);
+
+  // 🔥 validação de horário
+  if (inicioMin >= fimMin) {
+    alert("O horário final deve ser depois do início!");
+    return;
+  }
+
+  // 🔥 validação de conflito (CORRIGIDA)
+  const conflito = cronograma.some(b => {
+    if (b.dia !== dia) return false;
+
+    const bInicio = converterParaMinutos(b.inicio);
+    const bFim = converterParaMinutos(b.fim);
+
+    return (
+      inicioMin < bFim && fimMin > bInicio
+    );
+  });
+
+  if (conflito) {
+    alert("Já existe um bloco nesse horário!");
+    return;
+  }
+
+  // ✅ AGORA SIM adiciona
+  cronograma.push({
+    id: Date.now(),
+    materia,
+    dia,
+    inicio,
+    fim
+  });
+
+  salvarCronograma();
+  renderizarCronograma();
+
+  materiaEl.value = "";
+  inicioEl.value = "";
+  fimEl.value = "";
+}
+// ---------- RENDER ----------
+function renderizarCronograma() {
+  const container = document.getElementById("cronogramaLista");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const dias = ["segunda","terca","quarta","quinta","sexta","sabado","domingo"];
+
+  dias.forEach(dia => {
+    const divDia = document.createElement("div");
+    divDia.innerHTML = `<h3>${dia.toUpperCase()}</h3>`;
+
+    cronograma
+      .filter(b => b.dia === dia)
+      .forEach(b => {
+        const item = document.createElement("div");
+
+        item.style.background = "#f5f5f5";
+        item.style.padding = "10px";
+        item.style.margin = "5px 0";
+        item.style.borderLeft = `5px solid ${corMateria(b.materia)}`;
+
+        item.innerHTML = `
+          <strong>${b.materia}</strong> (${b.inicio} - ${b.fim})
+          <br>
+          <button onclick="editarBloco(${b.id})">✏️</button>
+          <button onclick="excluirBloco(${b.id})">❌</button>
+        `;
+
+        divDia.appendChild(item);
+      });
+
+    container.appendChild(divDia);
+  });
+
+  mostrarAgora();
+}
+
+// ---------- EXCLUIR ----------
+function excluirBloco(id) {
+  cronograma = cronograma.filter(b => b.id !== id);
+  salvarCronograma();
+  renderizarCronograma();
+}
+
+// ---------- EDITAR ----------
+function editarBloco(id) {
+  const bloco = cronograma.find(b => b.id === id);
+  if (!bloco) return;
+
+  const novaMateria = prompt("Matéria:", bloco.materia);
+  const novoInicio = prompt("Início:", bloco.inicio);
+  const novoFim = prompt("Fim:", bloco.fim);
+
+  if (!novaMateria || !novoInicio || !novoFim) return;
+
+  bloco.materia = novaMateria;
+  bloco.inicio = novoInicio;
+  bloco.fim = novoFim;
+
+  salvarCronograma();
+  renderizarCronograma();
+}
+
+// ---------- VER AGORA ----------
+function mostrarAgora() {
+  const agoraEl = document.getElementById("agora");
+  if (!agoraEl) return;
+
+  const agora = new Date();
+  const diaSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"][agora.getDay()];
+
+  const horaAtual = agora.toTimeString().slice(0,5);
+
+  const atual = cronograma.find(b =>
+    b.dia === diaSemana &&
+    horaAtual >= b.inicio &&
+    horaAtual <= b.fim
+  );
+
+  if (atual) {
+    agoraEl.textContent = `📌 Agora: ${atual.materia} até ${atual.fim}`;
+  } else {
+    agoraEl.textContent = "📌 Agora: Livre";
+  }
+}
+
+// ---------- INICIAR ----------
+document.addEventListener("DOMContentLoaded", () => {
+  renderizarCronograma();
 });
