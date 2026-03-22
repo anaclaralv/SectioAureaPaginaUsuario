@@ -32,16 +32,12 @@
           Sectio Aurea
         </span></a>
 
-      <div class="d-flex align-items-center ms-2">
+      <div id="userInfo" class="d-flex align-items-center ms-2" style="cursor:pointer;">
         <img id="sidebarFoto" src="usuario.png" class="sidebar-avatar"
           style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid #9f042c;">
         <div class="ms-3 d-flex flex-column">
-          <span class="fw-bold" id="sidebarNome" style="font-size:18px;">
-            Usuário
-          </span>
-          <span id="sidebarEmail" id="emailUsuario" style="font-size:14px; color:gray;">
-            usuario@email.com
-          </span>
+          <span class="fw-bold" id="sidebarNome" style="font-size:18px;">Usuário</span>
+          <span id="sidebarEmail" style="font-size:14px; color:gray;">usuario@email.com</span>
         </div>
       </div>
     </div>
@@ -346,7 +342,45 @@
 
 
 
+  <!-- BOTÃO QUE ABRE O MODAL -->
+  <div id="userInfo" style="cursor:pointer;">
+    <img id="sidebarFoto" src="usuario.png"
+      style="width:70px; height:70px; border-radius:50%; border:3px solid #9f042c;">
+    <div>
+      <span id="sidebarNome">Usuário</span><br>
+      <span id="sidebarEmail">usuario@email.com</span>
+    </div>
+  </div>
 
+  <!-- MODAL CONFIGURAÇÃO -->
+  <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-4">
+        <h2 class="text-center mb-3" style="color:#9f042c;">⚙️ Configurações do Usuário</h2>
+
+        <div class="text-center mb-3">
+          <div class="foto-usuario-container">
+            <img id="previewFoto" src="usuario.png" alt="Foto do Usuário"
+              style="width:120px;height:120px;border-radius:50%;border:4px solid #9f042c;object-fit:cover;">
+            <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label>Nome:</label>
+          <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+        </div>
+
+        <div class="mb-3">
+          <label>Email:</label>
+          <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+        </div>
+
+        <button onclick="salvarConfiguracao()" class="btn btn-danger w-100">💾 Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
 
 
 

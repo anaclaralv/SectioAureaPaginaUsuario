@@ -853,3 +853,56 @@ function renderizarResumoHoje() {
     lista.appendChild(li);
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+// ABRIR MODAL AO CLICAR NO USERINFO
+document.getElementById('userInfo').addEventListener('click', function() {
+  const novoNome = document.getElementById('sidebarNome').textContent;
+  const novoEmail = document.getElementById('sidebarEmail').textContent;
+  const fotoSrc = document.getElementById('sidebarFoto').src;
+
+  document.getElementById('novoNome').value = novoNome;
+  document.getElementById('novoEmail').value = novoEmail;
+  document.getElementById('previewFoto').src = fotoSrc;
+
+  const modal = new bootstrap.Modal(document.getElementById('configModal'));
+  modal.show();
+});
+
+// SALVAR CONFIGURAÇÕES
+function salvarConfiguracao() {
+  const novoNome = document.getElementById('novoNome').value;
+  const novoEmail = document.getElementById('novoEmail').value;
+  const novaFotoInput = document.getElementById('novaFoto');
+
+  document.getElementById('sidebarNome').textContent = novoNome;
+  document.getElementById('sidebarEmail').textContent = novoEmail;
+
+  if (novaFotoInput.files && novaFotoInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('sidebarFoto').src = e.target.result;
+      document.getElementById('previewFoto').src = e.target.result;
+    }
+    reader.readAsDataURL(novaFotoInput.files[0]);
+  }
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Sucesso!',
+    text: 'Configurações salvas com sucesso.',
+    timer: 1500,
+    showConfirmButton: false
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
+}
