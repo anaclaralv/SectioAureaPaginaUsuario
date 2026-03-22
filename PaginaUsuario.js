@@ -66,6 +66,11 @@ try {
   tarefas = [];
 }
 
+function ordenarPorPrioridade(arrayTarefas) {
+  const prioridadeValor = { "alta": 1, "media": 2, "baixa": 3 };
+  return arrayTarefas.sort((a, b) => prioridadeValor[a.prioridade] - prioridadeValor[b.prioridade]);
+}
+
 function salvar() {
   localStorage.setItem("tarefas", JSON.stringify(tarefas));
 }
@@ -113,10 +118,6 @@ function adicionarTarefa() {
   prioridadeEl.value = "alta";
 }
 
-function atualizarTudo() {
-  renderizar();
-  atualizarTabela();
-}
 
 function renderizar() {
   const hojeLista = document.getElementById("tarefasHoje");
@@ -129,55 +130,66 @@ function renderizar() {
 
   const hoje = hojeFormatado();
 
-  tarefas.forEach((tarefa) => {
-    const li = document.createElement("li");
+  const prioridadeOrdem = { alta: 3, media: 2, baixa: 1 };
 
-    if (tarefa.concluida) {
-      li.classList.add("concluida");
-    }
+  // Função para criar card
+  function criarCard(tarefa) {
+    const card = document.createElement("div");
+    card.classList.add("tarefa-card");
+    if (tarefa.concluida) card.classList.add("concluida");
 
-    li.innerHTML = `
-      <span style="color:${corPrioridade(tarefa.prioridade)}">
-        ${tarefa.titulo} (${tarefa.prioridade}) - ${tarefa.data}
-      </span>
-      <button onclick="toggle(${tarefa.id})">
-        ${tarefa.concluida ? "Desfazer" : "Concluir"}
-      </button>
-    `;
+    const info = document.createElement("div");
+    info.classList.add("tarefa-info");
 
-    if (tarefa.data === hoje) {
-      hojeLista.appendChild(li);
-    } else if (tarefa.data > hoje) {
-      futurasLista.appendChild(li);
-    }
-  });
-}
+    const spanTitulo = document.createElement("span");
+    spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
 
-function atualizarTabela() {
-  const tabela = document.getElementById("tabelaTarefas");
-  if (!tabela) return;
+    const badge = document.createElement("span");
+    badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
+    badge.textContent = tarefa.prioridade.toUpperCase();
 
-  tabela.innerHTML = "";
+    info.appendChild(spanTitulo);
+    info.appendChild(badge);
 
-  const hoje = hojeFormatado();
+    const btnConcluir = document.createElement("button");
+    btnConcluir.classList.add("btn-concluir");
+    btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
+    btnConcluir.onclick = () => {
+      tarefa.concluida = !tarefa.concluida;
+      salvar();
+      renderizar();
+      atualizarResumoInicio();
+    };
 
-  tarefas
-    .filter(t => t.data === hoje)
-    .forEach((tarefa) => {
-      tabela.innerHTML += `
-        <tr>
-          <td style="color:${corPrioridade(tarefa.prioridade)}">
-            ${tarefa.titulo}
-          </td>
-          <td>${tarefa.concluida ? "✔" : ""}</td>
-          <td>
-            <button onclick="toggle(${tarefa.id})">
-              ${tarefa.concluida ? "↩" : "✔"}
-            </button>
-          </td>
-        </tr>
-      `;
-    });
+    const btnExcluir = document.createElement("button");
+    btnExcluir.classList.add("btn-excluir");
+    btnExcluir.textContent = "❌ Excluir";
+    btnExcluir.onclick = () => {
+      tarefas = tarefas.filter(t => t.id !== tarefa.id);
+      salvar();
+      renderizar();
+      atualizarResumoInicio();
+    };
+
+    card.appendChild(info);
+    card.appendChild(btnConcluir);
+    card.appendChild(btnExcluir);
+
+    return card;
+  }
+
+  // Separar tarefas de hoje e futuras e ordenar
+  const tarefasHoje = tarefas.filter(t => t.data === hoje)
+                             .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
+
+  const tarefasFuturas = tarefas.filter(t => t.data > hoje)
+                                .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
+
+  if (tarefasHoje.length === 0) hojeLista.innerHTML = "<p>Nenhuma tarefa cadastrada hoje!</p>";
+  else tarefasHoje.forEach(t => hojeLista.appendChild(criarCard(t)));
+
+  if (tarefasFuturas.length === 0) futurasLista.innerHTML = "<p>Nenhuma tarefa futura cadastrada!</p>";
+  else tarefasFuturas.forEach(t => futurasLista.appendChild(criarCard(t)));
 }
 
 function toggle(id) {
@@ -586,8 +598,8 @@ function atualizarResumoInicio() {
   if (tarefasResumo) {
     tarefasResumo.innerHTML = "";
 
-    const tarefasHoje = tarefas.filter(t => t.data === hoje);
-    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+  const tarefasHoje = tarefas.filter(t => t.data === hoje);
+  const tarefasFuturas = tarefas.filter(t => t.data > hoje);
 
     function criarLiTarefa(tarefa) {
       const li = document.createElement("li");
@@ -866,6 +878,10 @@ function mostrarAgora() {
   }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 // ---------- INICIAR ----------
 document.addEventListener("DOMContentLoaded", () => {
   renderizarCronograma();
@@ -894,13 +910,6 @@ function renderizarResumoHoje() {
     lista.appendChild(li);
   });
 }
-
-
-
-
-
-
-
 
 
 
@@ -947,3 +956,7 @@ function salvarConfiguracao() {
 
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f

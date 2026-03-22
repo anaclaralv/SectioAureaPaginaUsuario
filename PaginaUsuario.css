@@ -242,84 +242,143 @@ html, body {
 /* ---------- TAREFAS GERAL ---------- */
 #tarefasSection {
   padding: 20px;
-
   margin-top: 80px;
-  margin-left: 220px;
-
-  margin-top: 10px;
   margin-left: 60px;
-
 }
 
-/* INPUTS */
-#tarefasSection input,
-#tarefasSection select {
-  padding: 8px;
-  margin: 5px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-#tarefasSection button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  background-color: #b3002d;
-  color: white;
-  cursor: pointer;
-}
-
-#tarefasSection button:hover {
-  background-color: #800020;
-}
-
-/* LISTAS */
-#tarefasHoje,
-#tarefasFuturas {
-  list-style: none;
-  padding: 0;
+/* FORMULÁRIO */
+.tarefa-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 20px;
 }
 
-#tarefasHoje li,
-#tarefasFuturas li {
-  background: #f5f5f5;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 10px;
+.tarefa-form input,
+.tarefa-form select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.tarefa-form button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #b3002d;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.tarefa-form button:hover {
+  background-color: #800020;
+}
+
+/* CONTAINER DE TAREFAS */
+.tarefas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* CARD DE TAREFA */
+.tarefa-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  gap: 12px;
+  font-size: 14px;
 }
 
-/* TÍTULOS */
-#tarefasSection h3 {
-  margin-top: 20px;
+/* INFO DA TAREFA */
+.tarefa-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* TABELA */
-#tarefasSection table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+.tarefa-info span {
+  font-weight: 500;
 }
 
-#tarefasSection th,
-#tarefasSection td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+/* BADGES DE PRIORIDADE */
+.tarefa-prioridade {
+  padding: 3px 6px;
+  border-radius: 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
 }
 
-#tarefasSection th {
-  background-color: #f0f0f0;
+.tarefa-alta { background-color: red; }
+.tarefa-media { background-color: orange; }
+.tarefa-baixa { background-color: green; }
+
+/* BOTÕES */
+.tarefa-card button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
 }
 
-/* LINHA CONCLUÍDA */
-.concluida {
+.btn-concluir {
+  background-color: #00b300;
+  color: white;
+}
+
+.btn-concluir:hover {
+  background-color: #009900;
+}
+
+.btn-excluir {
+  background-color: #b3002d;
+  color: white;
+}
+
+.btn-excluir:hover {
+  background-color: #800020;
+}
+
+/* TAREFA CONCLUÍDA */
+.concluida span {
   text-decoration: line-through;
   opacity: 0.6;
+}
 
+/* TITULOS DAS LISTAS */
+#tarefasSection h3 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+/* RESPONSIVO */
+@media(max-width: 768px) {
+  #tarefasSection {
+    margin-left: 15px;
+    margin-right: 15px;
+    padding: 15px;
+  }
+
+  .tarefa-form {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tarefa-card {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
 }
 
 
@@ -559,6 +618,10 @@ html, body {
   margin-bottom: 5px;
 
 
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 }
 
 
@@ -673,5 +736,8 @@ html, body {
   object-fit: cover;       /* recorta se necessário */
   border: 4px solid #9f042c;
   margin-bottom: 10px;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 }
