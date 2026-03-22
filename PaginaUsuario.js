@@ -377,206 +377,174 @@ function adicionarEvento() {
 
 
 
+// NOTAS
 
 
-// ===== NOTAS =====
+document.addEventListener("DOMContentLoaded", () => {
+  let notas = JSON.parse(localStorage.getItem("notas")) || [];
+  let notaAtual = null;
+  const notasContainer = document.getElementById("notasContainer");
+  const searchInput = document.getElementById("search");
+  const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
+
+  function renderNotas() {
+    notasContainer.innerHTML = "";
+    const filtro = searchInput.value.toLowerCase();
+    notas
+      .filter(n => n.titulo.toLowerCase().includes(filtro))
+      .sort((a,b) => b.favorito - a.favorito)
+      .forEach((nota, idx) => {
+        const card = document.createElement("div");
+        card.className = "col-md-4";
+        card.innerHTML = `
+          <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
+            <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
+            <h5>${nota.titulo}</h5>
+            <div class="card-conteudo">
+              ${nota.texto}
+              <div class="checklist-card">
+                ${nota.checklist.map((c,i) => `
+                  <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
+                    <input type="checkbox" ${c.checked ? 'checked' : ''}>
+                    <span>${c.texto}</span>
+                    <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
+              <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
+            </div>
+          </div>
+        `;
+        notasContainer.appendChild(card);
+      });
+
+    document.querySelectorAll(".check-item input").forEach(input => {
+      input.addEventListener("change", (e) => {
+        const div = e.target.parentElement;
+        const idx = div.dataset.idx;
+        const cardidx = div.dataset.cardidx;
+        notas[cardidx].checklist[idx].checked = e.target.checked;
+        salvarNotas();
+        renderNotas();
+      });
+    });
+
+    document.querySelectorAll(".btn-excluir-check").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const div = e.target.parentElement;
+        const idx = div.dataset.idx;
+        const cardidx = div.dataset.cardidx;
+        notas[cardidx].checklist.splice(idx,1);
+        salvarNotas();
+        renderNotas();
+      });
+    });
+  }
+
+  function salvarNotas() {
+    localStorage.setItem("notas", JSON.stringify(notas));
+  }
 
 
-let notas = JSON.parse(localStorage.getItem("notas")) || [];
-let notaAtual = null;
-let excluirIndex = null;
 
-// ALERTA
-function alertaNota(msg){
-  const a = document.getElementById("alertaNota");
-  a.innerText = msg;
-  a.classList.add("mostrar");
-  setTimeout(()=>a.classList.remove("mostrar"),2000);
-}
 
-// SALVAR
-function salvarNotas(){
-  localStorage.setItem("notas", JSON.stringify(notas));
-}
+  
+  function abrirModal(nota=null, idx=null){
+    notaAtual = idx;
+    document.getElementById("notaTitulo").value = nota?.titulo || "";
+    document.getElementById("notaTexto").innerHTML = nota?.texto || "";
+    document.getElementById("notaCor").value = nota?.cor || "#ffffff";
+    renderChecklist(nota?.checklist || []);
+    notaModal.show();
+  }
 
-// ORDENAR FAVORITOS
-function ordenarNotas(){
-  notas.sort((a,b)=>b.favorito - a.favorito);
-}
+  function renderChecklist(items){
+    const container = document.getElementById("checklistContainer");
+    container.innerHTML = "";
+    items.forEach((c,i) => {
+      const div = document.createElement("div");
+      div.className = "check-item" + (c.checked ? "completed" : "");
+      div.style.display = "flex"; div.style.alignItems = "center"; div.style.marginBottom = "5px";
+      div.innerHTML = `
+        <input type="checkbox" ${c.checked ? 'checked' : ''} style="margin-right:5px;">
+        <input type="text" class="form-control form-control-sm" value="${c.texto}" style="flex:1; margin-right:5px;">
+        <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
+      `;
+      const checkbox = div.querySelector("input[type=checkbox]");
+      const textoInput = div.querySelector("input[type=text]");
+      checkbox.addEventListener("change", () => {
+        c.checked = checkbox.checked;
+        renderChecklist(items);
+      });
+      textoInput.addEventListener("input", () => {
+        c.texto = textoInput.value;
+      });
+      div.querySelector(".btn-excluir-check").addEventListener("click", () => {
+        items.splice(i,1);
+        renderChecklist(items);
+      });
+      container.appendChild(div);
+    });
+  }
 
-// RENDER
-function renderNotas(){
-  ordenarNotas();
-  const lista = document.getElementById("listaNotas");
-  lista.innerHTML = "";
-
-  const filtro = document.getElementById("pesquisaNota").value.toLowerCase();
-
-  notas.forEach((n,i)=>{
-    if(!n.titulo.toLowerCase().includes(filtro)) return;
-
-    const div = document.createElement("div");
-    div.className="card-nota";
-    div.style.background = n.cor || "#fff";
-
-    div.innerHTML = `
-      <div class="topo-card">
-        <span class="estrela ${n.favorito?"ativa":""}" onclick="favoritarNota(${i})">⭐</span>
-
-        <div class="acoes-card">
-          <button onclick="editarNota(${i})">✏️</button>
-          <button onclick="abrirExcluirNota(${i})">🗑️</button>
-        </div>
-      </div>
-
-      <h3 onclick="toggleNota(${i})">${n.titulo || "Sem título"}</h3>
-
-      <div class="conteudo-nota" id="c${i}">
-        <p>${n.texto}</p>
-
-        <ul>
-          ${n.checklist.map((c,j)=>`
-            <li>
-              <input type="checkbox" ${c.feito?"checked":""}
-              onclick="checkNota(${i},${j})">
-              ${c.texto}
-            </li>
-          `).join("")}
-        </ul>
-      </div>
-    `;
-
-    lista.appendChild(div);
+  document.getElementById("addCheck").addEventListener("click", () => {
+    const checklist = notaAtual !== null ? notas[notaAtual].checklist : [];
+    checklist.push({texto:"Novo item", checked:false});
+    renderChecklist(checklist);
   });
-}
 
-// NOVA NOTA
-document.getElementById("criarNota").onclick = () => {
-  notas.push({
-    titulo:"",
-    texto:"",
-    checklist:[],
-    cor:"#ffffff",
-    favorito:false
+  document.getElementById("btnSalvar").addEventListener("click", () => {
+    const titulo = document.getElementById("notaTitulo").value;
+    const texto = document.getElementById("notaTexto").innerHTML;
+    const cor = document.getElementById("notaCor").value;
+    const checklist = Array.from(document.querySelectorAll("#checklistContainer .check-item")).map(item => ({
+      texto: item.querySelector("input[type=text]").value,
+      checked: item.querySelector("input[type=checkbox]").checked
+    }));
+    const novaNota = {titulo,texto,cor,checklist,favorito:notaAtual!==null ? notas[notaAtual].favorito : false};
+    if(notaAtual !== null) notas[notaAtual] = novaNota;
+    else notas.push(novaNota);
+    salvarNotas();
+    notaModal.hide();
+    renderNotas();
+    Swal.fire({icon:'success', title:'Nota salva!', timer:1500, showConfirmButton:false});
   });
 
-  notaAtual = notas.length - 1;
-  abrirEditorNota();
-};
-
-// EDITOR
-function abrirEditorNota(){
-  document.getElementById("editorView").style.display="block";
-
-  const n = notas[notaAtual];
-  document.getElementById("tituloNota").value = n.titulo;
-  document.getElementById("editorTexto").value = n.texto;
-  document.getElementById("corNota").value = n.cor;
-
-  renderChecklist();
-}
-
-function voltarLista(){
-  document.getElementById("editorView").style.display="none";
-  salvarNotas();
-  renderNotas();
-}
-
-// EDITAR
-function editarNota(i){
-  notaAtual = i;
-  abrirEditorNota();
-}
-
-// FAVORITO
-function favoritarNota(i){
-  notas[i].favorito = !notas[i].favorito;
-  salvarNotas();
-  renderNotas();
-}
-
-// CHECK
-function checkNota(i,j){
-  notas[i].checklist[j].feito = !notas[i].checklist[j].feito;
-  salvarNotas();
-  renderNotas();
-}
-
-// ADD ITEM
-function addItemNota(){
-  const novoItem = document.getElementById("novoItem");
-  const txt = novoItem.value;
-  if(!txt) return;
-
-  notas[notaAtual].checklist.push({texto:txt,feito:false});
-  novoItem.value="";
-  renderChecklist();
-  salvarNotas();
-}
-
-// RENDER CHECKLIST
-function renderChecklist(){
-  const lista = document.getElementById("checklist");
-  lista.innerHTML = "";
-  notas[notaAtual].checklist.forEach((c,j)=>{
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <input type="checkbox" ${c.feito?"checked":""} onclick="checkNota(${notaAtual},${j})">
-      ${c.texto}
-      <button onclick="removerItem(${j})">❌</button>
-    `;
-    lista.appendChild(li);
+  notasContainer.addEventListener("click", e => {
+    const idx = e.target.dataset.idx;
+    if(e.target.classList.contains("estrela")){
+      notas[idx].favorito = !notas[idx].favorito;
+      salvarNotas();
+      renderNotas();
+    }
+    if(e.target.classList.contains("btn-excluir")){
+      Swal.fire({
+        title:'Excluir nota?',
+        text:"Essa ação não pode ser desfeita!",
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonColor:'#d33',
+        cancelButtonColor:'#3085d6',
+        confirmButtonText:'Sim, excluir'
+      }).then(result => {
+        if(result.isConfirmed){
+          notas.splice(idx,1);
+          salvarNotas();
+          renderNotas();
+          Swal.fire('Excluída!', '', 'success');
+        }
+      });
+    }
+    if(e.target.classList.contains("btn-editar")){
+      abrirModal(notas[idx], idx);
+    }
   });
-}
 
-// REMOVER ITEM
-function removerItem(j){
-  notas[notaAtual].checklist.splice(j,1);
-  renderChecklist();
-  salvarNotas();
-}
+  document.getElementById("btnNova").addEventListener("click", () => abrirModal());
+  searchInput.addEventListener("input", renderNotas);
 
-// TEXTO
-document.getElementById("editorTexto").oninput = () => {
-  notas[notaAtual].texto = document.getElementById("editorTexto").value;
-};
-document.getElementById("tituloNota").oninput = () => {
-  notas[notaAtual].titulo = document.getElementById("tituloNota").value;
-};
-document.getElementById("corNota").oninput = () => {
-  notas[notaAtual].cor = document.getElementById("corNota").value;
-};
-
-// TOGGLE CONTEÚDO
-function toggleNota(i){
-  document.getElementById("c"+i).classList.toggle("ativo");
-}
-
-// EXCLUIR
-function abrirExcluirNota(i){
-  excluirIndex = i;
-  document.getElementById("modalExcluirNota").style.display="flex";
-}
-
-function fecharModalNota(){
-  document.getElementById("modalExcluirNota").style.display="none";
-}
-
-function confirmarExcluirNota(){
-  notas.splice(excluirIndex,1);
-  salvarNotas();
-  fecharModalNota();
   renderNotas();
-}
-
-// ALERTA SALVAR
-function salvarManualNota(){
-  salvarNotas();
-  alertaNota("Salvo ✔");
-}
-
-// BUSCA
-document.getElementById("pesquisaNota").addEventListener("input", renderNotas);
-
-// INIT
-renderNotas();
+});

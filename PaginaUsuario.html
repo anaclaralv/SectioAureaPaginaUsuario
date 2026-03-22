@@ -164,70 +164,49 @@
 
 
 
-
-
-<section id="notasSection" style="display:none;">
-
-  <!-- TOPO -->
-  <div class="topo-notas">
-    <h2>📒 Minhas Notas</h2>
-
-    <div class="acoes-topo">
-      <input id="pesquisaNota" placeholder="🔍 Pesquisar...">
-      <button id="criarNota" class="btn-nova">+ Nova</button>
-    </div>
+<section id="notasSection">
+  <h1 class="mb-3">Minhas Notas</h1>
+  <div class="d-flex mb-3 justify-content-between">
+    <input type="text" id="search" class="form-control me-2" placeholder="Pesquisar...">
+    <button class="btn btn-primary" id="btnNova"><i class="fa fa-plus"></i> Nova</button>
   </div>
 
-  <!-- LISTA -->
-  <div id="listaNotas" class="lista-notas"></div>
+  <div id="notasContainer" class="row g-3"></div>
 
-  <!-- EDITOR -->
-  <div id="editorView" class="editor-nota">
-
-    <div class="topo-editor">
-      <button onclick="voltarLista()">⬅</button>
-      <button onclick="desfazerNota()">↩</button>
-      <button onclick="refazerNota()">↪</button>
-      <button onclick="salvarManualNota()">💾</button>
+  <!-- Modal -->
+<div class="modal fade" id="notaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nova Nota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label>Título</label>
+          <input type="text" id="notaTitulo" class="form-control mb-2">
+          
+          <label>Cor da nota</label>
+          <input type="color" id="notaCor" class="form-control form-control-color mb-2" value="#ffffff">
+          
+          <label>Texto <small style="color:gray;">(Selecione o texto antes de clicar em B/I/U)</small></label>
+          <div id="notaTextoToolbar" class="mb-1">
+            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('bold',false,null)">B</button>
+            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('italic',false,null)">I</button>
+            <button type="button" class="btn btn-sm btn-light" onclick="document.execCommand('underline',false,null)">U</button>
+          </div>
+          <div id="notaTexto" class="form-control mb-2" contenteditable="true" style="height:150px; overflow:auto;"></div>
+          
+          <label>Checklist</label>
+          <div id="checklistContainer" class="mb-2"></div>
+          <button class="btn btn-success btn-sm" id="addCheck">Adicionar Item</button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="btnSalvar">Salvar</button>
+        </div>
+      </div>
     </div>
-
-    <!-- COR -->
-    <input type="color" id="corNota">
-
-    <!-- TITULO -->
-    <input id="tituloNota" placeholder="Título da nota">
-
-    <!-- TEXTO -->
-    <textarea id="editorTexto" placeholder="Escreva algo..."></textarea>
-
-    <!-- CHECKLIST -->
-    <h4>Checklist</h4>
-    <ul id="checklist"></ul>
-
-    <div class="add-check">
-      <input id="novoItem" placeholder="Novo item">
-      <button onclick="addItemNota()">Adicionar</button>
-    </div>
-
   </div>
-
 </section>
-
-<!-- MODAL EXCLUIR -->
-<div id="modalExcluirNota" class="modal-excluir">
-  <div class="box-excluir">
-    <p>Deseja excluir essa nota?</p>
-
-    <div class="botoes-modal">
-      <button onclick="confirmarExcluirNota()">Excluir</button>
-      <button onclick="fecharModalNota()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ALERTA -->
-<div id="alertaNota" class="alerta"></div>
-
 
 
 
@@ -350,8 +329,8 @@
 
 
 
-
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="PaginaUsuario.js"></script>
   </body>
   </html>
