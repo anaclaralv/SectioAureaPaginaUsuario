@@ -371,112 +371,182 @@ function adicionarEvento() {
 
 
 
-// ---------- BLOCO DE NOTAS ----------
 
-// pegar notas do localStorage
+
+
+
+// ===== NOTAS =====
+
+
+// ===== DADOS =====
 let notas = JSON.parse(localStorage.getItem('notas')) || [];
+let notaAtual = null;
 
-if (notas.length === 0) {
-  notas.push({ titulo: '', texto: '', checklist: [] });
-}
+// HISTÓRICO
+let historico = [];
+let passoAtual = -1;
 
-let notaAtual = 0;
-
-// elementos
+// ELEMENTOS
 const listaNotas = document.getElementById('listaNotas');
 const editor = document.getElementById('editorTexto');
 const tituloInput = document.getElementById('tituloNota');
+const corSelect = document.getElementById('corNota');
+const pesquisa = document.getElementById('pesquisaNota');
 
-// salvar no localStorage
-function salvarNotasStorage() {
+// ===== SALVAR =====
+function salvarNotas() {
   localStorage.setItem('notas', JSON.stringify(notas));
 }
 
-// ---------- RENDER LISTA ----------
+// ===== RENDER =====
 function renderNotas() {
   listaNotas.innerHTML = '';
 
+  const filtro = pesquisa.value.toLowerCase();
+
   notas.forEach((nota, index) => {
+
+    if (!nota.titulo.toLowerCase().includes(filtro)) return;
+
     const div = document.createElement('div');
     div.classList.add('card-nota');
+    div.draggable = true;
+
+    div.style.background = nota.cor || 'white';
 
     div.innerHTML = `
-      <h3 onclick="abrirNota(${index})">
-        ${nota.titulo || 'Sem título'}
-      </h3>
+      <div onclick="toggleNota(${index})">
+        ${nota.favorito ? '⭐ ' : ''}
+        <strong>${nota.titulo || 'Sem título'}</strong>
+      </div>
 
-      <button onclick="deletarNota(${index})">🗑️</button>
+      <div id="conteudo-${index}" class="conteudo-nota">
+        <p>${nota.texto}</p>
+      </div>
+
+      <div class="acoes">
+        <button onclick="editarNota(${index})">✏️</button>
+        <button onclick="excluirNota(${index})">🗑️</button>
+      </div>
     `;
+
+    // DRAG
+    div.addEventListener('dragstart', () => {
+      div.classList.add('dragging');
+    });
+
+    div.addEventListener('dragend', () => {
+      div.classList.remove('dragging');
+    });
 
     listaNotas.appendChild(div);
   });
 }
 
-// ---------- CRIAR NOTA ----------
+// ===== DRAG DROP =====
+listaNotas.addEventListener('dragover', e => {
+  e.preventDefault();
+  const dragging = document.querySelector('.dragging');
+  const after = getDragAfterElement(e.clientY);
+
+  if (after == null) {
+    listaNotas.appendChild(dragging);
+  } else {
+    listaNotas.insertBefore(dragging, after);
+  }
+});
+
+function getDragAfterElement(y) {
+  const elements = [...listaNotas.querySelectorAll('.card-nota:not(.dragging)')];
+
+  return elements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// ===== CRIAR =====
 document.getElementById('criarNota').onclick = () => {
-  notas.push({ titulo: '', texto: '', checklist: [] });
-  salvarNotasStorage();
-  renderNotas();
+  notas.push({
+    titulo: '',
+    texto: '',
+    checklist: [],
+    cor: 'white',
+    favorito: false
+  });
+
+  notaAtual = notas.length - 1;
+  abrirEditor();
 };
 
-// ---------- ABRIR NOTA ----------
-function abrirNota(index) {
-  notaAtual = index;
-
-  document.getElementById('listaNotasView').style.display = 'none';
+// ===== EDITOR =====
+function abrirEditor() {
   document.getElementById('editorView').style.display = 'block';
 
-  const nota = notas[index];
+  const nota = notas[notaAtual];
 
   tituloInput.value = nota.titulo;
   editor.value = nota.texto;
+  corSelect.value = nota.cor;
 
-  if (!nota.checklist) nota.checklist = [];
+  historico = [];
+  passoAtual = -1;
+  salvarHistorico(editor.value);
 
   renderChecklist();
 }
 
-// ---------- VOLTAR ----------
 function voltarLista() {
   document.getElementById('editorView').style.display = 'none';
-  document.getElementById('listaNotasView').style.display = 'block';
-
   renderNotas();
 }
 
-// ---------- DELETAR ----------
-function deletarNota(index) {
-  if (confirm("Tem certeza que quer deletar essa nota?")) {
+function editarNota(index) {
+  notaAtual = index;
+  abrirEditor();
+}
+
+function excluirNota(index) {
+  if (confirm("Excluir nota?")) {
     notas.splice(index, 1);
-    salvarNotasStorage();
+    salvarNotas();
     renderNotas();
   }
 }
 
-// ---------- SALVAR TEXTO ----------
-function salvarNotaAtual() {
-  notas[notaAtual].texto = editor.value;
-  salvarNotasStorage();
-}
-
-// ---------- SALVAR TÍTULO ----------
-tituloInput.addEventListener('input', () => {
-  notas[notaAtual].titulo = tituloInput.value;
-  salvarNotasStorage();
-  renderNotas();
-});
-
-// ---------- AUTO SAVE ----------
+// ===== AUTO SAVE =====
 editor.addEventListener('input', () => {
-  salvarNotaAtual();
+  notas[notaAtual].texto = editor.value;
+  salvarNotas();
   salvarHistorico(editor.value);
 });
 
-// ---------- CHECKLIST ----------
+tituloInput.addEventListener('input', () => {
+  notas[notaAtual].titulo = tituloInput.value;
+  salvarNotas();
+  renderNotas();
+});
+
+corSelect.addEventListener('change', () => {
+  notas[notaAtual].cor = corSelect.value;
+  salvarNotas();
+});
+
+// ===== FAVORITO =====
+function toggleFavorito() {
+  notas[notaAtual].favorito = !notas[notaAtual].favorito;
+  salvarNotas();
+}
+
+// ===== CHECKLIST =====
 function addItem() {
   const input = document.getElementById('novoItem');
-
-  if (!input.value.trim()) return;
 
   notas[notaAtual].checklist.push({
     texto: input.value,
@@ -484,7 +554,7 @@ function addItem() {
   });
 
   input.value = '';
-  salvarNotasStorage();
+  salvarNotas();
   renderChecklist();
 }
 
@@ -492,7 +562,7 @@ function toggleItem(i) {
   notas[notaAtual].checklist[i].feito =
     !notas[notaAtual].checklist[i].feito;
 
-  salvarNotasStorage();
+  salvarNotas();
   renderChecklist();
 }
 
@@ -517,10 +587,7 @@ function renderChecklist() {
   });
 }
 
-// ---------- UNDO / REDO ----------
-let historico = [];
-let passoAtual = -1;
-
+// ===== UNDO / REDO =====
 function salvarHistorico(texto) {
   historico = historico.slice(0, passoAtual + 1);
   historico.push(texto);
@@ -531,7 +598,8 @@ function desfazer() {
   if (passoAtual > 0) {
     passoAtual--;
     editor.value = historico[passoAtual];
-    salvarNotaAtual();
+    notas[notaAtual].texto = editor.value;
+    salvarNotas();
   }
 }
 
@@ -539,9 +607,19 @@ function refazer() {
   if (passoAtual < historico.length - 1) {
     passoAtual++;
     editor.value = historico[passoAtual];
-    salvarNotaAtual();
+    notas[notaAtual].texto = editor.value;
+    salvarNotas();
   }
 }
 
-// ---------- INICIAR ----------
+// ===== ACCORDION =====
+function toggleNota(index) {
+  const el = document.getElementById(`conteudo-${index}`);
+  el.classList.toggle('ativo');
+}
+
+// ===== PESQUISA =====
+pesquisa.addEventListener('input', renderNotas);
+
+// ===== INIT =====
 renderNotas();

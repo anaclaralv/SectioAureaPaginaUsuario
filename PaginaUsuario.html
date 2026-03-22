@@ -160,46 +160,65 @@
   </table>
 
 </section>
+
+
+
+
+
+
+  <!-- BLOCO DE NOTAS -->
 <section id="notasSection" style="display:none;">
 
-  <!-- LISTA DE NOTAS -->
-  <div id="listaNotasView" class="notas-lista">
-
-    <div class="topo-notas">
-      <h2>📒 Minhas Notas</h2>
-      <button id="criarNota" class="btn cor">+ Criar Nota</button>
+  <!-- TOPO -->
+  <div class="topo-notas">
+    <h2>📒 Minhas Notas</h2>
+    <div>
+      <input id="pesquisaNota" placeholder="Pesquisar...">
+      <button id="criarNota">+ Nova Nota</button>
     </div>
-
-    <div id="listaNotas"></div>
-
   </div>
+
+  <!-- LISTA -->
+  <div id="listaNotas" class="lista-notas"></div>
 
   <!-- EDITOR -->
   <div id="editorView" class="editor-nota" style="display:none;">
 
     <div class="topo-editor">
-      <button onclick="voltarLista()" class="btn cor">⬅ Voltar</button>
+      <button onclick="voltarLista()">⬅ Voltar</button>
+      <button onclick="desfazer()">↩</button>
+      <button onclick="refazer()">↪</button>
+      <button onclick="toggleFavorito()">⭐</button>
     </div>
 
-    <input id="tituloNota" placeholder="Título da nota" class="input-titulo">
+    <input id="tituloNota" placeholder="Título da nota">
 
-    <textarea id="editorTexto" placeholder="Digite sua nota..." class="area-texto"></textarea>
+    <select id="corNota">
+      <option value="white">Branco</option>
+      <option value="#fff3cd">Amarelo</option>
+      <option value="#d1ecf1">Azul</option>
+      <option value="#d4edda">Verde</option>
+      <option value="#f8d7da">Vermelho</option>
+    </select>
 
-    <!-- CHECKLIST -->
-    <div class="checklist-area">
-      <h4>✔️ Checklist</h4>
+    <textarea id="editorTexto"></textarea>
 
-      <ul id="checklist"></ul>
+    <h4>Checklist</h4>
+    <ul id="checklist"></ul>
 
-      <div class="add-item">
-        <input id="novoItem" placeholder="Novo item">
-        <button onclick="addItem()" class="btn cor">Adicionar</button>
-      </div>
-    </div>
+    <input id="novoItem" placeholder="Novo item">
+    <button onclick="addItem()">Adicionar</button>
 
   </div>
 
 </section>
+ <!-- FIM DO BLOCO DE NOTAS -->
+
+
+
+
+
+
 <section id="calendarioSection" style="display:none;">
 
   <div class="calendario-container">
