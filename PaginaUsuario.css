@@ -557,9 +557,8 @@ html, body {
 
 #resumoHojeCronograma li {
   margin-bottom: 5px;
-<<<<<<< HEAD
 
-=======
+
 }
 
 
@@ -674,5 +673,5 @@ html, body {
   object-fit: cover;       /* recorta se necessário */
   border: 4px solid #9f042c;
   margin-bottom: 10px;
->>>>>>> b4079efdf8f0d04c90d73d2f79d0ba48385c6d87
+
 }

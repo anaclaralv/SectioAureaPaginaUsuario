@@ -34,6 +34,13 @@ function mostrarTela(tela) {
   renderizarCronograma();
 }
 
+function corPrioridade(prioridade) {
+  if (prioridade === "alta") return "#ef4444";   // vermelho
+  if (prioridade === "media") return "#f59e0b";  // laranja
+  if (prioridade === "baixa") return "#22c55e";  // verde
+  return "#6b7280";
+}
+
 
   // funções específicas
   if (tela === "tarefas") atualizarTabela();
@@ -316,17 +323,26 @@ document.addEventListener("DOMContentLoaded", carregarHistorico);
 
 
 
-/** CALENDÁRIO */
+/**CALENDARIOO */
 let calendar;
 
 document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendario');
-  const cor = document.getElementById("corEvento").value;
-
-  if (!calendarEl) return; // evita erro se não existir
+  if (!calendarEl) return;
 
   const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
+  const tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
 
+  // 🔗 CONVERTE tarefas em eventos
+  const eventosTarefas = tarefas
+    .filter(t => t.data)
+    .map(tarefa => ({
+      title: tarefa.titulo,
+      date: tarefa.data,
+      backgroundColor: corPrioridade(tarefa.prioridade)
+    }));
+
+  // ✅ CRIA calendário UMA VEZ SÓ
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     locale: 'pt-br',
@@ -337,58 +353,20 @@ document.addEventListener('DOMContentLoaded', function () {
       right: 'dayGridMonth,timeGridWeek,timeGridDay'
     },
 
-    events: eventosSalvos
+    events: [...eventosSalvos, ...eventosTarefas]
   });
 
   calendar.render();
 });
-
 function adicionarEvento() {
   if (!calendar) {
     alert("Calendário ainda não carregou!");
     return;
   }
- 
-
-function salvarEventos() {
-  const eventos = calendar.getEvents().map(event => ({
-    title: event.title,
-    date: event.startStr,
-    color: event.backgroundColor,
-    extendedProps: event.extendedProps
-  }));
-
-
-  const eventosTarefas = tarefas.map(tarefa => ({
-  title: tarefa.nome,
-  date: tarefa.data,
-  backgroundColor: "#ef4444" // vermelho para tarefas
-}));
-
-const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
-
-calendar = new FullCalendar.Calendar(calendarEl, {
-  initialView: 'dayGridMonth',
-  locale: 'pt-br',
-
-  events: [
-    ...eventosSalvos,
-    ...eventosTarefas
-  ]
-});
-
-calendar.addEvent({
-  title: nomeDaTarefa,
-  date: dataDaTarefa,
-  backgroundColor: "#ef4444"
-});
-
-  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
-}
 
   const titulo = document.getElementById("tituloEvento").value;
   const data = document.getElementById("dataEvento").value;
-  const materia = document.getElementById("materiaEvento").value;
+  const cor = document.getElementById("corEvento").value;
 
   if (!titulo || !data) {
     alert("Preencha os campos!");
@@ -396,21 +374,29 @@ calendar.addEvent({
   }
 
   const novoEvento = {
-  title: titulo,
-  date: data,
-  backgroundColor: cor,
-  borderColor: cor
-};
+    title: titulo,
+    date: data,
+    backgroundColor: cor,
+    borderColor: cor
+  };
 
   calendar.addEvent(novoEvento);
   salvarEventos();
 
-  // limpar campos
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
-  document.getElementById("materiaEvento").value = "";
-  document.getElementById("corEvento").value = "#3788d8"; // cor padrão
+  document.getElementById("corEvento").value = "#3788d8";
 }
+function salvarEventos() {
+  const eventos = calendar.getEvents().map(event => ({
+    title: event.title,
+    date: event.startStr,
+    backgroundColor: event.backgroundColor
+  }));
+
+  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
+}
+
 
 
 
@@ -621,6 +607,14 @@ function atualizarResumoInicio() {
         else span.classList.remove("concluida");
         localStorage.setItem("tarefas", JSON.stringify(tarefas));
       });
+
+      if (calendar && tarefa.data) {
+  calendar.addEvent({
+    title: tarefa.titulo,
+    date: tarefa.data,
+    backgroundColor: corPrioridade(tarefa.prioridade)
+  });
+}
 
       li.appendChild(checkbox);
       li.appendChild(span);
@@ -872,12 +866,11 @@ function mostrarAgora() {
   }
 }
 
-<<<<<<< HEAD
 // ---------- INICIAR ----------
 document.addEventListener("DOMContentLoaded", () => {
   renderizarCronograma();
 });
-=======
+
 
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
@@ -954,4 +947,3 @@ function salvarConfiguracao() {
 
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
->>>>>>> b4079efdf8f0d04c90d73d2f79d0ba48385c6d87
