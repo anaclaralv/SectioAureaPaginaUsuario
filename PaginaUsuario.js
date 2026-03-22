@@ -34,10 +34,6 @@ function mostrarTela(tela) {
   renderizarCronograma();
 }
 
-if (tela === "inicio") {
-  renderizarResumoHoje();  // cronograma de hoje
-  atualizarResumoInicio(); // resumo das tarefas, eventos e cronograma
-}
 
   // funções específicas
   if (tela === "tarefas") atualizarTabela();
@@ -110,6 +106,10 @@ function adicionarTarefa() {
   prioridadeEl.value = "alta";
 }
 
+function atualizarTudo() {
+  renderizar();
+  atualizarTabela();
+}
 
 function renderizar() {
   const hojeLista = document.getElementById("tarefasHoje");
@@ -194,18 +194,22 @@ function corPrioridade(prioridade) {
 window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
 
-
-
 document.addEventListener("DOMContentLoaded", () => {
-  // Carregar dados
-  tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
-  cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
+  atualizarTudo();
+});
 
-  // Renderizar telas iniciais
-  mostrarTela("inicio");       // mostra a tela inicial
-  atualizarTudo();             // tarefas e resumo
-  carregarHistorico();         // histórico de estudos
-  renderizarCronograma();      // cronograma
+
+//--------TEMPORIZADORES--------------
+// ---------- INICIAR ----------
+document.addEventListener("DOMContentLoaded", () => {
+  renderizar();
+  atualizarTabela();
+});
+
+
+// ---------- INICIAR ----------
+document.addEventListener("DOMContentLoaded", () => {
+  mostrarTela("inicio");
 });
 
 let intervaloCronometro;
@@ -317,6 +321,7 @@ let calendar;
 
 document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendario');
+  const cor = document.getElementById("corEvento").value;
 
   if (!calendarEl) return; // evita erro se não existir
 
@@ -343,6 +348,43 @@ function adicionarEvento() {
     alert("Calendário ainda não carregou!");
     return;
   }
+ 
+
+function salvarEventos() {
+  const eventos = calendar.getEvents().map(event => ({
+    title: event.title,
+    date: event.startStr,
+    color: event.backgroundColor,
+    extendedProps: event.extendedProps
+  }));
+
+
+  const eventosTarefas = tarefas.map(tarefa => ({
+  title: tarefa.nome,
+  date: tarefa.data,
+  backgroundColor: "#ef4444" // vermelho para tarefas
+}));
+
+const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
+
+calendar = new FullCalendar.Calendar(calendarEl, {
+  initialView: 'dayGridMonth',
+  locale: 'pt-br',
+
+  events: [
+    ...eventosSalvos,
+    ...eventosTarefas
+  ]
+});
+
+calendar.addEvent({
+  title: nomeDaTarefa,
+  date: dataDaTarefa,
+  backgroundColor: "#ef4444"
+});
+
+  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
+}
 
   const titulo = document.getElementById("tituloEvento").value;
   const data = document.getElementById("dataEvento").value;
@@ -354,11 +396,11 @@ function adicionarEvento() {
   }
 
   const novoEvento = {
-    title: titulo,
-    date: data,
-    color: definirCorMateria(materia),
-    extendedProps: { materia }
-  };
+  title: titulo,
+  date: data,
+  backgroundColor: cor,
+  borderColor: cor
+};
 
   calendar.addEvent(novoEvento);
   salvarEventos();
@@ -367,6 +409,7 @@ function adicionarEvento() {
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
   document.getElementById("materiaEvento").value = "";
+  document.getElementById("corEvento").value = "#3788d8"; // cor padrão
 }
 
 
@@ -554,56 +597,56 @@ function atualizarResumoInicio() {
 
   // TAREFAS
   const tarefasResumo = document.getElementById("tarefasResumo");
-if (tarefasResumo) {
-  tarefasResumo.innerHTML = "";
+  if (tarefasResumo) {
+    tarefasResumo.innerHTML = "";
 
-  const tarefasHoje = tarefas.filter(t => t.data === hoje);
-  const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+    const tarefasHoje = tarefas.filter(t => t.data === hoje);
+    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
 
-  function criarLiTarefa(tarefa) {
-    const li = document.createElement("li");
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = tarefa.concluida || false;
+    function criarLiTarefa(tarefa) {
+      const li = document.createElement("li");
 
-    const span = document.createElement("span");
-    span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
-    span.style.color = corPrioridade(tarefa.prioridade);
-    if(tarefa.concluida) span.classList.add("concluida");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = tarefa.concluida || false;
 
-    checkbox.addEventListener("change", () => {
-      tarefa.concluida = checkbox.checked;
+      const span = document.createElement("span");
+      span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
+      span.style.color = corPrioridade(tarefa.prioridade);
       if(tarefa.concluida) span.classList.add("concluida");
-      else span.classList.remove("concluida");
-      salvar(); // <--- aqui salvamos no localStorage
-      atualizarResumoInicio(); // <--- e atualizamos o resumo
-    });
 
-    li.appendChild(checkbox);
-    li.appendChild(span);
-    return li;
-  }
+      checkbox.addEventListener("change", () => {
+        tarefa.concluida = checkbox.checked;
+        if(tarefa.concluida) span.classList.add("concluida");
+        else span.classList.remove("concluida");
+        localStorage.setItem("tarefas", JSON.stringify(tarefas));
+      });
 
-  if (tarefasHoje.length > 0) {
-    const titulo = document.createElement("li");
-    titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
-    tarefasResumo.appendChild(titulo);
-    tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
-  }
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      return li;
+    }
 
-  if (tarefasFuturas.length > 0) {
-    const titulo = document.createElement("li");
-    titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
-    tarefasResumo.appendChild(titulo);
-    tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
-  }
+    if (tarefasHoje.length > 0) {
+      const titulo = document.createElement("li");
+      titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
+      tarefasResumo.appendChild(titulo);
+      tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+    }
 
-  if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
-    const li = document.createElement("li");
-    li.textContent = "Nenhuma tarefa cadastrada!";
-    tarefasResumo.appendChild(li);
+    if (tarefasFuturas.length > 0) {
+      const titulo = document.createElement("li");
+      titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
+      tarefasResumo.appendChild(titulo);
+      tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
+    }
+
+    if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
+      const li = document.createElement("li");
+      li.textContent = "Nenhuma tarefa cadastrada!";
+      tarefasResumo.appendChild(li);
+    }
   }
-}
 
   // EVENTOS
   const eventosResumo = document.getElementById("eventosResumo");
@@ -626,7 +669,7 @@ if (tarefasResumo) {
     cronogramaResumo.innerHTML = "";
     const diasSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
     const hojeSemana = diasSemana[new Date().getDay()];
-    const blocosHoje = cronograma; // usa o array em memória
+    const blocosHoje = JSON.parse(localStorage.getItem("cronograma")) || [];
     blocosHoje
       .filter(b => b.dia === hojeSemana)
       .forEach(bloco => {
@@ -638,11 +681,14 @@ if (tarefasResumo) {
 }
 
 function atualizarTudo() {
-  renderizar();            // lista de tarefas
-  atualizarTabela();       // tabela de hoje
-  atualizarResumoInicio(); // resumo do início
+  renderizar();
+  atualizarTabela();
+  atualizarResumoInicio();
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+  atualizarResumoInicio();
+});
 
 /**CRONOGRAMA JAVA SCRIPT*/
 // ---------- CRONOGRAMA ----------
@@ -733,7 +779,6 @@ function adicionarBloco() {
 
   salvarCronograma();
   renderizarCronograma();
-  atualizarResumoInicio();
 
   materiaEl.value = "";
   inicioEl.value = "";
@@ -778,13 +823,11 @@ function renderizarCronograma() {
   mostrarAgora();
 }
 
-
 // ---------- EXCLUIR ----------
 function excluirBloco(id) {
   cronograma = cronograma.filter(b => b.id !== id);
   salvarCronograma();
   renderizarCronograma();
-  atualizarResumoInicio();
 }
 
 // ---------- EDITAR ----------
@@ -804,7 +847,6 @@ function editarBloco(id) {
 
   salvarCronograma();
   renderizarCronograma();
-  atualizarResumoInicio();
 }
 
 // ---------- VER AGORA ----------
@@ -830,26 +872,7 @@ function mostrarAgora() {
   }
 }
 
-
-function renderizarResumoHoje() {
-  const lista = document.getElementById("listaHojeCronograma");
-  if (!lista) return;
-
-  const hojeSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"][new Date().getDay()];
-  const cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
-
-  lista.innerHTML = "";
-
-  const blocosHoje = cronograma.filter(b => b.dia === hojeSemana);
-
-  if (blocosHoje.length === 0) {
-    lista.innerHTML = "<li>Sem atividades hoje 😊</li>";
-    return;
-  }
-
-  blocosHoje.forEach(bloco => {
-    const li = document.createElement("li");
-    li.textContent = `🕒 ${bloco.inicio} - ${bloco.fim} : ${bloco.materia}`;
-    lista.appendChild(li);
-  });
-}
+// ---------- INICIAR ----------
+document.addEventListener("DOMContentLoaded", () => {
+  renderizarCronograma();
+});
