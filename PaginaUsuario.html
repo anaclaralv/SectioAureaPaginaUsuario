@@ -160,7 +160,78 @@
   </table>
 
 </section>
-<section id="notasSection" style="display:none;">NOTAS</section>
+
+
+
+
+
+
+<section id="notasSection" style="display:none;">
+
+  <!-- TOPO -->
+  <div class="topo-notas">
+    <h2>📒 Minhas Notas</h2>
+
+    <div class="acoes-topo">
+      <input id="pesquisaNota" placeholder="🔍 Pesquisar...">
+      <button id="criarNota" class="btn-nova">+ Nova</button>
+    </div>
+  </div>
+
+  <!-- LISTA -->
+  <div id="listaNotas" class="lista-notas"></div>
+
+  <!-- EDITOR -->
+  <div id="editorView" class="editor-nota">
+
+    <div class="topo-editor">
+      <button onclick="voltarLista()">⬅</button>
+      <button onclick="desfazerNota()">↩</button>
+      <button onclick="refazerNota()">↪</button>
+      <button onclick="salvarManualNota()">💾</button>
+    </div>
+
+    <!-- COR -->
+    <input type="color" id="corNota">
+
+    <!-- TITULO -->
+    <input id="tituloNota" placeholder="Título da nota">
+
+    <!-- TEXTO -->
+    <textarea id="editorTexto" placeholder="Escreva algo..."></textarea>
+
+    <!-- CHECKLIST -->
+    <h4>Checklist</h4>
+    <ul id="checklist"></ul>
+
+    <div class="add-check">
+      <input id="novoItem" placeholder="Novo item">
+      <button onclick="addItemNota()">Adicionar</button>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- MODAL EXCLUIR -->
+<div id="modalExcluirNota" class="modal-excluir">
+  <div class="box-excluir">
+    <p>Deseja excluir essa nota?</p>
+
+    <div class="botoes-modal">
+      <button onclick="confirmarExcluirNota()">Excluir</button>
+      <button onclick="fecharModalNota()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTA -->
+<div id="alertaNota" class="alerta"></div>
+
+
+
+
+
 <section id="calendarioSection" style="display:none;">
 
   <div class="calendario-container">

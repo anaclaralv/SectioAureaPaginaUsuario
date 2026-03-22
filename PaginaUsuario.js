@@ -382,248 +382,201 @@ function adicionarEvento() {
 // ===== NOTAS =====
 
 
-// ===== DADOS =====
-let notas = JSON.parse(localStorage.getItem('notas')) || [];
+let notas = JSON.parse(localStorage.getItem("notas")) || [];
 let notaAtual = null;
+let excluirIndex = null;
 
-// HISTÓRICO
-let historico = [];
-let passoAtual = -1;
-
-// ELEMENTOS
-const listaNotas = document.getElementById('listaNotas');
-const editor = document.getElementById('editorTexto');
-const tituloInput = document.getElementById('tituloNota');
-const corSelect = document.getElementById('corNota');
-const pesquisa = document.getElementById('pesquisaNota');
-
-// ===== SALVAR =====
-function salvarNotas() {
-  localStorage.setItem('notas', JSON.stringify(notas));
+// ALERTA
+function alertaNota(msg){
+  const a = document.getElementById("alertaNota");
+  a.innerText = msg;
+  a.classList.add("mostrar");
+  setTimeout(()=>a.classList.remove("mostrar"),2000);
 }
 
-// ===== RENDER =====
-function renderNotas() {
-  listaNotas.innerHTML = '';
+// SALVAR
+function salvarNotas(){
+  localStorage.setItem("notas", JSON.stringify(notas));
+}
 
-  const filtro = pesquisa.value.toLowerCase();
+// ORDENAR FAVORITOS
+function ordenarNotas(){
+  notas.sort((a,b)=>b.favorito - a.favorito);
+}
 
-  notas.forEach((nota, index) => {
+// RENDER
+function renderNotas(){
+  ordenarNotas();
+  const lista = document.getElementById("listaNotas");
+  lista.innerHTML = "";
 
-    if (!nota.titulo.toLowerCase().includes(filtro)) return;
+  const filtro = document.getElementById("pesquisaNota").value.toLowerCase();
 
-    const div = document.createElement('div');
-    div.classList.add('card-nota');
-    div.draggable = true;
+  notas.forEach((n,i)=>{
+    if(!n.titulo.toLowerCase().includes(filtro)) return;
 
-    div.style.background = nota.cor || 'white';
+    const div = document.createElement("div");
+    div.className="card-nota";
+    div.style.background = n.cor || "#fff";
 
     div.innerHTML = `
-      <div onclick="toggleNota(${index})">
-        ${nota.favorito ? '⭐ ' : ''}
-        <strong>${nota.titulo || 'Sem título'}</strong>
+      <div class="topo-card">
+        <span class="estrela ${n.favorito?"ativa":""}" onclick="favoritarNota(${i})">⭐</span>
+
+        <div class="acoes-card">
+          <button onclick="editarNota(${i})">✏️</button>
+          <button onclick="abrirExcluirNota(${i})">🗑️</button>
+        </div>
       </div>
 
-      <div id="conteudo-${index}" class="conteudo-nota">
-        <p>${nota.texto}</p>
-      </div>
+      <h3 onclick="toggleNota(${i})">${n.titulo || "Sem título"}</h3>
 
-      <div class="acoes">
-        <button onclick="editarNota(${index})">✏️</button>
-        <button onclick="excluirNota(${index})">🗑️</button>
+      <div class="conteudo-nota" id="c${i}">
+        <p>${n.texto}</p>
+
+        <ul>
+          ${n.checklist.map((c,j)=>`
+            <li>
+              <input type="checkbox" ${c.feito?"checked":""}
+              onclick="checkNota(${i},${j})">
+              ${c.texto}
+            </li>
+          `).join("")}
+        </ul>
       </div>
     `;
 
-    // DRAG
-    div.addEventListener('dragstart', () => {
-      div.classList.add('dragging');
-    });
-
-    div.addEventListener('dragend', () => {
-      div.classList.remove('dragging');
-    });
-
-    listaNotas.appendChild(div);
+    lista.appendChild(div);
   });
 }
 
-// ===== DRAG DROP =====
-listaNotas.addEventListener('dragover', e => {
-  e.preventDefault();
-  const dragging = document.querySelector('.dragging');
-  const after = getDragAfterElement(e.clientY);
-
-  if (after == null) {
-    listaNotas.appendChild(dragging);
-  } else {
-    listaNotas.insertBefore(dragging, after);
-  }
-});
-
-function getDragAfterElement(y) {
-  const elements = [...listaNotas.querySelectorAll('.card-nota:not(.dragging)')];
-
-  return elements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-
-    if (offset < 0 && offset > closest.offset) {
-      return { offset: offset, element: child };
-    } else {
-      return closest;
-    }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-// ===== CRIAR =====
-document.getElementById('criarNota').onclick = () => {
+// NOVA NOTA
+document.getElementById("criarNota").onclick = () => {
   notas.push({
-    titulo: '',
-    texto: '',
-    checklist: [],
-    cor: 'white',
-    favorito: false
+    titulo:"",
+    texto:"",
+    checklist:[],
+    cor:"#ffffff",
+    favorito:false
   });
 
   notaAtual = notas.length - 1;
-  abrirEditor();
+  abrirEditorNota();
 };
 
-// ===== EDITOR =====
-function abrirEditor() {
-  document.getElementById('editorView').style.display = 'block';
+// EDITOR
+function abrirEditorNota(){
+  document.getElementById("editorView").style.display="block";
 
-  const nota = notas[notaAtual];
-
-  tituloInput.value = nota.titulo;
-  editor.value = nota.texto;
-  corSelect.value = nota.cor;
-
-  historico = [];
-  passoAtual = -1;
-  salvarHistorico(editor.value);
+  const n = notas[notaAtual];
+  document.getElementById("tituloNota").value = n.titulo;
+  document.getElementById("editorTexto").value = n.texto;
+  document.getElementById("corNota").value = n.cor;
 
   renderChecklist();
 }
 
-function voltarLista() {
-  document.getElementById('editorView').style.display = 'none';
+function voltarLista(){
+  document.getElementById("editorView").style.display="none";
+  salvarNotas();
   renderNotas();
 }
 
-function editarNota(index) {
-  notaAtual = index;
-  abrirEditor();
+// EDITAR
+function editarNota(i){
+  notaAtual = i;
+  abrirEditorNota();
 }
 
-function excluirNota(index) {
-  if (confirm("Excluir nota?")) {
-    notas.splice(index, 1);
-    salvarNotas();
-    renderNotas();
-  }
-}
-
-// ===== AUTO SAVE =====
-editor.addEventListener('input', () => {
-  notas[notaAtual].texto = editor.value;
-  salvarNotas();
-  salvarHistorico(editor.value);
-});
-
-tituloInput.addEventListener('input', () => {
-  notas[notaAtual].titulo = tituloInput.value;
+// FAVORITO
+function favoritarNota(i){
+  notas[i].favorito = !notas[i].favorito;
   salvarNotas();
   renderNotas();
-});
-
-corSelect.addEventListener('change', () => {
-  notas[notaAtual].cor = corSelect.value;
-  salvarNotas();
-});
-
-// ===== FAVORITO =====
-function toggleFavorito() {
-  notas[notaAtual].favorito = !notas[notaAtual].favorito;
-  salvarNotas();
 }
 
-// ===== CHECKLIST =====
-function addItem() {
-  const input = document.getElementById('novoItem');
-
-  notas[notaAtual].checklist.push({
-    texto: input.value,
-    feito: false
-  });
-
-  input.value = '';
+// CHECK
+function checkNota(i,j){
+  notas[i].checklist[j].feito = !notas[i].checklist[j].feito;
   salvarNotas();
+  renderNotas();
+}
+
+// ADD ITEM
+function addItemNota(){
+  const novoItem = document.getElementById("novoItem");
+  const txt = novoItem.value;
+  if(!txt) return;
+
+  notas[notaAtual].checklist.push({texto:txt,feito:false});
+  novoItem.value="";
   renderChecklist();
-}
-
-function toggleItem(i) {
-  notas[notaAtual].checklist[i].feito =
-    !notas[notaAtual].checklist[i].feito;
-
   salvarNotas();
-  renderChecklist();
 }
 
-function renderChecklist() {
-  const ul = document.getElementById('checklist');
-  ul.innerHTML = '';
-
-  notas[notaAtual].checklist.forEach((item, i) => {
-    const li = document.createElement('li');
-
+// RENDER CHECKLIST
+function renderChecklist(){
+  const lista = document.getElementById("checklist");
+  lista.innerHTML = "";
+  notas[notaAtual].checklist.forEach((c,j)=>{
+    const li = document.createElement("li");
     li.innerHTML = `
-      <input type="checkbox"
-        ${item.feito ? 'checked' : ''}
-        onclick="toggleItem(${i})">
-
-      <span style="text-decoration:${item.feito ? 'line-through' : 'none'}">
-        ${item.texto}
-      </span>
+      <input type="checkbox" ${c.feito?"checked":""} onclick="checkNota(${notaAtual},${j})">
+      ${c.texto}
+      <button onclick="removerItem(${j})">❌</button>
     `;
-
-    ul.appendChild(li);
+    lista.appendChild(li);
   });
 }
 
-// ===== UNDO / REDO =====
-function salvarHistorico(texto) {
-  historico = historico.slice(0, passoAtual + 1);
-  historico.push(texto);
-  passoAtual++;
+// REMOVER ITEM
+function removerItem(j){
+  notas[notaAtual].checklist.splice(j,1);
+  renderChecklist();
+  salvarNotas();
 }
 
-function desfazer() {
-  if (passoAtual > 0) {
-    passoAtual--;
-    editor.value = historico[passoAtual];
-    notas[notaAtual].texto = editor.value;
-    salvarNotas();
-  }
+// TEXTO
+document.getElementById("editorTexto").oninput = () => {
+  notas[notaAtual].texto = document.getElementById("editorTexto").value;
+};
+document.getElementById("tituloNota").oninput = () => {
+  notas[notaAtual].titulo = document.getElementById("tituloNota").value;
+};
+document.getElementById("corNota").oninput = () => {
+  notas[notaAtual].cor = document.getElementById("corNota").value;
+};
+
+// TOGGLE CONTEÚDO
+function toggleNota(i){
+  document.getElementById("c"+i).classList.toggle("ativo");
 }
 
-function refazer() {
-  if (passoAtual < historico.length - 1) {
-    passoAtual++;
-    editor.value = historico[passoAtual];
-    notas[notaAtual].texto = editor.value;
-    salvarNotas();
-  }
+// EXCLUIR
+function abrirExcluirNota(i){
+  excluirIndex = i;
+  document.getElementById("modalExcluirNota").style.display="flex";
 }
 
-// ===== ACCORDION =====
-function toggleNota(index) {
-  const el = document.getElementById(`conteudo-${index}`);
-  el.classList.toggle('ativo');
+function fecharModalNota(){
+  document.getElementById("modalExcluirNota").style.display="none";
 }
 
-// ===== PESQUISA =====
-pesquisa.addEventListener('input', renderNotas);
+function confirmarExcluirNota(){
+  notas.splice(excluirIndex,1);
+  salvarNotas();
+  fecharModalNota();
+  renderNotas();
+}
 
-// ===== INIT =====
+// ALERTA SALVAR
+function salvarManualNota(){
+  salvarNotas();
+  alertaNota("Salvo ✔");
+}
+
+// BUSCA
+document.getElementById("pesquisaNota").addEventListener("input", renderNotas);
+
+// INIT
 renderNotas();
