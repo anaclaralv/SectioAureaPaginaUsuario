@@ -368,3 +368,180 @@ function adicionarEvento() {
   document.getElementById("dataEvento").value = "";
   document.getElementById("materiaEvento").value = "";
 }
+
+
+
+// ---------- BLOCO DE NOTAS ----------
+
+// pegar notas do localStorage
+let notas = JSON.parse(localStorage.getItem('notas')) || [];
+
+if (notas.length === 0) {
+  notas.push({ titulo: '', texto: '', checklist: [] });
+}
+
+let notaAtual = 0;
+
+// elementos
+const listaNotas = document.getElementById('listaNotas');
+const editor = document.getElementById('editorTexto');
+const tituloInput = document.getElementById('tituloNota');
+
+// salvar no localStorage
+function salvarNotasStorage() {
+  localStorage.setItem('notas', JSON.stringify(notas));
+}
+
+// ---------- RENDER LISTA ----------
+function renderNotas() {
+  listaNotas.innerHTML = '';
+
+  notas.forEach((nota, index) => {
+    const div = document.createElement('div');
+    div.classList.add('card-nota');
+
+    div.innerHTML = `
+      <h3 onclick="abrirNota(${index})">
+        ${nota.titulo || 'Sem título'}
+      </h3>
+
+      <button onclick="deletarNota(${index})">🗑️</button>
+    `;
+
+    listaNotas.appendChild(div);
+  });
+}
+
+// ---------- CRIAR NOTA ----------
+document.getElementById('criarNota').onclick = () => {
+  notas.push({ titulo: '', texto: '', checklist: [] });
+  salvarNotasStorage();
+  renderNotas();
+};
+
+// ---------- ABRIR NOTA ----------
+function abrirNota(index) {
+  notaAtual = index;
+
+  document.getElementById('listaNotasView').style.display = 'none';
+  document.getElementById('editorView').style.display = 'block';
+
+  const nota = notas[index];
+
+  tituloInput.value = nota.titulo;
+  editor.value = nota.texto;
+
+  if (!nota.checklist) nota.checklist = [];
+
+  renderChecklist();
+}
+
+// ---------- VOLTAR ----------
+function voltarLista() {
+  document.getElementById('editorView').style.display = 'none';
+  document.getElementById('listaNotasView').style.display = 'block';
+
+  renderNotas();
+}
+
+// ---------- DELETAR ----------
+function deletarNota(index) {
+  if (confirm("Tem certeza que quer deletar essa nota?")) {
+    notas.splice(index, 1);
+    salvarNotasStorage();
+    renderNotas();
+  }
+}
+
+// ---------- SALVAR TEXTO ----------
+function salvarNotaAtual() {
+  notas[notaAtual].texto = editor.value;
+  salvarNotasStorage();
+}
+
+// ---------- SALVAR TÍTULO ----------
+tituloInput.addEventListener('input', () => {
+  notas[notaAtual].titulo = tituloInput.value;
+  salvarNotasStorage();
+  renderNotas();
+});
+
+// ---------- AUTO SAVE ----------
+editor.addEventListener('input', () => {
+  salvarNotaAtual();
+  salvarHistorico(editor.value);
+});
+
+// ---------- CHECKLIST ----------
+function addItem() {
+  const input = document.getElementById('novoItem');
+
+  if (!input.value.trim()) return;
+
+  notas[notaAtual].checklist.push({
+    texto: input.value,
+    feito: false
+  });
+
+  input.value = '';
+  salvarNotasStorage();
+  renderChecklist();
+}
+
+function toggleItem(i) {
+  notas[notaAtual].checklist[i].feito =
+    !notas[notaAtual].checklist[i].feito;
+
+  salvarNotasStorage();
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const ul = document.getElementById('checklist');
+  ul.innerHTML = '';
+
+  notas[notaAtual].checklist.forEach((item, i) => {
+    const li = document.createElement('li');
+
+    li.innerHTML = `
+      <input type="checkbox"
+        ${item.feito ? 'checked' : ''}
+        onclick="toggleItem(${i})">
+
+      <span style="text-decoration:${item.feito ? 'line-through' : 'none'}">
+        ${item.texto}
+      </span>
+    `;
+
+    ul.appendChild(li);
+  });
+}
+
+// ---------- UNDO / REDO ----------
+let historico = [];
+let passoAtual = -1;
+
+function salvarHistorico(texto) {
+  historico = historico.slice(0, passoAtual + 1);
+  historico.push(texto);
+  passoAtual++;
+}
+
+function desfazer() {
+  if (passoAtual > 0) {
+    passoAtual--;
+    editor.value = historico[passoAtual];
+    salvarNotaAtual();
+  }
+}
+
+function refazer() {
+  if (passoAtual < historico.length - 1) {
+    passoAtual++;
+    editor.value = historico[passoAtual];
+    salvarNotaAtual();
+  }
+}
+
+// ---------- INICIAR ----------
+renderNotas();

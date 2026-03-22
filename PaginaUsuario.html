@@ -160,7 +160,46 @@
   </table>
 
 </section>
-<section id="notasSection" style="display:none;">NOTAS</section>
+<section id="notasSection" style="display:none;">
+
+  <!-- LISTA DE NOTAS -->
+  <div id="listaNotasView" class="notas-lista">
+
+    <div class="topo-notas">
+      <h2>📒 Minhas Notas</h2>
+      <button id="criarNota" class="btn cor">+ Criar Nota</button>
+    </div>
+
+    <div id="listaNotas"></div>
+
+  </div>
+
+  <!-- EDITOR -->
+  <div id="editorView" class="editor-nota" style="display:none;">
+
+    <div class="topo-editor">
+      <button onclick="voltarLista()" class="btn cor">⬅ Voltar</button>
+    </div>
+
+    <input id="tituloNota" placeholder="Título da nota" class="input-titulo">
+
+    <textarea id="editorTexto" placeholder="Digite sua nota..." class="area-texto"></textarea>
+
+    <!-- CHECKLIST -->
+    <div class="checklist-area">
+      <h4>✔️ Checklist</h4>
+
+      <ul id="checklist"></ul>
+
+      <div class="add-item">
+        <input id="novoItem" placeholder="Novo item">
+        <button onclick="addItem()" class="btn cor">Adicionar</button>
+      </div>
+    </div>
+
+  </div>
+
+</section>
 <section id="calendarioSection" style="display:none;">
 
   <div class="calendario-container">
