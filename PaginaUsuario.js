@@ -696,7 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarResumoInicio();
 });
 
-/**CRONOGRAMA JAVA SCRIPT*/
+
 // ---------- CRONOGRAMA ----------
 let cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
 
@@ -878,10 +878,6 @@ function mostrarAgora() {
   }
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 // ---------- INICIAR ----------
 document.addEventListener("DOMContentLoaded", () => {
   renderizarCronograma();
@@ -956,7 +952,4 @@ function salvarConfiguracao() {
 
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
