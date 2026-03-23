@@ -34,6 +34,19 @@ function mostrarTela(tela) {
   renderizarCronograma();
 }
 
+if (tela === "estatistica") {
+  setTimeout(() => {
+    carregarEstatisticas();
+  }, 100);
+}
+
+if (tela === "revisao") {
+  setTimeout(() => {
+    carregarRevisao();
+  }, 100);
+}
+
+
 function corPrioridade(prioridade) {
   if (prioridade === "alta") return "#ef4444";   // vermelho
   if (prioridade === "media") return "#f59e0b";  // laranja
@@ -878,10 +891,6 @@ function mostrarAgora() {
   }
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
 // ---------- INICIAR ----------
 document.addEventListener("DOMContentLoaded", () => {
   renderizarCronograma();
@@ -956,7 +965,287 @@ function salvarConfiguracao() {
 
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 094252246ef2bc86119f0afe145227b0487cd00f
+
+/**ESTATISTICAS */
+/** 📊 ESTATÍSTICAS */
+let graficoSemanal;
+let graficoMaterias;
+let graficoMensal;
+
+function carregarEstatisticas() {
+
+  const historico = JSON.parse(localStorage.getItem("historicoEstudos")) || [];
+  const tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+
+  // ---------- 📅 ÚLTIMOS 7 DIAS ----------
+  const dias = [];
+  const horasPorDia = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const data = new Date();
+    data.setDate(data.getDate() - i);
+
+    const diaStr = data.toLocaleDateString('pt-BR');
+    dias.push(diaStr);
+
+    let total = 0;
+
+    historico.forEach(item => {
+      if (item.data.includes(diaStr)) {
+        total += item.tempo / 3600; // segundos → horas
+      }
+    });
+
+    horasPorDia.push(Number(total.toFixed(2)));
+  }
+
+  // ---------- 📚 POR MATÉRIA ----------
+  const materias = {};
+  historico.forEach(item => {
+    if (!materias[item.materia]) materias[item.materia] = 0;
+    materias[item.materia] += item.tempo / 3600;
+  });
+
+  const nomesMaterias = Object.keys(materias);
+  const horasMaterias = Object.values(materias).map(h => Number(h.toFixed(2)));
+
+  // ---------- ✅ TAREFAS ----------
+  const total = tarefas.length;
+  const concluidas = tarefas.filter(t => t.concluida).length;
+  const percentual = total ? ((concluidas / total) * 100).toFixed(0) : 0;
+
+  // ---------- 🔥 STREAK ----------
+  let streak = 0;
+  for (let i = 0; i < 7; i++) {
+    if (horasPorDia[6 - i] > 0) streak++;
+    else break;
+  }
+
+  // ---------- 🏆 MATÉRIA TOP ----------
+  let materiaTop = "-";
+  if (nomesMaterias.length > 0) {
+    materiaTop = nomesMaterias.reduce((a, b) =>
+      materias[a] > materias[b] ? a : b
+    );
+  }
+
+  // ---------- 📊 GRÁFICO SEMANAL ----------
+  const ctx1 = document.getElementById("graficoSemanal");
+
+  if (graficoSemanal) graficoSemanal.destroy();
+
+  graficoSemanal = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: dias,
+      datasets: [{
+        label: 'Horas estudadas',
+        data: horasPorDia,
+        backgroundColor: '#9f042c'
+      }]
+    }
+  });
+
+  // ---------- 🥧 GRÁFICO MATÉRIAS ----------
+  const ctx2 = document.getElementById("graficoMaterias");
+
+  if (graficoMaterias) graficoMaterias.destroy();
+
+  graficoMaterias = new Chart(ctx2, {
+    type: 'pie',
+    data: {
+      labels: nomesMaterias,
+      datasets: [{
+        data: horasMaterias,
+        backgroundColor: ['#9f042c', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7']
+      }]
+    }
+  });
+
+
+  // ---------- 📋 RESUMO ----------
+  document.getElementById("resumoEstatisticas").innerHTML = `
+    ✅ ${percentual}% das tarefas concluídas <br>
+    🔥 Ofensiva: ${streak} dias <br>
+    🏆 Matéria mais estudada: ${materiaTop}
+  `;
+  // ---------- 🎯 META SEMANAL ----------
+const META_SEMANAL = 10; // horas (pode mudar)
+
+const totalSemana = horasPorDia.reduce((a, b) => a + b, 0);
+const porcentagemMeta = Math.min((totalSemana / META_SEMANAL) * 100, 100);
+
+document.getElementById("barraMeta").style.width = porcentagemMeta + "%";
+
+document.getElementById("textoMeta").innerHTML = `
+  ${totalSemana.toFixed(1)}h / ${META_SEMANAL}h (${porcentagemMeta.toFixed(0)}%)
+`;
+
+// ---------- 📈 EVOLUÇÃO MENSAL ----------
+const diasMes = {};
+historico.forEach(item => {
+  const data = new Date(item.data);
+  const dia = data.getDate();
+
+  if (!diasMes[dia]) diasMes[dia] = 0;
+  diasMes[dia] += item.tempo / 3600;
+});
+
+const labelsMes = Object.keys(diasMes);
+const dadosMes = Object.values(diasMes).map(h => Number(h.toFixed(2)));
+
+const ctx3 = document.getElementById("graficoMensal");
+
+if (graficoMensal) graficoMensal.destroy();
+
+graficoMensal = new Chart(ctx3, {
+  type: 'line',
+  data: {
+    labels: labelsMes,
+    datasets: [{
+      label: 'Horas por dia no mês',
+      data: dadosMes,
+      borderColor: '#9f042c',
+      fill: false,
+      tension: 0.3
+    }]
+  }
+});
+// ---------- 🤖 SUGESTÕES ----------
+const sugestoes = [];
+
+if (totalSemana < 5) {
+  sugestoes.push("📉 Você estudou pouco essa semana. Tente aumentar o tempo!");
+}
+
+if (streak === 0) {
+  sugestoes.push("😴 Você não estudou hoje. Que tal começar agora?");
+}
+
+if (nomesMaterias.length > 1) {
+  const menorMateria = nomesMaterias.reduce((a, b) =>
+    materias[a] < materias[b] ? a : b
+  );
+  sugestoes.push(`⚠️ Você está estudando pouco ${menorMateria}`);
+}
+
+if (percentual < 50) {
+  sugestoes.push("❌ Muitas tarefas não concluídas. Foque nas prioridades!");
+}
+
+const listaSugestoes = document.getElementById("sugestoes");
+listaSugestoes.innerHTML = "";
+
+if (sugestoes.length === 0) {
+  listaSugestoes.innerHTML = "<li>👏 Tudo indo muito bem! Continue assim!</li>";
+} else {
+  sugestoes.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = s;
+    listaSugestoes.appendChild(li);
+  });
+}
+}
+
+/** 🔁 REVISÃO */
+function carregarRevisao() {
+  // ---------- Revisão do Dia ----------
+  const cronograma = JSON.parse(localStorage.getItem("cronograma")) || [];
+  const listaDia = document.getElementById("listaRevisaoDia");
+  listaDia.innerHTML = "";
+
+  const diasSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+  const hojeSemana = diasSemana[new Date().getDay()];
+  const horaAtual = new Date().toTimeString().slice(0,5);
+
+  const blocosHoje = cronograma.filter(b => b.dia === hojeSemana);
+
+  if(blocosHoje.length === 0) {
+    listaDia.innerHTML = "<li>Sem blocos de revisão hoje 😊</li>";
+  } else {
+    blocosHoje.forEach(b => {
+      const li = document.createElement("li");
+      li.textContent = `🕒 ${b.inicio} - ${b.fim} : ${b.materia}`;
+      listaDia.appendChild(li);
+    });
+  }
+
+  // ---------- Checklist de Notas ----------
+  const notas = JSON.parse(localStorage.getItem("notas")) || [];
+  const checklistNotas = document.getElementById("checklistNotas");
+  checklistNotas.innerHTML = "";
+
+  notas.forEach((nota, idx) => {
+    const li = document.createElement("li");
+    li.style.marginBottom = "5px";
+    li.innerHTML = `
+      <input type="checkbox" id="notaRevisao${idx}" ${nota.revisado ? "checked" : ""}>
+      <label for="notaRevisao${idx}">${nota.titulo}</label>
+    `;
+    li.querySelector("input").addEventListener("change", e => {
+      nota.revisado = e.target.checked;
+      localStorage.setItem("notas", JSON.stringify(notas));
+      carregarResumoRevisao();
+    });
+    checklistNotas.appendChild(li);
+  });
+
+  // ---------- Flashcards ----------
+  const flashcardContainer = document.getElementById("flashcardContainer");
+  flashcardContainer.innerHTML = "";
+
+  notas.forEach((nota, idx) => {
+    const card = document.createElement("div");
+    card.classList.add("flashcard");
+    card.style.border = "1px solid #ccc";
+    card.style.borderRadius = "8px";
+    card.style.padding = "10px";
+    card.style.marginBottom = "8px";
+    card.style.cursor = "pointer";
+    card.style.background = nota.cor || "#fff";
+    card.innerHTML = `
+      <strong>${nota.titulo}</strong>
+      <div class="resposta" style="display:none; margin-top:5px;">${nota.texto}</div>
+    `;
+    card.addEventListener("click", () => {
+      const resp = card.querySelector(".resposta");
+      resp.style.display = resp.style.display === "none" ? "block" : "none";
+    });
+    flashcardContainer.appendChild(card);
+  });
+
+  // ---------- Estatísticas de Revisão ----------
+  carregarResumoRevisao();
+}
+
+// ---------- Função de resumo ----------
+function carregarResumoRevisao() {
+  const notas = JSON.parse(localStorage.getItem("notas")) || [];
+  const revisadas = notas.filter(n => n.revisado).length;
+  const totais = notas.length;
+
+  const resumo = document.getElementById("resumoRevisao");
+  resumo.innerHTML = `✅ ${revisadas} de ${totais} notas revisadas`;
+}
+
+// ---------- Atualiza toda vez que a aba abre ----------
+function mostrarTela(tela) {
+  const telas = [
+    "inicio","tarefas","notas","calendario","relogio","estatistica","cronograma","metodos","revisao","progressoEstudos"
+  ];
+  telas.forEach(t => {
+    const el = document.getElementById(t + "Section");
+    if(el) el.style.display = "none";
+  });
+
+  const ativa = document.getElementById(tela + "Section");
+  if(ativa) ativa.style.display = "block";
+
+  if(tela === "revisao") carregarRevisao();
+  if(tela === "estatistica") setTimeout(carregarEstatisticas, 100);
+  if(tela === "cronograma") renderizarCronograma();
+  if(tela === "tarefas") atualizarTabela();
+  if(tela === "relogio") carregarHistorico();
+}
+
