@@ -17,10 +17,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-
-
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <!-- Seu CSS SEMPRE por último -->
@@ -104,13 +100,13 @@
         <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('revisao'); mudarPagina(this)">
           <i class="bi bi-arrow-repeat me-2"></i> Revisão
         </a>
+      </li>
 
       <li class="nav-item">
         <a href="#" class="nav-link"
-          onclick="event.preventDefault(); mostrarTela('progressoEstudos'); mudarPagina(this)">
+          onclick="event.preventDefault(); mostrarTela('progressoEstudosSection'); mudarPagina(this)">
           <i class="bi bi-trophy me-2"></i> Progressos
         </a>
-      </li>
       </li>
 
     </ul>
@@ -131,7 +127,10 @@
             </div>
           </div>
           <div class="col-12 col-md-4 mb-3">
-            <div class="card p-3">📅 Próximos Eventos</div>
+            <div class="card p-3">
+              <h5>📅 Próximos Eventos</h5>
+              <ul id="eventosResumo" style="padding-left:15px; margin-top:10px;"></ul>
+            </div>
           </div>
           <div class="col-12 col-md-4 mb-3">
             <div class="card p-3" id="resumoHojeCronograma">
@@ -140,6 +139,7 @@
             </div>
           </div>
         </div>
+      </div>
     </section>
 
     <section id="tarefasSection" style="display:none;">
@@ -163,6 +163,7 @@
       <div class="tarefas-container" id="tarefasFuturas"></div>
 
     </section>
+    
 
 
 
@@ -216,23 +217,23 @@
     </section>
 
 
-  <!-- CALENDÁRIO -->
-<section id="calendarioSection" style="display:none;">
-  <div class="calendario-container">
-    <h2>📅 Calendário</h2>
-
-    <!-- FORMULÁRIO SIMPLIFICADO -->
-    <div class="form-evento">
-      <input type="text" id="tituloEvento" placeholder="Nome do evento">
-      <input type="date" id="dataEvento">
-      <input type="color" id="corEvento" value="#3788d8">
-      <button onclick="adicionarEvento()">Adicionar</button>
-    </div>
-
     <!-- CALENDÁRIO -->
-    <div id="calendario"></div>
-  </div>
-</section>
+    <section id="calendarioSection" style="display:none;">
+      <div class="calendario-container">
+        <h2>📅 Calendário</h2>
+
+        <!-- FORMULÁRIO SIMPLIFICADO -->
+        <div class="form-evento">
+          <input type="text" id="tituloEvento" placeholder="Nome do evento">
+          <input type="date" id="dataEvento">
+          <input type="color" id="corEvento" value="#3788d8">
+          <button onclick="adicionarEvento()">Adicionar</button>
+        </div>
+
+        <!-- CALENDÁRIO -->
+        <div id="calendario"></div>
+      </div>
+    </section>
 
     <section id="relogioSection" style="display:none;">
       <h2>Relógio de Estudos</h2>
@@ -287,6 +288,7 @@
             <ul id="historico"></ul>
           </div>
           <div>
+          </div>
     </section>
 
     <section id="estatisticaSection" style="display:none;">
@@ -341,7 +343,7 @@
         <!-- BLOQUINHOS -->
         <h4>📦 Matérias</h4>
         <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-<br>
+        <br>
         <p class="drag-text">👉 Arraste a matéria para um dia da semana</p>
         <p class="drag-text">
           👉 Dica: <span>duplo clique no nome da matéria</span> para editar ou
@@ -428,12 +430,12 @@
 
 
   <!-- BOTÃO QUE ABRE O MODAL -->
-  <div id="userInfo" style="cursor:pointer;">
-    <img id="sidebarFoto" src="usuario.png"
+  <div id="userInfoFooter" style="cursor:pointer;">
+    <img id="sidebarFotoFooter" src="usuario.png"
       style="width:70px; height:70px; border-radius:50%; border:3px solid #9f042c;">
     <div>
-      <span id="sidebarNome">Usuário</span><br>
-      <span id="sidebarEmail">usuario@email.com</span>
+      <span id="sidebarNomeFooter">Usuário</span><br>
+      <span id="sidebarEmailFooter">usuario@email.com</span>
     </div>
   </div>
 

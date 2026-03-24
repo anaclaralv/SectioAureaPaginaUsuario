@@ -1,3 +1,4 @@
+
 function mostrarTela(tela) {
 
   const telas = [
@@ -15,11 +16,11 @@ function mostrarTela(tela) {
 
   // esconde tudo
   telas.forEach(t => {
-   const el = document.getElementById(t + "Section");
+    const el = document.getElementById(t + "Section");
     if (el) el.style.display = "none";
   });
 
-   const ativa = document.getElementById(tela + "Section");
+  const ativa = document.getElementById(tela + "Section");
   if (ativa) {
     ativa.style.display = "block";
   }
@@ -30,21 +31,21 @@ function mostrarTela(tela) {
     }, 100);
   }
 
- if (tela === "cronograma") {
-  renderCronogramaNovo();
-}
+  if (tela === "cronograma") {
+    renderCronogramaNovo();
+  }
 
-if (tela === "estatistica") {
-  setTimeout(() => {
-    carregarEstatisticas();
-  }, 100);
-}
+  if (tela === "estatistica") {
+    setTimeout(() => {
+      carregarEstatisticas();
+    }, 100);
+  }
 
-if (tela === "revisao") {
-  setTimeout(() => {
-    carregarRevisao();
-  }, 100);
-}
+  if (tela === "revisao") {
+    setTimeout(() => {
+      carregarRevisao();
+    }, 100);
+  }
 
 
   // funções específicas
@@ -107,23 +108,12 @@ function adicionarTarefa() {
     return;
   }
 
-  tarefas.push({
-    id: Date.now(),
-    titulo,
-    prioridade,
-    data,
-    concluida: false
-  });
-
-  salvar();
-  atualizarTudo();
-
   tituloEl.value = "";
   dataEl.value = "";
   prioridadeEl.value = "alta";
 
 
-   tarefas.push({
+  tarefas.push({
     id: Date.now(),
     titulo,
     prioridade,
@@ -152,58 +142,98 @@ function renderizar() {
 
   // Função para criar card
   function criarCard(tarefa) {
-    const card = document.createElement("div");
-    card.classList.add("tarefa-card");
-    if (tarefa.concluida) card.classList.add("concluida");
+  const card = document.createElement("div");
+  card.classList.add("tarefa-card");
+  if (tarefa.concluida) card.classList.add("concluida");
 
-    const info = document.createElement("div");
-    info.classList.add("tarefa-info");
+  const info = document.createElement("div");
+  info.classList.add("tarefa-info");
 
-    const spanTitulo = document.createElement("span");
-    spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
+  const spanTitulo = document.createElement("span");
+  spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
 
-    const badge = document.createElement("span");
-    badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
-    badge.textContent = tarefa.prioridade.toUpperCase();
+  const badge = document.createElement("span");
+  badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
+  badge.textContent = tarefa.prioridade.toUpperCase();
 
-    info.appendChild(spanTitulo);
-    info.appendChild(badge);
+  info.appendChild(spanTitulo);
+  info.appendChild(badge);
 
-    const btnConcluir = document.createElement("button");
-    btnConcluir.classList.add("btn-concluir");
-    btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
-    btnConcluir.onclick = () => {
-      tarefa.concluida = !tarefa.concluida;
-      salvar();
-      renderizar();
-      atualizarResumoInicio();
-      atualizarEventosTarefas();
-    };
+  // --- Botões ---
+  const btnConcluir = document.createElement("button");
+  btnConcluir.classList.add("btn-concluir");
+  btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
+  btnConcluir.onclick = () => {
+    tarefa.concluida = !tarefa.concluida;
+    salvar();
+    renderizar();
+    atualizarResumoInicio();
+    atualizarEventosTarefas();
+  };
 
-    const btnExcluir = document.createElement("button");
-    btnExcluir.classList.add("btn-excluir");
-    btnExcluir.textContent = "❌ Excluir";
-    btnExcluir.onclick = () => {
-      tarefas = tarefas.filter(t => t.id !== tarefa.id);
-      salvar();
-      renderizar();
-      atualizarResumoInicio();
-      atualizarEventosTarefas();
-    };
+  const btnEditar = document.createElement("button");
+  btnEditar.classList.add("btn-editar");
+  btnEditar.textContent = "✏️ Editar";
+  btnEditar.onclick = () => {
+    Swal.fire({
+      title: 'Editar Tarefa',
+      html: `
+        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+        <select id="editPrioridade" class="swal2-input">
+          <option value="alta" ${tarefa.prioridade === 'alta' ? 'selected' : ''}>Alta</option>
+          <option value="media" ${tarefa.prioridade === 'media' ? 'selected' : ''}>Média</option>
+          <option value="baixa" ${tarefa.prioridade === 'baixa' ? 'selected' : ''}>Baixa</option>
+        </select>
+        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Salvar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        const novoTitulo = document.getElementById('editTitulo').value.trim();
+        const novaPrioridade = document.getElementById('editPrioridade').value;
+        const novaData = document.getElementById('editData').value;
 
-    card.appendChild(info);
-    card.appendChild(btnConcluir);
-    card.appendChild(btnExcluir);
+        if (!novoTitulo || !novaData) {
+          Swal.fire({ icon: 'error', title: 'Preencha todos os campos!' });
+          return;
+        }
 
-    return card;
-  }
+        tarefa.titulo = novoTitulo;
+        tarefa.prioridade = novaPrioridade;
+        tarefa.data = novaData;
+        salvar();
+        atualizarTudo();
+        atualizarEventosTarefas();
+      }
+    });
+  };
+
+  const btnExcluir = document.createElement("button");
+  btnExcluir.classList.add("btn-excluir");
+  btnExcluir.textContent = "❌ Excluir";
+  btnExcluir.onclick = () => {
+    tarefas = tarefas.filter(t => t.id !== tarefa.id);
+    salvar();
+    renderizar();
+    atualizarResumoInicio();
+    atualizarEventosTarefas();
+  };
+
+  card.appendChild(info);
+  card.appendChild(btnConcluir);
+  card.appendChild(btnEditar); // adiciona aqui
+  card.appendChild(btnExcluir);
+
+  return card;
+}
 
   // Separar tarefas de hoje e futuras e ordenar
   const tarefasHoje = tarefas.filter(t => t.data === hoje)
-                             .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
+    .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
 
   const tarefasFuturas = tarefas.filter(t => t.data > hoje)
-                                .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
+    .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
 
   if (tarefasHoje.length === 0) hojeLista.innerHTML = "<p>Nenhuma tarefa cadastrada hoje!</p>";
   else tarefasHoje.forEach(t => hojeLista.appendChild(criarCard(t)));
@@ -221,6 +251,7 @@ function toggle(id) {
   tarefa.concluida = !tarefa.concluida;
   salvar();
   atualizarTudo();
+  atualizarEventosTarefas();
 }
 
 
@@ -375,37 +406,79 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     editable: true, // permite arrastar e mudar datas
     selectable: true,
-    eventClick: function(info) {
+    eventClick: function (info) {
       const event = info.event;
-      Swal.fire({
-        title: 'Editar evento',
-        html: `
-          <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
-          <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-          <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Salvar',
-        denyButtonText: 'Excluir',
-        showDenyButton: true
-      }).then(result => {
-        if(result.isConfirmed){
-          const novoTitulo = document.getElementById('editTitulo').value.trim();
-          const novaData = document.getElementById('editData').value;
-          const novaCor = document.getElementById('editCor').value;
-          if(novoTitulo && novaData){
-            event.setProp('title', novoTitulo);
-            event.setStart(novaData);
-            event.setProp('backgroundColor', novaCor);
-            event.setProp('borderColor', novaCor);
+
+      // Se o evento é de tarefa
+      if (event.extendedProps.isTarefa) {
+        const tarefa = tarefas.find(t => `${t.titulo} - ${t.prioridade.toUpperCase()}` === event.title);
+        if (!tarefa) return;
+
+
+
+        
+        Swal.fire({
+          title: 'Editar tarefa',
+          html: `
+        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+      `,
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            if (novoTitulo && novaData) {
+              tarefa.titulo = novoTitulo;
+              tarefa.data = novaData;
+              salvar();
+              atualizarTudo();
+              atualizarEventosTarefas();
+            }
+          } else if (result.isDenied) {
+            tarefas = tarefas.filter(t => t.id !== tarefa.id);
+            salvar();
+            atualizarTudo();
+            atualizarEventosTarefas();
+          }
+        });
+
+      } else {
+        // Eventos normais
+        Swal.fire({
+          title: 'Editar evento',
+          html: `
+        <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
+        <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+        <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
+      `,
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            const novaCor = document.getElementById('editCor').value;
+            if (novoTitulo && novaData) {
+              event.setProp('title', novoTitulo);
+              event.setStart(novaData);
+              event.setProp('backgroundColor', novaCor);
+              event.setProp('borderColor', novaCor);
+              salvarEventos();
+            }
+          } else if (result.isDenied) {
+            event.remove();
             salvarEventos();
           }
-        } else if(result.isDenied){
-          event.remove();
-          salvarEventos();
-        }
-      });
+        });
+      }
     },
+    
     events: carregarEventos()
   });
 
@@ -450,47 +523,61 @@ function salvarEventos() {
 // Carregar eventos do localStorage
 function carregarEventos() {
   const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
-  const tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+  const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
 
-  const eventosTarefas = tarefas
-    .filter(t => t.data)
+  // Mapeia apenas tarefas não concluídas
+  const eventosTarefas = tarefasLS
+    .filter(t => t.data && !t.concluida)
     .map(t => ({
       title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
       date: t.data,
       backgroundColor: corPrioridade(t.prioridade),
       borderColor: corPrioridade(t.prioridade),
-      extendedProps: { isTarefa: true }
+      extendedProps: { isTarefa: true, tarefaId: t.id }
     }));
 
-  return [...eventosSalvos, ...eventosTarefas];
+  // Junta e remove duplicações caso existam
+  const eventos = [...eventosSalvos, ...eventosTarefas];
+  const eventosUnicos = [];
+  const ids = new Set();
+
+  eventos.forEach(ev => {
+    const id = ev.extendedProps?.tarefaId || ev.title + ev.date;
+    if (!ids.has(id)) {
+      ids.add(id);
+      eventosUnicos.push(ev);
+    }
+  });
+
+  return eventosUnicos;
 }
 
-// Atualiza os eventos das tarefas (para refletir mudanças)
+
+
 function atualizarEventosTarefas() {
   if (!calendar) return;
 
-  // Remove eventos antigos de tarefas
+  // Remove **todos** os eventos de tarefas para evitar duplicação
   calendar.getEvents().forEach(ev => {
     if (ev.extendedProps.isTarefa) ev.remove();
   });
 
-  const tarefasAtuais = JSON.parse(localStorage.getItem("tarefas")) || [];
-
-  tarefasAtuais.forEach(t => {
-    if(!t.data) return;
+  // Adiciona somente tarefas **não concluídas**
+  tarefas.forEach(t => {
+    if (!t.data || t.concluida) return;
+    // Evita duplicar: checa se já existe
+    const jaExiste = calendar.getEvents().some(ev => ev.extendedProps.tarefaId === t.id);
+    if (jaExiste) return;
 
     calendar.addEvent({
       title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
       date: t.data,
       backgroundColor: corPrioridade(t.prioridade),
       borderColor: corPrioridade(t.prioridade),
-      extendedProps: { isTarefa: true }
+      extendedProps: { isTarefa: true, tarefaId: t.id }
     });
   });
 }
-
-
-
 
 
 
@@ -507,7 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const filtro = searchInput.value.toLowerCase();
     notas
       .filter(n => n.titulo.toLowerCase().includes(filtro))
-      .sort((a,b) => b.favorito - a.favorito)
+      .sort((a, b) => b.favorito - a.favorito)
       .forEach((nota, idx) => {
         const card = document.createElement("div");
         card.className = "col-md-4";
@@ -518,7 +605,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="card-conteudo">
               ${nota.texto}
               <div class="checklist-card">
-                ${nota.checklist.map((c,i) => `
+                ${nota.checklist.map((c, i) => `
                   <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
                     <input type="checkbox" ${c.checked ? 'checked' : ''}>
                     <span>${c.texto}</span>
@@ -552,7 +639,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const div = e.target.parentElement;
         const idx = div.dataset.idx;
         const cardidx = div.dataset.cardidx;
-        notas[cardidx].checklist.splice(idx,1);
+        notas[cardidx].checklist.splice(idx, 1);
         salvarNotas();
         renderNotas();
       });
@@ -566,8 +653,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-  
-  function abrirModal(nota=null, idx=null){
+
+  function abrirModal(nota = null, idx = null) {
     notaAtual = idx;
     document.getElementById("notaTitulo").value = nota?.titulo || "";
     document.getElementById("notaTexto").innerHTML = nota?.texto || "";
@@ -576,10 +663,10 @@ document.addEventListener("DOMContentLoaded", () => {
     notaModal.show();
   }
 
-  function renderChecklist(items){
+  function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
     container.innerHTML = "";
-    items.forEach((c,i) => {
+    items.forEach((c, i) => {
       const div = document.createElement("div");
       div.className = "check-item" + (c.checked ? "completed" : "");
       div.style.display = "flex"; div.style.alignItems = "center"; div.style.marginBottom = "5px";
@@ -598,7 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
         c.texto = textoInput.value;
       });
       div.querySelector(".btn-excluir-check").addEventListener("click", () => {
-        items.splice(i,1);
+        items.splice(i, 1);
         renderChecklist(items);
       });
       container.appendChild(div);
@@ -607,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("addCheck").addEventListener("click", () => {
     const checklist = notaAtual !== null ? notas[notaAtual].checklist : [];
-    checklist.push({texto:"Novo item", checked:false});
+    checklist.push({ texto: "Novo item", checked: false });
     renderChecklist(checklist);
   });
 
@@ -619,41 +706,41 @@ document.addEventListener("DOMContentLoaded", () => {
       texto: item.querySelector("input[type=text]").value,
       checked: item.querySelector("input[type=checkbox]").checked
     }));
-    const novaNota = {titulo,texto,cor,checklist,favorito:notaAtual!==null ? notas[notaAtual].favorito : false};
-    if(notaAtual !== null) notas[notaAtual] = novaNota;
+    const novaNota = { titulo, texto, cor, checklist, favorito: notaAtual !== null ? notas[notaAtual].favorito : false };
+    if (notaAtual !== null) notas[notaAtual] = novaNota;
     else notas.push(novaNota);
     salvarNotas();
     notaModal.hide();
     renderNotas();
-    Swal.fire({icon:'success', title:'Nota salva!', timer:1500, showConfirmButton:false});
+    Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
   });
 
   notasContainer.addEventListener("click", e => {
     const idx = e.target.dataset.idx;
-    if(e.target.classList.contains("estrela")){
+    if (e.target.classList.contains("estrela")) {
       notas[idx].favorito = !notas[idx].favorito;
       salvarNotas();
       renderNotas();
     }
-    if(e.target.classList.contains("btn-excluir")){
+    if (e.target.classList.contains("btn-excluir")) {
       Swal.fire({
-        title:'Excluir nota?',
-        text:"Essa ação não pode ser desfeita!",
-        icon:'warning',
-        showCancelButton:true,
-        confirmButtonColor:'#d33',
-        cancelButtonColor:'#3085d6',
-        confirmButtonText:'Sim, excluir'
+        title: 'Excluir nota?',
+        text: "Essa ação não pode ser desfeita!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sim, excluir'
       }).then(result => {
-        if(result.isConfirmed){
-          notas.splice(idx,1);
+        if (result.isConfirmed) {
+          notas.splice(idx, 1);
           salvarNotas();
           renderNotas();
           Swal.fire('Excluída!', '', 'success');
         }
       });
     }
-    if(e.target.classList.contains("btn-editar")){
+    if (e.target.classList.contains("btn-editar")) {
       abrirModal(notas[idx], idx);
     }
   });
@@ -672,15 +759,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
-  const hojeSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"][new Date().getDay()];
+  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
 
   // TAREFAS
   const tarefasResumo = document.getElementById("tarefasResumo");
   if (tarefasResumo) {
     tarefasResumo.innerHTML = "";
 
-  const tarefasHoje = tarefas.filter(t => t.data === hoje);
-  const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+    const tarefasHoje = tarefas.filter(t => t.data === hoje);
+    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
 
     function criarLiTarefa(tarefa) {
       const li = document.createElement("li");
@@ -692,22 +779,15 @@ function atualizarResumoInicio() {
       const span = document.createElement("span");
       span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
       span.style.color = corPrioridade(tarefa.prioridade);
-      if(tarefa.concluida) span.classList.add("concluida");
+      if (tarefa.concluida) span.classList.add("concluida");
 
       checkbox.addEventListener("change", () => {
         tarefa.concluida = checkbox.checked;
-        if(tarefa.concluida) span.classList.add("concluida");
+        if (tarefa.concluida) span.classList.add("concluida");
         else span.classList.remove("concluida");
         localStorage.setItem("tarefas", JSON.stringify(tarefas));
       });
-
-      if (calendar && tarefa.data) {
-  calendar.addEvent({
-    title: tarefa.titulo,
-    date: tarefa.data,
-    backgroundColor: corPrioridade(tarefa.prioridade)
-  });
-}renderizarResumoHoje();
+      renderizarResumoHoje();
 
       li.appendChild(checkbox);
       li.appendChild(span);
@@ -728,7 +808,7 @@ function atualizarResumoInicio() {
       tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
     }
 
-    if(tarefasHoje.length === 0 && tarefasFuturas.length === 0){
+    if (tarefasHoje.length === 0 && tarefasFuturas.length === 0) {
       const li = document.createElement("li");
       li.textContent = "Nenhuma tarefa cadastrada!";
       tarefasResumo.appendChild(li);
@@ -736,47 +816,65 @@ function atualizarResumoInicio() {
   }
 
   // EVENTOS
-  const eventosResumo = document.getElementById("eventosResumo");
-  if (eventosResumo && calendar) {
-    eventosResumo.innerHTML = "";
-    const proximosEventos = calendar.getEvents()
-      .filter(e => new Date(e.start).toDateString() >= new Date().toDateString())
-      .slice(0,5);
+const eventosResumo = document.getElementById("eventosResumo");
+if (eventosResumo && calendar) {
+  eventosResumo.innerHTML = "";
+
+  const hoje = new Date();
+  const umaSemana = new Date();
+  umaSemana.setDate(hoje.getDate() + 7);
+
+  
+  const proximosEventos = calendar.getEvents()
+  .filter(e => !e.extendedProps.isTarefa) // 🔹 aqui
+  .filter(e => {
+    const data = new Date(e.start);
+    return data >= hoje && data <= umaSemana;
+  })
+  .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+  if (proximosEventos.length === 0) {
+    eventosResumo.innerHTML = "<li>Nenhum evento nos próximos 7 dias!</li>";
+  } else {
     proximosEventos.forEach(ev => {
       const li = document.createElement("li");
-      li.textContent = `${ev.title} - ${ev.start.toLocaleDateString()}`;
+      const data = new Date(ev.start);
+      const diaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
+      li.textContent = `${ev.title} - ${diaSemana}, ${data.toLocaleDateString()}`;
       li.style.color = ev.backgroundColor || "black";
       eventosResumo.appendChild(li);
     });
   }
+}
 
 
   // ---------- MATÉRIAS DO DIA ----------
-const materiasHojeResumo = document.getElementById("materiasHojeResumo");
-if (materiasHojeResumo) {
-  materiasHojeResumo.innerHTML = "";
+  const materiasHojeResumo = document.getElementById("materiasHojeResumo");
+  if (materiasHojeResumo) {
+    materiasHojeResumo.innerHTML = "";
 
-  // pegar cronograma novo
-  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+    // pegar cronograma novo
+    const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
 
-  const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana)
-                                   .sort((a,b) => a.inicio.localeCompare(b.inicio));
+    const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana)
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
-  if(blocosHoje.length === 0){
-    materiasHojeResumo.innerHTML = "<li>Sem matérias hoje 😊</li>";
-  } else {
-    blocosHoje.forEach(bloco => {
-      const li = document.createElement("li");
-      li.textContent = `${bloco.materia.nome} - ${bloco.inicio} às ${bloco.fim}`;
-      li.style.background = bloco.materia.cor;
-      li.style.color = "#fff";
-      li.style.padding = "3px 5px";
-      li.style.borderRadius = "4px";
-      li.style.marginBottom = "3px";
-      materiasHojeResumo.appendChild(li);
-    });
+    if (blocosHoje.length === 0) {
+      materiasHojeResumo.innerHTML = "<li>Sem matérias hoje 😊</li>";
+    } else {
+      blocosHoje.forEach(bloco => {
+        const li = document.createElement("li");
+        li.textContent = `${bloco.materia.nome} - ${bloco.inicio} às ${bloco.fim}`;
+        li.style.background = bloco.materia.cor;
+        li.style.color = "#fff";
+        li.style.padding = "3px 5px";
+        li.style.borderRadius = "4px";
+        li.style.marginBottom = "3px";
+        materiasHojeResumo.appendChild(li);
+      });
+    }
   }
-}}
+}
 
 function atualizarTudo() {
   renderizar();
@@ -784,16 +882,17 @@ function atualizarTudo() {
   atualizarResumoInicio();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  atualizarResumoInicio();
+document.addEventListener('DOMContentLoaded', function () {
+  calendar.render();
+  atualizarEventosTarefas();
+  atualizarResumoInicio(); 
 });
-
 
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
 
-  const hojeSemana = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"][new Date().getDay()];
+  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
   const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
 
   lista.innerHTML = "";
@@ -816,7 +915,7 @@ function renderizarResumoHoje() {
 
 
 // ABRIR MODAL AO CLICAR NO USERINFO
-document.getElementById('userInfo').addEventListener('click', function() {
+document.getElementById('userInfo').addEventListener('click', function () {
   const novoNome = document.getElementById('sidebarNome').textContent;
   const novoEmail = document.getElementById('sidebarEmail').textContent;
   const fotoSrc = document.getElementById('sidebarFoto').src;
@@ -840,7 +939,7 @@ function salvarConfiguracao() {
 
   if (novaFotoInput.files && novaFotoInput.files[0]) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       document.getElementById('sidebarFoto').src = e.target.result;
       document.getElementById('previewFoto').src = e.target.result;
     }
@@ -871,7 +970,7 @@ let cronograma = [];
 try {
   materias = JSON.parse(localStorage.getItem("materias")) || [];
   cronograma = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-} catch(e) {
+} catch (e) {
   materias = [];
   cronograma = [];
 }
@@ -888,7 +987,7 @@ function salvarCronogramaNovo() {
 // ---------- RENDERIZAR MATÉRIAS ----------
 function renderMaterias() {
   const container = document.getElementById("materiasContainer");
-  if(!container) return;
+  if (!container) return;
   container.innerHTML = "";
 
   materias.forEach(m => {
@@ -903,38 +1002,38 @@ function renderMaterias() {
 
     // editar
     div.addEventListener("dblclick", () => {
-  Swal.fire({
-    title: `Editar Matéria`,
-    html: `
+      Swal.fire({
+        title: `Editar Matéria`,
+        html: `
       <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
       <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
     `,
-    showCancelButton: true,
-    showDenyButton: true, // botão extra para excluir
-    confirmButtonText: "Salvar",
-    denyButtonText: "Excluir"
-  }).then(result => {
-    if(result.isConfirmed){
-      const novoNome = document.getElementById("editNome").value.trim();
-      const novaCor = document.getElementById("editCor").value;
-      if(novoNome){
-        m.nome = novoNome;
-        m.cor = novaCor;
-        salvarMaterias();
-        renderMaterias();
-        renderCronogramaNovo();
-      }
-    } else if(result.isDenied){
-      // Excluir matéria
-      materias = materias.filter(mat => mat.id !== m.id);
-      cronograma = cronograma.filter(c => c.materia.id !== m.id); // remove também do cronograma
-      salvarMaterias();
-      salvarCronogramaNovo();
-      renderMaterias();
-      renderCronogramaNovo();
-    }
-  });
-});
+        showCancelButton: true,
+        showDenyButton: true, // botão extra para excluir
+        confirmButtonText: "Salvar",
+        denyButtonText: "Excluir"
+      }).then(result => {
+        if (result.isConfirmed) {
+          const novoNome = document.getElementById("editNome").value.trim();
+          const novaCor = document.getElementById("editCor").value;
+          if (novoNome) {
+            m.nome = novoNome;
+            m.cor = novaCor;
+            salvarMaterias();
+            renderMaterias();
+            renderCronogramaNovo();
+          }
+        } else if (result.isDenied) {
+          // Excluir matéria
+          materias = materias.filter(mat => mat.id !== m.id);
+          cronograma = cronograma.filter(c => c.materia.id !== m.id); // remove também do cronograma
+          salvarMaterias();
+          salvarCronogramaNovo();
+          renderMaterias();
+          renderCronogramaNovo();
+        }
+      });
+    });
     // excluir (clique direito)
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
@@ -945,7 +1044,7 @@ function renderMaterias() {
         confirmButtonText: 'Sim, excluir',
         cancelButtonText: 'Cancelar'
       }).then(res => {
-        if(res.isConfirmed){
+        if (res.isConfirmed) {
           materias = materias.filter(mat => mat.id !== m.id);
           cronograma = cronograma.filter(c => c.materia.id !== m.id);
           salvarMaterias();
@@ -962,16 +1061,16 @@ function renderMaterias() {
 
 // ---------- RENDERIZAR CRONOGRAMA ----------
 function renderCronogramaNovo() {
-  const dias = ["segunda","terca","quarta","quinta","sexta","sabado","domingo"];
+  const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
 
   dias.forEach(dia => {
     const coluna = document.getElementById(dia);
-    if(!coluna) return;
+    if (!coluna) return;
     coluna.innerHTML = `<h5>${dia.toUpperCase()}</h5><div class="dia-drop" ondragover="event.preventDefault()"></div>`;
     const dropArea = coluna.querySelector(".dia-drop");
 
     const blocos = cronograma.filter(b => b.dia === dia)
-                              .sort((a,b) => a.inicio.localeCompare(b.inicio));
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
     blocos.forEach(b => {
       const div = document.createElement("div");
@@ -992,18 +1091,18 @@ function renderCronogramaNovo() {
           confirmButtonText: "Salvar",
           denyButtonText: "Excluir"
         }).then(res => {
-          if(res.isConfirmed){
+          if (res.isConfirmed) {
             const inicio = document.getElementById("editInicio").value;
             const fim = document.getElementById("editFim").value;
-            if(!inicio || !fim || fim <= inicio){
-              Swal.fire({icon:'error', title:'Horário inválido!'});
+            if (!inicio || !fim || fim <= inicio) {
+              Swal.fire({ icon: 'error', title: 'Horário inválido!' });
               return;
             }
             b.inicio = inicio;
             b.fim = fim;
             salvarCronogramaNovo();
             renderCronogramaNovo();
-          } else if(res.isDenied){
+          } else if (res.isDenied) {
             cronograma = cronograma.filter(c => c.id !== b.id);
             salvarCronogramaNovo();
             renderCronogramaNovo();
@@ -1022,7 +1121,7 @@ function drop(ev) {
   const id = ev.dataTransfer.getData("id");
   const materia = materias.find(m => m.id == id);
   const dia = ev.currentTarget.id;
-  if(!materia) return;
+  if (!materia) return;
 
   const dropArea = ev.currentTarget.querySelector(".dia-drop");
 
@@ -1033,14 +1132,14 @@ function drop(ev) {
     preConfirm: () => {
       const inicio = document.getElementById("inicio").value;
       const fim = document.getElementById("fim").value;
-      if(!inicio || !fim || fim <= inicio){
+      if (!inicio || !fim || fim <= inicio) {
         Swal.showValidationMessage("Preencha horários válidos!");
         return false;
       }
-      return {inicio,fim};
+      return { inicio, fim };
     }
   }).then(result => {
-    if(result.isConfirmed){
+    if (result.isConfirmed) {
       const bloco = {
         id: Date.now(),
         materia,
@@ -1069,15 +1168,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Duplo clique no nome da matéria
     item.addEventListener("dblclick", () => {
       const novoNome = prompt("Digite o novo nome da matéria:", item.textContent);
-      if(novoNome) item.textContent = novoNome;
+      if (novoNome) item.textContent = novoNome;
     });
 
     // Duplo clique no horário (se você tiver span ou data-horario)
     const horario = item.querySelector(".horario"); // ou criar
-    if(horario){
+    if (horario) {
       horario.addEventListener("dblclick", () => {
         const novoHorario = prompt("Digite o novo horário:", horario.textContent);
-        if(novoHorario) horario.textContent = novoHorario;
+        if (novoHorario) horario.textContent = novoHorario;
       });
     }
   });
@@ -1087,7 +1186,7 @@ function adicionarMateria() {
   const nome = document.getElementById("novaMateriaNome").value.trim();
   const cor = document.getElementById("novaMateriaCor").value;
 
-  if (!nome) return Swal.fire({icon:'error', title:'Digite o nome da matéria!'});
+  if (!nome) return Swal.fire({ icon: 'error', title: 'Digite o nome da matéria!' });
 
   const novaMateria = {
     id: Date.now().toString(),
