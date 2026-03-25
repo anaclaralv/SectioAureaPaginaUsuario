@@ -25,11 +25,13 @@ function mostrarTela(tela) {
     ativa.style.display = "block";
   }
 
-  if (tela === "calendario") {
-    setTimeout(() => {
-      calendar.updateSize();
-    }, 100);
-  }
+  atualizarTudo();
+
+  if (tela === "calendario" && calendar) {
+  setTimeout(() => {
+    calendar.updateSize();
+  }, 100);
+}
 
   if (tela === "cronograma") {
     renderCronogramaNovo();
@@ -41,11 +43,10 @@ function mostrarTela(tela) {
     }, 100);
   }
 
- 
+
 
 
   // funções específicas
-  if (tela === "tarefas") atualizarTabela();
   if (tela === "relogio") carregarHistorico();
 }
 
@@ -73,7 +74,7 @@ function ordenarPorPrioridade(arrayTarefas) {
   return arrayTarefas.sort((a, b) => prioridadeValor[a.prioridade] - prioridadeValor[b.prioridade]);
 }
 
-function salvar() {
+function salvarTarefas() {
   localStorage.setItem("tarefas", JSON.stringify(tarefas));
 }
 
@@ -117,13 +118,13 @@ function adicionarTarefa() {
     concluida: false
   });
 
-  salvar();
+  salvarTarefas();
   atualizarTudo();
   atualizarEventosTarefas();
 }
 
 
-function renderizar() {
+function renderizarTarefas() {
   const hojeLista = document.getElementById("tarefasHoje");
   const futurasLista = document.getElementById("tarefasFuturas");
 
@@ -161,8 +162,8 @@ function renderizar() {
     btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
     btnConcluir.onclick = () => {
       tarefa.concluida = !tarefa.concluida;
-      salvar();
-      renderizar();
+      salvarTarefas();
+      renderizarTarefas();
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
@@ -198,7 +199,7 @@ function renderizar() {
           tarefa.titulo = novoTitulo;
           tarefa.prioridade = novaPrioridade;
           tarefa.data = novaData;
-          salvar();
+          salvarTarefas();
           atualizarTudo();
           atualizarEventosTarefas();
         }
@@ -210,8 +211,8 @@ function renderizar() {
     btnExcluir.textContent = "❌ Excluir";
     btnExcluir.onclick = () => {
       tarefas = tarefas.filter(t => t.id !== tarefa.id);
-      salvar();
-      renderizar();
+      salvarTarefas();
+      renderizarTarefas();
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
@@ -245,7 +246,7 @@ function toggle(id) {
   if (!tarefa) return;
 
   tarefa.concluida = !tarefa.concluida;
-  salvar();
+  salvarTarefas();
   atualizarTudo();
   atualizarEventosTarefas();
 }
@@ -263,23 +264,8 @@ function corPrioridade(prioridade) {
 window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
 
-document.addEventListener("DOMContentLoaded", () => {
-  atualizarTudo();
-});
 
 
-//--------TEMPORIZADORES--------------
-// ---------- INICIAR ----------
-document.addEventListener("DOMContentLoaded", () => {
-  renderizar();
-  atualizarTabela();
-});
-
-
-// ---------- INICIAR ----------
-document.addEventListener("DOMContentLoaded", () => {
-  mostrarTela("inicio");
-});
 
 let intervaloCronometro;
 let segundos = 0;
@@ -381,7 +367,6 @@ function carregarHistorico() {
     `;
   });
 }
-document.addEventListener("DOMContentLoaded", carregarHistorico);
 
 
 
@@ -427,13 +412,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (novoTitulo && novaData) {
               tarefa.titulo = novoTitulo;
               tarefa.data = novaData;
-              salvar();
+              salvarTarefas();
               atualizarTudo();
               atualizarEventosTarefas();
             }
           } else if (result.isDenied) {
             tarefas = tarefas.filter(t => t.id !== tarefa.id);
-            salvar();
+            salvarTarefas();
             atualizarTudo();
             atualizarEventosTarefas();
           }
@@ -871,19 +856,34 @@ function atualizarResumoInicio() {
 }
 
 function atualizarTudo() {
-  renderizar();
-  atualizarTabela();
+  renderizarTarefas();
   atualizarResumoInicio();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  calendar.render();
-  atualizarEventosTarefas();
-  atualizarResumoInicio();
-});
 
 document.addEventListener("DOMContentLoaded", () => {
+  // TELA
+  mostrarTela("inicio");
+
+  // CRONOGRAMA / MATÉRIAS
+  renderMaterias();
+  renderCronogramaNovo();
   renderizarResumoHoje();
+  atualizarMateriaAgora();
+
+  // SISTEMAS
+  renderizarTarefas();
+  renderizarRevisao();
+  carregarHistorico();
+
+  // CALENDÁRIO
+  if (typeof calendar !== "undefined" && calendar) {
+    atualizarEventosTarefas();
+    atualizarResumoInicio();
+  }
+
+  // FINAL (atualiza tudo junto)
+  atualizarTudo();
 });
 
 function renderizarResumoHoje() {
@@ -1003,52 +1003,38 @@ function renderMaterias() {
       Swal.fire({
         title: `Editar Matéria`,
         html: `
-      <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
-      <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
-    `,
+          <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
+          <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
+        `,
         showCancelButton: true,
-        showDenyButton: true, // botão extra para excluir
+        showDenyButton: true,
         confirmButtonText: "Salvar",
         denyButtonText: "Excluir"
       }).then(result => {
+
+        // ✅ EDITAR
         if (result.isConfirmed) {
+          const novoNome = document.getElementById("editNome").value.trim();
+          const novaCor = document.getElementById("editCor").value;
 
-       
-          // VERIFICAR CONFLITO
-          const conflito = cronograma.some(b =>
-            b.dia === dia &&
-            (
-              (inicio >= b.inicio && inicio < b.fim) ||
-              (fim > b.inicio && fim <= b.fim) ||
-              (inicio <= b.inicio && fim >= b.fim)
-            )
-          );
-
-          if (conflito) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Horário já ocupado!',
-              text: 'Já existe uma matéria nesse horário.'
-            });
+          if (!novoNome) {
+            Swal.fire({ icon: 'error', title: 'Digite um nome!' });
             return;
           }
 
-          const bloco = {
-            id: Date.now(),
-            materia,
-            dia,
-            inicio,
-            fim
-          };
+          m.nome = novoNome;
+          m.cor = novaCor;
 
-          cronograma.push(bloco);
-          salvarCronogramaNovo();
+          salvarMaterias();
+          renderMaterias();
           renderCronogramaNovo();
         }
+
+        // ❌ EXCLUIR
         else if (result.isDenied) {
-          // Excluir matéria
           materias = materias.filter(mat => mat.id !== m.id);
-          cronograma = cronograma.filter(c => c.materia.id !== m.id); // remove também do cronograma
+          cronograma = cronograma.filter(c => c.materia.id !== m.id);
+
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
@@ -1056,6 +1042,7 @@ function renderMaterias() {
         }
       });
     });
+
     // excluir (clique direito)
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
@@ -1069,6 +1056,7 @@ function renderMaterias() {
         if (res.isConfirmed) {
           materias = materias.filter(mat => mat.id !== m.id);
           cronograma = cronograma.filter(c => c.materia.id !== m.id);
+
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
@@ -1209,12 +1197,6 @@ function drop(ev) {
   });
 }
 
-// ---------- INIT ----------
-document.addEventListener("DOMContentLoaded", () => {
-  renderMaterias();
-  renderCronogramaNovo();
-});
-
 
 document.addEventListener("DOMContentLoaded", () => {
   const cronogramaItens = document.querySelectorAll(".bloco-materia");
@@ -1296,7 +1278,6 @@ function atualizarMateriaAgora() {
   }
 
 } setInterval(atualizarMateriaAgora, 60000);
-document.addEventListener("DOMContentLoaded", atualizarMateriaAgora);
 
 
 /** REVISÃO INTELIGENTE */
@@ -1308,7 +1289,7 @@ try {
   revisoes = [];
 }
 
-function salvar() {
+function salvarRevisao() {
   localStorage.setItem("revisoes", JSON.stringify(revisoes));
 }
 
@@ -1345,8 +1326,8 @@ function criarCard(revisao) {
   btnAcerto.onclick = () => {
     revisao.nivel = Math.min(revisao.nivel + 1, 2);
     revisao.data = proximaRevisao(revisao.nivel);
-    salvar();
-    renderizar();
+    salvarRevisao();
+    renderizarRevisao();
   };
 
   // ERREI (reset)
@@ -1355,8 +1336,8 @@ function criarCard(revisao) {
   btnErro.onclick = () => {
     revisao.nivel = 0;
     revisao.data = proximaRevisao(0);
-    salvar();
-    renderizar();
+    salvarRevisao();
+    renderizarRevisao();
   };
 
   // EXCLUIR
@@ -1364,8 +1345,8 @@ function criarCard(revisao) {
   btnExcluir.textContent = "❌";
   btnExcluir.onclick = () => {
     revisoes = revisoes.filter(r => r.id !== revisao.id);
-    salvar();
-    renderizar();
+    salvarRevisao();
+    renderizarRevisao();
   };
 
   acoes.append(btnAcerto, btnErro, btnExcluir);
@@ -1375,7 +1356,7 @@ function criarCard(revisao) {
 }
 
 // RENDERIZAR
-function renderizar() {
+function renderizarRevisao() {
   const lista = document.getElementById("listaRevisaoDia");
   const notas = document.getElementById("checklistNotas");
   const flash = document.getElementById("flashcardContainer");
@@ -1444,10 +1425,7 @@ function adicionarRevisao() {
       nivel: 0
     });
 
-    salvar();
-    renderizar();
+    salvarRevisao();
+    renderizarRevisao();
   });
 }
-
-
-document.addEventListener("DOMContentLoaded", renderizar);
