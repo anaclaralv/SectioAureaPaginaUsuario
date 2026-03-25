@@ -142,42 +142,42 @@ function renderizar() {
 
   // Função para criar card
   function criarCard(tarefa) {
-  const card = document.createElement("div");
-  card.classList.add("tarefa-card");
-  if (tarefa.concluida) card.classList.add("concluida");
+    const card = document.createElement("div");
+    card.classList.add("tarefa-card");
+    if (tarefa.concluida) card.classList.add("concluida");
 
-  const info = document.createElement("div");
-  info.classList.add("tarefa-info");
+    const info = document.createElement("div");
+    info.classList.add("tarefa-info");
 
-  const spanTitulo = document.createElement("span");
-  spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
+    const spanTitulo = document.createElement("span");
+    spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
 
-  const badge = document.createElement("span");
-  badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
-  badge.textContent = tarefa.prioridade.toUpperCase();
+    const badge = document.createElement("span");
+    badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
+    badge.textContent = tarefa.prioridade.toUpperCase();
 
-  info.appendChild(spanTitulo);
-  info.appendChild(badge);
+    info.appendChild(spanTitulo);
+    info.appendChild(badge);
 
-  // --- Botões ---
-  const btnConcluir = document.createElement("button");
-  btnConcluir.classList.add("btn-concluir");
-  btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
-  btnConcluir.onclick = () => {
-    tarefa.concluida = !tarefa.concluida;
-    salvar();
-    renderizar();
-    atualizarResumoInicio();
-    atualizarEventosTarefas();
-  };
+    // --- Botões ---
+    const btnConcluir = document.createElement("button");
+    btnConcluir.classList.add("btn-concluir");
+    btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
+    btnConcluir.onclick = () => {
+      tarefa.concluida = !tarefa.concluida;
+      salvar();
+      renderizar();
+      atualizarResumoInicio();
+      atualizarEventosTarefas();
+    };
 
-  const btnEditar = document.createElement("button");
-  btnEditar.classList.add("btn-editar");
-  btnEditar.textContent = "✏️ Editar";
-  btnEditar.onclick = () => {
-    Swal.fire({
-      title: 'Editar Tarefa',
-      html: `
+    const btnEditar = document.createElement("button");
+    btnEditar.classList.add("btn-editar");
+    btnEditar.textContent = "✏️ Editar";
+    btnEditar.onclick = () => {
+      Swal.fire({
+        title: 'Editar Tarefa',
+        html: `
         <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
         <select id="editPrioridade" class="swal2-input">
           <option value="alta" ${tarefa.prioridade === 'alta' ? 'selected' : ''}>Alta</option>
@@ -186,47 +186,47 @@ function renderizar() {
         </select>
         <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
       `,
-      showCancelButton: true,
-      confirmButtonText: 'Salvar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        const novoTitulo = document.getElementById('editTitulo').value.trim();
-        const novaPrioridade = document.getElementById('editPrioridade').value;
-        const novaData = document.getElementById('editData').value;
+        showCancelButton: true,
+        confirmButtonText: 'Salvar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          const novoTitulo = document.getElementById('editTitulo').value.trim();
+          const novaPrioridade = document.getElementById('editPrioridade').value;
+          const novaData = document.getElementById('editData').value;
 
-        if (!novoTitulo || !novaData) {
-          Swal.fire({ icon: 'error', title: 'Preencha todos os campos!' });
-          return;
+          if (!novoTitulo || !novaData) {
+            Swal.fire({ icon: 'error', title: 'Preencha todos os campos!' });
+            return;
+          }
+
+          tarefa.titulo = novoTitulo;
+          tarefa.prioridade = novaPrioridade;
+          tarefa.data = novaData;
+          salvar();
+          atualizarTudo();
+          atualizarEventosTarefas();
         }
+      });
+    };
 
-        tarefa.titulo = novoTitulo;
-        tarefa.prioridade = novaPrioridade;
-        tarefa.data = novaData;
-        salvar();
-        atualizarTudo();
-        atualizarEventosTarefas();
-      }
-    });
-  };
+    const btnExcluir = document.createElement("button");
+    btnExcluir.classList.add("btn-excluir");
+    btnExcluir.textContent = "❌ Excluir";
+    btnExcluir.onclick = () => {
+      tarefas = tarefas.filter(t => t.id !== tarefa.id);
+      salvar();
+      renderizar();
+      atualizarResumoInicio();
+      atualizarEventosTarefas();
+    };
 
-  const btnExcluir = document.createElement("button");
-  btnExcluir.classList.add("btn-excluir");
-  btnExcluir.textContent = "❌ Excluir";
-  btnExcluir.onclick = () => {
-    tarefas = tarefas.filter(t => t.id !== tarefa.id);
-    salvar();
-    renderizar();
-    atualizarResumoInicio();
-    atualizarEventosTarefas();
-  };
+    card.appendChild(info);
+    card.appendChild(btnConcluir);
+    card.appendChild(btnEditar); // adiciona aqui
+    card.appendChild(btnExcluir);
 
-  card.appendChild(info);
-  card.appendChild(btnConcluir);
-  card.appendChild(btnEditar); // adiciona aqui
-  card.appendChild(btnExcluir);
-
-  return card;
-}
+    return card;
+  }
 
   // Separar tarefas de hoje e futuras e ordenar
   const tarefasHoje = tarefas.filter(t => t.data === hoje)
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-        
+
         Swal.fire({
           title: 'Editar tarefa',
           html: `
@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       }
     },
-    
+
     events: carregarEventos()
   });
 
@@ -816,36 +816,36 @@ function atualizarResumoInicio() {
   }
 
   // EVENTOS
-const eventosResumo = document.getElementById("eventosResumo");
-if (eventosResumo && calendar) {
-  eventosResumo.innerHTML = "";
+  const eventosResumo = document.getElementById("eventosResumo");
+  if (eventosResumo && calendar) {
+    eventosResumo.innerHTML = "";
 
-  const hoje = new Date();
-  const umaSemana = new Date();
-  umaSemana.setDate(hoje.getDate() + 7);
+    const hoje = new Date();
+    const umaSemana = new Date();
+    umaSemana.setDate(hoje.getDate() + 7);
 
-  
-  const proximosEventos = calendar.getEvents()
-  .filter(e => !e.extendedProps.isTarefa) // 🔹 aqui
-  .filter(e => {
-    const data = new Date(e.start);
-    return data >= hoje && data <= umaSemana;
-  })
-  .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-  if (proximosEventos.length === 0) {
-    eventosResumo.innerHTML = "<li>Nenhum evento nos próximos 7 dias!</li>";
-  } else {
-    proximosEventos.forEach(ev => {
-      const li = document.createElement("li");
-      const data = new Date(ev.start);
-      const diaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
-      li.textContent = `${ev.title} - ${diaSemana}, ${data.toLocaleDateString()}`;
-      li.style.color = ev.backgroundColor || "black";
-      eventosResumo.appendChild(li);
-    });
+    const proximosEventos = calendar.getEvents()
+      .filter(e => !e.extendedProps.isTarefa) // 🔹 aqui
+      .filter(e => {
+        const data = new Date(e.start);
+        return data >= hoje && data <= umaSemana;
+      })
+      .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+    if (proximosEventos.length === 0) {
+      eventosResumo.innerHTML = "<li>Nenhum evento nos próximos 7 dias!</li>";
+    } else {
+      proximosEventos.forEach(ev => {
+        const li = document.createElement("li");
+        const data = new Date(ev.start);
+        const diaSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
+        li.textContent = `${ev.title} - ${diaSemana}, ${data.toLocaleDateString()}`;
+        li.style.color = ev.backgroundColor || "black";
+        eventosResumo.appendChild(li);
+      });
+    }
   }
-}
 
 
   // ---------- MATÉRIAS DO DIA ----------
@@ -856,7 +856,8 @@ if (eventosResumo && calendar) {
     // pegar cronograma novo
     const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
 
-    const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana)
+    const blocosHoje = cronogramaNovo
+      .filter(b => b.dia === hojeSemana)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
     if (blocosHoje.length === 0) {
@@ -885,7 +886,11 @@ function atualizarTudo() {
 document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
   atualizarEventosTarefas();
-  atualizarResumoInicio(); 
+  atualizarResumoInicio();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderizarResumoHoje();
 });
 
 function renderizarResumoHoje() {
@@ -1014,16 +1019,40 @@ function renderMaterias() {
         denyButtonText: "Excluir"
       }).then(result => {
         if (result.isConfirmed) {
-          const novoNome = document.getElementById("editNome").value.trim();
-          const novaCor = document.getElementById("editCor").value;
-          if (novoNome) {
-            m.nome = novoNome;
-            m.cor = novaCor;
-            salvarMaterias();
-            renderMaterias();
-            renderCronogramaNovo();
+
+       
+          // VERIFICAR CONFLITO
+          const conflito = cronograma.some(b =>
+            b.dia === dia &&
+            (
+              (inicio >= b.inicio && inicio < b.fim) ||
+              (fim > b.inicio && fim <= b.fim) ||
+              (inicio <= b.inicio && fim >= b.fim)
+            )
+          );
+
+          if (conflito) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Horário já ocupado!',
+              text: 'Já existe uma matéria nesse horário.'
+            });
+            return;
           }
-        } else if (result.isDenied) {
+
+          const bloco = {
+            id: Date.now(),
+            materia,
+            dia,
+            inicio,
+            fim
+          };
+
+          cronograma.push(bloco);
+          salvarCronogramaNovo();
+          renderCronogramaNovo();
+        }
+        else if (result.isDenied) {
           // Excluir matéria
           materias = materias.filter(mat => mat.id !== m.id);
           cronograma = cronograma.filter(c => c.materia.id !== m.id); // remove também do cronograma
@@ -1118,39 +1147,72 @@ function renderCronogramaNovo() {
 // ---------- DROP ----------
 function drop(ev) {
   ev.preventDefault();
+
   const id = ev.dataTransfer.getData("id");
   const materia = materias.find(m => m.id == id);
   const dia = ev.currentTarget.id;
-  if (!materia) return;
 
-  const dropArea = ev.currentTarget.querySelector(".dia-drop");
+  if (!materia) return;
 
   Swal.fire({
     title: `Horário de ${materia.nome}`,
-    html: `<input type="time" id="inicio" class="swal2-input"><input type="time" id="fim" class="swal2-input">`,
+    html: `
+      <input type="time" id="inicio" class="swal2-input">
+      <input type="time" id="fim" class="swal2-input">
+    `,
     confirmButtonText: "Salvar",
     preConfirm: () => {
       const inicio = document.getElementById("inicio").value;
       const fim = document.getElementById("fim").value;
+
       if (!inicio || !fim || fim <= inicio) {
         Swal.showValidationMessage("Preencha horários válidos!");
         return false;
       }
+
       return { inicio, fim };
     }
   }).then(result => {
-    if (result.isConfirmed) {
-      const bloco = {
-        id: Date.now(),
-        materia,
-        dia,
-        inicio: result.value.inicio,
-        fim: result.value.fim
-      };
-      cronograma.push(bloco);
-      salvarCronogramaNovo();
-      renderCronogramaNovo();
+
+    if (!result.isConfirmed) return;
+
+    const inicio = result.value.inicio;
+    const fim = result.value.fim;
+
+    // 🚨 VERIFICAR CONFLITO DE HORÁRIO
+    const conflito = cronograma.some(b =>
+      b.dia === dia &&
+      (
+        (inicio >= b.inicio && inicio < b.fim) ||
+        (fim > b.inicio && fim <= b.fim) ||
+        (inicio <= b.inicio && fim >= b.fim)
+      )
+    );
+
+    if (conflito) {
+      Swal.fire({
+        icon: "error",
+        title: "Horário ocupado!",
+        text: "Já existe uma matéria nesse horário."
+      });
+      return;
     }
+
+    const bloco = {
+      id: Date.now(),
+      materia,
+      dia,
+      inicio,
+      fim
+    };
+
+    cronograma.push(bloco);
+
+    salvarCronogramaNovo();
+    renderCronogramaNovo();
+    renderizarResumoHoje();
+    atualizarMateriaAgora();
+
   });
 }
 
@@ -1199,3 +1261,45 @@ function adicionarMateria() {
   renderMaterias();
 }
 
+function atualizarMateriaAgora() {
+
+  const el = document.getElementById("materiaAgora");
+  if (!el) return;
+
+  const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const hojeSemana = dias[new Date().getDay()];
+
+  const agora = new Date();
+  const horaAtual =
+    String(agora.getHours()).padStart(2, '0') + ":" +
+    String(agora.getMinutes()).padStart(2, '0');
+
+  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+
+  const blocoAtual = cronogramaNovo.find(b =>
+    b.dia === hojeSemana &&
+    horaAtual >= b.inicio &&
+    horaAtual < b.fim
+  );
+
+  if (blocoAtual) {
+
+    el.innerHTML =
+      `<span style="
+        background:${blocoAtual.materia.cor};
+        color:white;
+        padding:6px 10px;
+        border-radius:6px;
+      ">
+      ${blocoAtual.materia.nome}
+      (${blocoAtual.inicio} - ${blocoAtual.fim})
+      </span>`;
+
+  } else {
+
+    el.innerHTML = "😴 Descanso";
+
+  }
+
+} setInterval(atualizarMateriaAgora, 60000);
+document.addEventListener("DOMContentLoaded", atualizarMateriaAgora);
