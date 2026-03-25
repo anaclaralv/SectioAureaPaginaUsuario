@@ -41,11 +41,7 @@ function mostrarTela(tela) {
     }, 100);
   }
 
-  if (tela === "revisao") {
-    setTimeout(() => {
-      carregarRevisao();
-    }, 100);
-  }
+ 
 
 
   // funções específicas
@@ -413,9 +409,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (event.extendedProps.isTarefa) {
         const tarefa = tarefas.find(t => `${t.titulo} - ${t.prioridade.toUpperCase()}` === event.title);
         if (!tarefa) return;
-
-
-
 
         Swal.fire({
           title: 'Editar tarefa',
@@ -1261,6 +1254,7 @@ function adicionarMateria() {
   renderMaterias();
 }
 
+
 function atualizarMateriaAgora() {
 
   const el = document.getElementById("materiaAgora");
@@ -1303,3 +1297,157 @@ function atualizarMateriaAgora() {
 
 } setInterval(atualizarMateriaAgora, 60000);
 document.addEventListener("DOMContentLoaded", atualizarMateriaAgora);
+
+
+/** REVISÃO INTELIGENTE */
+let revisoes = [];
+
+try {
+  revisoes = JSON.parse(localStorage.getItem("revisoes")) || [];
+} catch {
+  revisoes = [];
+}
+
+function salvar() {
+  localStorage.setItem("revisoes", JSON.stringify(revisoes));
+}
+
+function hoje() {
+  return new Date().toISOString().split("T")[0];
+}
+
+// 🔥 SISTEMA DE REPETIÇÃO (1, 3, 7 dias)
+function proximaRevisao(nivel) {
+  const dias = [1, 3, 7];
+  const data = new Date();
+  data.setDate(data.getDate() + dias[nivel]);
+  return data.toISOString().split("T")[0];
+}
+
+// CARD
+function criarCard(revisao) {
+  const card = document.createElement("div");
+  card.classList.add("revisao-card");
+
+  const info = document.createElement("div");
+  info.classList.add("revisao-info");
+
+  info.innerHTML = `
+    <span>${revisao.titulo} (${revisao.data})</span>
+    <small>Nível: ${revisao.nivel}</small>
+  `;
+
+  const acoes = document.createElement("div");
+
+  // ACERTEI (avança nível)
+  const btnAcerto = document.createElement("button");
+  btnAcerto.textContent = "👍";
+  btnAcerto.onclick = () => {
+    revisao.nivel = Math.min(revisao.nivel + 1, 2);
+    revisao.data = proximaRevisao(revisao.nivel);
+    salvar();
+    renderizar();
+  };
+
+  // ERREI (reset)
+  const btnErro = document.createElement("button");
+  btnErro.textContent = "👎";
+  btnErro.onclick = () => {
+    revisao.nivel = 0;
+    revisao.data = proximaRevisao(0);
+    salvar();
+    renderizar();
+  };
+
+  // EXCLUIR
+  const btnExcluir = document.createElement("button");
+  btnExcluir.textContent = "❌";
+  btnExcluir.onclick = () => {
+    revisoes = revisoes.filter(r => r.id !== revisao.id);
+    salvar();
+    renderizar();
+  };
+
+  acoes.append(btnAcerto, btnErro, btnExcluir);
+
+  card.append(info, acoes);
+  return card;
+}
+
+// RENDERIZAR
+function renderizar() {
+  const lista = document.getElementById("listaRevisaoDia");
+  const notas = document.getElementById("checklistNotas");
+  const flash = document.getElementById("flashcardContainer");
+  const resumo = document.getElementById("resumoRevisao");
+
+  if (!lista || !notas || !flash || !resumo) return;
+
+  lista.innerHTML = "";
+  notas.innerHTML = "";
+  flash.innerHTML = "";
+
+  const hojeData = hoje();
+
+  revisoes.forEach(r => {
+    if (r.data !== hojeData) return;
+
+    let container;
+
+    if (r.tipo === "nota") container = notas;
+    else if (r.tipo === "flashcard") container = flash;
+    else container = lista;
+
+    container.appendChild(criarCard(r));
+  });
+
+  // 📊 PROGRESSO
+  const total = revisoes.length;
+  const feitas = revisoes.filter(r => r.nivel > 0).length;
+
+  resumo.textContent = `Progresso: ${feitas}/${total} revisões avançadas`;
+}
+
+function adicionarRevisao() {
+  Swal.fire({
+    title: 'Nova Revisão',
+    html: `
+      <input id="titulo" class="swal2-input" placeholder="Ex: Função do 2º grau">
+      
+      <select id="tipo" class="swal2-input">
+        <option value="nota">📒 Nota</option>
+        <option value="flashcard">🧠 Flashcard</option>
+        <option value="geral">📌 Geral</option>
+      </select>
+
+      <input type="date" id="data" class="swal2-input">
+    `,
+    confirmButtonText: 'Criar',
+    showCancelButton: true
+  }).then(res => {
+    if (!res.isConfirmed) return;
+
+    const titulo = document.getElementById("titulo").value.trim();
+    const tipo = document.getElementById("tipo").value;
+    const data = document.getElementById("data").value || hoje();
+
+    if (!titulo) {
+      Swal.fire("Erro", "Digite um título!", "error");
+      return;
+    }
+
+    revisoes.push({
+      id: Date.now(),
+      titulo,
+      tipo,
+      data,
+      nivel: 0
+    });
+
+    salvar();
+    renderizar();
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", renderizar);

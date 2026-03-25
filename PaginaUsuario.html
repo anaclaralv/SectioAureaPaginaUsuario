@@ -402,33 +402,41 @@
     <section id="metodosSection" style="display:none;">MÉTODOS</section>
   </div>
 
-  <section id="revisaoSection" style="display:none;">
-    <h2>🔁 Revisão</h2>
+ <section id="revisaoSection" style="display:none;">
+  <h2>🔁 Revisão</h2>
 
-    <!-- Revisão do Dia -->
-    <div class="revisao-dia mb-4">
-      <h4>📅 Revisão do Dia</h4>
-      <ul id="listaRevisaoDia"></ul>
-    </div>
+  <button onclick="adicionarRevisao()" class="btn-add-revisao">
+    + Nova Revisão
+  </button>
 
-    <!-- Checklist de Notas -->
-    <div class="checklist-revisao mb-4">
-      <h4>📝 Notas para Revisão</h4>
-      <ul id="checklistNotas"></ul>
-    </div>
+  <h3>📅 Revisões do Dia</h3>
+  <div id="listaRevisaoDia"></div>
 
-    <!-- Flashcards -->
-    <div class="flashcards mb-4">
-      <h4>🃏 Flashcards</h4>
-      <div id="flashcardContainer"></div>
-    </div>
+  <h3>📒 Notas</h3>
+  <div id="checklistNotas"></div>
 
-    <!-- Estatísticas de Revisão -->
-    <div class="estatisticas-revisao">
-      <h4>📊 Estatísticas</h4>
-      <p id="resumoRevisao"></p>
+  <h3>🧠 Flashcards</h3>
+  <div id="flashcardContainer"></div>
+
+
+  <div class="estatisticas-revisao">
+    <h4>📊 Estatísticas</h4>
+    <p id="resumoRevisao"></p>
+  </div>
+</section>
+
+
+
+  <!-- BOTÃO QUE ABRE O MODAL -->
+  <div id="userInfoFooter" style="cursor:pointer;">
+    <img id="sidebarFotoFooter" src="usuario.png"
+      style="width:70px; height:70px; border-radius:50%; border:3px solid #9f042c;">
+    <div>
+      <span id="sidebarNomeFooter">Usuário</span><br>
+      <span id="sidebarEmailFooter">usuario@email.com</span>
     </div>
-  </section>
+  </div>
+
 
   <!-- MODAL CONFIGURAÇÃO -->
   <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
