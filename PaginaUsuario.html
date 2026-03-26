@@ -19,6 +19,8 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <!-- Seu CSS SEMPRE por último -->
   <link rel="stylesheet" href="PaginaUsuario.css">
 </head>
@@ -171,7 +173,7 @@
 
 
 
-<section id="notasSection" style="display:none;">
+    <section id="notasSection" style="display:none;">
       <h1 class="mb-3">Minhas Notas</h1>
       <div class="d-flex mb-3 justify-content-between">
         <input type="text" id="search" class="form-control me-2" placeholder="Pesquisar...">
@@ -259,8 +261,12 @@
             <div class="tempo" id="tempoCronometro">00:00:00</div>
 
             <div class="botoes">
-              <button onclick="iniciarCronometro()">Iniciar</button>
-              <button onclick="pararCronometro()">Parar</button>
+              <button onclick="iniciarCronometro()">▶️ Iniciar</button>
+              <button onclick="pausarCronometro()">⏸️ Pausar</button>
+              <button onclick="pausarTimer()">Pausar</button>
+              <button onclick="continuarCronometro()">▶️ Continuar</button>
+              <button onclick="pararCronometro()">⏹️ Parar</button>
+              <button onclick="definirMeta()">🔔 Meta</button>
             </div>
           </div>
 
@@ -401,28 +407,28 @@
     <section id="metodosSection" style="display:none;">MÉTODOS</section>
   </div>
 
- <section id="revisaoSection" style="display:none;">
-  <h2>🔁 Revisão</h2>
+  <section id="revisaoSection" style="display:none;">
+    <h2>🔁 Revisão</h2>
 
-  <button onclick="adicionarRevisao()" class="btn-add-revisao">
-    + Nova Revisão
-  </button>
+    <button onclick="adicionarRevisao()" class="btn-add-revisao">
+      + Nova Revisão
+    </button>
 
-  <h3>📅 Revisões do Dia</h3>
-  <div id="listaRevisaoDia"></div>
+    <h3>📅 Revisões do Dia</h3>
+    <div id="listaRevisaoDia"></div>
 
-  <h3>📒 Notas</h3>
-  <div id="checklistNotas"></div>
+    <h3>📒 Notas</h3>
+    <div id="checklistNotas"></div>
 
-  <h3>🧠 Flashcards</h3>
-  <div id="flashcardContainer"></div>
+    <h3>🧠 Flashcards</h3>
+    <div id="flashcardContainer"></div>
 
 
-  <div class="estatisticas-revisao">
-    <h4>📊 Estatísticas</h4>
-    <p id="resumoRevisao"></p>
-  </div>
-</section>
+    <div class="estatisticas-revisao">
+      <h4>📊 Estatísticas</h4>
+      <p id="resumoRevisao"></p>
+    </div>
+  </section>
 
 
 

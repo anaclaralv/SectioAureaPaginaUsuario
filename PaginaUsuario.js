@@ -28,10 +28,10 @@ function mostrarTela(tela) {
   atualizarTudo();
 
   if (tela === "calendario" && calendar) {
-  setTimeout(() => {
-    calendar.updateSize();
-  }, 100);
-}
+    setTimeout(() => {
+      calendar.updateSize();
+    }, 100);
+  }
 
   if (tela === "cronograma") {
     renderCronogramaNovo();
@@ -263,43 +263,84 @@ function corPrioridade(prioridade) {
 // garante que os botões onclick encontrem as funções
 window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
-
-
-
-
-let intervaloCronometro;
+/*variaveis */
+let intervaloCronometro = null;
 let segundos = 0;
-let materiaAtual = "";
+let pausado = false;
+let metaSegundos = null;
 
 function iniciarCronometro() {
-  materiaAtual = document.getElementById("materia").value;
+  if (intervalo) return;
+  if (intervaloCronometro) return;
+
+  materiaAtual = document.getElementById("materia").value || materiaAtualAuto;
 
   if (!materiaAtual) {
     alert("Digite a matéria!");
     return;
   }
 
-  clearInterval(intervaloCronometro);
+  pausado = false;
 
   intervaloCronometro = setInterval(() => {
-    segundos++;
+    if (!pausado) {
+      segundos++;
 
-    let h = String(Math.floor(segundos / 3600)).padStart(2, '0');
-    let m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
-    let s = String(segundos % 60).padStart(2, '0');
+      let h = String(Math.floor(segundos / 3600)).padStart(2, '0');
+      let m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
+      let s = String(segundos % 60).padStart(2, '0');
 
-    document.getElementById("tempoCronometro").textContent = `${h}:${m}:${s}`;
+      document.getElementById("tempoCronometro").textContent = `${h}:${m}:${s}`;
+
+      // 🔔 NOTIFICAÇÃO
+      if (metaSegundos && segundos === metaSegundos) {
+        alert("⏰ Tempo atingido!");
+      }
+    }
   }, 1000);
+}
+
+function pausarCronometro() {
+  pausado = true;
+}
+
+function continuarCronometro() {
+  pausado = false;
 }
 
 function pararCronometro() {
   clearInterval(intervaloCronometro);
+  intervaloCronometro = null;
 
-  salvarHistorico(materiaAtual, segundos);
+  try {
+    tempoMaterias = JSON.parse(localStorage.getItem("tempoMaterias")) || {};
+  } catch {
+    tempoMaterias = {};
+  }
+
+  if (!tempoMaterias[materiaAtual]) {
+    tempoMaterias[materiaAtual] = 0;
+  }
+
+  tempoMaterias[materiaAtual] += segundos;
+
+  localStorage.setItem("tempoMaterias", JSON.stringify(tempoMaterias));
 
   segundos = 0;
+  pausado = false;
+
   document.getElementById("tempoCronometro").textContent = "00:00:00";
 }
+
+function definirMeta() {
+  const minutos = prompt("Defina o tempo (em minutos):");
+
+  if (!minutos) return;
+
+  metaSegundos = minutos * 60;
+}
+
+
 function iniciarTimer() {
   let minutos = document.getElementById("minutosTimer").value;
 
@@ -313,7 +354,8 @@ function iniciarTimer() {
     let m = Math.floor(tempo / 60);
     let s = tempo % 60;
 
-    document.getElementById("tempoTimer").textContent = `${m}:${s}`;
+    document.getElementById("tempoTimer").textContent =
+  `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
     if (tempo <= 0) {
       clearInterval(intervalo);
@@ -323,6 +365,7 @@ function iniciarTimer() {
 }
 function iniciarPomodoro() {
   let tempo = 25 * 60;
+  let modo = "foco";
 
   const intervalo = setInterval(() => {
     tempo--;
@@ -333,39 +376,39 @@ function iniciarPomodoro() {
     document.getElementById("tempoPomodoro").textContent = `${m}:${s}`;
 
     if (tempo <= 0) {
-      clearInterval(intervalo);
-      alert("Pomodoro finalizado! Descanse 5 min 😄");
+      if (modo === "foco") {
+        alert("Hora do descanso! 😴 (5 min)");
+        tempo = 5 * 60;
+        modo = "descanso";
+      } else {
+        alert("Bora voltar! 🚀");
+        tempo = 25 * 60;
+        modo = "foco";
+      }
     }
   }, 1000);
 }
-function salvarHistorico(materia, tempo) {
 
-  let historico = JSON.parse(localStorage.getItem("historicoEstudos")) || [];
+function renderTempoMaterias() {
+  const lista = document.getElementById("tempoMaterias");
 
-  historico.push({
-    materia: materia,
-    tempo: tempo,
-    data: new Date().toLocaleString()
-  });
-
-  localStorage.setItem("historicoEstudos", JSON.stringify(historico));
-
-  carregarHistorico();
-}
-
-function carregarHistorico() {
-  const lista = document.getElementById("historico");
   lista.innerHTML = "";
 
-  let historico = JSON.parse(localStorage.getItem("historicoEstudos")) || [];
+  for (let mat in tempoMaterias) {
+    const li = document.createElement("li");
 
-  historico.forEach(item => {
-    lista.innerHTML += `
-      <li>
-        ${item.materia} - ${Math.floor(item.tempo / 60)} min - ${item.data}
-      </li>
-    `;
-  });
+    let min = Math.floor(tempoMaterias[mat] / 60);
+
+    li.textContent = `${mat}: ${min} min`;
+    lista.appendChild(li);
+  }
+}
+function analisarEstudos() {
+  for (let mat in tempoMaterias) {
+    if (tempoMaterias[mat] < 60) {
+      console.log(`⚠️ Estude mais ${mat}`);
+    }
+  }
 }
 
 
@@ -389,6 +432,7 @@ document.addEventListener('DOMContentLoaded', function () {
     selectable: true,
     eventClick: function (info) {
       const event = info.event;
+
 
       // Se o evento é de tarefa
       if (event.extendedProps.isTarefa) {
@@ -454,6 +498,28 @@ document.addEventListener('DOMContentLoaded', function () {
             salvarEventos();
           }
         });
+      }
+    },
+    eventDrop: function (info) {
+      const event = info.event;
+
+      // 👉 SE FOR TAREFA
+      if (event.extendedProps.isTarefa) {
+        const tarefaId = event.extendedProps.tarefaId;
+
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (!tarefa) return;
+
+        // Atualiza a data da tarefa
+        tarefa.data = event.startStr;
+
+        salvarTarefas();
+        atualizarTudo();
+        atualizarEventosTarefas();
+
+      } else {
+        // 👉 SE FOR EVENTO NORMAL
+        salvarEventos();
       }
     },
 
@@ -531,14 +597,18 @@ function carregarEventos() {
 }
 
 
-
 function atualizarEventosTarefas() {
   if (!calendar) return;
 
-  // Remove **todos** os eventos de tarefas para evitar duplicação
-  calendar.getEvents().forEach(ev => {
-    if (ev.extendedProps.isTarefa) ev.remove();
+  // 🔥 REMOVE TODOS os eventos
+  calendar.getEvents().forEach(ev => ev.remove());
+
+  // 🔄 RECRIA tudo (eventos + tarefas)
+  const eventos = carregarEventos();
+  eventos.forEach(ev => {
+    calendar.addEvent(ev);
   });
+
 
   // Adiciona somente tarefas **não concluídas**
   tarefas.forEach(t => {
@@ -571,17 +641,26 @@ document.addEventListener("DOMContentLoaded", () => {
     notasContainer.innerHTML = "";
     const filtro = searchInput.value.toLowerCase();
     notas
-      .filter(n => n.titulo.toLowerCase().includes(filtro))
-      .sort((a, b) => b.favorito - a.favorito)
+      .filter(n =>
+        n.titulo.toLowerCase().includes(filtro) ||
+        n.texto.toLowerCase().includes(filtro)
+      )
+      .sort((a, b) => {
+        if (b.favorito !== a.favorito) return b.favorito - a.favorito;
+        return a.titulo.localeCompare(b.titulo);
+      })
       .forEach((nota, idx) => {
         const card = document.createElement("div");
         card.className = "col-md-4";
         card.innerHTML = `
           <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
-            <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
+          <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" 
+   data-idx="${idx}"
+   style="cursor:pointer;"></i>
             <h5>${nota.titulo}</h5>
+            <small>${nota.dataCriacao || ""}</small>
             <div class="card-conteudo">
-              ${nota.texto}
+             ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
               <div class="checklist-card">
                 ${nota.checklist.map((c, i) => `
                   <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
@@ -627,7 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function salvarNotas() {
     localStorage.setItem("notas", JSON.stringify(notas));
   }
-
+  document.getElementById("notaTexto").addEventListener("input", salvarNotas);
 
 
 
@@ -684,7 +763,16 @@ document.addEventListener("DOMContentLoaded", () => {
       texto: item.querySelector("input[type=text]").value,
       checked: item.querySelector("input[type=checkbox]").checked
     }));
-    const novaNota = { titulo, texto, cor, checklist, favorito: notaAtual !== null ? notas[notaAtual].favorito : false };
+    const novaNota = {
+      titulo,
+      texto,
+      cor,
+      checklist,
+      favorito: false,
+      dataCriacao: notaAtual !== null
+        ? notas[notaAtual].dataCriacao
+        : new Date().toLocaleString()
+    };
     if (notaAtual !== null) notas[notaAtual] = novaNota;
     else notas.push(novaNota);
     salvarNotas();
@@ -695,11 +783,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   notasContainer.addEventListener("click", e => {
     const idx = e.target.dataset.idx;
+
     if (e.target.classList.contains("estrela")) {
       notas[idx].favorito = !notas[idx].favorito;
       salvarNotas();
       renderNotas();
     }
+
     if (e.target.classList.contains("btn-excluir")) {
       Swal.fire({
         title: 'Excluir nota?',
@@ -718,6 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
     if (e.target.classList.contains("btn-editar")) {
       abrirModal(notas[idx], idx);
     }
@@ -728,8 +819,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderNotas();
 });
-
-
 
 
 
@@ -793,20 +882,23 @@ function atualizarResumoInicio() {
     }
   }
 
+
   // EVENTOS
   const eventosResumo = document.getElementById("eventosResumo");
   if (eventosResumo && calendar) {
     eventosResumo.innerHTML = "";
 
     const hoje = new Date();
-    const umaSemana = new Date();
+    hoje.setHours(0, 0, 0, 0); // 🔥 zera hora
+
+    const umaSemana = new Date(hoje);
     umaSemana.setDate(hoje.getDate() + 7);
 
-
     const proximosEventos = calendar.getEvents()
-      .filter(e => !e.extendedProps.isTarefa) // 🔹 aqui
+      .filter(e => !(e.extendedProps && e.extendedProps.isTarefa)) // 🔥 GARANTE: só eventos
       .filter(e => {
         const data = new Date(e.start);
+        data.setHours(0, 0, 0, 0); // 🔥 zera hora também
         return data >= hoje && data <= umaSemana;
       })
       .sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -824,7 +916,6 @@ function atualizarResumoInicio() {
       });
     }
   }
-
 
   // ---------- MATÉRIAS DO DIA ----------
   const materiasHojeResumo = document.getElementById("materiasHojeResumo");
@@ -963,6 +1054,11 @@ function salvarConfiguracao() {
 // ---------- VARIÁVEIS GLOBAIS ----------
 let materias = [];
 let cronograma = [];
+
+// 🔥 ADICIONA ISSO AQUI
+let tempoMaterias = {};
+let materiaAtualAuto = null;
+let materiaAnterior = null;
 
 // ---------- CARREGAR DO LOCALSTORAGE ----------
 try {
@@ -1259,7 +1355,11 @@ function atualizarMateriaAgora() {
   );
 
   if (blocoAtual) {
+  if (materiaAnterior && materiaAnterior !== blocoAtual.materia.nome) {
+      alert("Matéria concluída! Deseja fazer uma pausa? 😄");
+    }
 
+    materiaAnterior = blocoAtual.materia.nome;
     el.innerHTML =
       `<span style="
         background:${blocoAtual.materia.cor};
@@ -1276,6 +1376,8 @@ function atualizarMateriaAgora() {
     el.innerHTML = "😴 Descanso";
 
   }
+
+  materiaAtualAuto = blocoAtual?.materia?.nome || null;
 
 } setInterval(atualizarMateriaAgora, 60000);
 

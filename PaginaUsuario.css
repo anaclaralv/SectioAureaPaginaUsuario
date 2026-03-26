@@ -6,7 +6,6 @@ html, body {
   background: #f8f8f8;
   margin: 0;
   padding: 0;
-  height: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
   height: 100%;
@@ -37,18 +36,16 @@ html, body {
   background-color: #f2f2f2;
   font-weight: bold;
 }
-
+/*
 
 .main-content {
   margin-top: 100px;
-  /* espaço da navbar */
   margin-left: 250px;
-  /* espaço da sidebar */
   padding: 40px;
   min-height: calc(100vh - 100px);
   display: flex;
   justify-content: center;
-}
+}*/
 
 .layout-container {
   width: 100%;
