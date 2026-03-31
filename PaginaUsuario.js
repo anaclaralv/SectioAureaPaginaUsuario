@@ -28,11 +28,11 @@ function mostrarTela(tela) {
   if (tela === "cronogramaNovo") {
     renderCronogramaNovo();
   }
-  if (tela === "estatistica") {
-    setTimeout(() => {
-      carregarEstatisticas();
-    }, 100);
-  }
+ if (tela === "estatistica") {
+  setTimeout(() => {
+    carregarEstatisticas();
+  }, 100);
+}
   // funções específicas
   if (tela === "relogio") {
     renderTabelaMaterias();
@@ -709,7 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderizarResumoHoje();
   atualizarMateriaAgora();
   renderizarTarefas();
-  renderizarRevisao();
+   renderizarRevisao();
   carregarMetas();
   if (typeof calendar !== "undefined" && calendar) {
     atualizarEventosTarefas();
@@ -1077,139 +1077,7 @@ function adicionarMateria() {
     materiaAtualAuto = null;
   }
 }
-/** REVISÃO INTELIGENTE */
-let revisoes = [];
-try {
-  revisoes = JSON.parse(localStorage.getItem("revisoes")) || [];
-} catch {
-  revisoes = [];
-}
 
-function salvarRevisao() {
-  localStorage.setItem("revisoes", JSON.stringify(revisoes));
-}
-
-function hoje() {
-  return new Date().toISOString().split("T")[0];
-}
-
-// 🔥 SISTEMA DE REPETIÇÃO (1, 3, 7 dias)
-function proximaRevisao(nivel) {
-  const dias = [1, 3, 7];
-  const data = new Date();
-  data.setDate(data.getDate() + dias[nivel]);
-  return data.toISOString().split("T")[0];
-}
-
-// CARD
-function criarCard(revisao) {
-  const card = document.createElement("div");
-  card.classList.add("revisao-card");
-
-  const info = document.createElement("div");
-  info.classList.add("revisao-info");
-
-  info.innerHTML = `
-    <span>${revisao.titulo} (${revisao.data})</span>
-    <small>Nível: ${revisao.nivel}</small>
-  `;
-
-  const acoes = document.createElement("div");
-
-  // ACERTEI (avança nível)
-  const btnAcerto = document.createElement("button");
-  btnAcerto.textContent = "👍";
-  btnAcerto.onclick = () => {
-    revisao.nivel = Math.min(revisao.nivel + 1, 2);
-    revisao.data = proximaRevisao(revisao.nivel);
-    salvarRevisao();
-    renderizarRevisao();
-  };
-
-  // ERREI (reset)
-  const btnErro = document.createElement("button");
-  btnErro.textContent = "👎";
-  btnErro.onclick = () => {
-    revisao.nivel = 0;
-    revisao.data = proximaRevisao(0);
-    salvarRevisao();
-    renderizarRevisao();
-  };
-
-  // EXCLUIR
-  const btnExcluir = document.createElement("button");
-  btnExcluir.textContent = "❌";
-  btnExcluir.onclick = () => {
-    revisoes = revisoes.filter(r => r.id !== revisao.id);
-    salvarRevisao();
-    renderizarRevisao();
-  };
-  acoes.append(btnAcerto, btnErro, btnExcluir);
-  card.append(info, acoes);
-  return card;
-}
-
-// RENDERIZAR
-function renderizarRevisao() {
-  const lista = document.getElementById("listaRevisaoDia");
-  const notas = document.getElementById("checklistNotas");
-  const flash = document.getElementById("flashcardContainer");
-  const resumo = document.getElementById("resumoRevisao");
-
-  if (!lista || !notas || !flash || !resumo) return;
-
-  lista.innerHTML = "";
-  notas.innerHTML = "";
-  flash.innerHTML = "";
-  const hojeData = hoje();
-  revisoes.forEach(r => {
-    if (r.data !== hojeData) return;
-    let container;
-    if (r.tipo === "nota") container = notas;
-    else if (r.tipo === "flashcard") container = flash;
-    else container = lista;
-    container.appendChild(criarCard(r));
-  });
-  // 📊 PROGRESSO
-  const total = revisoes.length;
-  const feitas = revisoes.filter(r => r.nivel > 0).length;
-  resumo.textContent = `Progresso: ${feitas}/${total} revisões avançadas`;
-}
-
-function adicionarRevisao() {
-  Swal.fire({
-    title: 'Nova Revisão',
-    html: `
-      <input id="titulo" class="swal2-input" placeholder="Ex: Função do 2º grau">
-      <select id="tipo" class="swal2-input">
-        <option value="nota">📒 Nota</option>
-        <option value="flashcard">🧠 Flashcard</option>
-        <option value="geral">📌 Geral</option>
-      </select>
-      <input type="date" id="data" class="swal2-input">
-    `,
-    confirmButtonText: 'Criar',
-    showCancelButton: true
-  }).then(res => {
-    if (!res.isConfirmed) return;
-    const titulo = document.getElementById("titulo").value.trim();
-    const tipo = document.getElementById("tipo").value;
-    const data = document.getElementById("data").value || hoje();
-    if (!titulo) {
-      Swal.fire("Erro", "Digite um título!", "error");
-      return;
-    }
-    revisoes.push({
-      id: Date.now(),
-      titulo,
-      tipo,
-      data,
-      nivel: 0
-    });
-    salvarRevisao();
-    renderizarRevisao();
-  });
-}
 
 /* ===================== RELOGIO =====================*/
 
@@ -2445,4 +2313,442 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+/* ================= ESTATÍSTICAS ================= */
+
+// Variável para controlar o gráfico atual
+let graficoPrincipalAtual = null;
+let periodoAtual = "semana";
+
+// Calcular estudo de hoje
+function calcularEstudoHoje() {
+  const hoje = new Date().toISOString().split('T')[0];
+  let totalSegundos = 0;
+  
+  Object.values(tempoEstudo).forEach(materia => {
+    if (materia.historico && materia.historico[hoje]) {
+      totalSegundos += materia.historico[hoje];
+    }
+  });
+  
+  return totalSegundos / 3600;
+}
+
+// Calcular estudo semanal (últimos 7 dias)
+function calcularEstudoSemanal() {
+  const hoje = new Date();
+  let totalSegundos = 0;
+  
+  for (let i = 0; i < 7; i++) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const dataStr = data.toISOString().split('T')[0];
+    
+    Object.values(tempoEstudo).forEach(materia => {
+      if (materia.historico && materia.historico[dataStr]) {
+        totalSegundos += materia.historico[dataStr];
+      }
+    });
+  }
+  
+  return totalSegundos / 3600;
+}
+
+// Calcular estudo mensal (últimos 30 dias)
+function calcularEstudoMensal() {
+  const hoje = new Date();
+  let totalSegundos = 0;
+  
+  for (let i = 0; i < 30; i++) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const dataStr = data.toISOString().split('T')[0];
+    
+    Object.values(tempoEstudo).forEach(materia => {
+      if (materia.historico && materia.historico[dataStr]) {
+        totalSegundos += materia.historico[dataStr];
+      }
+    });
+  }
+  
+  return totalSegundos / 3600;
+}
+
+// Dados para gráfico por dia da semana
+function getDadosPorDiaSemana() {
+  const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const horasPorDia = [0, 0, 0, 0, 0, 0, 0];
+  
+  Object.values(tempoEstudo).forEach(materia => {
+    if (materia.historico) {
+      Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
+        const data = new Date(dataStr);
+        const diaSemana = data.getDay();
+        horasPorDia[diaSemana] += segundos / 3600;
+      });
+    }
+  });
+  
+  return { labels: diasSemana, dados: horasPorDia };
+}
+
+// Dados para gráfico de hoje (por matéria)
+function getDadosEstudoHoje() {
+  const hoje = new Date().toISOString().split('T')[0];
+  const dadosPorMateria = [];
+  
+  materias.forEach(m => {
+    const dados = tempoEstudo[m.id];
+    let segundos = 0;
+    if (dados && dados.historico && dados.historico[hoje]) {
+      segundos = dados.historico[hoje];
+    }
+    if (segundos > 0) {
+      dadosPorMateria.push({ nome: m.nome, horas: segundos / 3600 });
+    }
+  });
+  
+  dadosPorMateria.sort((a, b) => b.horas - a.horas);
+  
+  return {
+    labels: dadosPorMateria.map(d => d.nome),
+    dados: dadosPorMateria.map(d => d.horas)
+  };
+}
+
+// Dados para gráfico semanal (últimos 7 dias)
+function getDadosEstudoSemanal() {
+  const hoje = new Date();
+  const labels = [];
+  const dados = [];
+  
+  for (let i = 6; i >= 0; i--) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const dataStr = data.toISOString().split('T')[0];
+    const diaNome = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
+    labels.push(`${diaNome} ${data.getDate()}/${data.getMonth() + 1}`);
+    
+    let total = 0;
+    Object.values(tempoEstudo).forEach(materia => {
+      if (materia.historico && materia.historico[dataStr]) {
+        total += materia.historico[dataStr];
+      }
+    });
+    dados.push(total / 3600);
+  }
+  
+  return { labels, dados };
+}
+
+// Dados para gráfico mensal (últimos 30 dias)
+function getDadosEstudoMensal() {
+  const hoje = new Date();
+  const labels = [];
+  const dados = [];
+  
+  for (let i = 29; i >= 0; i--) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const dataStr = data.toISOString().split('T')[0];
+    labels.push(`${data.getDate()}/${data.getMonth() + 1}`);
+    
+    let total = 0;
+    Object.values(tempoEstudo).forEach(materia => {
+      if (materia.historico && materia.historico[dataStr]) {
+        total += materia.historico[dataStr];
+      }
+    });
+    dados.push(total / 3600);
+  }
+  
+  return { labels, dados };
+}
+
+// Atualizar gráfico principal conforme período
+function atualizarGraficoPrincipal() {
+  let dados, titulo;
+  
+  if (periodoAtual === "semana") {
+    dados = getDadosPorDiaSemana();
+    titulo = "📅 Estudos por Dia da Semana";
+  } else if (periodoAtual === "hoje") {
+    dados = getDadosEstudoHoje();
+    titulo = "📆 Estudo de Hoje (por matéria)";
+  } else if (periodoAtual === "semanal") {
+    dados = getDadosEstudoSemanal();
+    titulo = "📊 Estudo Semanal (últimos 7 dias)";
+  } else {
+    dados = getDadosEstudoMensal();
+    titulo = "📈 Estudo Mensal (últimos 30 dias)";
+  }
+  
+  document.getElementById("graficoTitulo").textContent = titulo;
+  
+  const ctx = document.getElementById('graficoPrincipal').getContext('2d');
+  if (graficoPrincipalAtual) graficoPrincipalAtual.destroy();
+  
+  graficoPrincipalAtual = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dados.labels,
+      datasets: [{
+        label: 'Horas Estudadas',
+        data: dados.dados,
+        backgroundColor: '#9f042c',
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+}
+
+// Atualizar todas as metas
+function atualizarMetas() {
+  const totalHoje = calcularEstudoHoje();
+  const totalSemana = calcularEstudoSemanal();
+  const totalMes = calcularHorasEstudadas("mensal");
+  
+  // Meta Diária
+  const metaDiaria = metas.diaria;
+  const progressoDiario = Math.min((totalHoje / metaDiaria) * 100, 100);
+  document.getElementById("barraMetaDiaria").style.width = `${progressoDiario}%`;
+  document.getElementById("metaDiariaTexto").textContent = `${metaDiaria}h`;
+  document.getElementById("metaDiariaRestante").textContent = `${totalHoje.toFixed(1)}h de ${metaDiaria}h`;
+  
+  // Meta Semanal
+  const metaSemanal = metas.semanal;
+  const progressoSemanal = Math.min((totalSemana / metaSemanal) * 100, 100);
+  document.getElementById("barraMetaSemanal").style.width = `${progressoSemanal}%`;
+  document.getElementById("metaSemanalTexto").textContent = `${metaSemanal}h`;
+  document.getElementById("metaSemanalRestante").textContent = `${totalSemana.toFixed(1)}h de ${metaSemanal}h`;
+  
+  // Meta Mensal
+  const metaMensal = metas.mensal;
+  const progressoMensal = Math.min((totalMes / metaMensal) * 100, 100);
+  document.getElementById("barraMetaMensal").style.width = `${progressoMensal}%`;
+  document.getElementById("metaMensalTexto").textContent = `${metaMensal}h`;
+  document.getElementById("metaMensalRestante").textContent = `${totalMes.toFixed(1)}h de ${metaMensal}h`;
+}
+
+// Atualizar conquistas separadas
+function atualizarConquistasSeparadas() {
+  const totalHoras = calcularTotais().totalHoras;
+  const streak = parseInt(localStorage.getItem("streak")) || 0;
+  const qtdMaterias = materias.length;
+  
+  const conquistas = [
+    { id: "primeiro-estudo", nome: "⭐ Primeiro Estudo", condicao: totalHoras > 0 },
+    { id: "7-dias", nome: "🔥 7 Dias Seguidos", condicao: streak >= 7 },
+    { id: "30-dias", nome: "🏆 30 Dias Seguidos", condicao: streak >= 30 },
+    { id: "10-horas", nome: "⏱️ 10 Horas Totais", condicao: totalHoras >= 10 },
+    { id: "50-horas", nome: "⚡ 50 Horas Totais", condicao: totalHoras >= 50 },
+    { id: "100-horas", nome: "💪 100 Horas Totais", condicao: totalHoras >= 100 },
+    { id: "5-materias", nome: "📚 5 Matérias", condicao: qtdMaterias >= 5 }
+  ];
+  
+  const desbloqueadas = conquistas.filter(c => c.condicao);
+  const bloqueadas = conquistas.filter(c => !c.condicao);
+  
+  const containerDesbloq = document.getElementById("conquistasDesbloqueadas");
+  const containerBloq = document.getElementById("conquistasBloqueadas");
+  
+  if (desbloqueadas.length > 0) {
+    containerDesbloq.innerHTML = desbloqueadas.map(c => `
+      <div class="badge desbloqueado">
+        <i class="bi bi-check-circle-fill"></i> ${c.nome}
+      </div>
+    `).join('');
+  } else {
+    containerDesbloq.innerHTML = '<p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>';
+  }
+  
+  if (bloqueadas.length > 0) {
+    containerBloq.innerHTML = bloqueadas.map(c => `
+      <div class="badge">
+        <i class="bi bi-lock-fill"></i> ${c.nome}
+      </div>
+    `).join('');
+  }
+}
+
+/* ================= CALCULAR TOTAIS ================= */
+function calcularTotais() {
+  let totalSegundos = 0;
+  let diasEstudados = new Set();
+  let maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
+  
+  Object.values(tempoEstudo).forEach(materia => {
+    if (typeof materia === 'number') {
+      totalSegundos += materia;
+    } else if (materia.historico) {
+      Object.entries(materia.historico).forEach(([data, segundos]) => {
+        totalSegundos += segundos;
+        diasEstudados.add(data);
+      });
+    } else if (materia.total) {
+      totalSegundos += materia.total;
+    }
+  });
+  
+  const totalHoras = totalSegundos / 3600;
+  const dias = diasEstudados.size;
+  const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
+  
+  return { totalHoras, dias, maiorStreak, mediaDiaria };
+}
+
+/* ================= CALCULAR HORAS POR MATÉRIA ================= */
+function calcularHorasPorMateria() {
+  const materiasEstudo = [];
+  
+  materias.forEach(m => {
+    const dados = tempoEstudo[m.id];
+    let tempo = 0;
+    if (dados) {
+      if (typeof dados === 'number') {
+        tempo = dados;
+      } else {
+        tempo = dados.total || 0;
+      }
+    }
+    if (tempo > 0) {
+      materiasEstudo.push({ nome: m.nome, horas: tempo / 3600 });
+    }
+  });
+  
+  materiasEstudo.sort((a, b) => b.horas - a.horas);
+  return materiasEstudo.slice(0, 5);
+}
+
+// Função principal
+function carregarEstatisticas() {
+  // Totais
+  const { totalHoras, dias, maiorStreak, mediaDiaria } = calcularTotais();
+  document.getElementById("totalGeralEstat").textContent = `${totalHoras.toFixed(1)}h`;
+  document.getElementById("diasEstudadosEstat").textContent = dias;
+  document.getElementById("maiorStreakEstat").textContent = maiorStreak;
+  document.getElementById("mediaDiariaEstat").textContent = `${mediaDiaria.toFixed(1)}h`;
+  
+  // Gráfico de matérias (top 5)
+  // Gráfico de matérias (barras horizontais)
+const materiasTop = calcularHorasPorMateria();
+const ctxMaterias = document.getElementById('graficoMaterias').getContext('2d');
+
+// Destruir gráfico anterior se existir
+if (window.graficoMateriasAtual) {
+  window.graficoMateriasAtual.destroy();
+}
+
+window.graficoMateriasAtual = new Chart(ctxMaterias, {
+  type: 'bar',
+  data: {
+    labels: materiasTop.map(m => m.nome),
+    datasets: [{
+      label: 'Horas Estudadas',
+      data: materiasTop.map(m => m.horas),
+      backgroundColor: '#9f042c',
+      borderRadius: 8,
+      barPercentage: 0.6,
+      categoryPercentage: 0.8
+    }]
+  },
+  options: {
+    indexAxis: 'y', // 👈 ISSO FAZ O GRÁFICO FICAR HORIZONTAL
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { font: { size: 11 } }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.raw.toFixed(1)} horas`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Horas',
+          font: { size: 11 }
+        },
+        grid: { color: '#e5e7eb' }
+      },
+      y: {
+        ticks: {
+          font: { size: 11 }
+        },
+        grid: { display: false }
+      }
+    }
+  }
+});
+  
+  // Configurar seletor de período
+  document.querySelectorAll('.periodo-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      periodoAtual = btn.dataset.periodo;
+      atualizarGraficoPrincipal();
+    };
+  });
+  
+  // Atualizar gráfico inicial
+  atualizarGraficoPrincipal();
+  
+  // Atualizar metas
+  atualizarMetas();
+  
+  // Atualizar conquistas
+  atualizarConquistasSeparadas();
+  
+  // Sugestões
+  gerarSugestoes();
+  
+  // Resumo
+  const resumoEl = document.getElementById("resumoEstatisticas");
+  if (resumoEl) {
+    resumoEl.innerHTML = `📊 Você já estudou ${totalHoras.toFixed(1)} horas no total! ${dias > 0 ? `Isso dá uma média de ${mediaDiaria.toFixed(1)}h por dia.` : 'Comece hoje!'}`;
+  }
+}
+
+// Gerar sugestões personalizadas
+function gerarSugestoes() {
+  const { totalHoras, dias } = calcularTotais();
+  const streak = parseInt(localStorage.getItem("streak")) || 0;
+  const materiasEstudo = calcularHorasPorMateria();
+  
+  const sugestoes = [];
+  
+  if (totalHoras === 0) {
+    sugestoes.push("📚 Comece seus estudos! Clique em ▶ ao lado de uma matéria.");
+  }
+  if (streak === 0 && totalHoras > 0) {
+    sugestoes.push("🔥 Estude hoje para começar um streak de dias consecutivos!");
+  }
+  if (streak > 0 && streak < 7) {
+    sugestoes.push(`🔥 Você está com ${streak} dia(s) de streak! Mantenha por mais ${7 - streak} dias para ganhar a conquista "7 Dias"!`);
+  }
+  if (materiasEstudo.length === 0 && totalHoras === 0) {
+    sugestoes.push("➕ Adicione matérias no cronograma para começar a estudar!");
+  }
+  if (sugestoes.length === 0) {
+    sugestoes.push("🎉 Parabéns! Você está indo muito bem! Continue assim!");
+  }
+  
+  const sugestoesLista = document.getElementById("sugestoes");
+  if (sugestoesLista) {
+    sugestoesLista.innerHTML = sugestoes.map(s => `<li><i class="bi bi-lightbulb"></i> ${s}</li>`).join('')
+  }
+}
 

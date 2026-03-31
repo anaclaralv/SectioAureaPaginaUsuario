@@ -1282,66 +1282,6 @@ input[type="color"] {
   transition: 0.2s;
 }
 
-/* ÁREA DE REVISÃO (container principal) */
-#revisaoSection {
-  margin-left: 240px;
-  /* espaço pro menu lateral */
-  padding: 20px;
-}
-
-/* LISTAS dentro da revisão */
-#listaRevisaoDia,
-#checklistNotas,
-#flashcardContainer {
-  margin-top: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* CARDS */
-.revisao-card {
-  background: #fff;
-  padding: 12px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* INFO */
-.revisao-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* BOTÕES */
-.btn-concluir,
-.btn-excluir {
-  padding: 5px 8px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-add-revisao {
-  background-color: #6366f1;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 15px;
-}
-
-.btn-add-revisao:hover {
-  background-color: #4f46e5;
-}
-
-/* ===== DESTAQUE CLEAN PARA MATÉRIA ATUAL ===== */
 
 /* Matéria atual - mais clean */
 #materiaAgoraInicio {
@@ -1765,4 +1705,385 @@ input[type="color"] {
   50% {
     text-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
   }
+}
+
+/* ==================== ESTATÍSTICAS ==================== */
+
+/* Cards de resumo */
+.stats-cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card i {
+  font-size: 2rem;
+  color: #9f042c;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.stat-card span {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 5px;
+}
+
+.stat-card strong {
+  font-size: 1.5rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* Cards de gráficos */
+.grafico-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
+}
+
+.grafico-card h4 {
+  margin-bottom: 20px;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Seletor de período */
+.periodo-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  background: white;
+  padding: 8px;
+  border-radius: 50px;
+  border: 1px solid #eef2ff;
+  justify-content: center;
+}
+
+.periodo-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.periodo-btn.active {
+  background: #9f042c;
+  color: white;
+}
+
+.periodo-btn:hover:not(.active) {
+  background: #f1f5f9;
+  color: #1f2937;
+}
+
+/* Metas */
+.metas-container {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
+}
+
+.metas-container h4 {
+  margin-bottom: 20px;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.meta-item {
+  margin-bottom: 20px;
+}
+
+.meta-item:last-child {
+  margin-bottom: 0;
+}
+
+.meta-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.meta-header span:first-child {
+  font-weight: 500;
+}
+
+.meta-header span:last-child {
+  color: #9f042c;
+  font-weight: 600;
+}
+
+.meta-progresso-container {
+  background: #e5e7eb;
+  border-radius: 20px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.meta-barra {
+  background: linear-gradient(90deg, #9f042c, #e73a5e);
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+
+.meta-restante {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* Conquistas */
+.conquistas-container {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
+}
+
+.conquistas-container h4 {
+  margin-bottom: 20px;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.conquistas-grupo {
+  margin-bottom: 20px;
+}
+
+.conquistas-grupo:last-child {
+  margin-bottom: 0;
+}
+
+.conquistas-grupo h5 {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badge {
+  background: #f1f5f9;
+  border-radius: 40px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.badge.desbloqueado {
+  background: linear-gradient(135deg, #fef2f2, #ffe4e4);
+  color: #9f042c;
+  border: 1px solid rgba(159, 4, 44, 0.2);
+}
+
+.badge.desbloqueado i {
+  color: #f59e0b;
+}
+
+/* Sugestões */
+.sugestoes-container {
+  background: linear-gradient(135deg, #fef2f2, #fff5f5);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #ffe4e4;
+}
+
+.sugestoes-container h4 {
+  margin-bottom: 15px;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.sugestoes-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sugestoes-container li {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #4b5563;
+  border-bottom: 1px solid #ffe4e4;
+  font-size: 0.9rem;
+}
+
+.sugestoes-container li:last-child {
+  border-bottom: none;
+}
+
+.sugestoes-container li i {
+  color: #9f042c;
+  font-size: 1.1rem;
+}
+
+/* Resumo */
+.resumo-container {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.resumo-container h4 {
+  color: white;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Botão exportar */
+.exportar-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.btn-exportar {
+  background: #9f042c;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-exportar:hover {
+  background: #7c0322;
+  transform: scale(1.02);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .stats-cards {
+    gap: 12px;
+  }
+  
+  .stat-card {
+    min-width: calc(50% - 6px);
+    padding: 15px;
+  }
+  
+  .stat-card strong {
+    font-size: 1.2rem;
+  }
+  
+  .periodo-selector {
+    border-radius: 30px;
+    padding: 6px;
+  }
+  
+  .periodo-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .badges-container {
+    gap: 8px;
+  }
+  
+  .badge {
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+  
+  .sugestoes-container li {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+}
+
+/* ===== GRÁFICOS LADO A LADO ===== */
+.graficos-lado-a-lado {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.graficos-lado-a-lado .grafico-card {
+  flex: 1;
+  min-width: 280px;
+  margin-bottom: 0;
+}
+
+/* No celular fica um embaixo do outro */
+@media (max-width: 768px) {
+  .graficos-lado-a-lado {
+    flex-direction: column;
+  }
+  
+  .graficos-lado-a-lado .grafico-card {
+    margin-bottom: 20px;
+  }
+}
+
+/* Ajuste para o gráfico de barras horizontais */
+#graficoMaterias {
+  max-height: 300px;
+  width: 100%;
+}
+
+/* Garantir que o canvas não fique muito grande */
+.grafico-card canvas {
+  max-height: 280px;
 }

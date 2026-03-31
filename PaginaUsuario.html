@@ -463,43 +463,142 @@
 
     </section>
 
+
+    <!--=================ESTATISTICA===================-->
     <section id="estatisticaSection" style="display:none;">
       <h2>📊 Estatísticas</h2>
 
-      <div class="row">
-        <div class="col-md-6">
-          <canvas id="graficoSemanal"></canvas>
+      <!-- CARDS DE RESUMO RÁPIDO -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <i class="bi bi-clock-history"></i>
+          <span>Total Geral</span>
+          <strong id="totalGeralEstat">0h</strong>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-calendar-check"></i>
+          <span>Dias Estudados</span>
+          <strong id="diasEstudadosEstat">0</strong>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-fire"></i>
+          <span>Maior Streak</span>
+          <strong id="maiorStreakEstat">0</strong>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-graph-up"></i>
+          <span>Média Diária</span>
+          <strong id="mediaDiariaEstat">0h</strong>
+        </div>
+      </div>
+
+      <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
+      <div class="periodo-selector">
+        <button class="periodo-btn active" data-periodo="semana">📅 Por Dia da Semana</button>
+        <button class="periodo-btn" data-periodo="hoje">📆 Estudo de Hoje</button>
+        <button class="periodo-btn" data-periodo="semanal">📊 Estudo Semanal</button>
+        <button class="periodo-btn" data-periodo="mensal">📈 Estudo Mensal</button>
+      </div>
+
+          <!-- GRÁFICOS LADO A LADO -->
+      <div class="graficos-lado-a-lado">
+        
+        <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
+        <div class="grafico-card">
+          <h4 id="graficoTitulo">📅 Estudos por Dia da Semana</h4>
+          <canvas id="graficoPrincipal"></canvas>
         </div>
 
-        <div class="col-md-6">
+        <!-- TOP MATÉRIAS (fixo) -->
+        <div class="grafico-card">
+          <h4>📚 Top Matérias</h4>
           <canvas id="graficoMaterias"></canvas>
         </div>
-      </div>
 
-      <div class="mt-4">
-        <h4>🎯 Meta semanal</h4>
-        <div style="background:#eee; border-radius:10px; overflow:hidden;">
-          <div id="barraMeta" style="height:20px; width:0%; background:#9f042c;"></div>
+      </div>
+      
+      <!-- METAS (Diária, Semanal, Mensal) -->
+      <div class="metas-container">
+        <h4>🎯 Minhas Metas</h4>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>📅 Meta Diária</span>
+            <span id="metaDiariaTexto">2h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaDiaria" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaDiariaRestante" class="meta-restante">0h de 2h</p>
         </div>
-        <p id="textoMeta"></p>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>📆 Meta Semanal</span>
+            <span id="metaSemanalTexto">14h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaSemanal" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaSemanalRestante" class="meta-restante">0h de 14h</p>
+        </div>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>📅 Meta Mensal</span>
+            <span id="metaMensalTexto">60h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaMensal" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaMensalRestante" class="meta-restante">0h de 60h</p>
+        </div>
       </div>
 
-      <div class="mt-4">
-        <canvas id="graficoMensal"></canvas>
+      <!-- CONQUISTAS (separadas) -->
+      <div class="conquistas-container">
+        <h4>🏆 Conquistas</h4>
+        
+        <div class="conquistas-grupo">
+          <h5>✅ Desbloqueadas</h5>
+          <div id="conquistasDesbloqueadas" class="badges-container">
+            <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
+          </div>
+        </div>
+        
+        <div class="conquistas-grupo">
+          <h5>🔒 A Desbloquear</h5>
+          <div id="conquistasBloqueadas" class="badges-container">
+            <div class="badge">⭐ Primeiro Estudo</div>
+            <div class="badge">🔥 7 Dias Seguidos</div>
+            <div class="badge">🏆 30 Dias Seguidos</div>
+            <div class="badge">⏱️ 10 Horas Totais</div>
+            <div class="badge">⚡ 50 Horas Totais</div>
+            <div class="badge">💪 100 Horas Totais</div>
+            <div class="badge">📚 5 Matérias</div>
+            <div class="badge">🌙 Estudo Noturno</div>
+          </div>
+        </div>
       </div>
 
-      <div class="mt-4">
-        <h4>🤖 Sugestões</h4>
+      <!-- SUGESTÕES -->
+      <div class="sugestoes-container">
+        <h4>🤖 Sugestões Personalizadas</h4>
         <ul id="sugestoes"></ul>
       </div>
 
-      <div class="mt-4">
+      <!-- RESUMO ESTATÍSTICAS -->
+      <div class="resumo-container">
         <h4 id="resumoEstatisticas"></h4>
+      </div>
+
+      <!-- BOTÃO EXPORTAR -->
+      <div class="exportar-container">
+        <button class="btn-exportar" onclick="exportarDados()">
+          <i class="bi bi-download"></i> Exportar Relatório (JSON)
+        </button>
       </div>
     </section>
 
-    <section id="cronogramaNovoSection" style="display:none;">
 
+    <section id="cronogramaNovoSection" style="display:none;">
       <div class="layout-container">
 
         <h2>📅 Cronograma Inteligente</h2>
@@ -567,32 +666,9 @@
 
     </section>
 
-    <section id="metodosSection" style="display:none;">MÉTODOS</section>
-
-    <section id="revisaoSection" style="display:none;">
-      <h2>🔁 Revisão</h2>
-
-      <button onclick="adicionarRevisao()" class="btn-add-revisao">
-        + Nova Revisão
-      </button>
-
-      <h3>📅 Revisões do Dia</h3>
-      <div id="listaRevisaoDia"></div>
-
-      <h3>📒 Notas</h3>
-      <div id="checklistNotas"></div>
-
-      <h3>🧠 Flashcards</h3>
-      <div id="flashcardContainer"></div>
-
-
-      <div class="estatisticas-revisao">
-        <h4>📊 Estatísticas</h4>
-        <p id="resumoRevisao"></p>
-      </div>
-    </section>
-  </div>
-
+        <section id="revisaoSection" style="display:none;">
+      <h2>🔁 Revisão Inteligente</h2>
+      </section>
 
 
   <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
