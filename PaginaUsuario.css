@@ -235,6 +235,7 @@ body {
   min-height: calc(100vh - 80px);
 }
 
+
 /* ==================== RELÓGIO DE ESTUDOS ==================== */
 
 /* Títulos das seções */
@@ -256,70 +257,78 @@ body {
   display: inline-block;
 }
 
-/* CARDS */
+/* ===== CARDS: TIMER, CRONÔMETRO, POMODORO (ESTILO BRANCO) ===== */
 .relogio-container {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  margin: 30px 0;
 }
 
 .relogio-card {
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border-radius: 20px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: 0.3s;
-  padding: 20px;
-  color: white;
+  padding: 24px 20px;
   width: 200px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #eef2ff;
 }
 
 .relogio-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
 .relogio-card h3 {
   font-size: 1.2rem;
   margin-bottom: 15px;
+  color: #1f2937;
 }
 
 .relogio-card p {
-  font-size: 1.8rem;
-  font-weight: bold;
+  font-size: 2rem;
+  font-weight: 700;
   margin-top: 10px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 8px;
-  border-radius: 12px;
+  color: #9f042c;
+  background: #fff5f5;
+  padding: 8px 12px;
+  border-radius: 16px;
   font-family: monospace;
+  width: 100%;
 }
 
 .relogio-card input {
   width: 100%;
   text-align: center;
-  padding: 8px;
-  border-radius: 10px;
-  border: none;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 40px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 1rem;
 }
 
 .relogio-botoes {
   margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .relogio-botoes button {
-  margin: 5px;
-  padding: 6px 14px;
+  margin: 0;
+  padding: 8px 16px;
   border: none;
-  border-radius: 30px;
-  background: #3b82f6;
+  border-radius: 40px;
+  background: #9f042c;
   color: white;
   cursor: pointer;
   font-size: 0.8rem;
@@ -327,38 +336,50 @@ body {
 }
 
 .relogio-botoes button:hover {
-  background: #2563eb;
+  background: #7c0322;
   transform: scale(1.02);
 }
 
-/* TABELA ESTUDO POR MATÉRIA */
+/* ===== TABELA ESTUDO POR MATÉRIA ===== */
 .add-materia-relogio {
   display: flex;
   gap: 10px;
   margin: 20px 0;
-  background: #f1f5f9;
+  background: #f8fafc;
   padding: 15px;
-  border-radius: 16px;
+  border-radius: 20px;
+  border: 1px solid #eef2ff;
 }
 
 .add-materia-relogio input {
   flex: 1;
-  padding: 8px;
-  border-radius: 12px;
+  padding: 12px 16px;
+  border-radius: 40px;
   border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.9rem;
+}
+
+.add-materia-relogio input:focus {
+  outline: none;
+  border-color: #9f042c;
+  box-shadow: 0 0 0 2px rgba(159, 4, 44, 0.1);
 }
 
 .add-materia-relogio button {
   background: #9f042c;
   color: white;
   border: none;
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: 12px 24px;
+  border-radius: 40px;
   cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
 }
 
 .add-materia-relogio button:hover {
   background: #7c0322;
+  transform: scale(1.02);
 }
 
 .tabela-estudo {
@@ -366,15 +387,15 @@ body {
   border-collapse: collapse;
   margin-top: 15px;
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
 }
 
 .tabela-estudo th,
 .tabela-estudo td {
-  border: 1px solid #ddd;
-  padding: 10px;
+  padding: 14px 12px;
   text-align: center;
 }
 
@@ -382,102 +403,49 @@ body {
   background: #9f042c;
   color: white;
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .tabela-estudo td {
   background: white;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1f2937;
+}
+
+.tabela-estudo tr:last-child td {
+  border-bottom: none;
 }
 
 .tabela-estudo tr:hover td {
-  background: #f1f5f9;
+  background: #fef2f2;
 }
 
 .tabela-estudo button {
   background: #22c55e;
   border: none;
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 6px 14px;
+  border-radius: 30px;
   color: white;
   cursor: pointer;
-  margin: 0 3px;
+  margin: 0 4px;
+  font-size: 0.8rem;
+  transition: 0.2s;
 }
 
 .tabela-estudo button:last-child {
   background: #ef4444;
 }
 
-/* RELÓGIO INTELIGENTE */
-.relogio-info-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  color: white !important;
-  border-radius: 24px;
-  padding: 25px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  max-width: 100%;
+.tabela-estudo button:hover {
+  transform: scale(1.02);
+  filter: brightness(0.95);
 }
 
-.relogio-topo h2 {
-  font-size: 1.5rem;
-  margin-bottom: 5px;
-  text-align: left;
-  color: white !important;
-}
-
-.relogio-topo p {
-  opacity: 0.8;
-  font-size: 14px;
-}
-
-.relogio-meio {
-  text-align: center;
-  margin: 20px 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 15px;
-}
-
-.relogio-meio p {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #22c55e;
-  margin: 0;
-}
-
-.relogio-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  gap: 15px;
-}
-
-.stat {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 12px;
-  border-radius: 12px;
-  width: 45%;
-  text-align: center;
-}
-
-.stat span {
-  display: block;
-  font-size: 14px;
-  opacity: 0.7;
-}
-
-.stat strong {
-  font-size: 20px;
-}
-
-/* ===== META DE ESTUDO ===== */
-/* ===== LAYOUT DOIS LADOS ===== */
+/* ===== LAYOUT DOIS LADOS (RELÓGIO INTELIGENTE + META) ===== */
 .relogio-duas-colunas {
   display: flex;
   gap: 30px;
-  margin: 30px 0;
+  margin: 40px 0;
   flex-wrap: wrap;
   align-items: stretch;
 }
@@ -489,34 +457,88 @@ body {
   flex-direction: column;
 }
 
-/* Garantir que os cards internos ocupem toda altura */
-.relogio-duas-colunas .relogio-info-card,
-.relogio-duas-colunas .meta-card-escuro {
+/* RELÓGIO INTELIGENTE - ESTILO BRANCO */
+.relogio-info-card {
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-/* Ajustar o conteúdo da meta para preencher */
-.meta-conteudo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.meta-card-escuro {
-  background: linear-gradient(135deg, #1e293b, #0f172a);
+  background: white;
+  color: #1f2937 !important;
   border-radius: 24px;
   padding: 25px;
-  color: white;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eef2ff;
+}
+
+.relogio-topo h2 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  color: #1f2937 !important;
+  text-align: left;
+}
+
+.relogio-topo p {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.relogio-meio {
+  text-align: center;
+  margin: 20px 0;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.relogio-meio p {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #9f042c;
+  margin: 0;
+}
+
+.relogio-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 15px;
+}
+
+.stat {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 16px;
+  width: 45%;
+  text-align: center;
+}
+
+.stat span {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.stat strong {
+  font-size: 1.2rem;
+  color: #1f2937;
+}
+
+/* META DE ESTUDO - ESTILO BRANCO */
+.meta-card-escuro {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  color: #1f2937 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s;
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
+  border: 1px solid #eef2ff;
 }
 
 .meta-card-escuro:hover {
@@ -534,32 +556,32 @@ body {
 
 .meta-header-escuro h3 {
   margin: 0;
-  font-size: 1.3rem;
-  color: white;
+  font-size: 1.2rem;
+  color: #1f2937;
 }
 
 .btn-editar-meta-escuro {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: #f1f5f9;
+  color: #9f042c;
   border: none;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 30px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: 0.2s;
 }
 
 .btn-editar-meta-escuro:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #e2e8f0;
   transform: scale(1.02);
 }
 
 /* Seletor de tipo de meta */
 .meta-tipo-selector {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 20px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f1f5f9;
   border-radius: 40px;
   padding: 4px;
 }
@@ -570,10 +592,11 @@ body {
   border: none;
   padding: 8px 12px;
   border-radius: 30px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   cursor: pointer;
   transition: 0.2s;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .meta-tipo-btn.active {
@@ -582,29 +605,39 @@ body {
 }
 
 .meta-tipo-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #e2e8f0;
+  color: #1f2937;
 }
 
 /* Conteúdo da meta */
+.meta-conteudo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .meta-texto-resumo {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: #22c55e;
+  color: #9f042c;
   margin-bottom: 15px;
   text-align: center;
+  background: #fef2f2;
+  padding: 10px;
+  border-radius: 16px;
 }
 
 .meta-progresso-escuro {
-  background: rgba(255, 255, 255, 0.2);
+  background: #e2e8f0;
   border-radius: 20px;
-  height: 10px;
+  height: 8px;
   overflow: hidden;
   margin: 15px 0;
 }
 
 .meta-barra-escuro {
-  background: linear-gradient(90deg, #22c55e, #3b82f6);
+  background: linear-gradient(90deg, #9f042c, #e73a5e);
   width: 0%;
   height: 100%;
   border-radius: 20px;
@@ -612,34 +645,27 @@ body {
 }
 
 .meta-restante-escuro {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  color: #64748b;
   text-align: right;
   margin-top: 8px;
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-  .relogio-duas-colunas {
-    flex-direction: column;
-  }
-}
-
-/* CARD EXPLICATIVO */
+/* ===== CARD EXPLICATIVO ===== */
 .info-relogio-card {
-  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-  border-radius: 16px;
-  padding: 14px 20px;
-  margin: 20px 0;
+  background: linear-gradient(135deg, #fef2f2, #fff5f5);
+  border-radius: 20px;
+  padding: 16px 24px;
+  margin: 30px 0 20px 0;
   cursor: pointer;
   transition: 0.3s;
-  border: 1px solid #9f042c20;
+  border: 1px solid #ffe4e4;
   text-align: center;
 }
 
 .info-relogio-card:hover {
-  transform: scale(1.02);
-  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+  transform: scale(1.01);
+  background: linear-gradient(135deg, #ffe4e4, #ffd6d6);
 }
 
 .info-relogio-content {
@@ -647,96 +673,76 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #1e1b4b;
+  color: #9f042c;
   font-weight: 500;
 }
 
 .info-relogio-content i {
-  font-size: 24px;
+  font-size: 22px;
   color: #9f042c;
 }
 
-/* BOTÕES DE CONTROLE */
+/* ===== BOTÕES DE CONTROLE ===== */
 .botoes-controle {
   display: flex;
-  gap: 15px;
+  gap: 20px;
   justify-content: center;
-  margin: 20px 0;
+  margin: 20px 0 40px 0;
   flex-wrap: wrap;
 }
 
 .botoes-controle .btn-foco,
 .botoes-controle .btn-auto {
   margin: 0;
-  padding: 12px 24px;
-  font-size: 1rem;
+  padding: 12px 32px;
+  font-size: 0.9rem;
   border-radius: 40px;
   font-weight: 600;
-  background: #1e293b;
-  color: white;
+  background: white;
+  color: #9f042c;
   cursor: pointer;
-  border: none;
+  border: 2px solid #9f042c;
   transition: 0.2s;
 }
 
 .botoes-controle .btn-foco:hover,
 .botoes-controle .btn-auto:hover {
-  background: #0f172a;
+  background: #9f042c;
+  color: white;
   transform: scale(1.02);
 }
 
-/* MODAIS */
-.modal-content {
-  border: none;
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.modal-dialog {
-  width: auto;
-  max-width: 50% !important;
-  min-width: 50% !important;
-}
-
-.modal-header {
-  background: #9f042c;
-  color: white;
-  border-bottom: none;
-}
-
-.modal-header .btn-close {
-  filter: brightness(0) invert(1);
-}
-
-.modal-body {
-  padding: 25px;
-}
-
-.modal-footer {
-  border-top: none;
-  padding: 15px 25px;
-}
-
-/* RESPONSIVO */
+/* ===== RESPONSIVO ===== */
 @media (max-width: 768px) {
+  .relogio-duas-colunas {
+    flex-direction: column;
+  }
+  
   .botoes-controle {
     flex-direction: column;
     align-items: center;
   }
-
+  
   .botoes-controle .btn-foco,
   .botoes-controle .btn-auto {
-    max-width: 100%;
     width: 100%;
+    max-width: 280px;
   }
-
-  .info-relogio-content span {
-    font-size: 12px;
-  }
-
+  
   .relogio-card {
     width: 100%;
-    max-width: 200px;
+    max-width: 180px;
+  }
+  
+  .modal-dialog {
+    max-width: 95% !important;
+    min-width: 95% !important;
+  }
+  
+  .tabela-estudo th,
+  .tabela-estudo td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
   }
 }
 

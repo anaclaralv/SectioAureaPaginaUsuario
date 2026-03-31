@@ -8,8 +8,7 @@ function mostrarTela(tela) {
     "estatistica",
     "cronogramaNovo",
     "metodos",
-    "revisao",
-    "progressoEstudos"
+    "revisao"
   ];
   // esconde tudo
   telas.forEach(t => {
@@ -1218,6 +1217,15 @@ function adicionarRevisao() {
 let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
 let intervaloEstudo;
 
+function atualizarSistema() {
+  atualizarMateriaAgora();
+  atualizarRelogioInfo();
+  // Verifica se a função existe antes de chamar
+  if (typeof atualizarMeta === 'function') {
+    atualizarMeta();
+  }
+}
+
 /* ================= CRONOMETRO ================= */
 let cronometro = 0;
 let cronometroInterval;
@@ -1576,17 +1584,98 @@ function atualizarDisplayFoco() {
 }
 /* ================= META PERSONALIZÁVEL ================= */
 let metas = {
-  diaria: 2,      // horas por dia (padrão)
-  semanal: 14,    // horas por semana (padrão)
-  mensal: 60      // horas por mês (padrão)
+  diaria: 2,
+  semanal: 14,
+  mensal: 60
 };
 let metaAtiva = "semanal";
 
-function calcularMetas() {
-  // Esta função agora apenas chama atualizarMeta()
-  atualizarMeta();
+// 1. PRIMEIRO: FUNÇÃO PARA CALCULAR HORAS
+function calcularHorasEstudadas(periodo) {
+  const hoje = new Date();
+  let totalSegundos = 0;
+
+  function formatarData(data) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  const hojeStr = formatarData(hoje);
+  let dataInicio = new Date();
+  let dataInicioStr;
+  
+  if (periodo === "diaria") {
+    dataInicioStr = hojeStr;
+  } else if (periodo === "semanal") {
+    dataInicio.setDate(hoje.getDate() - 7);
+    dataInicioStr = formatarData(dataInicio);
+  } else if (periodo === "mensal") {
+    dataInicio.setDate(hoje.getDate() - 30);
+    dataInicioStr = formatarData(dataInicio);
+  }
+
+  Object.entries(tempoEstudo).forEach(([materiaId, materia]) => {
+    if (typeof materia === 'number') {
+      totalSegundos += materia;
+      return;
+    }
+    
+    if (materia.historico) {
+      Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
+        if (dataStr >= dataInicioStr && dataStr <= hojeStr) {
+          totalSegundos += segundos;
+        }
+      });
+    } else if (materia.total) {
+      totalSegundos += materia.total;
+    }
+  });
+
+  return totalSegundos / 3600;
 }
 
+// 2. SEGUNDO: FUNÇÃO PARA ATUALIZAR A META (antes de ser chamada)
+function atualizarMeta() {
+  let metaValor, totalHoras, unidade;
+
+  if (metaAtiva === "diaria") {
+    metaValor = metas.diaria;
+    unidade = "dia";
+  } else if (metaAtiva === "semanal") {
+    metaValor = metas.semanal;
+    unidade = "semana";
+  } else {
+    metaValor = metas.mensal;
+    unidade = "mês";
+  }
+
+  totalHoras = calcularHorasEstudadas(metaAtiva);
+  const progresso = Math.min((totalHoras / metaValor) * 100, 100);
+  const faltam = Math.max(metaValor - totalHoras, 0);
+
+  const metaTexto = document.getElementById("metaTextoResumo");
+  if (metaTexto) {
+    metaTexto.textContent = `📊 ${totalHoras.toFixed(1)}h de ${metaValor}h (${unidade})`;
+  }
+
+  const metaBarra = document.getElementById("metaBarraResumo");
+  if (metaBarra) {
+    metaBarra.style.width = `${progresso}%`;
+  }
+
+  const metaRestante = document.getElementById("metaRestanteResumo");
+  if (metaRestante) {
+    if (faltam > 0) {
+      metaRestante.textContent = `⏳ Faltam ${faltam.toFixed(1)}h para bater a meta ${unidade}!`;
+    } else {
+      metaRestante.textContent = `🎉 Meta ${unidade} alcançada! Parabéns! 🎉`;
+    }
+  }
+}
+
+// 3. TERCEIRO: FUNÇÕES QUE CHAMAM atualizarMeta
 function carregarMetas() {
   const metasSalvas = localStorage.getItem("metas");
   if (metasSalvas) {
@@ -1648,84 +1737,8 @@ function salvarMeta() {
   });
 }
 
-/* ================= CALCULAR HORAS ESTUDADAS POR PERÍODO ================= */
-function calcularHorasEstudadas(periodo) {
-  const hoje = new Date();
-  let totalSegundos = 0;
-
-  // Define o intervalo de datas
-  let dataInicio = new Date();
-
-  if (periodo === "diaria") {
-    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  } else if (periodo === "semanal") {
-    dataInicio.setDate(hoje.getDate() - 7);
-  } else if (periodo === "mensal") {
-    dataInicio.setDate(hoje.getDate() - 30);
-  }
-
-  dataInicio.setHours(0, 0, 0, 0);
-  const hojeFim = new Date();
-  hojeFim.setHours(23, 59, 59, 999);
-
-  Object.values(tempoEstudo).forEach(materia => {
-    if (typeof materia === 'number') {
-      totalSegundos += materia;
-      return;
-    }
-    
-    if (materia.historico) {
-      Object.entries(materia.historico).forEach(([data, segundos]) => {
-        const dataEstudo = new Date(data);
-        if (dataEstudo >= dataInicio && dataEstudo <= hojeFim) {
-          totalSegundos += segundos;
-        }
-      });
-    } else if (materia.total) {
-      totalSegundos += materia.total;
-    }
-  });
-
-  return totalSegundos / 3600;
-}
-
-function atualizarMeta() {
-  let metaValor, totalHoras, unidade;
-
-  if (metaAtiva === "diaria") {
-    metaValor = metas.diaria;
-    unidade = "dia";
-  } else if (metaAtiva === "semanal") {
-    metaValor = metas.semanal;
-    unidade = "semana";
-  } else {
-    metaValor = metas.mensal;
-    unidade = "mês";
-  }
-
-  totalHoras = calcularHorasEstudadas(metaAtiva);
-  const progresso = Math.min((totalHoras / metaValor) * 100, 100);
-  const faltam = Math.max(metaValor - totalHoras, 0);
-
-  // Atualizar card do relógio
-  const metaTexto = document.getElementById("metaTextoResumo");
-  if (metaTexto) {
-    metaTexto.textContent = `📊 ${totalHoras.toFixed(1)}h de ${metaValor}h (${unidade})`;
-  }
-
-  const metaBarra = document.getElementById("metaBarraResumo");
-  if (metaBarra) {
-    metaBarra.style.width = `${progresso}%`;
-  }
-
-  const metaRestante = document.getElementById("metaRestanteResumo");
-  if (metaRestante) {
-    if (faltam > 0) {
-      metaRestante.textContent = `⏳ Faltam ${faltam.toFixed(1)}h para bater a meta ${unidade}!`;
-    } else {
-      metaRestante.textContent = `🎉 Meta ${unidade} alcançada! Parabéns! 🎉`;
-    }
-  }
+function calcularMetas() {
+  atualizarMeta();
 }
 
 /* ================= MIGRAR DADOS ANTIGOS ================= */
@@ -1888,11 +1901,7 @@ function finalizarEstudo() {
     showConfirmButton: false
   });
 }
-function atualizarSistema() {
-  atualizarMateriaAgora();
-  atualizarRelogioInfo();
-  atualizarMeta();
-}
+
 
 /* ================= POMODORO PERSONALIZADO ================= */
 let pomodoroConfig = {
@@ -2433,3 +2442,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Seu código existente...
   closeSidebarOnLinkClick();
 });
+
+
+
+
