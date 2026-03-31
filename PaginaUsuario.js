@@ -1,6 +1,4 @@
-
 function mostrarTela(tela) {
-
   const telas = [
     "inicio",
     "tarefas",
@@ -8,76 +6,59 @@ function mostrarTela(tela) {
     "calendario",
     "relogio",
     "estatistica",
-    "cronograma",
+    "cronogramaNovo",
     "metodos",
     "revisao",
     "progressoEstudos"
   ];
-
   // esconde tudo
   telas.forEach(t => {
     const el = document.getElementById(t + "Section");
     if (el) el.style.display = "none";
   });
-
   const ativa = document.getElementById(tela + "Section");
   if (ativa) {
     ativa.style.display = "block";
   }
-
   atualizarTudo();
-
   if (tela === "calendario" && calendar) {
     setTimeout(() => {
       calendar.updateSize();
     }, 100);
   }
-
-  if (tela === "cronograma") {
+  if (tela === "cronogramaNovo") {
     renderCronogramaNovo();
   }
-
   if (tela === "estatistica") {
     setTimeout(() => {
       carregarEstatisticas();
     }, 100);
   }
-
-
-
-
   // funções específicas
-  if (tela === "relogio") carregarHistorico();
+  if (tela === "relogio") {
+    renderTabelaMaterias();
+  }
 }
-
 // ---------- ATIVAR MENU ----------
 function mudarPagina(elemento) {
   const links = document.querySelectorAll('#menuLateral .nav-link');
-
   links.forEach(link => link.classList.remove('active'));
-
   elemento.classList.add('active');
 }
-
-
 // ---------- TAREFAS ----------
 let tarefas = [];
-
 try {
   tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
 } catch (e) {
   tarefas = [];
 }
-
 function ordenarPorPrioridade(arrayTarefas) {
   const prioridadeValor = { "alta": 1, "media": 2, "baixa": 3 };
   return arrayTarefas.sort((a, b) => prioridadeValor[a.prioridade] - prioridadeValor[b.prioridade]);
 }
-
 function salvarTarefas() {
   localStorage.setItem("tarefas", JSON.stringify(tarefas));
 }
-
 function hojeFormatado() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
@@ -85,31 +66,28 @@ function hojeFormatado() {
   const dia = String(hoje.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
 }
-
 function adicionarTarefa() {
   const tituloEl = document.getElementById("titulo");
   const prioridadeEl = document.getElementById("prioridade");
   const dataEl = document.getElementById("data");
-
   if (!tituloEl || !prioridadeEl || !dataEl) {
     alert("Os campos da tarefa não foram encontrados no HTML.");
     return;
   }
-
   const titulo = tituloEl.value.trim();
   const prioridade = prioridadeEl.value;
   const data = dataEl.value;
-
   if (!titulo || !data) {
-    alert("Preencha todos os campos!");
+    Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      text: "Preencha todos os campos!"
+    });
     return;
   }
-
   tituloEl.value = "";
   dataEl.value = "";
   prioridadeEl.value = "alta";
-
-
   tarefas.push({
     id: Date.now(),
     titulo,
@@ -117,45 +95,32 @@ function adicionarTarefa() {
     data,
     concluida: false
   });
-
   salvarTarefas();
   atualizarTudo();
   atualizarEventosTarefas();
 }
-
-
 function renderizarTarefas() {
   const hojeLista = document.getElementById("tarefasHoje");
   const futurasLista = document.getElementById("tarefasFuturas");
-
   if (!hojeLista || !futurasLista) return;
-
   hojeLista.innerHTML = "";
   futurasLista.innerHTML = "";
-
   const hoje = hojeFormatado();
-
   const prioridadeOrdem = { alta: 3, media: 2, baixa: 1 };
-
   // Função para criar card
   function criarCard(tarefa) {
     const card = document.createElement("div");
     card.classList.add("tarefa-card");
     if (tarefa.concluida) card.classList.add("concluida");
-
     const info = document.createElement("div");
     info.classList.add("tarefa-info");
-
     const spanTitulo = document.createElement("span");
     spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
-
     const badge = document.createElement("span");
     badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
     badge.textContent = tarefa.prioridade.toUpperCase();
-
     info.appendChild(spanTitulo);
     info.appendChild(badge);
-
     // --- Botões ---
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
@@ -167,7 +132,6 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
-
     const btnEditar = document.createElement("button");
     btnEditar.classList.add("btn-editar");
     btnEditar.textContent = "✏️ Editar";
@@ -190,12 +154,10 @@ function renderizarTarefas() {
           const novoTitulo = document.getElementById('editTitulo').value.trim();
           const novaPrioridade = document.getElementById('editPrioridade').value;
           const novaData = document.getElementById('editData').value;
-
           if (!novoTitulo || !novaData) {
             Swal.fire({ icon: 'error', title: 'Preencha todos os campos!' });
             return;
           }
-
           tarefa.titulo = novoTitulo;
           tarefa.prioridade = novaPrioridade;
           tarefa.data = novaData;
@@ -205,7 +167,6 @@ function renderizarTarefas() {
         }
       });
     };
-
     const btnExcluir = document.createElement("button");
     btnExcluir.classList.add("btn-excluir");
     btnExcluir.textContent = "❌ Excluir";
@@ -216,206 +177,135 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
-
     card.appendChild(info);
     card.appendChild(btnConcluir);
     card.appendChild(btnEditar); // adiciona aqui
     card.appendChild(btnExcluir);
-
     return card;
   }
-
   // Separar tarefas de hoje e futuras e ordenar
   const tarefasHoje = tarefas.filter(t => t.data === hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
-
   const tarefasFuturas = tarefas.filter(t => t.data > hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
-
   if (tarefasHoje.length === 0) hojeLista.innerHTML = "<p>Nenhuma tarefa cadastrada hoje!</p>";
   else tarefasHoje.forEach(t => hojeLista.appendChild(criarCard(t)));
-
   if (tarefasFuturas.length === 0) futurasLista.innerHTML = "<p>Nenhuma tarefa futura cadastrada!</p>";
   else tarefasFuturas.forEach(t => futurasLista.appendChild(criarCard(t)));
 }
-
 function toggle(id) {
   id = Number(id);
   const tarefa = tarefas.find(t => t.id === id);
-
   if (!tarefa) return;
-
   tarefa.concluida = !tarefa.concluida;
   salvarTarefas();
   atualizarTudo();
   atualizarEventosTarefas();
 }
-
-
 function corPrioridade(prioridade) {
   if (prioridade === "alta") return "#ef4444";   // vermelho
   if (prioridade === "media") return "#f59e0b";  // laranja
   if (prioridade === "baixa") return "#22c55e";  // verde
   return "#6b7280";
 }
-
-
 // garante que os botões onclick encontrem as funções
 window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
-/*variaveis */
-let intervaloCronometro = null;
-let segundos = 0;
-let pausado = false;
-let metaSegundos = null;
-
-function iniciarCronometro() {
-  if (intervalo) return;
-  if (intervaloCronometro) return;
-
-  materiaAtual = document.getElementById("materia").value || materiaAtualAuto;
-
-  if (!materiaAtual) {
-    alert("Digite a matéria!");
-    return;
-  }
-
-  pausado = false;
-
-  intervaloCronometro = setInterval(() => {
-    if (!pausado) {
-      segundos++;
-
-      let h = String(Math.floor(segundos / 3600)).padStart(2, '0');
-      let m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
-      let s = String(segundos % 60).padStart(2, '0');
-
-      document.getElementById("tempoCronometro").textContent = `${h}:${m}:${s}`;
-
-      // 🔔 NOTIFICAÇÃO
-      if (metaSegundos && segundos === metaSegundos) {
-        alert("⏰ Tempo atingido!");
-      }
-    }
-  }, 1000);
-}
-
-function pausarCronometro() {
-  pausado = true;
-}
-
-function continuarCronometro() {
-  pausado = false;
-}
-
-function pararCronometro() {
-  clearInterval(intervaloCronometro);
-  intervaloCronometro = null;
-
-  try {
-    tempoMaterias = JSON.parse(localStorage.getItem("tempoMaterias")) || {};
-  } catch {
-    tempoMaterias = {};
-  }
-
-  if (!tempoMaterias[materiaAtual]) {
-    tempoMaterias[materiaAtual] = 0;
-  }
-
-  tempoMaterias[materiaAtual] += segundos;
-
-  localStorage.setItem("tempoMaterias", JSON.stringify(tempoMaterias));
-
-  segundos = 0;
-  pausado = false;
-
-  document.getElementById("tempoCronometro").textContent = "00:00:00";
-}
-
-function definirMeta() {
-  const minutos = prompt("Defina o tempo (em minutos):");
-
-  if (!minutos) return;
-
-  metaSegundos = minutos * 60;
-}
-
-
-function iniciarTimer() {
-  let minutos = document.getElementById("minutosTimer").value;
-
-  if (!minutos) return;
-
-  let tempo = minutos * 60;
-
-  const intervalo = setInterval(() => {
-    tempo--;
-
-    let m = Math.floor(tempo / 60);
-    let s = tempo % 60;
-
-    document.getElementById("tempoTimer").textContent =
-  `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
-    if (tempo <= 0) {
-      clearInterval(intervalo);
-      alert("Tempo acabou!");
-    }
-  }, 1000);
-}
-function iniciarPomodoro() {
-  let tempo = 25 * 60;
-  let modo = "foco";
-
-  const intervalo = setInterval(() => {
-    tempo--;
-
-    let m = Math.floor(tempo / 60);
-    let s = tempo % 60;
-
-    document.getElementById("tempoPomodoro").textContent = `${m}:${s}`;
-
-    if (tempo <= 0) {
-      if (modo === "foco") {
-        alert("Hora do descanso! 😴 (5 min)");
-        tempo = 5 * 60;
-        modo = "descanso";
-      } else {
-        alert("Bora voltar! 🚀");
-        tempo = 25 * 60;
-        modo = "foco";
-      }
-    }
-  }, 1000);
-}
-
-function renderTempoMaterias() {
-  const lista = document.getElementById("tempoMaterias");
-
-  lista.innerHTML = "";
-
-  for (let mat in tempoMaterias) {
-    const li = document.createElement("li");
-
-    let min = Math.floor(tempoMaterias[mat] / 60);
-
-    li.textContent = `${mat}: ${min} min`;
-    lista.appendChild(li);
-  }
-}
-function analisarEstudos() {
-  for (let mat in tempoMaterias) {
-    if (tempoMaterias[mat] < 60) {
-      console.log(`⚠️ Estude mais ${mat}`);
-    }
-  }
-}
-
-
-
 // ---------- CALENDÁRIO ----------
 let calendar;
 
+// Função para adicionar evento do formulário
+function adicionarEvento() {
+  if (!calendar) return;
+
+  const titulo = document.getElementById("tituloEvento").value.trim();
+  const data = document.getElementById("dataEvento").value;
+  const cor = document.getElementById("corEvento").value;
+
+  if (!titulo || !data) return alert("Preencha os campos!");
+
+  calendar.addEvent({
+    title: titulo,
+    start: data,
+    backgroundColor: cor,
+    borderColor: cor,
+    extendedProps: { isTarefa: false }
+  });
+
+  salvarEventos();
+
+  document.getElementById("tituloEvento").value = "";
+  document.getElementById("dataEvento").value = "";
+  document.getElementById("corEvento").value = "#3788d8";
+}
+
+// Salvar todos eventos no localStorage
+function salvarEventos() {
+  const eventos = calendar.getEvents().map(ev => ({
+    title: ev.title,
+    start: ev.startStr,
+    backgroundColor: ev.backgroundColor,
+    extendedProps: ev.extendedProps
+  }));
+  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
+}
+
+// Carregar eventos do localStorage
+function carregarEventos() {
+  const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
+  const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
+
+  // Mapeia apenas tarefas não concluídas com flag EXPLÍCITA
+  const eventosTarefas = tarefasLS
+    .filter(t => t.data && !t.concluida)
+    .map(t => ({
+      title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
+      start: t.data,
+      backgroundColor: corPrioridade(t.prioridade),
+      borderColor: corPrioridade(t.prioridade),
+      extendedProps: {
+        isTarefa: true,
+        tarefaId: t.id
+      }
+    }));
+
+  // Garantir que eventos salvos tenham a flag isTarefa definida
+  const eventosLimpos = eventosSalvos.map(ev => ({
+    ...ev,
+    extendedProps: ev.extendedProps || { isTarefa: false }
+  }));
+
+  const eventos = [...eventosLimpos, ...eventosTarefas];
+
+  // Remover duplicações
+  const eventosUnicos = [];
+  const ids = new Set();
+
+  eventos.forEach(ev => {
+    const id = ev.extendedProps?.tarefaId || ev.title + ev.start;
+    if (!ids.has(id)) {
+      ids.add(id);
+      eventosUnicos.push(ev);
+    }
+  });
+
+  return eventosUnicos;
+}
+
+function atualizarEventosTarefas() {
+  if (!calendar) return;
+
+  // Remove todos os eventos
+  calendar.getEvents().forEach(ev => ev.remove());
+
+  // Recria tudo (eventos + tarefas)
+  const eventos = carregarEventos();
+  eventos.forEach(ev => {
+    calendar.addEvent(ev);
+  });
+}
+
+// Inicialização do calendário
 document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendario');
   if (!calendarEl) return;
@@ -428,23 +318,21 @@ document.addEventListener('DOMContentLoaded', function () {
       center: 'title',
       right: 'dayGridMonth,timeGridWeek,timeGridDay'
     },
-    editable: true, // permite arrastar e mudar datas
+    editable: true,
     selectable: true,
     eventClick: function (info) {
       const event = info.event;
-
-
       // Se o evento é de tarefa
-      if (event.extendedProps.isTarefa) {
-        const tarefa = tarefas.find(t => `${t.titulo} - ${t.prioridade.toUpperCase()}` === event.title);
+      if (event.extendedProps?.isTarefa === true) {
+        const tarefa = tarefas.find(t => t.id === event.extendedProps.tarefaId);
         if (!tarefa) return;
 
         Swal.fire({
           title: 'Editar tarefa',
           html: `
-        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
-        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
-      `,
+            <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+            <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+          `,
           showCancelButton: true,
           confirmButtonText: 'Salvar',
           denyButtonText: 'Excluir',
@@ -467,16 +355,15 @@ document.addEventListener('DOMContentLoaded', function () {
             atualizarEventosTarefas();
           }
         });
-
       } else {
         // Eventos normais
         Swal.fire({
           title: 'Editar evento',
           html: `
-        <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
-        <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-        <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
-      `,
+            <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
+            <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+            <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
+          `,
           showCancelButton: true,
           confirmButtonText: 'Salvar',
           denyButtonText: 'Excluir',
@@ -502,133 +389,27 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     eventDrop: function (info) {
       const event = info.event;
-
-      // 👉 SE FOR TAREFA
-      if (event.extendedProps.isTarefa) {
+      // Se for tarefa
+      if (event.extendedProps?.isTarefa === true) {
         const tarefaId = event.extendedProps.tarefaId;
-
         const tarefa = tarefas.find(t => t.id === tarefaId);
         if (!tarefa) return;
-
         // Atualiza a data da tarefa
         tarefa.data = event.startStr;
-
         salvarTarefas();
         atualizarTudo();
         atualizarEventosTarefas();
-
       } else {
-        // 👉 SE FOR EVENTO NORMAL
+        // Evento normal
         salvarEventos();
       }
     },
-
     events: carregarEventos()
   });
 
   calendar.render();
   atualizarEventosTarefas();
 });
-
-// Função para adicionar evento do formulário
-function adicionarEvento() {
-  if (!calendar) return;
-
-  const titulo = document.getElementById("tituloEvento").value.trim();
-  const data = document.getElementById("dataEvento").value;
-  const cor = document.getElementById("corEvento").value;
-
-  if (!titulo || !data) return alert("Preencha os campos!");
-
-  calendar.addEvent({
-    title: titulo,
-    date: data,
-    backgroundColor: cor,
-    borderColor: cor
-  });
-
-  salvarEventos();
-
-  document.getElementById("tituloEvento").value = "";
-  document.getElementById("dataEvento").value = "";
-  document.getElementById("corEvento").value = "#3788d8";
-}
-
-// Salvar todos eventos no localStorage
-function salvarEventos() {
-  const eventos = calendar.getEvents().map(ev => ({
-    title: ev.title,
-    date: ev.startStr,
-    backgroundColor: ev.backgroundColor
-  }));
-  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
-}
-
-// Carregar eventos do localStorage
-function carregarEventos() {
-  const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
-  const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
-
-  // Mapeia apenas tarefas não concluídas
-  const eventosTarefas = tarefasLS
-    .filter(t => t.data && !t.concluida)
-    .map(t => ({
-      title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
-      date: t.data,
-      backgroundColor: corPrioridade(t.prioridade),
-      borderColor: corPrioridade(t.prioridade),
-      extendedProps: { isTarefa: true, tarefaId: t.id }
-    }));
-
-  // Junta e remove duplicações caso existam
-  const eventos = [...eventosSalvos, ...eventosTarefas];
-  const eventosUnicos = [];
-  const ids = new Set();
-
-  eventos.forEach(ev => {
-    const id = ev.extendedProps?.tarefaId || ev.title + ev.date;
-    if (!ids.has(id)) {
-      ids.add(id);
-      eventosUnicos.push(ev);
-    }
-  });
-
-  return eventosUnicos;
-}
-
-
-function atualizarEventosTarefas() {
-  if (!calendar) return;
-
-  // 🔥 REMOVE TODOS os eventos
-  calendar.getEvents().forEach(ev => ev.remove());
-
-  // 🔄 RECRIA tudo (eventos + tarefas)
-  const eventos = carregarEventos();
-  eventos.forEach(ev => {
-    calendar.addEvent(ev);
-  });
-
-
-  // Adiciona somente tarefas **não concluídas**
-  tarefas.forEach(t => {
-    if (!t.data || t.concluida) return;
-    // Evita duplicar: checa se já existe
-    const jaExiste = calendar.getEvents().some(ev => ev.extendedProps.tarefaId === t.id);
-    if (jaExiste) return;
-
-    calendar.addEvent({
-      title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
-      date: t.data,
-      backgroundColor: corPrioridade(t.prioridade),
-      borderColor: corPrioridade(t.prioridade),
-      extendedProps: { isTarefa: true, tarefaId: t.id }
-    });
-  });
-}
-
-
-
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
   let notas = JSON.parse(localStorage.getItem("notas")) || [];
@@ -636,7 +417,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const notasContainer = document.getElementById("notasContainer");
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
-
   function renderNotas() {
     notasContainer.innerHTML = "";
     const filtro = searchInput.value.toLowerCase();
@@ -679,7 +459,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         notasContainer.appendChild(card);
       });
-
     document.querySelectorAll(".check-item input").forEach(input => {
       input.addEventListener("change", (e) => {
         const div = e.target.parentElement;
@@ -690,7 +469,6 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNotas();
       });
     });
-
     document.querySelectorAll(".btn-excluir-check").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const div = e.target.parentElement;
@@ -702,15 +480,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-
   function salvarNotas() {
     localStorage.setItem("notas", JSON.stringify(notas));
   }
   document.getElementById("notaTexto").addEventListener("input", salvarNotas);
-
-
-
-
   function abrirModal(nota = null, idx = null) {
     notaAtual = idx;
     document.getElementById("notaTitulo").value = nota?.titulo || "";
@@ -719,7 +492,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderChecklist(nota?.checklist || []);
     notaModal.show();
   }
-
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
     container.innerHTML = "";
@@ -748,13 +520,11 @@ document.addEventListener("DOMContentLoaded", () => {
       container.appendChild(div);
     });
   }
-
   document.getElementById("addCheck").addEventListener("click", () => {
     const checklist = notaAtual !== null ? notas[notaAtual].checklist : [];
     checklist.push({ texto: "Novo item", checked: false });
     renderChecklist(checklist);
   });
-
   document.getElementById("btnSalvar").addEventListener("click", () => {
     const titulo = document.getElementById("notaTitulo").value;
     const texto = document.getElementById("notaTexto").innerHTML;
@@ -780,7 +550,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderNotas();
     Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
   });
-
   notasContainer.addEventListener("click", e => {
     const idx = e.target.dataset.idx;
 
@@ -789,7 +558,6 @@ document.addEventListener("DOMContentLoaded", () => {
       salvarNotas();
       renderNotas();
     }
-
     if (e.target.classList.contains("btn-excluir")) {
       Swal.fire({
         title: 'Excluir nota?',
@@ -808,46 +576,33 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
-
     if (e.target.classList.contains("btn-editar")) {
       abrirModal(notas[idx], idx);
     }
   });
-
   document.getElementById("btnNova").addEventListener("click", () => abrirModal());
   searchInput.addEventListener("input", renderNotas);
-
   renderNotas();
 });
-
-
-
 //INICIO
-
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
   const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
-
   // TAREFAS
   const tarefasResumo = document.getElementById("tarefasResumo");
   if (tarefasResumo) {
     tarefasResumo.innerHTML = "";
-
     const tarefasHoje = tarefas.filter(t => t.data === hoje);
     const tarefasFuturas = tarefas.filter(t => t.data > hoje);
-
     function criarLiTarefa(tarefa) {
       const li = document.createElement("li");
-
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = tarefa.concluida || false;
-
       const span = document.createElement("span");
       span.textContent = `${tarefa.titulo} - ${tarefa.data} - prioridade ${tarefa.prioridade}`;
       span.style.color = corPrioridade(tarefa.prioridade);
       if (tarefa.concluida) span.classList.add("concluida");
-
       checkbox.addEventListener("change", () => {
         tarefa.concluida = checkbox.checked;
         if (tarefa.concluida) span.classList.add("concluida");
@@ -855,50 +610,46 @@ function atualizarResumoInicio() {
         localStorage.setItem("tarefas", JSON.stringify(tarefas));
       });
       renderizarResumoHoje();
-
       li.appendChild(checkbox);
       li.appendChild(span);
       return li;
     }
-
     if (tarefasHoje.length > 0) {
       const titulo = document.createElement("li");
       titulo.innerHTML = "<strong>Tarefas de Hoje:</strong>";
       tarefasResumo.appendChild(titulo);
       tarefasHoje.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
     }
-
     if (tarefasFuturas.length > 0) {
       const titulo = document.createElement("li");
       titulo.innerHTML = "<strong>Tarefas Futuras:</strong>";
       tarefasResumo.appendChild(titulo);
       tarefasFuturas.forEach(t => tarefasResumo.appendChild(criarLiTarefa(t)));
     }
-
     if (tarefasHoje.length === 0 && tarefasFuturas.length === 0) {
       const li = document.createElement("li");
       li.textContent = "Nenhuma tarefa cadastrada!";
       tarefasResumo.appendChild(li);
     }
   }
-
-
   // EVENTOS
   const eventosResumo = document.getElementById("eventosResumo");
   if (eventosResumo && calendar) {
     eventosResumo.innerHTML = "";
-
     const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0); // 🔥 zera hora
-
+    hoje.setHours(0, 0, 0, 0);
     const umaSemana = new Date(hoje);
     umaSemana.setDate(hoje.getDate() + 7);
 
     const proximosEventos = calendar.getEvents()
-      .filter(e => !(e.extendedProps && e.extendedProps.isTarefa)) // 🔥 GARANTE: só eventos
+      .filter(e => {
+        // 👈 VERIFICAÇÃO MAIS ROBUSTA
+        const isTarefa = e.extendedProps?.isTarefa === true;
+        return !isTarefa;  // Só mostra se NÃO for tarefa
+      })
       .filter(e => {
         const data = new Date(e.start);
-        data.setHours(0, 0, 0, 0); // 🔥 zera hora também
+        data.setHours(0, 0, 0, 0);
         return data >= hoje && data <= umaSemana;
       })
       .sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -916,21 +667,19 @@ function atualizarResumoInicio() {
       });
     }
   }
-
   // ---------- MATÉRIAS DO DIA ----------
-  const materiasHojeResumo = document.getElementById("materiasHojeResumo");
-  if (materiasHojeResumo) {
-    materiasHojeResumo.innerHTML = "";
+  // pegar cronograma novo
+  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  const blocosHoje = cronogramaNovo
+    .filter(b => b.dia === hojeSemana)
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
-    // pegar cronograma novo
-    const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-
-    const blocosHoje = cronogramaNovo
-      .filter(b => b.dia === hojeSemana)
-      .sort((a, b) => a.inicio.localeCompare(b.inicio));
-
+  // Usar o elemento que realmente existe no HTML
+  const listaHojeCronograma = document.getElementById("listaHojeCronograma");
+  if (listaHojeCronograma) {
+    listaHojeCronograma.innerHTML = "";
     if (blocosHoje.length === 0) {
-      materiasHojeResumo.innerHTML = "<li>Sem matérias hoje 😊</li>";
+      listaHojeCronograma.innerHTML = "<li>Sem matérias hoje 😊</li>";
     } else {
       blocosHoje.forEach(bloco => {
         const li = document.createElement("li");
@@ -940,7 +689,7 @@ function atualizarResumoInicio() {
         li.style.padding = "3px 5px";
         li.style.borderRadius = "4px";
         li.style.marginBottom = "3px";
-        materiasHojeResumo.appendChild(li);
+        listaHojeCronograma.appendChild(li);
       });
     }
   }
@@ -949,80 +698,59 @@ function atualizarResumoInicio() {
 function atualizarTudo() {
   renderizarTarefas();
   atualizarResumoInicio();
+  atualizarEventosTarefas();
 }
 
-
+// No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", () => {
-  // TELA
+  migrarDadosAntigos();
   mostrarTela("inicio");
-
-  // CRONOGRAMA / MATÉRIAS
   renderMaterias();
   renderCronogramaNovo();
   renderizarResumoHoje();
   atualizarMateriaAgora();
-
-  // SISTEMAS
   renderizarTarefas();
   renderizarRevisao();
-  carregarHistorico();
-
-  // CALENDÁRIO
+  carregarMetas();
   if (typeof calendar !== "undefined" && calendar) {
     atualizarEventosTarefas();
     atualizarResumoInicio();
   }
-
-  // FINAL (atualiza tudo junto)
   atualizarTudo();
 });
-
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
-
   const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
   const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-
   lista.innerHTML = "";
-
   const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana);
-
   if (blocosHoje.length === 0) {
     lista.innerHTML = "<li>Sem atividades hoje 😊</li>";
     return;
   }
-
   blocosHoje.forEach(bloco => {
     const li = document.createElement("li");
     li.textContent = `🕒 ${bloco.inicio} - ${bloco.fim} : ${bloco.materia.nome}`;
     lista.appendChild(li);
   });
 }
-
-
-
-
 // ABRIR MODAL AO CLICAR NO USERINFO
 document.getElementById('userInfo').addEventListener('click', function () {
   const novoNome = document.getElementById('sidebarNome').textContent;
   const novoEmail = document.getElementById('sidebarEmail').textContent;
   const fotoSrc = document.getElementById('sidebarFoto').src;
-
   document.getElementById('novoNome').value = novoNome;
   document.getElementById('novoEmail').value = novoEmail;
   document.getElementById('previewFoto').src = fotoSrc;
-
   const modal = new bootstrap.Modal(document.getElementById('configModal'));
   modal.show();
 });
-
 // SALVAR CONFIGURAÇÕES
 function salvarConfiguracao() {
   const novoNome = document.getElementById('novoNome').value;
   const novoEmail = document.getElementById('novoEmail').value;
   const novaFotoInput = document.getElementById('novaFoto');
-
   document.getElementById('sidebarNome').textContent = novoNome;
   document.getElementById('sidebarEmail').textContent = novoEmail;
 
@@ -1034,7 +762,6 @@ function salvarConfiguracao() {
     }
     reader.readAsDataURL(novaFotoInput.files[0]);
   }
-
   Swal.fire({
     icon: 'success',
     title: 'Sucesso!',
@@ -1042,40 +769,35 @@ function salvarConfiguracao() {
     timer: 1500,
     showConfirmButton: false
   });
-
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
-
-
-
-
-
-// ---------- CRIAR MATÉRIA ----------
 // ---------- VARIÁVEIS GLOBAIS ----------
 let materias = [];
-let cronograma = [];
-
-// 🔥 ADICIONA ISSO AQUI
-let tempoMaterias = {};
+let cronogramaNovo = [];
 let materiaAtualAuto = null;
 let materiaAnterior = null;
+let notificarMudanca = true;
+let estudoAtual = null;
+let modoEstudo = "auto";
+
+function allowDrop(ev) {
+  ev.preventDefault();
+}
 
 // ---------- CARREGAR DO LOCALSTORAGE ----------
 try {
   materias = JSON.parse(localStorage.getItem("materias")) || [];
-  cronograma = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
 } catch (e) {
   materias = [];
-  cronograma = [];
+  cronogramaNovo = [];
 }
-
 // ---------- SALVAR ----------
 function salvarMaterias() {
   localStorage.setItem("materias", JSON.stringify(materias));
 }
-
 function salvarCronogramaNovo() {
-  localStorage.setItem("cronogramaNovo", JSON.stringify(cronograma));
+  localStorage.setItem("cronogramaNovo", JSON.stringify(cronogramaNovo));
 }
 
 // ---------- RENDERIZAR MATÉRIAS ----------
@@ -1083,7 +805,6 @@ function renderMaterias() {
   const container = document.getElementById("materiasContainer");
   if (!container) return;
   container.innerHTML = "";
-
   materias.forEach(m => {
     const div = document.createElement("div");
     div.classList.add("materia-bloco");
@@ -1091,9 +812,7 @@ function renderMaterias() {
     div.textContent = m.nome;
     div.id = m.id;
     div.draggable = true;
-
     div.ondragstart = (e) => e.dataTransfer.setData("id", m.id);
-
     // editar
     div.addEventListener("dblclick", () => {
       Swal.fire({
@@ -1107,7 +826,6 @@ function renderMaterias() {
         confirmButtonText: "Salvar",
         denyButtonText: "Excluir"
       }).then(result => {
-
         // ✅ EDITAR
         if (result.isConfirmed) {
           const novoNome = document.getElementById("editNome").value.trim();
@@ -1117,20 +835,16 @@ function renderMaterias() {
             Swal.fire({ icon: 'error', title: 'Digite um nome!' });
             return;
           }
-
           m.nome = novoNome;
           m.cor = novaCor;
-
           salvarMaterias();
           renderMaterias();
           renderCronogramaNovo();
         }
-
         // ❌ EXCLUIR
         else if (result.isDenied) {
           materias = materias.filter(mat => mat.id !== m.id);
-          cronograma = cronograma.filter(c => c.materia.id !== m.id);
-
+          cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
@@ -1138,7 +852,6 @@ function renderMaterias() {
         }
       });
     });
-
     // excluir (clique direito)
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
@@ -1151,7 +864,7 @@ function renderMaterias() {
       }).then(res => {
         if (res.isConfirmed) {
           materias = materias.filter(mat => mat.id !== m.id);
-          cronograma = cronograma.filter(c => c.materia.id !== m.id);
+          cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
 
           salvarMaterias();
           salvarCronogramaNovo();
@@ -1160,7 +873,6 @@ function renderMaterias() {
         }
       });
     });
-
     container.appendChild(div);
   });
 }
@@ -1168,14 +880,13 @@ function renderMaterias() {
 // ---------- RENDERIZAR CRONOGRAMA ----------
 function renderCronogramaNovo() {
   const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
-
   dias.forEach(dia => {
     const coluna = document.getElementById(dia);
     if (!coluna) return;
     coluna.innerHTML = `<h5>${dia.toUpperCase()}</h5><div class="dia-drop" ondragover="event.preventDefault()"></div>`;
     const dropArea = coluna.querySelector(".dia-drop");
 
-    const blocos = cronograma.filter(b => b.dia === dia)
+    const blocos = cronogramaNovo.filter(b => b.dia === dia)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
     blocos.forEach(b => {
@@ -1209,13 +920,12 @@ function renderCronogramaNovo() {
             salvarCronogramaNovo();
             renderCronogramaNovo();
           } else if (res.isDenied) {
-            cronograma = cronograma.filter(c => c.id !== b.id);
+            cronogramaNovo = cronogramaNovo.filter(c => c.id !== b.id);
             salvarCronogramaNovo();
             renderCronogramaNovo();
           }
         });
       });
-
       dropArea.appendChild(div);
     });
   });
@@ -1224,13 +934,10 @@ function renderCronogramaNovo() {
 // ---------- DROP ----------
 function drop(ev) {
   ev.preventDefault();
-
   const id = ev.dataTransfer.getData("id");
   const materia = materias.find(m => m.id == id);
-  const dia = ev.currentTarget.id;
-
+  const dia = ev.currentTarget.closest('.dia').id;
   if (!materia) return;
-
   Swal.fire({
     title: `Horário de ${materia.nome}`,
     html: `
@@ -1241,23 +948,18 @@ function drop(ev) {
     preConfirm: () => {
       const inicio = document.getElementById("inicio").value;
       const fim = document.getElementById("fim").value;
-
       if (!inicio || !fim || fim <= inicio) {
         Swal.showValidationMessage("Preencha horários válidos!");
         return false;
       }
-
       return { inicio, fim };
     }
   }).then(result => {
-
     if (!result.isConfirmed) return;
-
     const inicio = result.value.inicio;
     const fim = result.value.fim;
-
     // 🚨 VERIFICAR CONFLITO DE HORÁRIO
-    const conflito = cronograma.some(b =>
+    const conflito = cronogramaNovo.some(b =>
       b.dia === dia &&
       (
         (inicio >= b.inicio && inicio < b.fim) ||
@@ -1265,7 +967,6 @@ function drop(ev) {
         (inicio <= b.inicio && fim >= b.fim)
       )
     );
-
     if (conflito) {
       Swal.fire({
         icon: "error",
@@ -1274,7 +975,6 @@ function drop(ev) {
       });
       return;
     }
-
     const bloco = {
       id: Date.now(),
       materia,
@@ -1282,9 +982,7 @@ function drop(ev) {
       inicio,
       fim
     };
-
-    cronograma.push(bloco);
-
+    cronogramaNovo.push(bloco);
     salvarCronogramaNovo();
     renderCronogramaNovo();
     renderizarResumoHoje();
@@ -1293,10 +991,8 @@ function drop(ev) {
   });
 }
 
-
 document.addEventListener("DOMContentLoaded", () => {
   const cronogramaItens = document.querySelectorAll(".bloco-materia");
-
   cronogramaItens.forEach(item => {
     // Duplo clique no nome da matéria
     item.addEventListener("dblclick", () => {
@@ -1318,73 +1014,72 @@ document.addEventListener("DOMContentLoaded", () => {
 function adicionarMateria() {
   const nome = document.getElementById("novaMateriaNome").value.trim();
   const cor = document.getElementById("novaMateriaCor").value;
-
   if (!nome) return Swal.fire({ icon: 'error', title: 'Digite o nome da matéria!' });
-
   const novaMateria = {
     id: Date.now().toString(),
     nome,
     cor
   };
-
   materias.push(novaMateria);
   salvarMaterias();
   renderMaterias();
-}
-
-
-function atualizarMateriaAgora() {
-
-  const el = document.getElementById("materiaAgora");
+} function atualizarMateriaAgora() {
+  const el = document.getElementById("materiaAgoraInicio");
   if (!el) return;
 
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hojeSemana = dias[new Date().getDay()];
-
   const agora = new Date();
   const horaAtual =
     String(agora.getHours()).padStart(2, '0') + ":" +
     String(agora.getMinutes()).padStart(2, '0');
 
   const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-
   const blocoAtual = cronogramaNovo.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
     horaAtual < b.fim
   );
 
-  if (blocoAtual) {
-  if (materiaAnterior && materiaAnterior !== blocoAtual.materia.nome) {
-      alert("Matéria concluída! Deseja fazer uma pausa? 😄");
+  // VERIFICA SE MODO ESTUDO EXISTE
+  if (typeof modoEstudo !== 'undefined' && modoEstudo === "auto") {
+    if (blocoAtual) {
+      const idMateria = blocoAtual.materia.id;
+      if (estudoAtual !== idMateria) {
+        if (typeof iniciarEstudo === 'function') {
+          iniciarEstudo(idMateria);
+        }
+      }
     }
-
-    materiaAnterior = blocoAtual.materia.nome;
-    el.innerHTML =
-      `<span style="
-        background:${blocoAtual.materia.cor};
-        color:white;
-        padding:6px 10px;
-        border-radius:6px;
-      ">
-      ${blocoAtual.materia.nome}
-      (${blocoAtual.inicio} - ${blocoAtual.fim})
-      </span>`;
-
-  } else {
-
-    el.innerHTML = "😴 Descanso";
-
   }
 
-  materiaAtualAuto = blocoAtual?.materia?.nome || null;
-
-} setInterval(atualizarMateriaAgora, 60000);
-
-
+  if (blocoAtual) {
+    const idMateria = blocoAtual.materia.id;
+    if (typeof modoEstudo !== 'undefined' && modoEstudo === "auto" && estudoAtual !== idMateria) {
+      if (typeof pausarEstudo === 'function') {
+        pausarEstudo();
+      }
+      if (typeof iniciarEstudo === 'function') {
+        iniciarEstudo(idMateria);
+      }
+    }
+    if (notificarMudanca && materiaAnterior !== idMateria) {
+      Swal.fire({
+        icon: "info",
+        title: "Hora de estudar!",
+        text: `Agora é ${blocoAtual.materia.nome}`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+    materiaAnterior = idMateria;
+    materiaAtualAuto = blocoAtual.materia.nome;
+  } else {
+    materiaAtualAuto = null;
+  }
+}
 /** REVISÃO INTELIGENTE */
 let revisoes = [];
-
 try {
   revisoes = JSON.parse(localStorage.getItem("revisoes")) || [];
 } catch {
@@ -1450,9 +1145,7 @@ function criarCard(revisao) {
     salvarRevisao();
     renderizarRevisao();
   };
-
   acoes.append(btnAcerto, btnErro, btnExcluir);
-
   card.append(info, acoes);
   return card;
 }
@@ -1469,25 +1162,18 @@ function renderizarRevisao() {
   lista.innerHTML = "";
   notas.innerHTML = "";
   flash.innerHTML = "";
-
   const hojeData = hoje();
-
   revisoes.forEach(r => {
     if (r.data !== hojeData) return;
-
     let container;
-
     if (r.tipo === "nota") container = notas;
     else if (r.tipo === "flashcard") container = flash;
     else container = lista;
-
     container.appendChild(criarCard(r));
   });
-
   // 📊 PROGRESSO
   const total = revisoes.length;
   const feitas = revisoes.filter(r => r.nivel > 0).length;
-
   resumo.textContent = `Progresso: ${feitas}/${total} revisões avançadas`;
 }
 
@@ -1496,29 +1182,24 @@ function adicionarRevisao() {
     title: 'Nova Revisão',
     html: `
       <input id="titulo" class="swal2-input" placeholder="Ex: Função do 2º grau">
-      
       <select id="tipo" class="swal2-input">
         <option value="nota">📒 Nota</option>
         <option value="flashcard">🧠 Flashcard</option>
         <option value="geral">📌 Geral</option>
       </select>
-
       <input type="date" id="data" class="swal2-input">
     `,
     confirmButtonText: 'Criar',
     showCancelButton: true
   }).then(res => {
     if (!res.isConfirmed) return;
-
     const titulo = document.getElementById("titulo").value.trim();
     const tipo = document.getElementById("tipo").value;
     const data = document.getElementById("data").value || hoje();
-
     if (!titulo) {
       Swal.fire("Erro", "Digite um título!", "error");
       return;
     }
-
     revisoes.push({
       id: Date.now(),
       titulo,
@@ -1526,8 +1207,1229 @@ function adicionarRevisao() {
       data,
       nivel: 0
     });
-
     salvarRevisao();
     renderizarRevisao();
   });
 }
+
+/* ===================== RELOGIO =====================*/
+
+/* VARIAVEIS */
+let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
+let intervaloEstudo;
+
+/* ================= CRONOMETRO ================= */
+let cronometro = 0;
+let cronometroInterval;
+function iniciarCronometro() {
+  clearInterval(cronometroInterval);
+  cronometroInterval = setInterval(() => {
+    cronometro++;
+    const h = String(Math.floor(cronometro / 3600)).padStart(2, "0");
+    const m = String(Math.floor((cronometro % 3600) / 60)).padStart(2, "0");
+    const s = String(cronometro % 60).padStart(2, "0");
+    document.getElementById("cronometroDisplay").textContent =
+      `${h}:${m}:${s}`;
+  }, 1000)
+}
+function pausarCronometro() {
+  clearInterval(cronometroInterval);
+}
+function resetarCronometro() {
+  clearInterval(cronometroInterval);
+  cronometro = 0;
+  document.getElementById("cronometroDisplay").textContent = "00:00:00";
+}
+/* ================= TIMER ================= */
+let timerInterval;
+let tempoRestante = 0;
+function iniciarTimer() {
+  clearInterval(timerInterval);
+  const minutos = document.getElementById("timerMinutos").value;
+  tempoRestante = minutos * 60;
+  timerInterval = setInterval(() => {
+    tempoRestante--;
+    const min = String(Math.floor(tempoRestante / 60)).padStart(2, "0");
+    const seg = String(tempoRestante % 60).padStart(2, "0");
+    document.getElementById("timerDisplay").textContent = `${min}:${seg}`;
+    if (tempoRestante <= 0) {
+      clearInterval(timerInterval);
+      tempoRestante = 0;
+      document.getElementById("timerDisplay").textContent = "00:00";
+      Swal.fire({
+        icon: "info",
+        title: "Tempo acabou!",
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  }, 1000)
+}
+function pararTimer() {
+  clearInterval(timerInterval);
+}
+/* ================= TEMPO POR MATERIA ================= */
+/* ================= TEMPO POR MATERIA ================= */
+function renderTabelaMaterias() {
+  const tabela = document.getElementById("tabelaMateriasTempo");
+  if (!tabela) return;
+
+  tabela.innerHTML = "";
+  materias.forEach(m => {
+    const dados = tempoEstudo[m.id];
+    let tempo = 0;
+
+    if (dados) {
+      if (typeof dados === 'number') {
+        tempo = dados;
+      } else {
+        tempo = dados.total || 0;
+      }
+    }
+
+    const h = String(Math.floor(tempo / 3600)).padStart(2, "0");
+    const min = String(Math.floor((tempo % 3600) / 60)).padStart(2, "0");
+    const seg = String(tempo % 60).padStart(2, "0");
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${m.nome}</td>
+      <td>${h}:${min}:${seg}</td>
+      <td>
+        <button onclick="iniciarEstudo('${m.id}')">▶</button>
+        <button onclick="pausarEstudo()">⏸</button>
+      </td>
+    `;
+    tabela.appendChild(tr);
+  });
+}
+/* ================= POMODORO ================= */
+let pomodoroTempo = 1500;
+let pomodoroInterval;
+let pomodoroRodando = false;
+let modoPomodoro = "foco";
+function iniciarPomodoro() {
+  if (!pomodoroRodando) {
+    pomodoroTempo = 1500;
+  }
+  document.getElementById("pomodoroDisplay").textContent = "25:00";
+  if (pomodoroRodando) return;
+  pomodoroRodando = true;
+  pomodoroInterval = setInterval(() => {
+    pomodoroTempo--;
+    const min = String(Math.floor(pomodoroTempo / 60)).padStart(2, "0");
+    const seg = String(pomodoroTempo % 60).padStart(2, "0");
+    document.getElementById("pomodoroDisplay").textContent = `${min}:${seg}`;
+    if (pomodoroTempo <= 0) {
+      clearInterval(pomodoroInterval);
+      if (modoPomodoro === "foco") {
+        Swal.fire({
+          icon: "success",
+          title: "Hora da pausa! ☕",
+          timer: 2000,
+          showConfirmButton: false
+        });
+        modoPomodoro = "pausa";
+        pomodoroTempo = 300;
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Hora de estudar! 📚",
+          timer: 2000,
+          showConfirmButton: false
+        });
+        modoPomodoro = "foco";
+        pomodoroTempo = 1500;
+      }
+      pomodoroRodando = false;
+      iniciarPomodoro();
+    }
+  }, 1000)
+}
+/* ================= INICIAR ESTUDO ================= */
+/* ================= INICIAR ESTUDO ================= */
+function iniciarEstudo(id) {
+  atualizarStreak();
+  estudoAtual = id;
+
+  // Inicializar estrutura se não existir
+  if (!tempoEstudo[id]) {
+    tempoEstudo[id] = {
+      total: 0,
+      historico: {} // vai guardar { "2024-03-31": segundos }
+    };
+  }
+
+  // Garantir que tem a estrutura correta
+  if (typeof tempoEstudo[id] === 'number') {
+    // Migrar formato antigo para novo
+    const tempoAntigo = tempoEstudo[id];
+    tempoEstudo[id] = {
+      total: tempoAntigo,
+      historico: {}
+    };
+  }
+
+  const hoje = new Date().toISOString().split('T')[0];
+  if (!tempoEstudo[id].historico[hoje]) {
+    tempoEstudo[id].historico[hoje] = 0;
+  }
+
+  clearInterval(intervaloEstudo);
+  intervaloEstudo = setInterval(() => {
+    // Incrementar total
+    tempoEstudo[id].total++;
+    // Incrementar histórico do dia
+    tempoEstudo[id].historico[hoje]++;
+
+    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+    renderTabelaMaterias();
+    atualizarMeta(); // Atualizar a meta em tempo real
+  }, 1000);
+}
+
+/* ================= MODO FOCO MELHORADO ================= */
+let focoInterval = null;
+let focoTempoRestante = 25 * 60; // 25 minutos em segundos
+let focoAtivo = false;
+
+function ativarModoFoco() {
+  // Salvar o estado atual antes de entrar no modo foco
+  const materiaNome = materiaAtualAuto || "Estudo";
+  const materiaCor = document.querySelector('.bloco-materia')?.style.background || "#9f042c";
+
+  // Criar o HTML do modo foco (sem style interno)
+  document.body.innerHTML = `
+    <div id="modoFocoContainer" class="modo-foco-container">
+      <!-- Card principal -->
+      <div class="modo-foco-card">
+        <!-- Ícone de foco -->
+        <div class="modo-foco-icon" style="background: ${materiaCor}; box-shadow: 0 0 30px ${materiaCor}80;">
+          <i class="bi bi-brain"></i>
+        </div>
+        
+        <!-- Nome da matéria -->
+        <h1 id="focoMateria" class="modo-foco-titulo">${materiaNome}</h1>
+        
+        <!-- Timer -->
+        <div id="focoTimer" class="modo-foco-timer">25:00</div>
+        
+        <!-- Barra de progresso -->
+        <div class="modo-foco-progresso-bg">
+          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materiaCor};"></div>
+        </div>
+        
+        <!-- Botões -->
+        <div class="modo-foco-botoes">
+          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">
+            ⏸ Pausar
+          </button>
+          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">
+            🔄 Reset
+          </button>
+          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">
+            ✕ Sair
+          </button>
+        </div>
+        
+        <!-- Frase motivacional -->
+        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total! Você consegue!</p>
+      </div>
+    </div>
+  `;
+
+  // Inicializar variáveis
+  focoTempoRestante = 25 * 60;
+  focoAtivo = true;
+  atualizarDisplayFoco();
+
+  // Atualizar barra de progresso
+  const progressoEl = document.getElementById('focoProgresso');
+  if (progressoEl) {
+    progressoEl.style.width = '100%';
+  }
+
+  // Iniciar contagem regressiva
+  if (focoInterval) clearInterval(focoInterval);
+  focoInterval = setInterval(() => {
+    if (!focoAtivo) return;
+
+    if (focoTempoRestante > 0) {
+      focoTempoRestante--;
+      atualizarDisplayFoco();
+
+      // Atualizar barra de progresso
+      const progressoPercent = (focoTempoRestante / (25 * 60)) * 100;
+      if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
+
+      // Tocar notificação quando faltar 1 minuto
+      if (focoTempoRestante === 60) {
+        const fraseEl = document.getElementById('focoFrase');
+        if (fraseEl) fraseEl.textContent = '⏰ Falta 1 minuto! Você está quase lá!';
+      }
+    } else {
+      // Tempo acabou!
+      clearInterval(focoInterval);
+      focoInterval = null;
+
+      Swal.fire({
+        icon: 'success',
+        title: '🎉 Tempo concluído!',
+        text: 'Parabéns pela sessão de foco!',
+        timer: 3000,
+        showConfirmButton: false,
+        background: '#1f2937',
+        color: 'white'
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+    }
+  }, 1000);
+
+  // Configurar botões
+  setTimeout(() => {
+    const pausarBtn = document.getElementById('focoPausarBtn');
+    const resetBtn = document.getElementById('focoResetBtn');
+    const sairBtn = document.getElementById('focoSairBtn');
+
+    if (pausarBtn) {
+      pausarBtn.onclick = () => {
+        focoAtivo = !focoAtivo;
+        pausarBtn.innerHTML = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
+        pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivo);
+
+        const fraseEl = document.getElementById('focoFrase');
+        if (fraseEl) {
+          fraseEl.textContent = focoAtivo ? '🎯 Foco total! Você consegue!' : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
+        }
+      };
+    }
+
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        focoTempoRestante = 25 * 60;
+        focoAtivo = true;
+        atualizarDisplayFoco();
+        if (progressoEl) progressoEl.style.width = '100%';
+        if (pausarBtn) {
+          pausarBtn.innerHTML = '⏸ Pausar';
+          pausarBtn.classList.remove('modo-foco-btn-continuar');
+        }
+        const fraseEl = document.getElementById('focoFrase');
+        if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
+
+        if (!focoInterval) {
+          focoInterval = setInterval(() => {
+            if (!focoAtivo) return;
+            if (focoTempoRestante > 0) {
+              focoTempoRestante--;
+              atualizarDisplayFoco();
+              const progressoPercent = (focoTempoRestante / (25 * 60)) * 100;
+              if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
+            } else {
+              clearInterval(focoInterval);
+              focoInterval = null;
+              Swal.fire({
+                icon: 'success',
+                title: '🎉 Tempo concluído!',
+                timer: 2000,
+                showConfirmButton: false
+              });
+              setTimeout(() => location.reload(), 2000);
+            }
+          }, 1000);
+        }
+      };
+    }
+
+    if (sairBtn) {
+      sairBtn.onclick = () => {
+        if (focoInterval) clearInterval(focoInterval);
+        location.reload();
+      };
+    }
+  }, 100);
+}
+
+function atualizarDisplayFoco() {
+  const minutos = Math.floor(focoTempoRestante / 60);
+  const segundos = focoTempoRestante % 60;
+  const timerEl = document.getElementById('focoTimer');
+  if (timerEl) {
+    timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  }
+
+  const fraseEl = document.getElementById('focoFrase');
+  if (fraseEl && focoAtivo) {
+    if (focoTempoRestante > 1200) {
+      fraseEl.textContent = '🎯 Começando com tudo! Mantenha o foco!';
+    } else if (focoTempoRestante > 600) {
+      fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
+    } else if (focoTempoRestante > 60) {
+      fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
+    } else if (focoTempoRestante > 0) {
+      fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
+    }
+  }
+}
+/* ================= META PERSONALIZÁVEL ================= */
+let metas = {
+  diaria: 2,      // horas por dia (padrão)
+  semanal: 14,    // horas por semana (padrão)
+  mensal: 60      // horas por mês (padrão)
+};
+let metaAtiva = "semanal";
+
+function calcularMetas() {
+  // Esta função agora apenas chama atualizarMeta()
+  atualizarMeta();
+}
+
+function carregarMetas() {
+  const metasSalvas = localStorage.getItem("metas");
+  if (metasSalvas) {
+    metas = JSON.parse(metasSalvas);
+  } else {
+    localStorage.setItem("metas", JSON.stringify(metas));
+  }
+
+  const metaAtivaSalva = localStorage.getItem("metaAtiva");
+  if (metaAtivaSalva) {
+    metaAtiva = metaAtivaSalva;
+  }
+
+  atualizarMeta();
+  atualizarBotoesMeta();
+}
+
+function atualizarBotoesMeta() {
+  const botoes = document.querySelectorAll('.meta-tipo-btn');
+  botoes.forEach(btn => {
+    if (btn.dataset.tipo === metaAtiva) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+
+    btn.onclick = () => {
+      metaAtiva = btn.dataset.tipo;
+      localStorage.setItem("metaAtiva", metaAtiva);
+      atualizarBotoesMeta();
+      atualizarMeta();
+    };
+  });
+}
+
+function abrirModalMeta() {
+  document.getElementById("metaDiaria").value = metas.diaria;
+  document.getElementById("metaSemanal").value = metas.semanal;
+  document.getElementById("metaMensal").value = metas.mensal;
+  const modal = new bootstrap.Modal(document.getElementById('modalMeta'));
+  modal.show();
+}
+
+function salvarMeta() {
+  metas.diaria = parseFloat(document.getElementById("metaDiaria").value) || 2;
+  metas.semanal = parseFloat(document.getElementById("metaSemanal").value) || 14;
+  metas.mensal = parseFloat(document.getElementById("metaMensal").value) || 60;
+
+  localStorage.setItem("metas", JSON.stringify(metas));
+  atualizarMeta();
+
+  bootstrap.Modal.getInstance(document.getElementById('modalMeta')).hide();
+  Swal.fire({
+    icon: 'success',
+    title: 'Metas atualizadas!',
+    text: `🎯 Diária: ${metas.diaria}h | Semanal: ${metas.semanal}h | Mensal: ${metas.mensal}h`,
+    timer: 2500,
+    showConfirmButton: false
+  });
+}
+
+/* ================= CALCULAR HORAS ESTUDADAS POR PERÍODO ================= */
+function calcularHorasEstudadas(periodo) {
+  const hoje = new Date();
+  let totalSegundos = 0;
+
+  // Define o intervalo de datas
+  let dataInicio = new Date();
+
+  if (periodo === "diaria") {
+    dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  } else if (periodo === "semanal") {
+    dataInicio.setDate(hoje.getDate() - 7);
+  } else if (periodo === "mensal") {
+    dataInicio.setDate(hoje.getDate() - 30);
+  }
+
+  dataInicio.setHours(0, 0, 0, 0);
+  const hojeFim = new Date();
+  hojeFim.setHours(23, 59, 59, 999);
+
+  Object.values(tempoEstudo).forEach(materia => {
+    if (typeof materia === 'number') {
+      totalSegundos += materia;
+      return;
+    }
+    
+    if (materia.historico) {
+      Object.entries(materia.historico).forEach(([data, segundos]) => {
+        const dataEstudo = new Date(data);
+        if (dataEstudo >= dataInicio && dataEstudo <= hojeFim) {
+          totalSegundos += segundos;
+        }
+      });
+    } else if (materia.total) {
+      totalSegundos += materia.total;
+    }
+  });
+
+  return totalSegundos / 3600;
+}
+
+function atualizarMeta() {
+  let metaValor, totalHoras, unidade;
+
+  if (metaAtiva === "diaria") {
+    metaValor = metas.diaria;
+    unidade = "dia";
+  } else if (metaAtiva === "semanal") {
+    metaValor = metas.semanal;
+    unidade = "semana";
+  } else {
+    metaValor = metas.mensal;
+    unidade = "mês";
+  }
+
+  totalHoras = calcularHorasEstudadas(metaAtiva);
+  const progresso = Math.min((totalHoras / metaValor) * 100, 100);
+  const faltam = Math.max(metaValor - totalHoras, 0);
+
+  // Atualizar card do relógio
+  const metaTexto = document.getElementById("metaTextoResumo");
+  if (metaTexto) {
+    metaTexto.textContent = `📊 ${totalHoras.toFixed(1)}h de ${metaValor}h (${unidade})`;
+  }
+
+  const metaBarra = document.getElementById("metaBarraResumo");
+  if (metaBarra) {
+    metaBarra.style.width = `${progresso}%`;
+  }
+
+  const metaRestante = document.getElementById("metaRestanteResumo");
+  if (metaRestante) {
+    if (faltam > 0) {
+      metaRestante.textContent = `⏳ Faltam ${faltam.toFixed(1)}h para bater a meta ${unidade}!`;
+    } else {
+      metaRestante.textContent = `🎉 Meta ${unidade} alcançada! Parabéns! 🎉`;
+    }
+  }
+}
+
+/* ================= MIGRAR DADOS ANTIGOS ================= */
+function migrarDadosAntigos() {
+  let precisaSalvar = false;
+  
+  Object.keys(tempoEstudo).forEach(id => {
+    const dado = tempoEstudo[id];
+    
+    // Se for número (formato antigo)
+    if (typeof dado === 'number') {
+      const hoje = new Date().toISOString().split('T')[0];
+      tempoEstudo[id] = {
+        total: dado,
+        historico: {
+          [hoje]: dado
+        }
+      };
+      precisaSalvar = true;
+    }
+  });
+  
+  if (precisaSalvar) {
+    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+    console.log("✅ Dados migrados para o novo formato!");
+  }
+}
+
+/* ================= STREAK ================= */
+function atualizarStreak() {
+  const hoje = new Date().toDateString();
+  let ultimoDia = localStorage.getItem("ultimoDiaEstudo");
+  let streak = parseInt(localStorage.getItem("streak")) || 0;
+  if (!ultimoDia) {
+    localStorage.setItem("ultimoDiaEstudo", hoje);
+    localStorage.setItem("streak", 1);
+    return;
+  }
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+  if (new Date(ultimoDia).toDateString() === ontem.toDateString()) {
+    streak++;
+    localStorage.setItem("streak", streak);
+  } else if (ultimoDia !== hoje) {
+    streak = 1;
+    localStorage.setItem("streak", streak);
+  }
+  localStorage.setItem("ultimoDiaEstudo", hoje);
+}
+
+/* ================= RELOGIO INTELIGENTE ================= */
+function atualizarRelogioInfo() {
+  const materiaEl = document.getElementById("materiaRelogio");
+  const horarioEl = document.getElementById("horarioRelogio");
+  const tempoRestanteEl = document.getElementById("tempoRestante");
+  const tempoHojeEl = document.getElementById("tempoHoje");
+  const streakEl = document.getElementById("streakRelogio");
+  
+  if (!materiaEl) return;
+  
+  const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const hojeSemana = dias[new Date().getDay()];
+  const agora = new Date();
+  const horaAtual = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
+  
+  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  const blocoAtual = cronogramaNovo.find(b =>
+    b.dia === hojeSemana &&
+    horaAtual >= b.inicio &&
+    horaAtual < b.fim
+  );
+  
+  if (blocoAtual) {
+    materiaEl.textContent = "📚 " + blocoAtual.materia.nome;
+    horarioEl.textContent = blocoAtual.inicio + " - " + blocoAtual.fim;
+    const [fh, fm] = blocoAtual.fim.split(":");
+    const fim = new Date();
+    fim.setHours(fh);
+    fim.setMinutes(fm);
+    fim.setSeconds(0);
+    const restante = Math.floor((fim - agora) / 1000);
+    if (restante > 0) {
+      const h = String(Math.floor(restante / 3600)).padStart(2, "0");
+      const m = String(Math.floor((restante % 3600) / 60)).padStart(2, "0");
+      const s = String(restante % 60).padStart(2, "0");
+      tempoRestanteEl.textContent = "⏳ faltam " + h + ":" + m + ":" + s;
+    } else {
+      tempoRestanteEl.textContent = "⏳ terminou";
+    }
+  } else {
+    materiaEl.textContent = "😴 Descanso";
+    horarioEl.textContent = "";
+    tempoRestanteEl.textContent = "";
+  }
+  
+  // ✅ CALCULAR APENAS AS HORAS ESTUDADAS HOJE
+  const hoje = new Date().toISOString().split('T')[0];
+  let totalSegundosHoje = 0;
+  
+  Object.values(tempoEstudo).forEach(materia => {
+    if (typeof materia === 'number') {
+      // Formato antigo - considera tudo
+      totalSegundosHoje += materia;
+    } else if (materia.historico && materia.historico[hoje]) {
+      // Formato novo - pega só o dia de hoje
+      totalSegundosHoje += materia.historico[hoje];
+    } else if (materia.total) {
+      // Fallback
+      totalSegundosHoje += materia.total;
+    }
+  });
+  
+  const h = String(Math.floor(totalSegundosHoje / 3600)).padStart(2, "0");
+  const m = String(Math.floor((totalSegundosHoje % 3600) / 60)).padStart(2, "0");
+  const s = String(totalSegundosHoje % 60).padStart(2, "0");
+  tempoHojeEl.textContent = "⏱ " + h + ":" + m + ":" + s + " estudados hoje";
+  
+  const streak = localStorage.getItem("streak") || 0;
+  streakEl.textContent = "🔥 " + streak + " dias seguidos";
+}
+
+function pausarEstudo() {
+  clearInterval(intervaloEstudo);
+  estudoAtual = null;
+  modoEstudo = "manual";
+  notificarMudanca = false;  // 👈 DESATIVA NOTIFICAÇÕES
+  Swal.fire({
+    icon: "info",
+    title: "Estudo pausado",
+    text: "As notificações de estudo automático foram desativadas.",
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+function adicionarMateriaRelogio() {
+  const nome = document.getElementById("novaMateriaRelogio").value.trim();
+  if (!nome) return;
+  const novaMateria = {
+    id: "m" + Date.now(),
+    nome: nome
+  };
+  materias.push(novaMateria);
+  localStorage.setItem("materias", JSON.stringify(materias));
+  document.getElementById("novaMateriaRelogio").value = "";
+  renderTabelaMaterias();
+  Swal.fire({
+    icon: "success",
+    title: "Matéria adicionada!",
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+function finalizarEstudo() {
+  clearInterval(intervaloEstudo);
+  estudoAtual = null;
+  Swal.fire({
+    icon: "success",
+    title: "Sessão finalizada!",
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+function atualizarSistema() {
+  atualizarMateriaAgora();
+  atualizarRelogioInfo();
+  atualizarMeta();
+}
+
+/* ================= POMODORO PERSONALIZADO ================= */
+let pomodoroConfig = {
+  tempoEstudo: 25,
+  tempoPausa: 5,
+  materiaId: null,
+  materiaNome: null
+};
+
+function abrirModalPomodoro() {
+  // Atualizar lista de matérias no select
+  const select = document.getElementById('pomodoroMateria');
+  if (select) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  // Resetar valores padrão
+  document.getElementById('pomodoroTempoEstudo').value = 25;
+  document.getElementById('pomodoroTempoPausa').value = 5;
+
+  const modal = new bootstrap.Modal(document.getElementById('modalPomodoro'));
+  modal.show();
+}
+
+function iniciarPomodoroPersonalizado() {
+  const materiaId = document.getElementById('pomodoroMateria').value;
+  const tempoEstudo = parseInt(document.getElementById('pomodoroTempoEstudo').value);
+  const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa').value);
+
+  if (!materiaId) {
+    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+
+  const materia = materias.find(m => m.id == materiaId);
+
+  pomodoroConfig = {
+    tempoEstudo: tempoEstudo,
+    tempoPausa: tempoPausa,
+    materiaId: materiaId,
+    materiaNome: materia.nome
+  };
+
+  // Fechar modal
+  bootstrap.Modal.getInstance(document.getElementById('modalPomodoro')).hide();
+
+  // Iniciar Pomodoro
+  iniciarPomodoroComConfig();
+}
+
+function iniciarPomodoroComConfig() {
+  if (pomodoroInterval) clearInterval(pomodoroInterval);
+
+  pomodoroRodando = true;
+  modoPomodoro = "foco";
+  pomodoroTempo = pomodoroConfig.tempoEstudo * 60;
+
+  document.getElementById("pomodoroDisplay").textContent =
+    `${String(pomodoroConfig.tempoEstudo).padStart(2, '0')}:00`;
+
+  pomodoroInterval = setInterval(() => {
+    if (!pomodoroRodando) return;
+
+    pomodoroTempo--;
+    const min = String(Math.floor(pomodoroTempo / 60)).padStart(2, "0");
+    const seg = String(pomodoroTempo % 60).padStart(2, "0");
+    document.getElementById("pomodoroDisplay").textContent = `${min}:${seg}`;
+
+    if (pomodoroTempo <= 0) {
+      clearInterval(pomodoroInterval);
+
+      if (modoPomodoro === "foco") {
+        // Salvar tempo estudado
+        if (pomodoroConfig.materiaId) {
+          if (!tempoEstudo[pomodoroConfig.materiaId]) tempoEstudo[pomodoroConfig.materiaId] = 0;
+          tempoEstudo[pomodoroConfig.materiaId] += pomodoroConfig.tempoEstudo * 60;
+          localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+          renderTabelaMaterias();
+        }
+
+        Swal.fire({
+          icon: "success",
+          title: "Hora da pausa! ☕",
+          text: `${pomodoroConfig.tempoPausa} minutos de descanso`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        modoPomodoro = "pausa";
+        pomodoroTempo = pomodoroConfig.tempoPausa * 60;
+        document.getElementById("pomodoroDisplay").textContent =
+          `${String(pomodoroConfig.tempoPausa).padStart(2, '0')}:00`;
+        pomodoroRodando = false;
+        iniciarPomodoroComConfig();
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Hora de estudar! 📚",
+          text: `${pomodoroConfig.tempoEstudo} minutos de foco`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        modoPomodoro = "foco";
+        pomodoroTempo = pomodoroConfig.tempoEstudo * 60;
+        document.getElementById("pomodoroDisplay").textContent =
+          `${String(pomodoroConfig.tempoEstudo).padStart(2, '0')}:00`;
+        pomodoroRodando = false;
+        iniciarPomodoroComConfig();
+      }
+    }
+  }, 1000);
+}
+
+/* ================= MODO FOCO PERSONALIZADO ================= */
+function abrirModalModoFoco() {
+  // Atualizar lista de matérias no select
+  const select = document.getElementById('focoMateriaSelect');
+  if (select) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  document.getElementById('focoTempoPersonalizado').value = 25;
+
+  const modal = new bootstrap.Modal(document.getElementById('modalModoFoco'));
+  modal.show();
+}
+
+function iniciarModoFocoPersonalizado() {
+  const materiaId = document.getElementById('focoMateriaSelect').value;
+  const tempoFoco = parseInt(document.getElementById('focoTempoPersonalizado').value);
+
+  if (!materiaId) {
+    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+
+  const materia = materias.find(m => m.id == materiaId);
+
+  // Fechar modal
+  bootstrap.Modal.getInstance(document.getElementById('modalModoFoco')).hide();
+
+  // Iniciar modo foco com configurações
+  iniciarModoFocoComConfig(materia, tempoFoco);
+}
+
+function iniciarModoFocoComConfig(materia, tempoMinutos) {
+  const materiaNome = materia.nome;
+  const materiaCor = materia.cor || "#9f042c";
+  const tempoSegundos = tempoMinutos * 60;
+
+  // Salvar que começou a estudar esta matéria
+  if (!tempoEstudo[materia.id]) tempoEstudo[materia.id] = 0;
+
+  let tempoDecorrido = 0;
+  let focoAtivoLocal = true;
+
+  document.body.innerHTML = `
+    <div id="modoFocoContainer" class="modo-foco-container">
+      <div class="modo-foco-card">
+        <div class="modo-foco-icon" style="background: ${materiaCor}; box-shadow: 0 0 30px ${materiaCor}80;">
+          <i class="bi bi-brain"></i>
+        </div>
+        
+        <h1 class="modo-foco-titulo">${materiaNome}</h1>
+        
+        <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
+        
+        <div class="modo-foco-progresso-bg">
+          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materiaCor}; width: 100%;"></div>
+        </div>
+        
+        <div class="modo-foco-botoes">
+          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
+          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
+          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
+        </div>
+        
+        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materiaNome}! Você consegue!</p>
+      </div>
+    </div>
+  `;
+
+  let tempoRestante = tempoSegundos;
+  let focoIntervalLocal = null;
+
+  function atualizarDisplay() {
+    const minutos = Math.floor(tempoRestante / 60);
+    const segundos = tempoRestante % 60;
+    const timerEl = document.getElementById('focoTimer');
+    if (timerEl) timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+
+    const progressoPercent = (tempoRestante / tempoSegundos) * 100;
+    const progressoEl = document.getElementById('focoProgresso');
+    if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
+
+    const fraseEl = document.getElementById('focoFrase');
+    if (fraseEl && focoAtivoLocal) {
+      if (tempoRestante > tempoSegundos * 0.8) fraseEl.textContent = '🎯 Começando com tudo! Mantenha o foco!';
+      else if (tempoRestante > tempoSegundos * 0.5) fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
+      else if (tempoRestante > 60) fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
+      else if (tempoRestante > 0) fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
+    }
+  }
+
+  focoIntervalLocal = setInterval(() => {
+    if (!focoAtivoLocal) return;
+
+    if (tempoRestante > 0) {
+      tempoRestante--;
+      tempoDecorrido++;
+      atualizarDisplay();
+    } else {
+      clearInterval(focoIntervalLocal);
+
+      // Salvar tempo estudado
+      tempoEstudo[materia.id] += tempoDecorrido;
+      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+      renderTabelaMaterias();
+
+      Swal.fire({
+        icon: 'success',
+        title: '🎉 Tempo concluído!',
+        text: `Parabéns! Você estudou ${Math.floor(tempoDecorrido / 60)} minutos de ${materiaNome}!`,
+        timer: 3000,
+        showConfirmButton: false,
+        background: '#1f2937',
+        color: 'white'
+      });
+
+      setTimeout(() => { location.reload(); }, 2000);
+    }
+  }, 1000);
+
+  setTimeout(() => {
+    const pausarBtn = document.getElementById('focoPausarBtn');
+    const resetBtn = document.getElementById('focoResetBtn');
+    const sairBtn = document.getElementById('focoSairBtn');
+
+    if (pausarBtn) {
+      pausarBtn.onclick = () => {
+        focoAtivoLocal = !focoAtivoLocal;
+        pausarBtn.innerHTML = focoAtivoLocal ? '⏸ Pausar' : '▶ Continuar';
+        pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivoLocal);
+      };
+    }
+
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        tempoRestante = tempoSegundos;
+        tempoDecorrido = 0;
+        focoAtivoLocal = true;
+        atualizarDisplay();
+        if (pausarBtn) {
+          pausarBtn.innerHTML = '⏸ Pausar';
+          pausarBtn.classList.remove('modo-foco-btn-continuar');
+        }
+      };
+    }
+
+    if (sairBtn) {
+      sairBtn.onclick = () => {
+        if (focoIntervalLocal) clearInterval(focoIntervalLocal);
+        location.reload();
+      };
+    }
+  }, 100);
+}
+
+/* ================= INFO RELÓGIO ================= */
+function mostrarInfoRelogio() {
+  Swal.fire({
+    title: '⏰ Como funciona o Relógio Inteligente?',
+    html: `
+      <div style="text-align: left;">
+        <p>📌 <strong>Modo Automático:</strong> O relógio acompanha seu cronograma e começa a contar automaticamente quando chega o horário de cada matéria.</p>
+        <p>⏸️ <strong>Pausar:</strong> Você pode pausar o estudo a qualquer momento clicando no botão ⏸ ao lado da matéria.</p>
+        <p>🔄 <strong>Voltar ao Automático:</strong> Depois de pausar, clique em "Voltar automático" para voltar a seguir o cronograma.</p>
+        <p>📚 <strong>Estudo por Matéria:</strong> Você também pode estudar "solto", sem seguir o cronograma, usando os botões ▶ ao lado de cada matéria.</p>
+        <p>🍅 <strong>Pomodoro:</strong> Clique no timer do Pomodoro para personalizar o tempo de estudo e pausa!</p>
+      </div>
+    `,
+    icon: 'info',
+    confirmButtonText: 'Entendi!',
+    confirmButtonColor: '#9f042c'
+  });
+}
+
+function atualizarPainelEstudos() {
+  console.log("🔄 Atualizando painel de estudos...");
+
+  const agora = new Date();
+  let blocoAtual = null;
+  let proximoBloco = null;
+
+  // Pega o cronograma do localStorage
+  let cronogramaLocal = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+
+  // Usa a variável global se estiver vazia
+  if (cronogramaLocal.length === 0 && window.cronogramaNovo && window.cronogramaNovo.length > 0) {
+    cronogramaLocal = window.cronogramaNovo;
+  }
+
+  console.log("📅 Cronograma carregado:", cronogramaLocal.length, "blocos");
+
+  // Verificar se cronogramaNovo existe e tem dados
+  if (!cronogramaLocal || cronogramaLocal.length === 0) {
+    console.log("⚠️ Nenhum bloco no cronograma");
+    const materiaAgoraEl = document.getElementById("materiaAgoraInicio");
+    const horarioAgoraEl = document.getElementById("horarioAgoraInicio");
+    const tempoRestanteEl = document.getElementById("tempoRestanteInicio");
+    const materiaProximaEl = document.getElementById("materiaProximaInicio");
+    const horarioProximaEl = document.getElementById("horarioProximaInicio");
+    const tempoProximaEl = document.getElementById("tempoProximaInicio");
+
+    if (materiaAgoraEl) materiaAgoraEl.textContent = "😴 Descanso";
+    if (horarioAgoraEl) horarioAgoraEl.textContent = "";
+    if (tempoRestanteEl) tempoRestanteEl.textContent = "";
+    if (materiaProximaEl) materiaProximaEl.textContent = "Nenhuma matéria agendada";
+    if (horarioProximaEl) horarioProximaEl.textContent = "";
+    if (tempoProximaEl) tempoProximaEl.textContent = "";
+    return;
+  }
+
+  // Dias da semana
+  const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const hojeSemana = dias[agora.getDay()];
+  const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
+
+  console.log(`📅 Hoje: ${hojeSemana}, Hora: ${horaAtual}`);
+
+  // Filtrar blocos do dia atual e ordenar
+  const blocosHoje = cronogramaLocal
+    .filter(b => b.dia === hojeSemana)
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
+
+  console.log(`📖 Blocos de hoje: ${blocosHoje.length}`);
+
+  // Encontrar bloco atual e próximo
+  for (let i = 0; i < blocosHoje.length; i++) {
+    const bloco = blocosHoje[i];
+    if (!bloco.inicio || !bloco.fim) continue;
+
+    // Verificar se é o bloco atual
+    if (horaAtual >= bloco.inicio && horaAtual < bloco.fim) {
+      blocoAtual = bloco;
+      console.log(`✅ MATÉRIA ATUAL: ${bloco.materia.nome} (${bloco.inicio} - ${bloco.fim})`);
+    }
+
+    // Verificar se é o próximo bloco (primeiro que começa depois da hora atual)
+    if (!blocoAtual && bloco.inicio > horaAtual && !proximoBloco) {
+      proximoBloco = bloco;
+      console.log(`⏰ PRÓXIMA: ${bloco.materia.nome} às ${bloco.inicio}`);
+    }
+  }
+
+  // Se não encontrou bloco atual mas tem blocos, pega o próximo
+  if (!blocoAtual && blocosHoje.length > 0 && !proximoBloco) {
+    // Pega o primeiro bloco do dia (se for antes do primeiro horário)
+    if (horaAtual < blocosHoje[0].inicio) {
+      proximoBloco = blocosHoje[0];
+      console.log(`⏰ PRÓXIMA (primeira do dia): ${proximoBloco.materia.nome} às ${proximoBloco.inicio}`);
+    }
+  }
+
+  // Atualizar UI - Matéria Atual
+  const materiaAtualEl = document.getElementById("materiaAgoraInicio");
+  const horarioAtualEl = document.getElementById("horarioAgoraInicio");
+  const tempoRestanteEl = document.getElementById("tempoRestanteInicio");
+
+  if (blocoAtual) {
+    if (materiaAtualEl) materiaAtualEl.textContent = blocoAtual.materia.nome;
+    if (horarioAtualEl) horarioAtualEl.textContent = `${blocoAtual.inicio} - ${blocoAtual.fim}`;
+
+    // Calcular tempo restante
+    const [h, m] = blocoAtual.fim.split(":");
+    const fim = new Date();
+    fim.setHours(parseInt(h), parseInt(m), 0);
+    const diff = fim - agora;
+    if (diff > 0) {
+      const minutos = Math.floor(diff / 60000);
+      const segundos = Math.floor((diff % 60000) / 1000);
+      if (tempoRestanteEl) tempoRestanteEl.textContent = `⏳ faltam ${minutos}min ${segundos}s`;
+    } else {
+      if (tempoRestanteEl) tempoRestanteEl.textContent = `⏳ terminou`;
+    }
+
+    console.log(`✅ Painel atualizado: ${blocoAtual.materia.nome}`);
+  } else {
+    if (materiaAtualEl) materiaAtualEl.textContent = "😴 Descanso";
+    if (horarioAtualEl) horarioAtualEl.textContent = "";
+    if (tempoRestanteEl) tempoRestanteEl.textContent = "";
+    console.log("😴 Nenhuma matéria no momento");
+  }
+
+  // Atualizar UI - Próxima Matéria
+  const materiaProximaEl = document.getElementById("materiaProximaInicio");
+  const horarioProximaEl = document.getElementById("horarioProximaInicio");
+  const tempoProximaEl = document.getElementById("tempoProximaInicio");
+
+  if (proximoBloco) {
+    if (materiaProximaEl) materiaProximaEl.textContent = proximoBloco.materia.nome;
+    if (horarioProximaEl) horarioProximaEl.textContent = `${proximoBloco.inicio} - ${proximoBloco.fim}`;
+
+    const [h, m] = proximoBloco.inicio.split(":");
+    const inicio = new Date();
+    inicio.setHours(parseInt(h), parseInt(m), 0);
+    const diff = inicio - agora;
+    if (diff > 0) {
+      const minutos = Math.floor(diff / 60000);
+      const horas = Math.floor(minutos / 60);
+      const minsRest = minutos % 60;
+      if (horas > 0) {
+        if (tempoProximaEl) tempoProximaEl.textContent = `(em ${horas}h ${minsRest}min)`;
+      } else {
+        if (tempoProximaEl) tempoProximaEl.textContent = `(em ${minutos} min)`;
+      }
+    } else {
+      if (tempoProximaEl) tempoProximaEl.textContent = `(em breve)`;
+    }
+  } else {
+    if (materiaProximaEl) materiaProximaEl.textContent = "Nenhuma matéria agendada";
+    if (horarioProximaEl) horarioProximaEl.textContent = "";
+    if (tempoProximaEl) tempoProximaEl.textContent = "";
+  }
+}
+
+// Garantir que o painel seja atualizado na inicialização e quando o cronograma mudar
+function forcarAtualizacaoPainel() {
+  console.log("🔄 Forçando atualização do painel...");
+  setTimeout(() => {
+    atualizarPainelEstudos();
+  }, 100);
+}
+
+// Adicionar listener para quando o cronograma for alterado
+function atualizarCronogramaCompleto() {
+  renderCronogramaNovo();
+  renderizarResumoHoje();
+  atualizarMateriaAgora();
+  forcarAtualizacaoPainel();
+}
+
+// Substituir a chamada do setInterval por uma mais confiável
+setInterval(() => {
+  if (typeof atualizarPainelEstudos === 'function') {
+    atualizarPainelEstudos();
+  }
+}, 30000); // atualiza a cada 30 segundos
+
+// Forçar atualização inicial
+setTimeout(() => {
+  forcarAtualizacaoPainel();
+}, 500);
+
+setInterval(atualizarSistema, 10000); function voltarModoAuto() {
+  modoEstudo = "auto";
+  notificarMudanca = true;
+  Swal.fire({
+    icon: "info",
+    title: "Modo automático ativado",
+    text: "Você receberá notificações quando for hora de estudar.",
+    timer: 2000,
+    showConfirmButton: false
+  });
+  atualizarMateriaAgora();
+  atualizarPainelEstudos();
+}
+
+
+
+// ===== MENU HAMBÚRGUER PARA CELULAR =====
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.overlay');
+
+  if (!sidebar) return;
+
+  sidebar.classList.toggle('show');
+
+  // Criar overlay se não existir
+  if (!overlay) {
+    const newOverlay = document.createElement('div');
+    newOverlay.className = 'overlay';
+    newOverlay.onclick = closeSidebar;
+    document.body.appendChild(newOverlay);
+  }
+
+  const overlayEl = document.querySelector('.overlay');
+  if (sidebar.classList.contains('show')) {
+    if (overlayEl) overlayEl.classList.add('show');
+    document.body.style.overflow = 'hidden'; // impede rolagem do fundo
+  } else {
+    if (overlayEl) overlayEl.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.overlay');
+
+  if (sidebar) sidebar.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// Fechar menu ao clicar em um link (opcional)
+function closeSidebarOnLinkClick() {
+  const links = document.querySelectorAll('#menuLateral .nav-link');
+  links.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+}
+
+// Detectar redimensionamento da tela
+window.addEventListener('resize', function () {
+  if (window.innerWidth > 768) {
+    closeSidebar();
+    const overlay = document.querySelector('.overlay');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+});
+
+// Inicializar ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+  // Seu código existente...
+  closeSidebarOnLinkClick();
+});

@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 
-html, body {
+html,
+body {
   font-family: 'Poppins', sans-serif;
   background: #f8f8f8;
   margin: 0;
@@ -11,41 +12,90 @@ html, body {
   height: 100%;
 }
 
-  
-
 .navbar {
-  height: 80px; /* ajuste de acordo com sua navbar */
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100px;
+  height: 80px;
   background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
-  z-index: 1030; 
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 1030;
   display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.navbar-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
+/* Lado ESQUERDO da navbar */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+
+/* Logo */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.navbar-brand img {
+  width: 50px;
+  height: auto;
+}
+
+.brand-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #9f042c;
+  white-space: nowrap;
+}
+
+/* ===== PERFIL DO USUÁRIO (LADO DIREITO) ===== */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 40px;
+  transition: all 0.3s ease;
+  background: rgba(159, 4, 44, 0.05);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.navbar-right:hover {
+  background: rgba(159, 4, 44, 0.15);
+}
+
+/*SIDEBAR*/
+/* ===== SIDEBAR - DESKTOP ===== */
 .sidebar {
   position: fixed;
-  top: 100px;
+  top: 80px;
   left: 0;
   width: 250px;
-  height: calc(100vh - 90px);
+  height: calc(100vh - 80px);
   background-color: #f2f2f2;
   font-weight: bold;
+  z-index: 1020;
+  transition: left 0.3s ease;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
 }
-/*
-
-.main-content {
-  margin-top: 100px;
-  margin-left: 250px;
-  padding: 40px;
-  min-height: calc(100vh - 100px);
-  display: flex;
-  justify-content: center;
-}*/
 
 .layout-container {
   width: 100%;
@@ -123,11 +173,6 @@ html, body {
     gap: 10px;
   }
 
-  .app-main {
-    padding: 15px;
-     margin-left: 0;
-  }
-
   .relogio-container {
     padding: 10px;
   }
@@ -138,21 +183,6 @@ html, body {
 
   .linha-inferior {
     flex-direction: column;
-  }
-
-    .sidebar {
-    position: fixed;
-    left: -250px; /* escondida por padrão */
-    top: 80px; /* abaixo da navbar */
-    width: 250px;
-    height: 100%;
-    background: #f8f9fa;
-    transition: left 0.3s;
-    z-index: 999;
-  }
-
-  .sidebar.show {
-    left: 0;
   }
 
 }
@@ -195,61 +225,535 @@ html, body {
   cursor: pointer;
 }
 
-
-/*CONFIGURAÇÕES RELÓGIO*/
-.relogio-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  /* centraliza corretamente */
-}
-
-.grid-relogio {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.card-relogio {
-  background: #fff;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.tempo {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 15px 0;
-}
-
+/* APP MAIN - DESKTOP */
 .app-main {
   flex: 1;
   padding: 30px;
   margin-left: 250px;
-  margin-top: 100px;
+  margin-top: 80px;
   background-color: #f8f9fa;
+  min-height: calc(100vh - 80px);
 }
 
-.relogio-container h2 {
+/* ==================== RELÓGIO DE ESTUDOS ==================== */
+
+/* Títulos das seções */
+#relogioSection h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.titulo-materia {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #9f042c;
+  display: inline-block;
+}
+
+/* CARDS */
+.relogio-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.relogio-card {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+  padding: 20px;
+  color: white;
+  width: 200px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.relogio-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+}
+
+.relogio-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+.relogio-card p {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 12px;
+  font-family: monospace;
+}
+
+.relogio-card input {
+  width: 100%;
+  text-align: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.relogio-botoes {
+  margin-top: 10px;
+}
+
+.relogio-botoes button {
+  margin: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 30px;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: 0.2s;
+}
+
+.relogio-botoes button:hover {
+  background: #2563eb;
+  transform: scale(1.02);
+}
+
+/* TABELA ESTUDO POR MATÉRIA */
+.add-materia-relogio {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 16px;
+}
+
+.add-materia-relogio input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.add-materia-relogio button {
+  background: #9f042c;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.add-materia-relogio button:hover {
+  background: #7c0322;
+}
+
+.tabela-estudo {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tabela-estudo th,
+.tabela-estudo td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.tabela-estudo th {
+  background: #9f042c;
+  color: white;
+  font-weight: 600;
+}
+
+.tabela-estudo td {
+  background: white;
+}
+
+.tabela-estudo tr:hover td {
+  background: #f1f5f9;
+}
+
+.tabela-estudo button {
+  background: #22c55e;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+  margin: 0 3px;
+}
+
+.tabela-estudo button:last-child {
+  background: #ef4444;
+}
+
+/* RELÓGIO INTELIGENTE */
+.relogio-info-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: white !important;
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 100%;
+}
+
+.relogio-topo h2 {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  text-align: left;
+  color: white !important;
+}
+
+.relogio-topo p {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.relogio-meio {
+  text-align: center;
+  margin: 20px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 15px;
+}
+
+.relogio-meio p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #22c55e;
+  margin: 0;
+}
+
+.relogio-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 15px;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 12px;
+  width: 45%;
+  text-align: center;
+}
+
+.stat span {
+  display: block;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.stat strong {
+  font-size: 20px;
+}
+
+/* ===== META DE ESTUDO ===== */
+/* ===== LAYOUT DOIS LADOS ===== */
+.relogio-duas-colunas {
+  display: flex;
+  gap: 30px;
+  margin: 30px 0;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.relogio-duas-colunas > div {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Garantir que os cards internos ocupem toda altura */
+.relogio-duas-colunas .relogio-info-card,
+.relogio-duas-colunas .meta-card-escuro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Ajustar o conteúdo da meta para preencher */
+.meta-conteudo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.meta-card-escuro {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 24px;
+  padding: 25px;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.meta-card-escuro:hover {
+  transform: translateY(-5px);
+}
+
+.meta-header-escuro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
+.meta-header-escuro h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: white;
+}
+
+.btn-editar-meta-escuro {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-editar-meta-escuro:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.02);
+}
+
+/* Seletor de tipo de meta */
+.meta-tipo-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 40px;
+  padding: 4px;
+}
+
+.meta-tipo-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 30px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.85rem;
+}
+
+.meta-tipo-btn.active {
+  background: #9f042c;
+  color: white;
+}
+
+.meta-tipo-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Conteúdo da meta */
+.meta-texto-resumo {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #22c55e;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.meta-progresso-escuro {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  height: 10px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+.meta-barra-escuro {
+  background: linear-gradient(90deg, #22c55e, #3b82f6);
+  width: 0%;
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+
+.meta-restante-escuro {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: right;
+  margin-top: 8px;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  .relogio-duas-colunas {
+    flex-direction: column;
+  }
+}
+
+/* CARD EXPLICATIVO */
+.info-relogio-card {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  border-radius: 16px;
+  padding: 14px 20px;
+  margin: 20px 0;
+  cursor: pointer;
+  transition: 0.3s;
+  border: 1px solid #9f042c20;
+  text-align: center;
+}
+
+.info-relogio-card:hover {
+  transform: scale(1.02);
+  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+}
+
+.info-relogio-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #1e1b4b;
+  font-weight: 500;
+}
+
+.info-relogio-content i {
+  font-size: 24px;
+  color: #9f042c;
+}
+
+/* BOTÕES DE CONTROLE */
+.botoes-controle {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.botoes-controle .btn-foco,
+.botoes-controle .btn-auto {
+  margin: 0;
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 40px;
+  font-weight: 600;
+  background: #1e293b;
+  color: white;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.botoes-controle .btn-foco:hover,
+.botoes-controle .btn-auto:hover {
+  background: #0f172a;
+  transform: scale(1.02);
+}
+
+/* MODAIS */
+.modal-content {
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.modal-dialog {
+  width: auto;
+  max-width: 50% !important;
+  min-width: 50% !important;
+}
+
+.modal-header {
+  background: #9f042c;
+  color: white;
+  border-bottom: none;
+}
+
+.modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+.modal-body {
+  padding: 25px;
+}
+
+.modal-footer {
+  border-top: none;
+  padding: 15px 25px;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  .botoes-controle {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .botoes-controle .btn-foco,
+  .botoes-controle .btn-auto {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .info-relogio-content span {
+    font-size: 12px;
+  }
+
+  .relogio-card {
+    width: 100%;
+    max-width: 200px;
+  }
+}
 
 /* ---------- TAREFAS GERAL ---------- */
 
 #tarefasSection {
-  position: fixed;        
-  top: 150px;             
-  left: 350px;            
-  right: 20px;            
-  bottom: 20px;           
+  position: fixed;
+  top: 150px;
+  left: 350px;
+  right: 20px;
+  bottom: 20px;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;    
+  align-items: center;
   background: #f8f8f8;
-  overflow-y: auto;       
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -286,7 +790,8 @@ html, body {
 /* Container de tarefas */
 .tarefas-container {
   width: 100%;
-  max-width: 800px; /* limita largura máxima */
+  max-width: 800px;
+  /* limita largura máxima */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -302,7 +807,7 @@ html, body {
   background: #fff;
   border-radius: 10px;
   padding: 10px 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   gap: 12px;
   font-size: 14px;
 }
@@ -327,9 +832,17 @@ html, body {
   font-weight: bold;
 }
 
-.tarefa-alta { background-color: red; }
-.tarefa-media { background-color: orange; }
-.tarefa-baixa { background-color: green; }
+.tarefa-alta {
+  background-color: red;
+}
+
+.tarefa-media {
+  background-color: orange;
+}
+
+.tarefa-baixa {
+  background-color: green;
+}
 
 /* Botões */
 .tarefa-card button {
@@ -384,7 +897,8 @@ html, body {
 
   .tarefa-form {
     flex-direction: column;
-    align-items: stretch; /* ocupa toda largura */
+    align-items: stretch;
+    /* ocupa toda largura */
   }
 
   .tarefas-container {
@@ -399,7 +913,7 @@ html, body {
 
 
 /* ===== CRONOGRAMA MODERNO ===== */
-#cronogramaSection {
+#cronogramaNovoSection {
   margin: 20px;
   padding: 20px;
 }
@@ -424,10 +938,10 @@ html, body {
 }
 
 .dia-drop {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap:5px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   padding: 5px;
 }
 
@@ -449,7 +963,7 @@ html, body {
   font-weight: bold;
   text-align: center;
   cursor: grab;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
   transition: 0.2s;
 }
 
@@ -465,15 +979,17 @@ html, body {
   text-align: center;
   font-weight: 500;
   color: white;
-  margin-bottom: 5px;      
-  cursor: pointer;          
+  margin-bottom: 5px;
+  cursor: pointer;
   transition: 0.2s;
 }
+
 @media (max-width: 768px) {
   .dia {
     min-height: 150px;
     padding: 8px;
   }
+
   .bloco-materia {
     font-size: 12px;
     padding: 5px;
@@ -481,26 +997,10 @@ html, body {
 }
 
 input[type="color"] {
-  width: 50px !important;       
+  width: 50px !important;
 }
-
-
-
-
-
-
-
-
-
-
 
 /* BLOCO DE NOTAS */
-.modal-dialog {
-  z-index: 1050;
-  max-width: 800px; 
-  margin: auto;
-}
-
 .card-nota {
   position: relative;
   padding: 15px;
@@ -577,62 +1077,63 @@ input[type="color"] {
 
 
 /*INICIO*/
- /* GRID RESPONSIVO */
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-  }
+/* GRID RESPONSIVO */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
 
-  /* CARDS */
-  .card {
-    background: #f4f4f9;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-  }
+/* CARDS */
+.card {
+  background: #f4f4f9;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
 
-  .card h3 {
-    margin-bottom: 15px;
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+  margin-bottom: 15px;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card li {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card input[type="checkbox"] {
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+/* TEXTO RISCADAS PARA TAREFAS CONCLUÍDAS */
+.concluida {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+@media(max-width: 500px) {
+  h2 {
+    font-size: 1.5rem;
   }
-
-  .card ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .card li {
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .card input[type="checkbox"] {
-    margin-right: 10px;
-    transform: scale(1.2);
-  }
-
-  /* TEXTO RISCADAS PARA TAREFAS CONCLUÍDAS */
-  .concluida {
-    text-decoration: line-through;
-    opacity: 0.6;
-  }
-
-  @media(max-width: 500px){
-    h2 {
-      font-size: 1.5rem;
-    }
-  }
+}
 
 
-  #resumoHojeCronograma ul {
+#resumoHojeCronograma ul {
   list-style: disc;
   padding-left: 20px;
 }
@@ -647,9 +1148,12 @@ input[type="color"] {
 /* ===== CONFIGURAÇÃO DO USUÁRIO ===== */
 #configuracaoSection {
   display: flex;
-  justify-content: center; /* centraliza horizontal */
-  align-items: center;     /* centraliza vertical */
-  height: 100%;            /* ocupa 100% da tela */
+  justify-content: center;
+  /* centraliza horizontal */
+  align-items: center;
+  /* centraliza vertical */
+  height: 100%;
+  /* ocupa 100% da tela */
   padding: 20px;
   box-sizing: border-box;
 }
@@ -660,9 +1164,10 @@ input[type="color"] {
   padding: 30px 25px;
   width: 100%;
   max-width: 450px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   text-align: center;
-  overflow: hidden; /* evita rolagem interna */
+  overflow: hidden;
+  /* evita rolagem interna */
 }
 
 .foto-usuario-container {
@@ -709,13 +1214,13 @@ input[type="color"] {
 
 .campos-config input:focus {
   border-color: #9f042c;
-  box-shadow: 0 0 8px rgba(159,4,44,0.2);
+  box-shadow: 0 0 8px rgba(159, 4, 44, 0.2);
 }
 
 .btn-salvar {
   margin-top: 20px;
   width: 100%;
-  background: linear-gradient(45deg,#9f042c,#e73a5e);
+  background: linear-gradient(45deg, #9f042c, #e73a5e);
   color: #fff;
   padding: 12px;
   border-radius: 10px;
@@ -727,14 +1232,15 @@ input[type="color"] {
 }
 
 .btn-salvar:hover {
-  background: linear-gradient(45deg,#e73a5e,#9f042c);
+  background: linear-gradient(45deg, #e73a5e, #9f042c);
   transform: scale(1.02);
 }
 
 /* ===== RESPONSIVO ===== */
 @media (max-height: 600px) {
   #configuracaoSection {
-    align-items: flex-start; /* Se a tela for muito pequena, evita corte */
+    align-items: flex-start;
+    /* Se a tela for muito pequena, evita corte */
     padding-top: 40px;
   }
 }
@@ -748,10 +1254,14 @@ input[type="color"] {
 }
 
 .foto-usuario-container img {
-  width: 150px;           /* largura desejada */
-  aspect-ratio: 1 / 1;    /* força quadrado */
-  border-radius: 50%;      /* círculo perfeito */
-  object-fit: cover;       /* recorta se necessário */
+  width: 150px;
+  /* largura desejada */
+  aspect-ratio: 1 / 1;
+  /* força quadrado */
+  border-radius: 50%;
+  /* círculo perfeito */
+  object-fit: cover;
+  /* recorta se necessário */
   border: 4px solid #9f042c;
   margin-bottom: 10px;
 }
@@ -768,7 +1278,8 @@ input[type="color"] {
 
 /* ÁREA DE REVISÃO (container principal) */
 #revisaoSection {
-  margin-left: 240px; /* espaço pro menu lateral */
+  margin-left: 240px;
+  /* espaço pro menu lateral */
   padding: 20px;
 }
 
@@ -791,7 +1302,7 @@ input[type="color"] {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 /* INFO */
@@ -822,4 +1333,430 @@ input[type="color"] {
 
 .btn-add-revisao:hover {
   background-color: #4f46e5;
+}
+
+/* ===== DESTAQUE CLEAN PARA MATÉRIA ATUAL ===== */
+
+/* Matéria atual - mais clean */
+#materiaAgoraInicio {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #9f042c;
+  border-left: 4px solid #9f042c;
+  padding-left: 12px;
+  margin-bottom: 10px;
+}
+
+/* Horário da matéria atual */
+#horarioAgoraInicio {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 5px;
+}
+
+/* Tempo restante */
+#tempoRestanteInicio {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #28a745;
+  margin-top: 8px;
+}
+
+/* Próxima matéria */
+#materiaProximaInicio {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 5px;
+}
+
+#horarioProximaInicio {
+  font-size: 0.85rem;
+  color: #868e96;
+}
+
+#tempoProximaInicio {
+  font-size: 0.85rem;
+  color: #fd7e14;
+  margin-top: 3px;
+}
+
+/* Separador sutil */
+.painel-estudos hr {
+  margin: 15px 0;
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #e9ecef, #9f042c, #e9ecef);
+}
+
+
+.painel-estudos h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+/* ===== MENU HAMBÚRGUER ===== */
+.menu-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #9f042c;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: 10px;
+  transition: 0.3s;
+  z-index: 1100;
+}
+
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 768px) {
+  .menu-hamburger {
+    display: block;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding: 15px;
+    width: 100%;
+  }
+
+  /* Mantém as seções no lugar */
+  #tarefasSection,
+  #notasSection,
+  #calendarioSection,
+  #relogioSection,
+  #estatisticaSection,
+  #cronogramaNovoSection,
+  #revisaoSection,
+  #inicioSection {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+.user-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #9f042c;
+  flex-shrink: 0;
+}
+
+.user-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  overflow: hidden;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-size: 11px;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foto-usuario-container img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #9f042c;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ===== RESPONSIVO - CELULAR ===== */
+@media (max-width: 768px) {
+  .navbar {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .navbar-brand img {
+    width: 35px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+  }
+
+  /* Mostra o botão hambúrguer */
+  .menu-hamburger {
+    display: block;
+  }
+
+  /* Sidebar escondida por padrão no celular */
+  .sidebar {
+    top: 60px;
+    left: -280px;
+    width: 260px;
+    height: calc(100vh - 60px);
+    transition: left 0.3s ease;
+    z-index: 1040;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  /* Conteúdo principal no celular */
+  .app-main {
+    margin-left: 0 !important;
+    margin-top: 60px !important;
+    padding: 15px;
+    width: 100%;
+  }
+
+  /* PERFIL NO CELULAR - MAIS COMPACTO */
+  .navbar-right {
+    padding: 3px 8px;
+    gap: 5px;
+    max-width: 130px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-text {
+    max-width: 80px;
+  }
+
+  .user-name {
+    font-size: 11px;
+  }
+
+  .user-email {
+    font-size: 9px;
+  }
+
+  .modal-dialog {
+    max-width: 90% !important;
+    min-width: 90% !important;
+    width: auto;
+    margin: auto;
+  }
+}
+
+/* ===== TABLET ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .navbar {
+    height: 70px;
+  }
+
+  .sidebar {
+    top: 70px;
+    height: calc(100vh - 70px);
+  }
+
+  .app-main {
+    margin-top: 70px;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-email {
+    font-size: 10px;
+  }
+}
+
+/* Overlay para escurecer o fundo quando o menu está aberto */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1035;
+}
+
+.overlay.show {
+  display: block;
+}
+
+
+/* ===== MODO FOCO ===== */
+.modo-foco-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-family: 'Poppins', sans-serif;
+}
+
+#foco {
+  max-width: 50%;
+  width: auto;
+}
+
+.modo-foco-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 48px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeInScale 0.5s ease-out;
+}
+
+.modo-foco-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+}
+
+.modo-foco-icon i {
+  font-size: 40px;
+  color: white;
+}
+
+.modo-foco-titulo {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.modo-foco-timer {
+  font-size: 5rem;
+  font-weight: 800;
+  font-family: monospace;
+  color: white;
+  letter-spacing: 5px;
+  margin: 30px 0;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.modo-foco-progresso-bg {
+  width: 300px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  margin: 20px auto;
+  overflow: hidden;
+}
+
+.modo-foco-progresso-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s linear;
+}
+
+.modo-foco-botoes {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.modo-foco-btn {
+  border: none;
+  padding: 12px 24px;
+  border-radius: 40px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.modo-foco-btn-pausar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modo-foco-btn-reset {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modo-foco-btn-sair {
+  background: #ef4444;
+}
+
+.modo-foco-btn-continuar {
+  background: #22c55e;
+}
+
+.modo-foco-btn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.modo-foco-frase {
+  margin-top: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  50% {
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+  }
 }
