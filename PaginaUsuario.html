@@ -43,7 +43,7 @@
 
       <!-- Lado DIREITO: info do usuário -->
       <div id="userInfo" class="navbar-right">
-        <img id="sidebarFoto" src="usuario.png" class="user-avatar">
+        <img id="sidebarFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="user-avatar">
         <div class="user-text">
           <span class="user-name" id="sidebarNome">Usuário</span>
           <span class="user-email" id="sidebarEmail">usuario@email.com</span>
@@ -207,12 +207,9 @@
 
               <label>Texto <small style="color:gray;">(Selecione o texto antes de clicar em B/I/U)</small></label>
               <div id="notaTextoToolbar" class="mb-1">
-                <button type="button" class="btn btn-sm btn-light"
-                  onclick="document.execCommand('bold',false,null)">B</button>
-                <button type="button" class="btn btn-sm btn-light"
-                  onclick="document.execCommand('italic',false,null)">I</button>
-                <button type="button" class="btn btn-sm btn-light"
-                  onclick="document.execCommand('underline',false,null)">U</button>
+                <button type="button" class="btn btn-sm btn-light" id="btnBoldNota"><strong>B</strong></button>
+                <button type="button" class="btn btn-sm btn-light" id="btnItalicNota"><em>I</em></button>
+                <button type="button" class="btn btn-sm btn-light" id="btnUnderlineNota"><u>U</u></button>
               </div>
               <div id="notaTexto" class="form-control mb-2" contenteditable="true" style="height:150px; overflow:auto;">
               </div>
@@ -248,7 +245,7 @@
       </div>
     </section>
 
-            <!-- ==================== RELÓGIO DE ESTUDOS ==================== -->
+    <!-- ==================== RELÓGIO DE ESTUDOS ==================== -->
     <section id="relogioSection" style="display:none;">
 
       <h2>⏱ Relógio de Estudos</h2>
@@ -269,7 +266,7 @@
           </tr>
         </thead>
         <tbody id="tabelaMateriasTempo"></tbody>
-       </table>
+      </table>
 
       <!-- CARDS: TIMER, CRONÔMETRO, POMODORO -->
       <div class="relogio-container mt-5 mb-5">
@@ -305,9 +302,9 @@
         </div>
       </div>
 
-            <!-- LAYOUT DOIS LADOS: RELÓGIO INTELIGENTE + META -->
+      <!-- LAYOUT DOIS LADOS: RELÓGIO INTELIGENTE + META -->
       <div class="relogio-duas-colunas">
-        
+
         <!-- LADO ESQUERDO: RELÓGIO INTELIGENTE -->
         <div id="relogioInfo" class="relogio-info-card">
           <div class="relogio-topo">
@@ -354,7 +351,7 @@
       </div>
 
 
-                 <!-- MODAL PARA DEFINIR METAS -->
+      <!-- MODAL PARA DEFINIR METAS -->
       <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
@@ -427,7 +424,8 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar Pomodoro</button>
+              <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar
+                Pomodoro</button>
             </div>
           </div>
         </div>
@@ -455,14 +453,16 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar Foco</button>
+
+              <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar
+                Foco</button>
             </div>
           </div>
         </div>
       </div>
 
     </section>
-
+    <div class="overlay" id="overlay" onclick="fecharSidebar()"></div>
 
     <!--=================ESTATISTICA===================-->
     <section id="estatisticaSection" style="display:none;">
@@ -500,9 +500,9 @@
         <button class="periodo-btn" data-periodo="mensal">📈 Estudo Mensal</button>
       </div>
 
-          <!-- GRÁFICOS LADO A LADO -->
+      <!-- GRÁFICOS LADO A LADO -->
       <div class="graficos-lado-a-lado">
-        
+
         <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
         <div class="grafico-card">
           <h4 id="graficoTitulo">📅 Estudos por Dia da Semana</h4>
@@ -516,7 +516,7 @@
         </div>
 
       </div>
-      
+
       <!-- METAS (Diária, Semanal, Mensal) -->
       <div class="metas-container">
         <h4>🎯 Minhas Metas</h4>
@@ -555,14 +555,14 @@
       <!-- CONQUISTAS (separadas) -->
       <div class="conquistas-container">
         <h4>🏆 Conquistas</h4>
-        
+
         <div class="conquistas-grupo">
           <h5>✅ Desbloqueadas</h5>
           <div id="conquistasDesbloqueadas" class="badges-container">
             <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
           </div>
         </div>
-        
+
         <div class="conquistas-grupo">
           <h5>🔒 A Desbloquear</h5>
           <div id="conquistasBloqueadas" class="badges-container">
@@ -666,47 +666,191 @@
 
     </section>
 
-        <section id="revisaoSection" style="display:none;">
-      <h2>🔁 Revisão Inteligente</h2>
-      </section>
+    <!-- ==================== REVISÃO INTELIGENTE ==================== -->
+    <section id="revisaoSection" style="display:none;">
 
+      <!-- CABEÇALHO -->
+      <div class="revisao-header">
+        <h2>🔁 Revisão Inteligente</h2>
+        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+          <i class="bi bi-plus-lg"></i> Novo Flashcard
+        </button>
+      </div>
 
-  <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
-  <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-    data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">⚙️ Configurações do Usuário</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      <!-- AVISO DE PROVA (CALENDÁRIO) -->
+      <div id="avisoProva" class="aviso-prova" style="display: none;">
+        <div class="aviso-conteudo">
+          <i class="bi bi-calendar-exclamation"></i>
+          <div>
+            <strong>📅 Prova se aproximando!</strong>
+            <p id="textoAvisoProva"></p>
+          </div>
+          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
         </div>
-        <div class="modal-body">
-          <div class="text-center mb-4">
-            <div class="foto-usuario-container">
-              <img id="previewFoto" src="usuario.png" alt="Foto do Usuário">
-              <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2">
+      </div>
+
+      <!-- FILTROS -->
+      <div class="filtros-revisao">
+        <div class="filtros-rapidos">
+          <button class="filtro-btn active" data-filtro="hoje">📅 Hoje</button>
+          <button class="filtro-btn" data-filtro="atrasadas">⚠️ Atrasadas</button>
+          <button class="filtro-btn" data-filtro="semana">📆 Esta Semana</button>
+          <button class="filtro-btn" data-filtro="todas">📚 Todas</button>
+        </div>
+        <div class="filtros-avancados">
+          <select id="filtroMateria" class="filtro-select">
+            <option value="">Todas as matérias</option>
+          </select>
+          <select id="filtroTipo" class="filtro-select">
+            <option value="">Todos os tipos</option>
+            <option value="flashcard">🧠 Flashcards</option>
+            <option value="nota">📒 Notas</option>
+            <option value="prova">📅 Provas</option>
+          </select>
+          <input type="text" id="buscaRevisao" class="filtro-busca" placeholder="🔍 Buscar revisão...">
+        </div>
+      </div>
+
+      <!-- ESTATÍSTICAS RÁPIDAS -->
+      <div class="stats-rapidas">
+        <div class="stat-item">
+          <i class="bi bi-calendar-check"></i>
+          <span>Hoje</span>
+          <strong id="totalHoje">0</strong>
+        </div>
+        <div class="stat-item">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span>Atrasadas</span>
+          <strong id="totalAtrasadas">0</strong>
+        </div>
+        <div class="stat-item">
+          <i class="bi bi-check-circle"></i>
+          <span>Concluídas</span>
+          <strong id="totalConcluidas">0</strong>
+        </div>
+        <div class="stat-item">
+          <i class="bi bi-graph-up"></i>
+          <span>Taxa Acerto</span>
+          <strong id="taxaAcertoGeral">0%</strong>
+        </div>
+      </div>
+
+      <!-- LISTA DE FLASHCARDS (MODO LISTA) -->
+      <div id="listaFlashcards" class="lista-flashcards">
+        <div class="empty-message">🎉 Nenhum flashcard criado ainda!</div>
+      </div>
+
+      <!-- MODO FOCO (CARD ÚNICO) -->
+      <div id="modoFocoContainer" class="modo-foco-container" style="display: none;">
+        <div class="foco-card">
+          <div class="foco-header">
+            <div>
+              <span class="materia-badge" id="focoMateria">Matéria</span>
+              <span class="tema-badge" id="focoTema">Tema</span>
+            </div>
+            <button class="foco-fechar" onclick="fecharModoFoco()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
+          <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+          <div class="foco-botoes">
+            <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
+              <i class="bi bi-eye"></i> Mostrar Resposta
+            </button>
+            <div id="botoesDificuldade" class="botoes-dificuldade" style="display: none;">
+              <button class="btn-dificil" onclick="responderDificuldade('dificil')">😰 Difícil</button>
+              <button class="btn-medio" onclick="responderDificuldade('medio')">😐 Médio</button>
+              <button class="btn-facil" onclick="responderDificuldade('facil')">😊 Fácil</button>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">👤 Nome</label>
-            <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">📧 Email</label>
-            <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+          <div class="foco-progresso">
+            <span id="focoContador">Card 0 de 0</span>
+            <div class="progresso-barra">
+              <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+      </div>
+
+    </section>
+
+    <!-- MODAL FLASHCARD -->
+    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">🧠 Novo Flashcard</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">📚 Matéria</label>
+              <select id="revisaoMateria" class="form-select">
+                <option value="">Selecione uma matéria</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">📂 Tema</label>
+              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">❓ Pergunta</label>
+              <textarea id="revisaoPergunta" class="form-control" rows="2"
+                placeholder="Digite a pergunta..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">✅ Resposta</label>
+              <textarea id="revisaoResposta" class="form-control" rows="3"
+                placeholder="Digite a resposta..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+      data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">⚙️ Configurações do Usuário</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-4">
+              <div class="foto-usuario-container">
+                <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                  alt="Foto do Usuário">
+                <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
+                  onchange="previewFotoSelecionada()">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">👤 Nome</label>
+              <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">📧 Email</label>
+              <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 <script src="PaginaUsuario.js"></script>

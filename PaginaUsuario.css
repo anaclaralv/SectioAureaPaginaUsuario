@@ -749,11 +749,7 @@ body {
 /* ---------- TAREFAS GERAL ---------- */
 
 #tarefasSection {
-  position: fixed;
-  top: 150px;
-  left: 350px;
-  right: 20px;
-  bottom: 20px;
+  position: relative;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -1002,9 +998,7 @@ body {
   }
 }
 
-input[type="color"] {
-  width: 50px !important;
-}
+
 
 /* BLOCO DE NOTAS */
 .card-nota {
@@ -1273,13 +1267,12 @@ input[type="color"] {
 }
 
 input[type="color"] {
-  width: 10px;
-  height: 45px;
-  border-radius: 10px;
+  width: 50px;
+  height: 40px;
+  border-radius: 8px;
   border: 2px solid #ddd;
-  background: none;
-  padding: 0;
-  transition: 0.2s;
+  padding: 2px;
+  cursor: pointer;
 }
 
 
@@ -1547,7 +1540,7 @@ input[type="color"] {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1035;
+  z-index: 1040;
 }
 
 .overlay.show {
@@ -2086,4 +2079,500 @@ input[type="color"] {
 /* Garantir que o canvas não fique muito grande */
 .grafico-card canvas {
   max-height: 280px;
+}
+
+/* ==================== REVISÃO INTELIGENTE ==================== */
+
+#revisaoSection {
+  margin-left: 250px;
+  padding: 30px;
+  background: #f8fafc;
+  min-height: calc(100vh - 80px);
+}
+
+/* CABEÇALHO */
+.revisao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.revisao-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.btn-add-revisao {
+  background: linear-gradient(135deg, #9f042c, #e73a5e);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add-revisao:hover {
+  transform: scale(1.02);
+  background: linear-gradient(135deg, #7c0322, #c01a48);
+}
+
+/* AVISO PROVA */
+.aviso-prova {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 16px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  border-left: 4px solid #d97706;
+}
+
+.aviso-conteudo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.aviso-conteudo i {
+  font-size: 2rem;
+  color: #d97706;
+}
+
+.aviso-conteudo div {
+  flex: 1;
+}
+
+.aviso-conteudo strong {
+  display: block;
+  color: #92400e;
+}
+
+.aviso-conteudo p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #78350f;
+}
+
+.btn-aviso {
+  background: #d97706;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-aviso:hover {
+  background: #b45309;
+}
+
+/* FILTROS */
+.filtros-revisao {
+  background: white;
+  border-radius: 20px;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  border: 1px solid #eef2ff;
+}
+
+.filtros-rapidos {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eef2ff;
+}
+
+.filtro-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.filtro-btn.active {
+  background: #9f042c;
+  color: white;
+}
+
+.filtro-btn:hover:not(.active) {
+  background: #f1f5f9;
+  color: #1f2937;
+}
+
+.filtros-avancados {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filtro-select, .filtro-busca {
+  padding: 8px 15px;
+  border-radius: 30px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 140px;
+}
+
+.filtro-busca {
+  flex: 2;
+}
+
+/* ESTATÍSTICAS RÁPIDAS */
+.stats-rapidas {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  background: white;
+  border-radius: 20px;
+  padding: 15px 20px;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  border: 1px solid #eef2ff;
+}
+
+.stat-item i {
+  font-size: 1.5rem;
+  color: #9f042c;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.stat-item span {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.stat-item strong {
+  font-size: 1.5rem;
+  color: #1f2937;
+  display: block;
+  margin-top: 5px;
+}
+
+/* LISTA DE FLASHCARDS */
+.lista-flashcards {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.flashcard-item {
+  background: white;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid #eef2ff;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.flashcard-item:hover {
+  transform: translateX(5px);
+  border-left: 4px solid #9f042c;
+}
+
+.flashcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.flashcard-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.materia-badge {
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9f042c;
+}
+
+.tema-badge {
+  background: #e0e7ff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.data-badge {
+  background: #fef3c7;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #d97706;
+}
+
+.data-badge.atrasada {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.flashcard-pergunta {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 10px;
+}
+
+.flashcard-resposta {
+  font-size: 0.9rem;
+  color: #6b7280;
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.flashcard-acoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.flashcard-acoes button {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-editar-flashcard {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-editar-flashcard:hover {
+  background: #e2e8f0;
+}
+
+.btn-excluir-flashcard {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.btn-excluir-flashcard:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* MODO FOCO */
+.modo-foco-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.foco-card {
+  background: white;
+  border-radius: 32px;
+  padding: 40px;
+  max-width: 600px;
+  width: 90%;
+  text-align: center;
+  animation: fadeInScale 0.3s ease;
+}
+
+.foco-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.foco-fechar {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.foco-pergunta {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 30px;
+  line-height: 1.4;
+}
+
+.foco-resposta {
+  font-size: 1.2rem;
+  color: #4b5563;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+
+.foco-botoes {
+  margin-top: 20px;
+}
+
+.btn-mostrar-resposta {
+  background: #9f042c;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.botoes-dificuldade {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-dificil, .btn-medio, .btn-facil {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.btn-dificil {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.btn-dificil:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-medio {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.btn-medio:hover {
+  background: #d97706;
+  color: white;
+}
+
+.btn-facil {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.btn-facil:hover {
+  background: #16a34a;
+  color: white;
+}
+
+.foco-progresso {
+  margin-top: 30px;
+}
+
+/* MODAL FLASHCARD */
+.modal-flashcard .modal-content {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.modal-flashcard .modal-header {
+  background: #9f042c;
+  color: white;
+}
+
+.modal-flashcard .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  #revisaoSection {
+    margin-left: 0;
+    padding: 20px;
+  }
+  
+  .filtros-avancados {
+    flex-direction: column;
+  }
+  
+  .foco-card {
+    padding: 25px;
+  }
+  
+  .foco-pergunta {
+    font-size: 1.2rem;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Botão transformar nota em flashcard */
+.btn-nota-to-flashcard {
+  background: #9f042c;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  margin-left: 8px;
+}
+
+.btn-nota-to-flashcard:hover {
+  background: #7c0322;
 }

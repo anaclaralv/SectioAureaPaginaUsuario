@@ -28,11 +28,11 @@ function mostrarTela(tela) {
   if (tela === "cronogramaNovo") {
     renderCronogramaNovo();
   }
- if (tela === "estatistica") {
-  setTimeout(() => {
-    carregarEstatisticas();
-  }, 100);
-}
+  if (tela === "estatistica") {
+    setTimeout(() => {
+      carregarEstatisticas();
+    }, 100);
+  }
   // funções específicas
   if (tela === "relogio") {
     renderTabelaMaterias();
@@ -321,10 +321,15 @@ document.addEventListener('DOMContentLoaded', function () {
     selectable: true,
     eventClick: function (info) {
       const event = info.event;
-      // Se o evento é de tarefa
       if (event.extendedProps?.isTarefa === true) {
-        const tarefa = tarefas.find(t => t.id === event.extendedProps.tarefaId);
-        if (!tarefa) return;
+        const tarefaId = event.extendedProps.tarefaId;
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (!tarefa) {
+          // Se não encontrar, apenas remove o evento
+          event.remove();
+          salvarEventos();
+          return;
+        }
 
         Swal.fire({
           title: 'Editar tarefa',
@@ -411,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
-  let notas = JSON.parse(localStorage.getItem("notas")) || [];
+  notas = JSON.parse(localStorage.getItem("notas")) || [];
   let notaAtual = null;
   const notasContainer = document.getElementById("notasContainer");
   const searchInput = document.getElementById("search");
@@ -432,32 +437,34 @@ document.addEventListener("DOMContentLoaded", () => {
         const card = document.createElement("div");
         card.className = "col-md-4";
         card.innerHTML = `
-          <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
-          <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" 
-   data-idx="${idx}"
-   style="cursor:pointer;"></i>
-            <h5>${nota.titulo}</h5>
-            <small>${nota.dataCriacao || ""}</small>
-            <div class="card-conteudo">
-             ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
-              <div class="checklist-card">
-                ${nota.checklist.map((c, i) => `
-                  <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
-                    <input type="checkbox" ${c.checked ? 'checked' : ''}>
-                    <span>${c.texto}</span>
-                    <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-            <div class="mt-2">
-              <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
-              <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
+        <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
+          <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
+          <h5>${nota.titulo}</h5>
+          <small>${nota.dataCriacao || ""}</small>
+          <div class="card-conteudo">
+            ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
+            <div class="checklist-card">
+              ${nota.checklist.map((c, i) => `
+                <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
+                  <input type="checkbox" ${c.checked ? 'checked' : ''}>
+                  <span>${c.texto}</span>
+                  <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
+                </div>
+              `).join("")}
             </div>
           </div>
-        `;
+          <div class="mt-2">
+            <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
+            <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
+            <button class="btn-nota-to-flashcard" onclick="transformarNotaEmFlashcard(${idx})">
+              <i class="bi bi-stack"></i> Virar Flashcard
+            </button>
+          </div>
+        </div>
+      `;
         notasContainer.appendChild(card);
       });
+
     document.querySelectorAll(".check-item input").forEach(input => {
       input.addEventListener("change", (e) => {
         const div = e.target.parentElement;
@@ -468,6 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNotas();
       });
     });
+
     document.querySelectorAll(".btn-excluir-check").forEach(btn => {
       btn.addEventListener("click", (e) => {
         const div = e.target.parentElement;
@@ -582,6 +590,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnNova").addEventListener("click", () => abrirModal());
   searchInput.addEventListener("input", renderNotas);
   renderNotas();
+  setupNotaTextFormatting();
 });
 //INICIO
 function atualizarResumoInicio() {
@@ -709,14 +718,26 @@ document.addEventListener("DOMContentLoaded", () => {
   renderizarResumoHoje();
   atualizarMateriaAgora();
   renderizarTarefas();
-   renderizarRevisao();
+  initRevisao();
+  renderizarFlashcards();
   carregarMetas();
   if (typeof calendar !== "undefined" && calendar) {
     atualizarEventosTarefas();
     atualizarResumoInicio();
   }
   atualizarTudo();
+  closeSidebarOnLinkClick();
+
+    const fotoSalva = localStorage.getItem("userFoto");
+  if (fotoSalva) {
+    const sidebarFoto = document.getElementById('sidebarFoto');
+    const previewFoto = document.getElementById('previewFoto');
+    if (sidebarFoto) sidebarFoto.src = fotoSalva;
+    if (previewFoto) previewFoto.src = fotoSalva;
+  }
 });
+
+
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
@@ -750,17 +771,31 @@ function salvarConfiguracao() {
   const novoNome = document.getElementById('novoNome').value;
   const novoEmail = document.getElementById('novoEmail').value;
   const novaFotoInput = document.getElementById('novaFoto');
+  
   document.getElementById('sidebarNome').textContent = novoNome;
   document.getElementById('sidebarEmail').textContent = novoEmail;
 
+  // CORREÇÃO: Verifica se o usuário selecionou uma nova foto
   if (novaFotoInput.files && novaFotoInput.files[0]) {
     const reader = new FileReader();
     reader.onload = function (e) {
-      document.getElementById('sidebarFoto').src = e.target.result;
-      document.getElementById('previewFoto').src = e.target.result;
+      // Atualiza a foto da sidebar E do preview
+      const sidebarFoto = document.getElementById('sidebarFoto');
+      const previewFoto = document.getElementById('previewFoto');
+      
+      if (sidebarFoto) sidebarFoto.src = e.target.result;
+      if (previewFoto) previewFoto.src = e.target.result;
+      
+      // Salva a foto no localStorage para persistir
+      localStorage.setItem("userFoto", e.target.result);
     }
     reader.readAsDataURL(novaFotoInput.files[0]);
   }
+  
+  // Salvar nome e email no localStorage
+  localStorage.setItem("userName", novoNome);
+  localStorage.setItem("userEmail", novoEmail);
+  
   Swal.fire({
     icon: 'success',
     title: 'Sucesso!',
@@ -768,19 +803,88 @@ function salvarConfiguracao() {
     timer: 1500,
     showConfirmButton: false
   });
+  
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
+
+// ADICIONE esta função no seu JS (após a função salvarConfiguracao, por exemplo)
+function previewFotoSelecionada() {
+  const input = document.getElementById('novaFoto');
+  const preview = document.getElementById('previewFoto');
+  
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;  // Atualiza o preview no modal
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
 // ---------- VARIÁVEIS GLOBAIS ----------
-let materias = [];
-let cronogramaNovo = [];
+
 let materiaAtualAuto = null;
 let materiaAnterior = null;
 let notificarMudanca = true;
 let estudoAtual = null;
 let modoEstudo = "auto";
+let materias = [];
+let cronogramaNovo = [];
+let notas = []; // <-- ADICIONAR ESTA LINHA
+let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
 
 function allowDrop(ev) {
   ev.preventDefault();
+}
+
+// ===== FORMATAÇÃO DE TEXTO DAS NOTAS (SUBSTITUI document.execCommand) =====
+function setupNotaTextFormatting() {
+  const textoDiv = document.getElementById("notaTexto");
+  if (!textoDiv) return;
+  
+  const btnBold = document.getElementById("btnBoldNota");
+  const btnItalic = document.getElementById("btnItalicNota");
+  const btnUnderline = document.getElementById("btnUnderlineNota");
+  
+  if (btnBold) {
+    btnBold.addEventListener("click", () => {
+      document.execCommand('bold', false, null);
+      textoDiv.focus();
+    });
+  }
+  
+  if (btnItalic) {
+    btnItalic.addEventListener("click", () => {
+      document.execCommand('italic', false, null);
+      textoDiv.focus();
+    });
+  }
+  
+  if (btnUnderline) {
+    btnUnderline.addEventListener("click", () => {
+      document.execCommand('underline', false, null);
+      textoDiv.focus();
+    });
+  }
+}
+/*MIGRAR DADOS ANTIGOS */
+function migrarDadosAntigos() {
+  let precisaSalvar = false;
+
+  Object.keys(tempoEstudo).forEach(id => {
+    const dado = tempoEstudo[id];
+    if (typeof dado === 'number') {
+      const hoje = new Date().toISOString().split('T')[0];
+      tempoEstudo[id] = {
+        total: dado,
+        historico: { [hoje]: dado }
+      };
+      precisaSalvar = true;
+    }
+  });
+
+  if (precisaSalvar) {
+    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+  }
 }
 
 // ---------- CARREGAR DO LOCALSTORAGE ----------
@@ -1080,9 +1184,6 @@ function adicionarMateria() {
 
 
 /* ===================== RELOGIO =====================*/
-
-/* VARIAVEIS */
-let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
 let intervaloEstudo;
 
 function atualizarSistema() {
@@ -1262,96 +1363,156 @@ function iniciarEstudo(id) {
     renderTabelaMaterias();
     atualizarMeta(); // Atualizar a meta em tempo real
   }, 1000);
+}/* ================= MODO FOCO PERSONALIZADO ================= */
+
+// Função para abrir o modal
+function abrirModalModoFoco() {
+  // Atualizar lista de matérias no select
+  const select = document.getElementById('focoMateriaSelect');
+  if (select && typeof materias !== 'undefined' && materias) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  document.getElementById('focoTempoPersonalizado').value = 25;
+
+  // Abrir modal usando Bootstrap
+  const modalElement = document.getElementById('modalModoFoco');
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
 }
 
-/* ================= MODO FOCO MELHORADO ================= */
-let focoInterval = null;
-let focoTempoRestante = 25 * 60; // 25 minutos em segundos
-let focoAtivo = false;
+// Função chamada quando clica em "Iniciar Foco"
+function iniciarModoFocoPersonalizado() {
+  const materiaId = document.getElementById('focoMateriaSelect').value;
+  const tempoFoco = parseInt(document.getElementById('focoTempoPersonalizado').value);
 
-function ativarModoFoco() {
-  // Salvar o estado atual antes de entrar no modo foco
-  const materiaNome = materiaAtualAuto || "Estudo";
-  const materiaCor = document.querySelector('.bloco-materia')?.style.background || "#9f042c";
+  if (!materiaId) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Selecione uma matéria!',
+      timer: 1500,
+      showConfirmButton: false,
+      background: '#1f2937',
+      color: 'white'
+    });
+    return;
+  }
 
-  // Criar o HTML do modo foco (sem style interno)
-  document.body.innerHTML = `
+  const materia = materias.find(m => m.id == materiaId);
+
+  if (!materia) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Matéria não encontrada!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  // Fechar modal
+  const modalElement = document.getElementById('modalModoFoco');
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) modal.hide();
+
+  // Iniciar o modo foco
+  iniciarTimerFoco(materia, tempoFoco);
+}
+
+// Função principal do timer
+function iniciarTimerFoco(materia, tempoMinutos) {
+  const materiaNome = materia.nome;
+  const materiaCor = materia.cor || "#9f042c";
+  const tempoSegundos = tempoMinutos * 60;
+
+  // Remove container existente
+  const existingContainer = document.getElementById("modoFocoContainer");
+  if (existingContainer) existingContainer.remove();
+
+  // Criar o HTML do modo foco
+  const focoHTML = `
     <div id="modoFocoContainer" class="modo-foco-container">
-      <!-- Card principal -->
       <div class="modo-foco-card">
-        <!-- Ícone de foco -->
         <div class="modo-foco-icon" style="background: ${materiaCor}; box-shadow: 0 0 30px ${materiaCor}80;">
           <i class="bi bi-brain"></i>
         </div>
-        
-        <!-- Nome da matéria -->
-        <h1 id="focoMateria" class="modo-foco-titulo">${materiaNome}</h1>
-        
-        <!-- Timer -->
-        <div id="focoTimer" class="modo-foco-timer">25:00</div>
-        
-        <!-- Barra de progresso -->
+        <h1 class="modo-foco-titulo">${materiaNome}</h1>
+        <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
         <div class="modo-foco-progresso-bg">
-          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materiaCor};"></div>
+          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materiaCor}; width: 100%;"></div>
         </div>
-        
-        <!-- Botões -->
         <div class="modo-foco-botoes">
-          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">
-            ⏸ Pausar
-          </button>
-          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">
-            🔄 Reset
-          </button>
-          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">
-            ✕ Sair
-          </button>
+          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
+          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
+          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
         </div>
-        
-        <!-- Frase motivacional -->
-        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total! Você consegue!</p>
+        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materiaNome}! Você consegue!</p>
       </div>
     </div>
   `;
 
-  // Inicializar variáveis
-  focoTempoRestante = 25 * 60;
-  focoAtivo = true;
-  atualizarDisplayFoco();
+  document.body.insertAdjacentHTML('beforeend', focoHTML);
 
-  // Atualizar barra de progresso
-  const progressoEl = document.getElementById('focoProgresso');
-  if (progressoEl) {
-    progressoEl.style.width = '100%';
+  let tempoRestante = tempoSegundos;
+  let focoAtivo = true;
+  let intervalId = null;
+
+  const timerEl = document.getElementById("focoTimer");
+  const progressoEl = document.getElementById("focoProgresso");
+  const fraseEl = document.getElementById("focoFrase");
+  const pausarBtn = document.getElementById("focoPausarBtn");
+  const resetBtn = document.getElementById("focoResetBtn");
+  const sairBtn = document.getElementById("focoSairBtn");
+
+  function atualizarDisplay() {
+    if (!timerEl) return;
+    const minutos = Math.floor(tempoRestante / 60);
+    const segundos = tempoRestante % 60;
+    timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+
+    const progressoPercent = (tempoRestante / tempoSegundos) * 100;
+    if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
+
+    if (fraseEl && focoAtivo) {
+      if (tempoRestante > tempoSegundos * 0.8) {
+        fraseEl.textContent = `🎯 Começando com tudo! Mantenha o foco em ${materiaNome}!`;
+      } else if (tempoRestante > tempoSegundos * 0.5) {
+        fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
+      } else if (tempoRestante > 60) {
+        fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
+      } else if (tempoRestante > 0) {
+        fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
+      }
+    }
   }
 
-  // Iniciar contagem regressiva
-  if (focoInterval) clearInterval(focoInterval);
-  focoInterval = setInterval(() => {
+  // Iniciar timer
+  intervalId = setInterval(() => {
     if (!focoAtivo) return;
 
-    if (focoTempoRestante > 0) {
-      focoTempoRestante--;
-      atualizarDisplayFoco();
-
-      // Atualizar barra de progresso
-      const progressoPercent = (focoTempoRestante / (25 * 60)) * 100;
-      if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
-
-      // Tocar notificação quando faltar 1 minuto
-      if (focoTempoRestante === 60) {
-        const fraseEl = document.getElementById('focoFrase');
-        if (fraseEl) fraseEl.textContent = '⏰ Falta 1 minuto! Você está quase lá!';
-      }
+    if (tempoRestante > 0) {
+      tempoRestante--;
+      atualizarDisplay();
     } else {
-      // Tempo acabou!
-      clearInterval(focoInterval);
-      focoInterval = null;
+      clearInterval(intervalId);
 
+      // Salvar tempo estudado
+      if (typeof tempoEstudo !== 'undefined' && tempoEstudo && materia.id) {
+        if (!tempoEstudo[materia.id]) tempoEstudo[materia.id] = 0;
+        tempoEstudo[materia.id] += tempoSegundos;
+        localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+        if (typeof renderTabelaMaterias === 'function') renderTabelaMaterias();
+      }
+
+      // Comemoração
       Swal.fire({
         icon: 'success',
         title: '🎉 Tempo concluído!',
-        text: 'Parabéns pela sessão de foco!',
+        text: `Parabéns! Você focou ${tempoMinutos} minutos em ${materiaNome}!`,
         timer: 3000,
         showConfirmButton: false,
         background: '#1f2937',
@@ -1359,96 +1520,46 @@ function ativarModoFoco() {
       });
 
       setTimeout(() => {
-        location.reload();
-      }, 2000);
+        const container = document.getElementById("modoFocoContainer");
+        if (container) container.remove();
+      }, 3000);
     }
   }, 1000);
 
-  // Configurar botões
-  setTimeout(() => {
-    const pausarBtn = document.getElementById('focoPausarBtn');
-    const resetBtn = document.getElementById('focoResetBtn');
-    const sairBtn = document.getElementById('focoSairBtn');
-
-    if (pausarBtn) {
-      pausarBtn.onclick = () => {
-        focoAtivo = !focoAtivo;
-        pausarBtn.innerHTML = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
-        pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivo);
-
-        const fraseEl = document.getElementById('focoFrase');
-        if (fraseEl) {
-          fraseEl.textContent = focoAtivo ? '🎯 Foco total! Você consegue!' : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
-        }
-      };
-    }
-
-    if (resetBtn) {
-      resetBtn.onclick = () => {
-        focoTempoRestante = 25 * 60;
-        focoAtivo = true;
-        atualizarDisplayFoco();
-        if (progressoEl) progressoEl.style.width = '100%';
-        if (pausarBtn) {
-          pausarBtn.innerHTML = '⏸ Pausar';
-          pausarBtn.classList.remove('modo-foco-btn-continuar');
-        }
-        const fraseEl = document.getElementById('focoFrase');
-        if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
-
-        if (!focoInterval) {
-          focoInterval = setInterval(() => {
-            if (!focoAtivo) return;
-            if (focoTempoRestante > 0) {
-              focoTempoRestante--;
-              atualizarDisplayFoco();
-              const progressoPercent = (focoTempoRestante / (25 * 60)) * 100;
-              if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
-            } else {
-              clearInterval(focoInterval);
-              focoInterval = null;
-              Swal.fire({
-                icon: 'success',
-                title: '🎉 Tempo concluído!',
-                timer: 2000,
-                showConfirmButton: false
-              });
-              setTimeout(() => location.reload(), 2000);
-            }
-          }, 1000);
-        }
-      };
-    }
-
-    if (sairBtn) {
-      sairBtn.onclick = () => {
-        if (focoInterval) clearInterval(focoInterval);
-        location.reload();
-      };
-    }
-  }, 100);
-}
-
-function atualizarDisplayFoco() {
-  const minutos = Math.floor(focoTempoRestante / 60);
-  const segundos = focoTempoRestante % 60;
-  const timerEl = document.getElementById('focoTimer');
-  if (timerEl) {
-    timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  // Botões
+  if (pausarBtn) {
+    pausarBtn.onclick = () => {
+      focoAtivo = !focoAtivo;
+      pausarBtn.innerHTML = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
+      pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivo);
+      if (fraseEl) {
+        fraseEl.textContent = focoAtivo ? `🎯 Foco total em ${materiaNome}!` : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
+      }
+    };
   }
 
-  const fraseEl = document.getElementById('focoFrase');
-  if (fraseEl && focoAtivo) {
-    if (focoTempoRestante > 1200) {
-      fraseEl.textContent = '🎯 Começando com tudo! Mantenha o foco!';
-    } else if (focoTempoRestante > 600) {
-      fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
-    } else if (focoTempoRestante > 60) {
-      fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
-    } else if (focoTempoRestante > 0) {
-      fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
-    }
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      tempoRestante = tempoSegundos;
+      focoAtivo = true;
+      atualizarDisplay();
+      if (pausarBtn) {
+        pausarBtn.innerHTML = '⏸ Pausar';
+        pausarBtn.classList.remove('modo-foco-btn-continuar');
+      }
+      if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
+    };
   }
+
+  if (sairBtn) {
+    sairBtn.onclick = () => {
+      if (intervalId) clearInterval(intervalId);
+      const container = document.getElementById("modoFocoContainer");
+      if (container) container.remove();
+    };
+  }
+
+  atualizarDisplay();
 }
 /* ================= META PERSONALIZÁVEL ================= */
 let metas = {
@@ -1473,7 +1584,7 @@ function calcularHorasEstudadas(periodo) {
   const hojeStr = formatarData(hoje);
   let dataInicio = new Date();
   let dataInicioStr;
-  
+
   if (periodo === "diaria") {
     dataInicioStr = hojeStr;
   } else if (periodo === "semanal") {
@@ -1489,7 +1600,7 @@ function calcularHorasEstudadas(periodo) {
       totalSegundos += materia;
       return;
     }
-    
+
     if (materia.historico) {
       Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
         if (dataStr >= dataInicioStr && dataStr <= hojeStr) {
@@ -1609,32 +1720,6 @@ function calcularMetas() {
   atualizarMeta();
 }
 
-/* ================= MIGRAR DADOS ANTIGOS ================= */
-function migrarDadosAntigos() {
-  let precisaSalvar = false;
-  
-  Object.keys(tempoEstudo).forEach(id => {
-    const dado = tempoEstudo[id];
-    
-    // Se for número (formato antigo)
-    if (typeof dado === 'number') {
-      const hoje = new Date().toISOString().split('T')[0];
-      tempoEstudo[id] = {
-        total: dado,
-        historico: {
-          [hoje]: dado
-        }
-      };
-      precisaSalvar = true;
-    }
-  });
-  
-  if (precisaSalvar) {
-    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-    console.log("✅ Dados migrados para o novo formato!");
-  }
-}
-
 /* ================= STREAK ================= */
 function atualizarStreak() {
   const hoje = new Date().toDateString();
@@ -1664,21 +1749,21 @@ function atualizarRelogioInfo() {
   const tempoRestanteEl = document.getElementById("tempoRestante");
   const tempoHojeEl = document.getElementById("tempoHoje");
   const streakEl = document.getElementById("streakRelogio");
-  
+
   if (!materiaEl) return;
-  
+
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hojeSemana = dias[new Date().getDay()];
   const agora = new Date();
   const horaAtual = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
-  
+
   const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
   const blocoAtual = cronogramaNovo.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
     horaAtual < b.fim
   );
-  
+
   if (blocoAtual) {
     materiaEl.textContent = "📚 " + blocoAtual.materia.nome;
     horarioEl.textContent = blocoAtual.inicio + " - " + blocoAtual.fim;
@@ -1701,11 +1786,11 @@ function atualizarRelogioInfo() {
     horarioEl.textContent = "";
     tempoRestanteEl.textContent = "";
   }
-  
+
   // ✅ CALCULAR APENAS AS HORAS ESTUDADAS HOJE
   const hoje = new Date().toISOString().split('T')[0];
   let totalSegundosHoje = 0;
-  
+
   Object.values(tempoEstudo).forEach(materia => {
     if (typeof materia === 'number') {
       // Formato antigo - considera tudo
@@ -1718,12 +1803,12 @@ function atualizarRelogioInfo() {
       totalSegundosHoje += materia.total;
     }
   });
-  
+
   const h = String(Math.floor(totalSegundosHoje / 3600)).padStart(2, "0");
   const m = String(Math.floor((totalSegundosHoje % 3600) / 60)).padStart(2, "0");
   const s = String(totalSegundosHoje % 60).padStart(2, "0");
   tempoHojeEl.textContent = "⏱ " + h + ":" + m + ":" + s + " estudados hoje";
-  
+
   const streak = localStorage.getItem("streak") || 0;
   streakEl.textContent = "🔥 " + streak + " dias seguidos";
 }
@@ -1887,163 +1972,35 @@ function iniciarPomodoroComConfig() {
   }, 1000);
 }
 
-/* ================= MODO FOCO PERSONALIZADO ================= */
-function abrirModalModoFoco() {
-  // Atualizar lista de matérias no select
-  const select = document.getElementById('focoMateriaSelect');
-  if (select) {
-    select.innerHTML = '<option value="">Selecione uma matéria</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
-  }
 
-  document.getElementById('focoTempoPersonalizado').value = 25;
 
-  const modal = new bootstrap.Modal(document.getElementById('modalModoFoco'));
-  modal.show();
-}
 
-function iniciarModoFocoPersonalizado() {
-  const materiaId = document.getElementById('focoMateriaSelect').value;
-  const tempoFoco = parseInt(document.getElementById('focoTempoPersonalizado').value);
 
-  if (!materiaId) {
-    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
-    return;
-  }
 
-  const materia = materias.find(m => m.id == materiaId);
 
-  // Fechar modal
-  bootstrap.Modal.getInstance(document.getElementById('modalModoFoco')).hide();
 
-  // Iniciar modo foco com configurações
-  iniciarModoFocoComConfig(materia, tempoFoco);
-}
 
-function iniciarModoFocoComConfig(materia, tempoMinutos) {
-  const materiaNome = materia.nome;
-  const materiaCor = materia.cor || "#9f042c";
-  const tempoSegundos = tempoMinutos * 60;
 
-  // Salvar que começou a estudar esta matéria
-  if (!tempoEstudo[materia.id]) tempoEstudo[materia.id] = 0;
 
-  let tempoDecorrido = 0;
-  let focoAtivoLocal = true;
 
-  document.body.innerHTML = `
-    <div id="modoFocoContainer" class="modo-foco-container">
-      <div class="modo-foco-card">
-        <div class="modo-foco-icon" style="background: ${materiaCor}; box-shadow: 0 0 30px ${materiaCor}80;">
-          <i class="bi bi-brain"></i>
-        </div>
-        
-        <h1 class="modo-foco-titulo">${materiaNome}</h1>
-        
-        <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
-        
-        <div class="modo-foco-progresso-bg">
-          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materiaCor}; width: 100%;"></div>
-        </div>
-        
-        <div class="modo-foco-botoes">
-          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
-          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
-          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
-        </div>
-        
-        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materiaNome}! Você consegue!</p>
-      </div>
-    </div>
-  `;
 
-  let tempoRestante = tempoSegundos;
-  let focoIntervalLocal = null;
 
-  function atualizarDisplay() {
-    const minutos = Math.floor(tempoRestante / 60);
-    const segundos = tempoRestante % 60;
-    const timerEl = document.getElementById('focoTimer');
-    if (timerEl) timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
 
-    const progressoPercent = (tempoRestante / tempoSegundos) * 100;
-    const progressoEl = document.getElementById('focoProgresso');
-    if (progressoEl) progressoEl.style.width = `${progressoPercent}%`;
 
-    const fraseEl = document.getElementById('focoFrase');
-    if (fraseEl && focoAtivoLocal) {
-      if (tempoRestante > tempoSegundos * 0.8) fraseEl.textContent = '🎯 Começando com tudo! Mantenha o foco!';
-      else if (tempoRestante > tempoSegundos * 0.5) fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
-      else if (tempoRestante > 60) fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
-      else if (tempoRestante > 0) fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
-    }
-  }
 
-  focoIntervalLocal = setInterval(() => {
-    if (!focoAtivoLocal) return;
 
-    if (tempoRestante > 0) {
-      tempoRestante--;
-      tempoDecorrido++;
-      atualizarDisplay();
-    } else {
-      clearInterval(focoIntervalLocal);
 
-      // Salvar tempo estudado
-      tempoEstudo[materia.id] += tempoDecorrido;
-      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-      renderTabelaMaterias();
 
-      Swal.fire({
-        icon: 'success',
-        title: '🎉 Tempo concluído!',
-        text: `Parabéns! Você estudou ${Math.floor(tempoDecorrido / 60)} minutos de ${materiaNome}!`,
-        timer: 3000,
-        showConfirmButton: false,
-        background: '#1f2937',
-        color: 'white'
-      });
 
-      setTimeout(() => { location.reload(); }, 2000);
-    }
-  }, 1000);
 
-  setTimeout(() => {
-    const pausarBtn = document.getElementById('focoPausarBtn');
-    const resetBtn = document.getElementById('focoResetBtn');
-    const sairBtn = document.getElementById('focoSairBtn');
 
-    if (pausarBtn) {
-      pausarBtn.onclick = () => {
-        focoAtivoLocal = !focoAtivoLocal;
-        pausarBtn.innerHTML = focoAtivoLocal ? '⏸ Pausar' : '▶ Continuar';
-        pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivoLocal);
-      };
-    }
 
-    if (resetBtn) {
-      resetBtn.onclick = () => {
-        tempoRestante = tempoSegundos;
-        tempoDecorrido = 0;
-        focoAtivoLocal = true;
-        atualizarDisplay();
-        if (pausarBtn) {
-          pausarBtn.innerHTML = '⏸ Pausar';
-          pausarBtn.classList.remove('modo-foco-btn-continuar');
-        }
-      };
-    }
 
-    if (sairBtn) {
-      sairBtn.onclick = () => {
-        if (focoIntervalLocal) clearInterval(focoIntervalLocal);
-        location.reload();
-      };
-    }
-  }, 100);
-}
+
+
+
+
+
 
 /* ================= INFO RELÓGIO ================= */
 function mostrarInfoRelogio() {
@@ -2324,13 +2281,13 @@ let periodoAtual = "semana";
 function calcularEstudoHoje() {
   const hoje = new Date().toISOString().split('T')[0];
   let totalSegundos = 0;
-  
+
   Object.values(tempoEstudo).forEach(materia => {
     if (materia.historico && materia.historico[hoje]) {
       totalSegundos += materia.historico[hoje];
     }
   });
-  
+
   return totalSegundos / 3600;
 }
 
@@ -2338,19 +2295,19 @@ function calcularEstudoHoje() {
 function calcularEstudoSemanal() {
   const hoje = new Date();
   let totalSegundos = 0;
-  
+
   for (let i = 0; i < 7; i++) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
-    
+
     Object.values(tempoEstudo).forEach(materia => {
       if (materia.historico && materia.historico[dataStr]) {
         totalSegundos += materia.historico[dataStr];
       }
     });
   }
-  
+
   return totalSegundos / 3600;
 }
 
@@ -2358,19 +2315,19 @@ function calcularEstudoSemanal() {
 function calcularEstudoMensal() {
   const hoje = new Date();
   let totalSegundos = 0;
-  
+
   for (let i = 0; i < 30; i++) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
-    
+
     Object.values(tempoEstudo).forEach(materia => {
       if (materia.historico && materia.historico[dataStr]) {
         totalSegundos += materia.historico[dataStr];
       }
     });
   }
-  
+
   return totalSegundos / 3600;
 }
 
@@ -2378,7 +2335,7 @@ function calcularEstudoMensal() {
 function getDadosPorDiaSemana() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const horasPorDia = [0, 0, 0, 0, 0, 0, 0];
-  
+
   Object.values(tempoEstudo).forEach(materia => {
     if (materia.historico) {
       Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
@@ -2388,7 +2345,7 @@ function getDadosPorDiaSemana() {
       });
     }
   });
-  
+
   return { labels: diasSemana, dados: horasPorDia };
 }
 
@@ -2396,7 +2353,7 @@ function getDadosPorDiaSemana() {
 function getDadosEstudoHoje() {
   const hoje = new Date().toISOString().split('T')[0];
   const dadosPorMateria = [];
-  
+
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let segundos = 0;
@@ -2407,9 +2364,9 @@ function getDadosEstudoHoje() {
       dadosPorMateria.push({ nome: m.nome, horas: segundos / 3600 });
     }
   });
-  
+
   dadosPorMateria.sort((a, b) => b.horas - a.horas);
-  
+
   return {
     labels: dadosPorMateria.map(d => d.nome),
     dados: dadosPorMateria.map(d => d.horas)
@@ -2421,14 +2378,14 @@ function getDadosEstudoSemanal() {
   const hoje = new Date();
   const labels = [];
   const dados = [];
-  
+
   for (let i = 6; i >= 0; i--) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
     const diaNome = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
     labels.push(`${diaNome} ${data.getDate()}/${data.getMonth() + 1}`);
-    
+
     let total = 0;
     Object.values(tempoEstudo).forEach(materia => {
       if (materia.historico && materia.historico[dataStr]) {
@@ -2437,7 +2394,7 @@ function getDadosEstudoSemanal() {
     });
     dados.push(total / 3600);
   }
-  
+
   return { labels, dados };
 }
 
@@ -2446,13 +2403,13 @@ function getDadosEstudoMensal() {
   const hoje = new Date();
   const labels = [];
   const dados = [];
-  
+
   for (let i = 29; i >= 0; i--) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
     labels.push(`${data.getDate()}/${data.getMonth() + 1}`);
-    
+
     let total = 0;
     Object.values(tempoEstudo).forEach(materia => {
       if (materia.historico && materia.historico[dataStr]) {
@@ -2461,14 +2418,14 @@ function getDadosEstudoMensal() {
     });
     dados.push(total / 3600);
   }
-  
+
   return { labels, dados };
 }
 
 // Atualizar gráfico principal conforme período
 function atualizarGraficoPrincipal() {
   let dados, titulo;
-  
+
   if (periodoAtual === "semana") {
     dados = getDadosPorDiaSemana();
     titulo = "📅 Estudos por Dia da Semana";
@@ -2482,12 +2439,12 @@ function atualizarGraficoPrincipal() {
     dados = getDadosEstudoMensal();
     titulo = "📈 Estudo Mensal (últimos 30 dias)";
   }
-  
+
   document.getElementById("graficoTitulo").textContent = titulo;
-  
+
   const ctx = document.getElementById('graficoPrincipal').getContext('2d');
   if (graficoPrincipalAtual) graficoPrincipalAtual.destroy();
-  
+
   graficoPrincipalAtual = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -2512,21 +2469,21 @@ function atualizarMetas() {
   const totalHoje = calcularEstudoHoje();
   const totalSemana = calcularEstudoSemanal();
   const totalMes = calcularHorasEstudadas("mensal");
-  
+
   // Meta Diária
   const metaDiaria = metas.diaria;
   const progressoDiario = Math.min((totalHoje / metaDiaria) * 100, 100);
   document.getElementById("barraMetaDiaria").style.width = `${progressoDiario}%`;
   document.getElementById("metaDiariaTexto").textContent = `${metaDiaria}h`;
   document.getElementById("metaDiariaRestante").textContent = `${totalHoje.toFixed(1)}h de ${metaDiaria}h`;
-  
+
   // Meta Semanal
   const metaSemanal = metas.semanal;
   const progressoSemanal = Math.min((totalSemana / metaSemanal) * 100, 100);
   document.getElementById("barraMetaSemanal").style.width = `${progressoSemanal}%`;
   document.getElementById("metaSemanalTexto").textContent = `${metaSemanal}h`;
   document.getElementById("metaSemanalRestante").textContent = `${totalSemana.toFixed(1)}h de ${metaSemanal}h`;
-  
+
   // Meta Mensal
   const metaMensal = metas.mensal;
   const progressoMensal = Math.min((totalMes / metaMensal) * 100, 100);
@@ -2540,7 +2497,7 @@ function atualizarConquistasSeparadas() {
   const totalHoras = calcularTotais().totalHoras;
   const streak = parseInt(localStorage.getItem("streak")) || 0;
   const qtdMaterias = materias.length;
-  
+
   const conquistas = [
     { id: "primeiro-estudo", nome: "⭐ Primeiro Estudo", condicao: totalHoras > 0 },
     { id: "7-dias", nome: "🔥 7 Dias Seguidos", condicao: streak >= 7 },
@@ -2550,13 +2507,13 @@ function atualizarConquistasSeparadas() {
     { id: "100-horas", nome: "💪 100 Horas Totais", condicao: totalHoras >= 100 },
     { id: "5-materias", nome: "📚 5 Matérias", condicao: qtdMaterias >= 5 }
   ];
-  
+
   const desbloqueadas = conquistas.filter(c => c.condicao);
   const bloqueadas = conquistas.filter(c => !c.condicao);
-  
+
   const containerDesbloq = document.getElementById("conquistasDesbloqueadas");
   const containerBloq = document.getElementById("conquistasBloqueadas");
-  
+
   if (desbloqueadas.length > 0) {
     containerDesbloq.innerHTML = desbloqueadas.map(c => `
       <div class="badge desbloqueado">
@@ -2566,7 +2523,7 @@ function atualizarConquistasSeparadas() {
   } else {
     containerDesbloq.innerHTML = '<p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>';
   }
-  
+
   if (bloqueadas.length > 0) {
     containerBloq.innerHTML = bloqueadas.map(c => `
       <div class="badge">
@@ -2581,7 +2538,7 @@ function calcularTotais() {
   let totalSegundos = 0;
   let diasEstudados = new Set();
   let maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
-  
+
   Object.values(tempoEstudo).forEach(materia => {
     if (typeof materia === 'number') {
       totalSegundos += materia;
@@ -2594,18 +2551,18 @@ function calcularTotais() {
       totalSegundos += materia.total;
     }
   });
-  
+
   const totalHoras = totalSegundos / 3600;
   const dias = diasEstudados.size;
   const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
-  
+
   return { totalHoras, dias, maiorStreak, mediaDiaria };
 }
 
 /* ================= CALCULAR HORAS POR MATÉRIA ================= */
 function calcularHorasPorMateria() {
   const materiasEstudo = [];
-  
+
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let tempo = 0;
@@ -2620,7 +2577,7 @@ function calcularHorasPorMateria() {
       materiasEstudo.push({ nome: m.nome, horas: tempo / 3600 });
     }
   });
-  
+
   materiasEstudo.sort((a, b) => b.horas - a.horas);
   return materiasEstudo.slice(0, 5);
 }
@@ -2633,66 +2590,66 @@ function carregarEstatisticas() {
   document.getElementById("diasEstudadosEstat").textContent = dias;
   document.getElementById("maiorStreakEstat").textContent = maiorStreak;
   document.getElementById("mediaDiariaEstat").textContent = `${mediaDiaria.toFixed(1)}h`;
-  
+
   // Gráfico de matérias (top 5)
   // Gráfico de matérias (barras horizontais)
-const materiasTop = calcularHorasPorMateria();
-const ctxMaterias = document.getElementById('graficoMaterias').getContext('2d');
+  const materiasTop = calcularHorasPorMateria();
+  const ctxMaterias = document.getElementById('graficoMaterias').getContext('2d');
 
-// Destruir gráfico anterior se existir
-if (window.graficoMateriasAtual) {
-  window.graficoMateriasAtual.destroy();
-}
+  // Destruir gráfico anterior se existir
+  if (window.graficoMateriasAtual) {
+    window.graficoMateriasAtual.destroy();
+  }
 
-window.graficoMateriasAtual = new Chart(ctxMaterias, {
-  type: 'bar',
-  data: {
-    labels: materiasTop.map(m => m.nome),
-    datasets: [{
-      label: 'Horas Estudadas',
-      data: materiasTop.map(m => m.horas),
-      backgroundColor: '#9f042c',
-      borderRadius: 8,
-      barPercentage: 0.6,
-      categoryPercentage: 0.8
-    }]
-  },
-  options: {
-    indexAxis: 'y', // 👈 ISSO FAZ O GRÁFICO FICAR HORIZONTAL
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: { font: { size: 11 } }
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            return `${context.raw.toFixed(1)} horas`;
+  window.graficoMateriasAtual = new Chart(ctxMaterias, {
+    type: 'bar',
+    data: {
+      labels: materiasTop.map(m => m.nome),
+      datasets: [{
+        label: 'Horas Estudadas',
+        data: materiasTop.map(m => m.horas),
+        backgroundColor: '#9f042c',
+        borderRadius: 8,
+        barPercentage: 0.6,
+        categoryPercentage: 0.8
+      }]
+    },
+    options: {
+      indexAxis: 'y', // 👈 ISSO FAZ O GRÁFICO FICAR HORIZONTAL
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return `${context.raw.toFixed(1)} horas`;
+            }
           }
         }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Horas',
-          font: { size: 11 }
-        },
-        grid: { color: '#e5e7eb' }
       },
-      y: {
-        ticks: {
-          font: { size: 11 }
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Horas',
+            font: { size: 11 }
+          },
+          grid: { color: '#e5e7eb' }
         },
-        grid: { display: false }
+        y: {
+          ticks: {
+            font: { size: 11 }
+          },
+          grid: { display: false }
+        }
       }
     }
-  }
-});
-  
+  });
+
   // Configurar seletor de período
   document.querySelectorAll('.periodo-btn').forEach(btn => {
     btn.onclick = () => {
@@ -2702,19 +2659,19 @@ window.graficoMateriasAtual = new Chart(ctxMaterias, {
       atualizarGraficoPrincipal();
     };
   });
-  
+
   // Atualizar gráfico inicial
   atualizarGraficoPrincipal();
-  
+
   // Atualizar metas
   atualizarMetas();
-  
+
   // Atualizar conquistas
   atualizarConquistasSeparadas();
-  
+
   // Sugestões
   gerarSugestoes();
-  
+
   // Resumo
   const resumoEl = document.getElementById("resumoEstatisticas");
   if (resumoEl) {
@@ -2727,9 +2684,9 @@ function gerarSugestoes() {
   const { totalHoras, dias } = calcularTotais();
   const streak = parseInt(localStorage.getItem("streak")) || 0;
   const materiasEstudo = calcularHorasPorMateria();
-  
+
   const sugestoes = [];
-  
+
   if (totalHoras === 0) {
     sugestoes.push("📚 Comece seus estudos! Clique em ▶ ao lado de uma matéria.");
   }
@@ -2745,10 +2702,623 @@ function gerarSugestoes() {
   if (sugestoes.length === 0) {
     sugestoes.push("🎉 Parabéns! Você está indo muito bem! Continue assim!");
   }
-  
+
   const sugestoesLista = document.getElementById("sugestoes");
   if (sugestoesLista) {
     sugestoesLista.innerHTML = sugestoes.map(s => `<li><i class="bi bi-lightbulb"></i> ${s}</li>`).join('')
   }
 }
 
+
+
+/** ==================== REVISÃO INTELIGENTE ==================== */
+
+let flashcards = [];
+let revisoesEmAndamento = [];
+let indiceAtualFoco = 0;
+let filtroAtivo = "hoje";
+
+// ==================== CARREGAR DADOS ====================
+function carregarFlashcards() {
+  try {
+    const salvos = localStorage.getItem("flashcards_sistema");
+    if (salvos) {
+      flashcards = JSON.parse(salvos);
+    }
+  } catch (e) {
+    flashcards = [];
+  }
+  renderizarFlashcards();
+  verificarProvasProximas();
+}
+
+function salvarFlashcards() {
+  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+}
+
+// ==================== VERIFICAR PROVAS NO CALENDÁRIO ====================
+function verificarProvasProximas() {
+  if (!calendar) return;
+
+  const hoje = new Date();
+  const eventos = calendar.getEvents();
+  const provasProximas = [];
+
+  eventos.forEach(evento => {
+    const dataEvento = new Date(evento.start);
+    const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
+
+    if (diasRestantes <= 7 && diasRestantes > 0) {
+      provasProximas.push({
+        titulo: evento.title,
+        data: dataEvento,
+        dias: diasRestantes
+      });
+    }
+  });
+
+  if (provasProximas.length > 0) {
+    const avisoDiv = document.getElementById("avisoProva");
+    const textoAviso = document.getElementById("textoAvisoProva");
+
+    if (avisoDiv && textoAviso && provasProximas[0]) {
+      const prova = provasProximas[0];
+      textoAviso.innerHTML = `${prova.titulo} - Faltam ${prova.dias} dias!`;
+      avisoDiv.style.display = "block";
+      window.provaAtual = prova;
+    }
+  }
+}
+
+function criarRevisaoPorProva() {
+  if (window.provaAtual) {
+    abrirModalFlashcardComProva(window.provaAtual.titulo);
+  }
+}
+
+// ==================== MODAL E CRIAÇÃO ====================
+function abrirModalFlashcard() {
+  // Popular o select do modal CORRETO
+  const select = document.getElementById("revisaoMateria");
+  if (select && materias) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  document.getElementById("revisaoTema").value = "";
+  document.getElementById("revisaoPergunta").value = "";
+  document.getElementById("revisaoResposta").value = "";
+
+  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
+  modal.show();
+}
+
+function abrirModalFlashcardComProva(tituloProva) {
+  // Popular o select de matérias também!
+  const select = document.getElementById("revisaoMateria");
+  if (select && materias) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  document.getElementById("revisaoTema").value = "Prova";
+  document.getElementById("revisaoPergunta").value = `Revisar conteúdo da prova: ${tituloProva}`;
+  document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
+
+  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
+  modal.show();
+}
+
+function salvarFlashcard() {
+  const materiaId = document.getElementById("revisaoMateria").value;
+  const tema = document.getElementById("revisaoTema").value.trim();
+  const pergunta = document.getElementById("revisaoPergunta").value.trim();
+  const resposta = document.getElementById("revisaoResposta").value.trim();
+
+  if (!materiaId) {
+    Swal.fire("Erro", "Selecione uma matéria!", "error");
+    return;
+  }
+  if (!pergunta || !resposta) {
+    Swal.fire("Erro", "Preencha pergunta e resposta!", "error");
+    return;
+  }
+
+  const materia = materias.find(m => m.id == materiaId);
+
+  flashcards.push({
+    id: Date.now(),
+    materiaId: materiaId,
+    materiaNome: materia ? materia.nome : "Matéria",
+    tema: tema || "Geral",
+    pergunta: pergunta,
+    resposta: resposta,
+    nivel: 0,
+    dataProxima: hoje(),
+    acertos: 0,
+    erros: 0,
+    tipo: "flashcard"
+  });
+
+  salvarFlashcards();
+  renderizarFlashcards();
+
+  bootstrap.Modal.getInstance(document.getElementById("modalRevisao")).hide();
+  Swal.fire({
+    icon: 'success',
+    title: 'Flashcard criado!',
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+
+// ==================== RENDERIZAR LISTA ====================
+function hoje() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function proximaRevisao(nivel, dificuldade) {
+  let dias = [1, 3, 7, 14, 30];
+  if (dificuldade === "facil") dias = [3, 7, 14, 30, 60];
+  if (dificuldade === "dificil") dias = [0.5, 1, 3, 7, 14];
+
+  const data = new Date();
+  data.setDate(data.getDate() + dias[nivel]);
+  return data.toISOString().split("T")[0];
+}
+
+function renderizarFlashcards() {
+  const container = document.getElementById("listaFlashcards");
+  if (!container) return;
+
+  let flashcardsFiltrados = [...flashcards];
+
+  // Aplicar filtros
+  // Filtro por tipo
+  const tipoFiltro = document.getElementById("filtroTipo")?.value;
+  if (tipoFiltro) {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.tipo === tipoFiltro);
+  }
+  if (filtroAtivo === "hoje") {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima === hoje());
+  } else if (filtroAtivo === "atrasadas") {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima < hoje());
+  } else if (filtroAtivo === "semana") {
+    const semanaQueVem = new Date();
+    semanaQueVem.setDate(semanaQueVem.getDate() + 7);
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
+  }
+
+  const materiaFiltro = document.getElementById("filtroMateria")?.value;
+  if (materiaFiltro) {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.materiaId == materiaFiltro);
+  }
+
+  const busca = document.getElementById("buscaRevisao")?.value.toLowerCase();
+  if (busca) {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f =>
+      f.pergunta.toLowerCase().includes(busca) ||
+      f.resposta.toLowerCase().includes(busca) ||
+      f.tema.toLowerCase().includes(busca)
+    );
+  }
+
+  // Ordenar: atrasadas primeiro
+  flashcardsFiltrados.sort((a, b) => {
+    if (a.dataProxima < hoje() && b.dataProxima >= hoje()) return -1;
+    if (a.dataProxima >= hoje() && b.dataProxima < hoje()) return 1;
+    return a.dataProxima.localeCompare(b.dataProxima);
+  });
+
+  if (flashcardsFiltrados.length === 0) {
+    container.innerHTML = '<div class="empty-message">🎉 Nenhum flashcard encontrado!</div>';
+  } else {
+    container.innerHTML = flashcardsFiltrados.map(f => criarCardHTML(f)).join('');
+  }
+
+  atualizarEstatisticas();
+  adicionarEventosCards();
+}
+
+function criarCardHTML(flashcard) {
+  const isAtrasada = flashcard.dataProxima < hoje();
+  const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
+
+  return `
+    <div class="flashcard-item" data-id="${flashcard.id}">
+      <div class="flashcard-header">
+        <div class="flashcard-badges">
+          <span class="materia-badge">${flashcard.materiaNome}</span>
+          <span class="tema-badge">📂 ${flashcard.tema}</span>
+          <span class="data-badge ${isAtrasada ? 'atrasada' : ''}">
+            ${isAtrasada ? '⚠️ Atrasada' : '📅 ' + dataFormatada}
+          </span>
+        </div>
+      </div>
+      <div class="flashcard-pergunta">${flashcard.pergunta}</div>
+      <div class="flashcard-resposta">${flashcard.resposta}</div>
+      <div class="flashcard-acoes">
+        <button class="btn-editar-flashcard" onclick="editarFlashcard(${flashcard.id})">✏️ Editar</button>
+        <button class="btn-excluir-flashcard" onclick="excluirFlashcard(${flashcard.id})">🗑️ Excluir</button>
+        <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶️ Revisar</button>
+      </div>
+    </div>
+  `;
+}
+
+function adicionarEventosCards() {
+  document.querySelectorAll('.flashcard-item').forEach(card => {
+    const pergunta = card.querySelector('.flashcard-pergunta');
+    const resposta = card.querySelector('.flashcard-resposta');
+
+    card.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (resposta.style.display === 'none' || !resposta.style.display) {
+        resposta.style.display = 'block';
+      } else {
+        resposta.style.display = 'none';
+      }
+    });
+  });
+}
+
+// ==================== ESTATÍSTICAS ====================
+function atualizarEstatisticas() {
+  const hojeData = hoje();
+  const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
+  const revisoesAtrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
+  const revisoesConcluidas = flashcards.filter(f => f.nivel > 0).length;
+
+  const totalAcertos = flashcards.reduce((sum, f) => sum + f.acertos, 0);
+  const totalRespostas = flashcards.reduce((sum, f) => sum + f.acertos + f.erros, 0);
+  const taxaAcerto = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
+
+  document.getElementById("totalHoje").textContent = revisoesHoje;
+  document.getElementById("totalAtrasadas").textContent = revisoesAtrasadas;
+  document.getElementById("totalConcluidas").textContent = revisoesConcluidas;
+  document.getElementById("taxaAcertoGeral").textContent = `${taxaAcerto}%`;
+}
+
+// ==================== MODO FOCO ====================
+function iniciarRevisao() {
+  const hojeData = hoje();
+  revisoesEmAndamento = flashcards.filter(f => f.dataProxima <= hojeData);
+
+  if (revisoesEmAndamento.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nenhuma revisão pendente!',
+      text: 'Você já revisou tudo por hoje. Volte amanhã!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  indiceAtualFoco = 0;
+  mostrarCardFoco();
+}
+
+function mostrarCardFoco() {
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+    return;
+  }
+
+  const card = revisoesEmAndamento[indiceAtualFoco];
+
+  document.getElementById("focoMateria").textContent = card.materiaNome;
+  document.getElementById("focoTema").textContent = `📂 ${card.tema}`;
+  document.getElementById("focoPergunta").textContent = card.pergunta;
+  document.getElementById("focoResposta").innerHTML = card.resposta;
+  document.getElementById("focoResposta").style.display = "none";
+  document.getElementById("botoesDificuldade").style.display = "none";
+  document.getElementById("btnMostrarResposta").style.display = "block";
+
+  const total = revisoesEmAndamento.length;
+  const atual = indiceAtualFoco + 1;
+  document.getElementById("focoContador").textContent = `Card ${atual} de ${total}`;
+
+  const progresso = (atual / total) * 100;
+  document.getElementById("focoProgressoBarra").style.width = `${progresso}%`;
+
+  document.getElementById("modoFocoContainer").style.display = "flex";
+}
+
+function mostrarRespostaFoco() {
+  document.getElementById("focoResposta").style.display = "block";
+  document.getElementById("btnMostrarResposta").style.display = "none";
+  document.getElementById("botoesDificuldade").style.display = "flex";
+}
+
+function responderDificuldade(dificuldade) {
+  const card = revisoesEmAndamento[indiceAtualFoco];
+  const flashcardOriginal = flashcards.find(f => f.id === card.id);
+
+  if (!flashcardOriginal) return;
+
+  if (dificuldade === "facil") {
+    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
+    flashcardOriginal.acertos++;
+  } else if (dificuldade === "medio") {
+    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
+    flashcardOriginal.acertos++;
+  } else if (dificuldade === "dificil") {
+    flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
+    flashcardOriginal.erros++;
+  }
+
+  flashcardOriginal.dataProxima = proximaRevisao(flashcardOriginal.nivel, dificuldade);
+
+  salvarFlashcards();
+
+  indiceAtualFoco++;
+  mostrarCardFoco();
+}
+
+function finalizarRevisao() {
+  document.getElementById("modoFocoContainer").style.display = "none";
+  renderizarFlashcards();
+
+  Swal.fire({
+    icon: 'success',
+    title: '🎉 Revisão concluída!',
+    text: 'Parabéns! Você revisou tudo por hoje.',
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+function fecharModoFoco() {
+  document.getElementById("modoFocoContainer").style.display = "none";
+}
+
+// ==================== EDITAR E EXCLUIR ====================
+function editarFlashcard(id) {
+  const flashcard = flashcards.find(f => f.id === id);
+  if (!flashcard) return;
+
+  Swal.fire({
+    title: 'Editar Flashcard',
+    html: `
+      <input id="editPergunta" class="swal2-input" value="${flashcard.pergunta.replace(/"/g, '&quot;')}">
+      <textarea id="editResposta" class="swal2-textarea" rows="3">${flashcard.resposta.replace(/"/g, '&quot;')}</textarea>
+      <input id="editTema" class="swal2-input" value="${flashcard.tema}">
+    `,
+    confirmButtonText: 'Salvar',
+    showCancelButton: true,
+    preConfirm: () => {
+      const pergunta = document.getElementById('editPergunta').value;
+      const resposta = document.getElementById('editResposta').value;
+      const tema = document.getElementById('editTema').value;
+
+      if (!pergunta || !resposta) {
+        Swal.showValidationMessage('Preencha todos os campos!');
+        return false;
+      }
+
+      flashcard.pergunta = pergunta;
+      flashcard.resposta = resposta;
+      flashcard.tema = tema || "Geral";
+      salvarFlashcards();
+      renderizarFlashcards();
+
+      Swal.fire('Atualizado!', '', 'success');
+    }
+  });
+}
+
+function excluirFlashcard(id) {
+  Swal.fire({
+    title: 'Excluir flashcard?',
+    text: 'Essa ação não pode ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar'
+  }).then(result => {
+    if (result.isConfirmed) {
+      flashcards = flashcards.filter(f => f.id !== id);
+      salvarFlashcards();
+      renderizarFlashcards();
+      Swal.fire('Excluído!', '', 'success');
+    }
+  });
+}
+
+// ==================== FILTROS ====================
+function configurarFiltros() {
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filtroAtivo = btn.dataset.filtro;
+      renderizarFlashcards();
+    });
+  });
+
+  document.getElementById("filtroMateria")?.addEventListener('change', () => renderizarFlashcards());
+  document.getElementById("buscaRevisao")?.addEventListener('input', () => renderizarFlashcards());
+}
+
+// ==================== MODAL FLASHCARD HTML ====================
+// Adicione este modal no final do body
+function adicionarModalFlashcardHTML() {
+   if (document.getElementById("modalRevisao")) {
+   // console.log("Modal já existe no HTML");
+    return;
+  }
+
+  const modalHTML = `
+    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">🧠 Novo Flashcard</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">📚 Matéria</label>
+              <select id="revisaoMateria" class="form-select">
+                <option value="">Selecione uma matéria</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">📂 Tema</label>
+              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">❓ Pergunta</label>
+              <textarea id="revisaoPergunta" class="form-control" rows="2" placeholder="Digite a pergunta..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">✅ Resposta</label>
+              <textarea id="revisaoResposta" class="form-control" rows="3" placeholder="Digite a resposta..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}// ==================== TRANSFORMAR NOTA EM FLASHCARD ====================
+function transformarNotaEmFlashcard(idx) {
+  console.log("Transformando nota índice:", idx);
+  console.log("Notas disponíveis:", notas);
+
+  // Verificar se notas existe e tem conteúdo
+  if (!notas || notas.length === 0) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Nenhuma nota encontrada!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const nota = notas[idx];
+  if (!nota) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Nota não encontrada!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  // Verificar se já existe flashcard com esta nota
+  const existe = flashcards.some(f => f.pergunta === nota.titulo && f.tipo === "nota");
+
+  if (existe) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Já existe!',
+      text: 'Esta nota já foi transformada em flashcard!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  // Abrir modal para confirmar
+  Swal.fire({
+    title: 'Transformar em Flashcard?',
+    html: `
+      <p>Nota: <strong>${nota.titulo.replace(/"/g, '&quot;')}</strong></p>
+      <p>Conteúdo: ${nota.texto ? nota.texto.substring(0, 100).replace(/"/g, '&quot;') : 'Sem conteúdo'}...</p>
+      <div class="mb-3 mt-3">
+        <label class="form-label fw-bold">📚 Matéria <span style="color: red;">*</span></label>
+        <select id="flashcardMateriaNota" class="form-select" required>
+          <option value="">Selecione uma matéria</option>
+          ${materias.map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">📂 Tema (opcional)</label>
+        <input type="text" id="flashcardTemaNota" class="form-control" placeholder="Ex: Resumo, Revisão...">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Sim, transformar!',
+    cancelButtonText: 'Cancelar',
+    preConfirm: () => {
+      const materiaId = document.getElementById('flashcardMateriaNota').value;
+      const tema = document.getElementById('flashcardTemaNota').value;
+
+      // Validar se matéria foi selecionada
+      if (!materiaId) {
+        Swal.showValidationMessage('❌ Selecione uma matéria!');
+        return false;
+      }
+
+      const materia = materias.find(m => m.id == materiaId);
+
+      return {
+        materiaId: materiaId,
+        materiaNome: materia ? materia.nome : "Matéria",
+        tema: tema || "Nota"
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const { materiaId, materiaNome, tema } = result.value;
+
+      const novoFlashcard = {
+        id: Date.now(),
+        materiaId: materiaId,
+        materiaNome: materiaNome,
+        tema: tema,
+        pergunta: nota.titulo,
+        resposta: nota.texto || "Sem conteúdo detalhado",
+        nivel: 0,
+        dataProxima: hoje(),
+        acertos: 0,
+        erros: 0,
+        tipo: "nota",
+        notaOriginalId: nota.id
+      };
+
+      flashcards.push(novoFlashcard);
+      salvarFlashcards();
+      renderizarFlashcards();
+
+      Swal.fire({
+        icon: 'success',
+        title: '✅ Flashcard criado!',
+        text: `"${nota.titulo.substring(0, 50)}..." agora é um flashcard da matéria ${materiaNome}!`,
+        timer: 2500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+// ==================== INICIALIZAR ====================
+function initRevisao() {
+  adicionarModalFlashcardHTML();
+  carregarFlashcards();
+  configurarFiltros();
+}
+
+// Chamar no DOMContentLoaded
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initRevisao();
+  });
+}
+
+// ADICIONE no final do arquivo, após todas as funções:
+window.transformarNotaEmFlashcard = transformarNotaEmFlashcard;
