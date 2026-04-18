@@ -82,7 +82,6 @@ body {
   background: rgba(159, 4, 44, 0.15);
 }
 
-/*SIDEBAR*/
 /* ===== SIDEBAR - DESKTOP ===== */
 .sidebar {
   position: fixed;
@@ -92,7 +91,7 @@ body {
   height: calc(100vh - 80px);
   background-color: #f2f2f2;
   font-weight: bold;
-  z-index: 1020;
+  z-index: 1040;
   transition: left 0.3s ease;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
 }
@@ -162,30 +161,6 @@ body {
   border-radius: 15px;
 }
 
-/* celular */
-@media (max-width: 768px) {
-  .calendario-container {
-    padding: 10px;
-  }
-
-  .fc-toolbar {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .relogio-container {
-    padding: 10px;
-  }
-
-  .tempo {
-    font-size: 20px;
-  }
-
-  .linha-inferior {
-    flex-direction: column;
-  }
-
-}
 
 
 .fc a {
@@ -712,41 +687,29 @@ body {
   transform: scale(1.02);
 }
 
-/* ===== RESPONSIVO ===== */
-@media (max-width: 768px) {
-  .relogio-duas-colunas {
-    flex-direction: column;
-  }
-  
-  .botoes-controle {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .botoes-controle .btn-foco,
-  .botoes-controle .btn-auto {
-    width: 100%;
-    max-width: 280px;
-  }
-  
-  .relogio-card {
-    width: 100%;
-    max-width: 180px;
-  }
-  
-  .modal-dialog {
-    max-width: 95% !important;
-    min-width: 95% !important;
-  }
-  
-  .tabela-estudo th,
-  .tabela-estudo td {
-    padding: 10px 8px;
-    font-size: 0.8rem;
-  }
-}
 
 /* ---------- TAREFAS GERAL ---------- */
+
+/* Filtro de prioridade nas tarefas */
+.btn-filtro-prioridade {
+  background: #f1f5f9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-filtro-prioridade.active {
+  background: #9f042c;
+  color: white;
+}
+
+.btn-filtro-prioridade:hover:not(.active) {
+  background: #e2e8f0;
+}
 
 #tarefasSection {
   position: relative;
@@ -986,21 +949,45 @@ body {
   transition: 0.2s;
 }
 
-@media (max-width: 768px) {
-  .dia {
-    min-height: 150px;
-    padding: 8px;
-  }
-
-  .bloco-materia {
-    font-size: 12px;
-    padding: 5px;
-  }
-}
 
 
 
 /* BLOCO DE NOTAS */
+
+/* Contador de checklist nas notas */
+.checklist-stats {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  margin-top: 5px;
+}
+
+.checklist-stats i {
+  margin-right: 3px;
+}
+
+.checklist-stats.concluido {
+  background: #22c55e20;
+  color: #16a34a;
+}
+
+.checklist-stats.pendente {
+  background: #ef444420;
+  color: #dc2626;
+}
+
+/* Contador de caracteres das notas */
+.contador-caracteres {
+  transition: color 0.2s ease;
+}
+
+.contador-caracteres.alerta {
+  color: #ef4444 !important;
+  font-weight: bold;
+}
+
 .card-nota {
   position: relative;
   padding: 15px;
@@ -1354,9 +1341,211 @@ input[type="color"] {
   z-index: 1100;
 }
 
-
-/* ===== RESPONSIVO ===== */
+/* RESPONSIVO */
 @media (max-width: 768px) {
+  #revisaoSection {
+    margin-left: 0;
+    padding: 20px;
+  }
+  
+  .filtros-avancados {
+    flex-direction: column;
+  }
+  
+  .foco-card {
+    padding: 25px;
+  }
+  
+  .foco-pergunta {
+    font-size: 1.2rem;
+  }
+.relogio-duas-colunas {
+    flex-direction: column;
+  }
+  
+  .botoes-controle {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .botoes-controle .btn-foco,
+  .botoes-controle .btn-auto {
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .relogio-card {
+    width: 100%;
+    max-width: 180px;
+  }
+  
+  .modal-dialog {
+    max-width: 95% !important;
+    min-width: 95% !important;
+  }
+  
+  .tabela-estudo th,
+  .tabela-estudo td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+    .calendario-container {
+    padding: 10px;
+  }
+
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .relogio-container {
+    padding: 10px;
+  }
+
+  .tempo {
+    font-size: 20px;
+  }
+
+  .linha-inferior {
+    flex-direction: column;
+  }
+
+  .dia {
+    min-height: 150px;
+    padding: 8px;
+  }
+
+  .bloco-materia {
+    font-size: 12px;
+    padding: 5px;
+  }
+
+  .menu-hamburger {
+    display: block;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding: 15px;
+    width: 100%;
+  }
+
+  .graficos-lado-a-lado {
+    flex-direction: column;
+  }
+  
+  .graficos-lado-a-lado .grafico-card {
+    margin-bottom: 20px;
+  }
+
+  .stats-cards {
+    gap: 12px;
+  }
+  
+  .stat-card {
+    min-width: calc(50% - 6px);
+    padding: 15px;
+  }
+  
+  .stat-card strong {
+    font-size: 1.2rem;
+  }
+  
+  .periodo-selector {
+    border-radius: 30px;
+    padding: 6px;
+  }
+  
+  .periodo-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .badges-container {
+    gap: 8px;
+  }
+  
+  .badge {
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+  
+  .sugestoes-container li {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+
+  .navbar {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .navbar-brand img {
+    width: 35px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+  }
+
+  /* Mostra o botão hambúrguer */
+  .menu-hamburger {
+    display: block;
+  }
+
+  /* Sidebar escondida por padrão no celular */
+  .sidebar {
+    top: 60px;
+    left: -280px;
+    width: 260px;
+    height: calc(100vh - 60px);
+    transition: left 0.3s ease;
+    z-index: 1050;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  /* Conteúdo principal no celular */
+   .app-main {
+    margin-left: 0 !important;
+    margin-top: 60px !important;
+    padding: 15px;
+    width: 100%;
+  }
+
+  /* PERFIL NO CELULAR - MAIS COMPACTO */
+  .navbar-right {
+    padding: 3px 8px;
+    gap: 5px;
+    max-width: 130px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-text {
+    max-width: 80px;
+  }
+
+  .user-name {
+    font-size: 11px;
+  }
+
+  .user-email {
+    font-size: 9px;
+  }
+
+  .modal-dialog {
+    max-width: 90% !important;
+    min-width: 90% !important;
+    width: auto;
+    margin: auto;
+  }
+
   .menu-hamburger {
     display: block;
   }
@@ -1428,79 +1617,6 @@ input[type="color"] {
   margin: 0 auto;
 }
 
-/* ===== RESPONSIVO - CELULAR ===== */
-@media (max-width: 768px) {
-  .navbar {
-    height: 60px;
-    padding: 0 12px;
-  }
-
-  .navbar-brand img {
-    width: 35px;
-  }
-
-  .brand-text {
-    font-size: 14px;
-  }
-
-  /* Mostra o botão hambúrguer */
-  .menu-hamburger {
-    display: block;
-  }
-
-  /* Sidebar escondida por padrão no celular */
-  .sidebar {
-    top: 60px;
-    left: -280px;
-    width: 260px;
-    height: calc(100vh - 60px);
-    transition: left 0.3s ease;
-    z-index: 1040;
-  }
-
-  .sidebar.show {
-    left: 0;
-  }
-
-  /* Conteúdo principal no celular */
-  .app-main {
-    margin-left: 0 !important;
-    margin-top: 60px !important;
-    padding: 15px;
-    width: 100%;
-  }
-
-  /* PERFIL NO CELULAR - MAIS COMPACTO */
-  .navbar-right {
-    padding: 3px 8px;
-    gap: 5px;
-    max-width: 130px;
-  }
-
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .user-text {
-    max-width: 80px;
-  }
-
-  .user-name {
-    font-size: 11px;
-  }
-
-  .user-email {
-    font-size: 9px;
-  }
-
-  .modal-dialog {
-    max-width: 90% !important;
-    min-width: 90% !important;
-    width: auto;
-    margin: auto;
-  }
-}
 
 /* ===== TABLET ===== */
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -1540,7 +1656,7 @@ input[type="color"] {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1040;
+  z-index: 1045;
 }
 
 .overlay.show {
@@ -2005,45 +2121,8 @@ input[type="color"] {
   transform: scale(1.02);
 }
 
-/* Responsivo */
-@media (max-width: 768px) {
-  .stats-cards {
-    gap: 12px;
-  }
-  
-  .stat-card {
-    min-width: calc(50% - 6px);
-    padding: 15px;
-  }
-  
-  .stat-card strong {
-    font-size: 1.2rem;
-  }
-  
-  .periodo-selector {
-    border-radius: 30px;
-    padding: 6px;
-  }
-  
-  .periodo-btn {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-  }
-  
-  .badges-container {
-    gap: 8px;
-  }
-  
-  .badge {
-    padding: 5px 12px;
-    font-size: 0.7rem;
-  }
-  
-  .sugestoes-container li {
-    font-size: 0.8rem;
-    gap: 8px;
-  }
-}
+
+
 
 /* ===== GRÁFICOS LADO A LADO ===== */
 .graficos-lado-a-lado {
@@ -2059,16 +2138,7 @@ input[type="color"] {
   margin-bottom: 0;
 }
 
-/* No celular fica um embaixo do outro */
-@media (max-width: 768px) {
-  .graficos-lado-a-lado {
-    flex-direction: column;
-  }
-  
-  .graficos-lado-a-lado .grafico-card {
-    margin-bottom: 20px;
-  }
-}
+
 
 /* Ajuste para o gráfico de barras horizontais */
 #graficoMaterias {
@@ -2530,25 +2600,6 @@ input[type="color"] {
   filter: brightness(0) invert(1);
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-  #revisaoSection {
-    margin-left: 0;
-    padding: 20px;
-  }
-  
-  .filtros-avancados {
-    flex-direction: column;
-  }
-  
-  .foco-card {
-    padding: 25px;
-  }
-  
-  .foco-pergunta {
-    font-size: 1.2rem;
-  }
-}
 
 @keyframes fadeInScale {
   from {
@@ -2576,3 +2627,4 @@ input[type="color"] {
 .btn-nota-to-flashcard:hover {
   background: #7c0322;
 }
+

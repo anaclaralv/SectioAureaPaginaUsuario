@@ -159,6 +159,12 @@
     <section id="tarefasSection" style="display:none;">
 
       <h1 class="mb-3">Minhas Tarefas</h1>
+      <div class="filtro-prioridade" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <button class="btn-filtro-prioridade active" data-prioridade="todas">📋 Todas</button>
+        <button class="btn-filtro-prioridade" data-prioridade="alta">🔴 Alta</button>
+        <button class="btn-filtro-prioridade" data-prioridade="media">🟠 Média</button>
+        <button class="btn-filtro-prioridade" data-prioridade="baixa">🟢 Baixa</button>
+      </div>
       <div class="tarefa-form">
         <input type="text" id="titulo" placeholder="Digite a tarefa">
         <select id="prioridade">
@@ -212,6 +218,11 @@
                 <button type="button" class="btn btn-sm btn-light" id="btnUnderlineNota"><u>U</u></button>
               </div>
               <div id="notaTexto" class="form-control mb-2" contenteditable="true" style="height:150px; overflow:auto;">
+
+                <div class="contador-caracteres"
+                  style="text-align: right; font-size: 0.75rem; color: #6c757d; margin-top: 5px;">
+                  <span id="contadorTexto">0</span> caracteres
+                </div>
               </div>
 
               <label>Checklist</label>
@@ -237,6 +248,17 @@
           <input type="text" id="tituloEvento" placeholder="Nome do evento">
           <input type="date" id="dataEvento">
           <input type="color" id="corEvento" value="#3788d8">
+          <select id="tipoEvento">
+            <option value="compromisso">📅 Compromisso</option>
+            <option value="prova">📝 Prova</option>
+            <option value="tarefa">✅ Tarefa</option>
+          </select>
+          <select id="recorrenciaEvento">
+            <option value="nenhuma">🔁 Não repetir</option>
+            <option value="diaria">📅 Repetir diariamente</option>
+            <option value="semanal">📆 Repetir semanalmente</option>
+            <option value="mensal">🗓️ Repetir mensalmente</option>
+          </select>
           <button onclick="adicionarEvento()">Adicionar</button>
         </div>
 
@@ -297,172 +319,174 @@
           <h3>🍅 Pomodoro</h3>
           <p id="pomodoroDisplay">25:00</p>
           <div class="relogio-botoes">
-            <button onclick="abrirModalPomodoro()">Iniciar</button>
+            <button onclick="iniciarPomodoroPadrao()">▶ Iniciar</button>
+            <button onclick="pausarPomodoro()">⏸ Pausar</button>
+            <button onclick="resetarPomodoro()">🔄 Resetar</button>
           </div>
-        </div>
-      </div>
-
-      <!-- LAYOUT DOIS LADOS: RELÓGIO INTELIGENTE + META -->
-      <div class="relogio-duas-colunas">
-
-        <!-- LADO ESQUERDO: RELÓGIO INTELIGENTE -->
-        <div id="relogioInfo" class="relogio-info-card">
-          <div class="relogio-topo">
-            <h2 id="materiaRelogio">📚 Nenhuma matéria</h2>
-            <p id="horarioRelogio">--:-- - --:--</p>
-          </div>
-          <div class="relogio-meio">
-            <p id="tempoRestante">⏳ aguardando...</p>
-          </div>
-          <div class="relogio-stats">
-            <div class="stat">
-              <span>⏱ Hoje</span>
-              <strong id="tempoHoje">00:00:00</strong>
-            </div>
-            <div class="stat">
-              <span>🔥 Streak</span>
-              <strong id="streakRelogio">0 dias</strong>
-            </div>
-          </div>
+          <p id="pomodoroStatus" style="font-size: 0.8rem; margin-top: 5px;">⚪ Parado</p>
         </div>
 
-        <!-- LADO DIREITO: META DE ESTUDO -->
-        <div id="metaCard" class="meta-card-escuro">
-          <div class="meta-header-escuro">
-            <h3>🎯 Meta de Estudo</h3>
-            <button class="btn-editar-meta-escuro" onclick="abrirModalMeta()">
-              <i class="bi bi-pencil-fill"></i>
-            </button>
-          </div>
-          <div class="meta-tipo-selector">
-            <button class="meta-tipo-btn active" data-tipo="diaria">Diária</button>
-            <button class="meta-tipo-btn" data-tipo="semanal">Semanal</button>
-            <button class="meta-tipo-btn" data-tipo="mensal">Mensal</button>
-          </div>
-          <div class="meta-conteudo">
-            <p id="metaTextoResumo" class="meta-texto-resumo">Carregando...</p>
-            <div class="meta-progresso-escuro">
-              <div id="metaBarraResumo" class="meta-barra-escuro"></div>
+        <!-- LAYOUT DOIS LADOS: RELÓGIO INTELIGENTE + META -->
+        <div class="relogio-duas-colunas">
+
+          <!-- LADO ESQUERDO: RELÓGIO INTELIGENTE -->
+          <div id="relogioInfo" class="relogio-info-card">
+            <div class="relogio-topo">
+              <h2 id="materiaRelogio">📚 Nenhuma matéria</h2>
+              <p id="horarioRelogio">--:-- - --:--</p>
             </div>
-            <p id="metaRestanteResumo" class="meta-restante-escuro"></p>
+            <div class="relogio-meio">
+              <p id="tempoRestante">⏳ aguardando...</p>
+            </div>
+            <div class="relogio-stats">
+              <div class="stat">
+                <span>⏱ Hoje</span>
+                <strong id="tempoHoje">00:00:00</strong>
+              </div>
+              <div class="stat">
+                <span>🔥 Streak</span>
+                <strong id="streakRelogio">0 dias</strong>
+              </div>
+            </div>
           </div>
+
+          <!-- LADO DIREITO: META DE ESTUDO -->
+          <div id="metaCard" class="meta-card-escuro">
+            <div class="meta-header-escuro">
+              <h3>🎯 Meta de Estudo</h3>
+              <button class="btn-editar-meta-escuro" onclick="abrirModalMeta()">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+            </div>
+            <div class="meta-tipo-selector">
+              <button class="meta-tipo-btn active" data-tipo="diaria">Diária</button>
+              <button class="meta-tipo-btn" data-tipo="semanal">Semanal</button>
+              <button class="meta-tipo-btn" data-tipo="mensal">Mensal</button>
+            </div>
+            <div class="meta-conteudo">
+              <p id="metaTextoResumo" class="meta-texto-resumo">Carregando...</p>
+              <div class="meta-progresso-escuro">
+                <div id="metaBarraResumo" class="meta-barra-escuro"></div>
+              </div>
+              <p id="metaRestanteResumo" class="meta-restante-escuro"></p>
+            </div>
+          </div>
+
         </div>
 
-      </div>
 
-
-      <!-- MODAL PARA DEFINIR METAS -->
-      <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">🎯 Definir Metas de Estudo</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label fw-bold">📅 Meta Diária (horas)</label>
-                <input type="number" id="metaDiaria" class="form-control" value="2" min="0.5" max="24" step="0.5">
+        <!-- MODAL PARA DEFINIR METAS -->
+        <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">🎯 Definir Metas de Estudo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
               </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">📆 Meta Semanal (horas)</label>
-                <input type="number" id="metaSemanal" class="form-control" value="14" min="1" max="168" step="0.5">
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">📅 Meta Diária (horas)</label>
+                  <input type="number" id="metaDiaria" class="form-control" value="2" min="0.5" max="24" step="0.5">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">📆 Meta Semanal (horas)</label>
+                  <input type="number" id="metaSemanal" class="form-control" value="14" min="1" max="168" step="0.5">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">📅 Meta Mensal (horas)</label>
+                  <input type="number" id="metaMensal" class="form-control" value="60" min="1" max="720" step="0.5">
+                </div>
+                <div class="alert alert-info mt-3">
+                  <i class="bi bi-lightbulb"></i> Dica: Comece com metas realistas e aumente aos poucos!
+                </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">📅 Meta Mensal (horas)</label>
-                <input type="number" id="metaMensal" class="form-control" value="60" min="1" max="720" step="0.5">
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="salvarMeta()">Salvar Metas</button>
               </div>
-              <div class="alert alert-info mt-3">
-                <i class="bi bi-lightbulb"></i> Dica: Comece com metas realistas e aumente aos poucos!
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" onclick="salvarMeta()">Salvar Metas</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CARD EXPLICATIVO -->
-      <div class="info-relogio-card" onclick="mostrarInfoRelogio()">
-        <div class="info-relogio-content">
-          <i class="bi bi-question-circle-fill"></i>
-          <span>Como funciona o Relógio Inteligente?</span>
-        </div>
-      </div>
-
-      <!-- BOTÕES DE CONTROLE -->
-      <div class="botoes-controle mb-5">
-        <button class="btn-foco" onclick="abrirModalModoFoco()">🧠 Modo foco</button>
-        <button class="btn-auto" onclick="voltarModoAuto()">🔄 Voltar automático</button>
-      </div>
-
-      <!-- MODAL POMODORO PERSONALIZADO -->
-      <div class="modal fade" id="modalPomodoro" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">🍅 Personalizar Pomodoro</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label fw-bold">📚 Matéria</label>
-                <select id="pomodoroMateria" class="form-select">
-                  <option value="">Selecione uma matéria</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">⏱ Tempo de Estudo (minutos)</label>
-                <input type="number" id="pomodoroTempoEstudo" class="form-control" value="25" min="1" max="120">
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">☕ Tempo de Pausa (minutos)</label>
-                <input type="number" id="pomodoroTempoPausa" class="form-control" value="5" min="1" max="30">
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar
-                Pomodoro</button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- MODAL MODO FOCO PERSONALIZADO -->
-      <div class="modal fade" id="modalModoFoco" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">🧠 Personalizar Modo Foco</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label fw-bold">📚 Matéria</label>
-                <select id="focoMateriaSelect" class="form-select">
-                  <option value="">Selecione uma matéria</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">⏱ Tempo de Foco (minutos)</label>
-                <input type="number" id="focoTempoPersonalizado" class="form-control" value="25" min="1" max="120">
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <!-- CARD EXPLICATIVO -->
+        <div class="info-relogio-card" onclick="mostrarInfoRelogio()">
+          <div class="info-relogio-content">
+            <i class="bi bi-question-circle-fill"></i>
+            <span>Como funciona o Relógio Inteligente?</span>
+          </div>
+        </div>
 
-              <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar
-                Foco</button>
+        <!-- BOTÕES DE CONTROLE -->
+        <div class="botoes-controle mb-5">
+          <button class="btn-foco" onclick="abrirModalModoFoco()">🧠 Modo foco</button>
+          <button class="btn-auto" onclick="voltarModoAuto()">🔄 Voltar automático</button>
+        </div>
+
+        <!-- MODAL POMODORO PERSONALIZADO -->
+        <div class="modal fade" id="modalPomodoro" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">🍅 Personalizar Pomodoro</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">📚 Matéria</label>
+                  <select id="pomodoroMateria" class="form-select">
+                    <option value="">Selecione uma matéria</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">⏱ Tempo de Estudo (minutos)</label>
+                  <input type="number" id="pomodoroTempoEstudo" class="form-control" value="25" min="1" max="120">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">☕ Tempo de Pausa (minutos)</label>
+                  <input type="number" id="pomodoroTempoPausa" class="form-control" value="5" min="1" max="30">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar
+                  Pomodoro</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- MODAL MODO FOCO PERSONALIZADO -->
+        <div class="modal fade" id="modalModoFoco" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">🧠 Personalizar Modo Foco</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">📚 Matéria</label>
+                  <select id="focoMateriaSelect" class="form-select">
+                    <option value="">Selecione uma matéria</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">⏱ Tempo de Foco (minutos)</label>
+                  <input type="number" id="focoTempoPersonalizado" class="form-control" value="25" min="1" max="120">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+                <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar
+                  Foco</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
     </section>
-    <div class="overlay" id="overlay" onclick="fecharSidebar()"></div>
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <!--=================ESTATISTICA===================-->
     <section id="estatisticaSection" style="display:none;">
@@ -693,7 +717,7 @@
       <div class="filtros-revisao">
         <div class="filtros-rapidos">
           <button class="filtro-btn active" data-filtro="hoje">📅 Hoje</button>
-          <button class="filtro-btn" data-filtro="atrasadas">⚠️ Atrasadas</button>
+          <button class="filtro-btn" data-filtro="atrasadas">⏰ Vencidas (precisam revisar)</button>
           <button class="filtro-btn" data-filtro="semana">📆 Esta Semana</button>
           <button class="filtro-btn" data-filtro="todas">📚 Todas</button>
         </div>
@@ -708,6 +732,13 @@
             <option value="prova">📅 Provas</option>
           </select>
           <input type="text" id="buscaRevisao" class="filtro-busca" placeholder="🔍 Buscar revisão...">
+        </div>
+        <div class="dica-revisao"
+          style="font-size: 12px; color: #6c757d; margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
+          <i class="bi bi-info-circle"></i>
+          <strong>Como funciona:</strong> Após estudar um card, escolha a dificuldade.
+          "Fácil" = rever em 3 dias, "Médio" = 7 dias, "Difícil" = 1 dia.
+          Cards "Vencidas" são os que já passaram da data de revisão!
         </div>
       </div>
 

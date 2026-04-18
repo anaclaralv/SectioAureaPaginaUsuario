@@ -98,19 +98,30 @@ function adicionarTarefa() {
   atualizarTudo();
   atualizarEventosTarefas();
 }
+let filtroPrioridadeAtual = "todas";
+
 function renderizarTarefas() {
   const hojeLista = document.getElementById("tarefasHoje");
   const futurasLista = document.getElementById("tarefasFuturas");
   if (!hojeLista || !futurasLista) return;
+  
   hojeLista.innerHTML = "";
   futurasLista.innerHTML = "";
+  
   const hoje = hojeFormatado();
   const prioridadeOrdem = { alta: 3, media: 2, baixa: 1 };
-  // Função para criar card
+  
+  // Aplicar filtro de prioridade
+  let tarefasFiltradas = [...tarefas];
+  if (filtroPrioridadeAtual !== "todas") {
+    tarefasFiltradas = tarefasFiltradas.filter(t => t.prioridade === filtroPrioridadeAtual);
+  }
+  
   function criarCard(tarefa) {
     const card = document.createElement("div");
     card.classList.add("tarefa-card");
     if (tarefa.concluida) card.classList.add("concluida");
+    
     const info = document.createElement("div");
     info.classList.add("tarefa-info");
     const spanTitulo = document.createElement("span");
@@ -120,7 +131,7 @@ function renderizarTarefas() {
     badge.textContent = tarefa.prioridade.toUpperCase();
     info.appendChild(spanTitulo);
     info.appendChild(badge);
-    // --- Botões ---
+    
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
     btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
@@ -131,6 +142,7 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
+    
     const btnEditar = document.createElement("button");
     btnEditar.classList.add("btn-editar");
     btnEditar.textContent = "✏️ Editar";
@@ -138,14 +150,14 @@ function renderizarTarefas() {
       Swal.fire({
         title: 'Editar Tarefa',
         html: `
-        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
-        <select id="editPrioridade" class="swal2-input">
-          <option value="alta" ${tarefa.prioridade === 'alta' ? 'selected' : ''}>Alta</option>
-          <option value="media" ${tarefa.prioridade === 'media' ? 'selected' : ''}>Média</option>
-          <option value="baixa" ${tarefa.prioridade === 'baixa' ? 'selected' : ''}>Baixa</option>
-        </select>
-        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
-      `,
+          <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+          <select id="editPrioridade" class="swal2-input">
+            <option value="alta" ${tarefa.prioridade === 'alta' ? 'selected' : ''}>Alta</option>
+            <option value="media" ${tarefa.prioridade === 'media' ? 'selected' : ''}>Média</option>
+            <option value="baixa" ${tarefa.prioridade === 'baixa' ? 'selected' : ''}>Baixa</option>
+          </select>
+          <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+        `,
         showCancelButton: true,
         confirmButtonText: 'Salvar'
       }).then(result => {
@@ -166,6 +178,7 @@ function renderizarTarefas() {
         }
       });
     };
+    
     const btnExcluir = document.createElement("button");
     btnExcluir.classList.add("btn-excluir");
     btnExcluir.textContent = "❌ Excluir";
@@ -176,21 +189,37 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
+    
     card.appendChild(info);
     card.appendChild(btnConcluir);
-    card.appendChild(btnEditar); // adiciona aqui
+    card.appendChild(btnEditar);
     card.appendChild(btnExcluir);
     return card;
   }
-  // Separar tarefas de hoje e futuras e ordenar
-  const tarefasHoje = tarefas.filter(t => t.data === hoje)
+  
+  const tarefasHoje = tarefasFiltradas.filter(t => t.data === hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
-  const tarefasFuturas = tarefas.filter(t => t.data > hoje)
+  const tarefasFuturas = tarefasFiltradas.filter(t => t.data > hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
+  
   if (tarefasHoje.length === 0) hojeLista.innerHTML = "<p>Nenhuma tarefa cadastrada hoje!</p>";
   else tarefasHoje.forEach(t => hojeLista.appendChild(criarCard(t)));
+  
   if (tarefasFuturas.length === 0) futurasLista.innerHTML = "<p>Nenhuma tarefa futura cadastrada!</p>";
   else tarefasFuturas.forEach(t => futurasLista.appendChild(criarCard(t)));
+}
+
+// Configurar os botões de filtro
+function configurarFiltroPrioridade() {
+  const botoes = document.querySelectorAll('.btn-filtro-prioridade');
+  botoes.forEach(btn => {
+    btn.addEventListener('click', () => {
+      botoes.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filtroPrioridadeAtual = btn.dataset.prioridade;
+      renderizarTarefas();
+    });
+  });
 }
 function toggle(id) {
   id = Number(id);
@@ -216,26 +245,69 @@ let calendar;
 // Função para adicionar evento do formulário
 function adicionarEvento() {
   if (!calendar) return;
-
   const titulo = document.getElementById("tituloEvento").value.trim();
   const data = document.getElementById("dataEvento").value;
   const cor = document.getElementById("corEvento").value;
+  const tipo = document.getElementById("tipoEvento").value;
+  const recorrencia = document.getElementById("recorrenciaEvento").value;
 
   if (!titulo || !data) return alert("Preencha os campos!");
 
+  // Adicionar evento principal
   calendar.addEvent({
     title: titulo,
     start: data,
     backgroundColor: cor,
     borderColor: cor,
-    extendedProps: { isTarefa: false }
+    extendedProps: { isTarefa: false, tipo: tipo, recorrencia: recorrencia }
   });
 
-  salvarEventos();
+  // Adicionar eventos recorrentes
+  if (recorrencia !== "nenhuma") {
+    const dataInicio = new Date(data);
+    let datasRecorrentes = [];
+    let maxIteracoes = 0;
+    
+    if (recorrencia === "diaria") {
+      maxIteracoes = 30;
+      for (let i = 1; i <= maxIteracoes; i++) {
+        const novaData = new Date(dataInicio);
+        novaData.setDate(dataInicio.getDate() + i);
+        datasRecorrentes.push(novaData);
+      }
+    } else if (recorrencia === "semanal") {
+      maxIteracoes = 12;
+      for (let i = 1; i <= maxIteracoes; i++) {
+        const novaData = new Date(dataInicio);
+        novaData.setDate(dataInicio.getDate() + (i * 7));
+        datasRecorrentes.push(novaData);
+      }
+    } else if (recorrencia === "mensal") {
+      maxIteracoes = 6;
+      for (let i = 1; i <= maxIteracoes; i++) {
+        const novaData = new Date(dataInicio);
+        novaData.setMonth(dataInicio.getMonth() + i);
+        datasRecorrentes.push(novaData);
+      }
+    }
+    
+    datasRecorrentes.forEach(novaData => {
+      calendar.addEvent({
+        title: titulo,
+        start: novaData.toISOString().split('T')[0],
+        backgroundColor: cor,
+        borderColor: cor,
+        extendedProps: { isTarefa: false, tipo: tipo, recorrencia: recorrencia, isRecorrente: true }
+      });
+    });
+  }
 
+  salvarEventos();
+  
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
   document.getElementById("corEvento").value = "#3788d8";
+  document.getElementById("recorrenciaEvento").value = "nenhuma";
 }
 
 // Salvar todos eventos no localStorage
@@ -320,94 +392,112 @@ document.addEventListener('DOMContentLoaded', function () {
     editable: true,
     selectable: true,
     eventClick: function (info) {
-      const event = info.event;
-      if (event.extendedProps?.isTarefa === true) {
-        const tarefaId = event.extendedProps.tarefaId;
-        const tarefa = tarefas.find(t => t.id === tarefaId);
-        if (!tarefa) {
-          // Se não encontrar, apenas remove o evento
-          event.remove();
-          salvarEventos();
-          return;
-        }
+  const event = info.event;
+  
+  // Verificar se é um evento recorrente
+  const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
+  const isRecorrenciaFilha = event.extendedProps?.isRecorrente === true;
+  
+  if (event.extendedProps?.isTarefa === true) {
+    // ===== TAREFA =====
+    const tarefaId = event.extendedProps.tarefaId;
+    const tarefa = tarefas.find(t => t.id === tarefaId);
+    if (!tarefa) {
+      event.remove();
+      salvarEventos();
+      return;
+    }
 
-        Swal.fire({
-          title: 'Editar tarefa',
-          html: `
-            <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
-            <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
-          `,
-          showCancelButton: true,
-          confirmButtonText: 'Salvar',
-          denyButtonText: 'Excluir',
-          showDenyButton: true
-        }).then(result => {
-          if (result.isConfirmed) {
-            const novoTitulo = document.getElementById('editTitulo').value.trim();
-            const novaData = document.getElementById('editData').value;
-            if (novoTitulo && novaData) {
-              tarefa.titulo = novoTitulo;
-              tarefa.data = novaData;
-              salvarTarefas();
-              atualizarTudo();
-              atualizarEventosTarefas();
-            }
-          } else if (result.isDenied) {
-            tarefas = tarefas.filter(t => t.id !== tarefa.id);
-            salvarTarefas();
-            atualizarTudo();
-            atualizarEventosTarefas();
-          }
-        });
-      } else {
-        // Eventos normais
-        Swal.fire({
-          title: 'Editar evento',
-          html: `
-            <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
-            <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-            <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
-          `,
-          showCancelButton: true,
-          confirmButtonText: 'Salvar',
-          denyButtonText: 'Excluir',
-          showDenyButton: true
-        }).then(result => {
-          if (result.isConfirmed) {
-            const novoTitulo = document.getElementById('editTitulo').value.trim();
-            const novaData = document.getElementById('editData').value;
-            const novaCor = document.getElementById('editCor').value;
-            if (novoTitulo && novaData) {
-              event.setProp('title', novoTitulo);
-              event.setStart(novaData);
-              event.setProp('backgroundColor', novaCor);
-              event.setProp('borderColor', novaCor);
-              salvarEventos();
-            }
-          } else if (result.isDenied) {
-            event.remove();
-            salvarEventos();
-          }
-        });
-      }
-    },
-    eventDrop: function (info) {
-      const event = info.event;
-      // Se for tarefa
-      if (event.extendedProps?.isTarefa === true) {
-        const tarefaId = event.extendedProps.tarefaId;
-        const tarefa = tarefas.find(t => t.id === tarefaId);
-        if (!tarefa) return;
-        // Atualiza a data da tarefa
-        tarefa.data = event.startStr;
+    Swal.fire({
+      title: 'Editar tarefa',
+      html: `
+        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Salvar',
+      denyButtonText: 'Excluir',
+      showDenyButton: true
+    }).then(result => {
+      if (result.isConfirmed) {
+        const novoTitulo = document.getElementById('editTitulo').value.trim();
+        const novaData = document.getElementById('editData').value;
+        if (novoTitulo && novaData) {
+          tarefa.titulo = novoTitulo;
+          tarefa.data = novaData;
+          salvarTarefas();
+          atualizarTudo();
+          atualizarEventosTarefas();
+        }
+      } else if (result.isDenied) {
+        tarefas = tarefas.filter(t => t.id !== tarefa.id);
         salvarTarefas();
         atualizarTudo();
         atualizarEventosTarefas();
-      } else {
-        // Evento normal
+      }
+    });
+  } 
+  // ===== EVENTO RECORRENTE =====
+  else if (isRecorrente) {
+    Swal.fire({
+      title: 'Excluir evento recorrente',
+      text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
+      icon: 'warning',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Excluir apenas este dia',
+      denyButtonText: 'Excluir todas as repetições',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        // Excluir APENAS esta ocorrência
+        event.remove();
+        salvarEventos();
+        Swal.fire({ icon: 'success', title: 'Evento removido!', text: 'Apenas esta data foi removida.', timer: 1500, showConfirmButton: false });
+      } else if (result.isDenied) {
+        // Excluir TODAS as ocorrências (eventos com o mesmo título e mesma recorrência)
+        const eventosParaRemover = calendar.getEvents().filter(e => 
+          e.title === event.title && 
+          e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
+        );
+        eventosParaRemover.forEach(e => e.remove());
+        salvarEventos();
+        Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: 'Todas as repetições foram removidas.', timer: 1500, showConfirmButton: false });
+      }
+    });
+  }
+  // ===== EVENTO NORMAL (não recorrente) =====
+  else {
+    Swal.fire({
+      title: 'Editar evento',
+      html: `
+        <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
+        <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+        <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Salvar',
+      denyButtonText: 'Excluir',
+      showDenyButton: true
+    }).then(result => {
+      if (result.isConfirmed) {
+        const novoTitulo = document.getElementById('editTitulo').value.trim();
+        const novaData = document.getElementById('editData').value;
+        const novaCor = document.getElementById('editCor').value;
+        if (novoTitulo && novaData) {
+          event.setProp('title', novoTitulo);
+          event.setStart(novaData);
+          event.setProp('backgroundColor', novaCor);
+          event.setProp('borderColor', novaCor);
+          salvarEventos();
+        }
+      } else if (result.isDenied) {
+        event.remove();
         salvarEventos();
       }
-    },
+    });
+  }
+},
     events: carregarEventos()
   });
 
@@ -422,25 +512,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
   function renderNotas() {
-    notasContainer.innerHTML = "";
-    const filtro = searchInput.value.toLowerCase();
-    notas
-      .filter(n =>
-        n.titulo.toLowerCase().includes(filtro) ||
-        n.texto.toLowerCase().includes(filtro)
-      )
-      .sort((a, b) => {
-        if (b.favorito !== a.favorito) return b.favorito - a.favorito;
-        return a.titulo.localeCompare(b.titulo);
-      })
-      .forEach((nota, idx) => {
-        const card = document.createElement("div");
-        card.className = "col-md-4";
-        card.innerHTML = `
+  notasContainer.innerHTML = "";
+  const filtro = searchInput.value.toLowerCase();
+  notas
+    .filter(n =>
+      n.titulo.toLowerCase().includes(filtro) ||
+      n.texto.toLowerCase().includes(filtro)
+    )
+    .sort((a, b) => {
+      if (b.favorito !== a.favorito) return b.favorito - a.favorito;
+      return a.titulo.localeCompare(b.titulo);
+    })
+    .forEach((nota, idx) => {
+      // Calcular estatísticas do checklist
+      const totalItens = nota.checklist?.length || 0;
+      const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
+      const pendentes = totalItens - itensConcluidos;
+      
+      let checklistStats = "";
+      if (totalItens > 0) {
+        const statsClass = pendentes === 0 ? "concluido" : "pendente";
+        const statsIcon = pendentes === 0 ? "✅" : "📋";
+        checklistStats = `<div class="checklist-stats ${statsClass}">${statsIcon} ${itensConcluidos}/${totalItens} itens ${pendentes === 0 ? 'concluídos' : 'pendentes'}</div>`;
+      }
+      
+      const card = document.createElement("div");
+      card.className = "col-md-4";
+      card.innerHTML = `
         <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
           <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
           <h5>${nota.titulo}</h5>
           <small>${nota.dataCriacao || ""}</small>
+          ${checklistStats}
           <div class="card-conteudo">
             ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
             <div class="checklist-card">
@@ -462,9 +565,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-        notasContainer.appendChild(card);
-      });
-
+      notasContainer.appendChild(card);
+    });
     document.querySelectorAll(".check-item input").forEach(input => {
       input.addEventListener("change", (e) => {
         const div = e.target.parentElement;
@@ -487,18 +589,59 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
+  // Contador de caracteres da nota
+function atualizarContadorCaracteres() {
+  const textoDiv = document.getElementById("notaTexto");
+  const contadorSpan = document.getElementById("contadorTexto");
+  
+  if (!textoDiv || !contadorSpan) return;
+  
+  const texto = textoDiv.innerText || textoDiv.textContent || "";
+  const caracteres = texto.length;
+  contadorSpan.textContent = caracteres;
+  
+  const contadorDiv = document.querySelector(".contador-caracteres");
+  if (caracteres > 5000) {
+    contadorDiv?.classList.add("alerta");
+  } else {
+    contadorDiv?.classList.remove("alerta");
+  }
+}
+
+// Função para monitorar mudanças no texto
+function iniciarMonitoramentoTexto() {
+  const textoDiv = document.getElementById("notaTexto");
+  if (!textoDiv) return;
+  
+  // Atualiza contador ao digitar
+  textoDiv.addEventListener("input", atualizarContadorCaracteres);
+  textoDiv.addEventListener("keyup", atualizarContadorCaracteres);
+  
+  // Atualiza ao abrir modal com nota existente
+  const observer = new MutationObserver(() => {
+    atualizarContadorCaracteres();
+  });
+  observer.observe(textoDiv, { childList: true, subtree: true, characterData: true });
+}
+
   function salvarNotas() {
     localStorage.setItem("notas", JSON.stringify(notas));
   }
   document.getElementById("notaTexto").addEventListener("input", salvarNotas);
   function abrirModal(nota = null, idx = null) {
-    notaAtual = idx;
-    document.getElementById("notaTitulo").value = nota?.titulo || "";
-    document.getElementById("notaTexto").innerHTML = nota?.texto || "";
-    document.getElementById("notaCor").value = nota?.cor || "#ffffff";
-    renderChecklist(nota?.checklist || []);
-    notaModal.show();
-  }
+  notaAtual = idx;
+  document.getElementById("notaTitulo").value = nota?.titulo || "";
+  document.getElementById("notaTexto").innerHTML = nota?.texto || "";
+  document.getElementById("notaCor").value = nota?.cor || "#ffffff";
+  renderChecklist(nota?.checklist || []);
+  notaModal.show();
+  
+  // Atualizar contador após abrir o modal (dar tempo para o DOM carregar)
+  setTimeout(() => {
+    atualizarContadorCaracteres();
+  }, 100);
+}
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
     container.innerHTML = "";
@@ -590,6 +733,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnNova").addEventListener("click", () => abrirModal());
   searchInput.addEventListener("input", renderNotas);
   renderNotas();
+  iniciarMonitoramentoTexto();
   setupNotaTextFormatting();
 });
 //INICIO
@@ -711,6 +855,7 @@ function atualizarTudo() {
 
 // No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", () => {
+  configurarFiltroPrioridade();
   migrarDadosAntigos();
   mostrarTela("inicio");
   renderMaterias();
@@ -821,17 +966,26 @@ function previewFotoSelecionada() {
   }
 }
 // ---------- VARIÁVEIS GLOBAIS ----------
-
 let materiaAtualAuto = null;
 let materiaAnterior = null;
 let notificarMudanca = true;
 let estudoAtual = null;
 let modoEstudo = "auto";
-let materias = [];
+let materias = [];  // APENAS UM ARRAY para todas as matérias
 let cronogramaNovo = [];
-let notas = []; // <-- ADICIONAR ESTA LINHA
+let notas = [];
+let materiasCronograma = []; 
+let materiasRelogio = [];
 let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
 
+// Carregar do localStorage
+try {
+  materias = JSON.parse(localStorage.getItem("materias")) || [];
+  cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+} catch (e) {
+  materias = [];
+  cronogramaNovo = [];
+}
 function allowDrop(ev) {
   ev.preventDefault();
 }
@@ -908,6 +1062,8 @@ function renderMaterias() {
   const container = document.getElementById("materiasContainer");
   if (!container) return;
   container.innerHTML = "";
+  
+  // Usar 'materias' diretamente (é o array principal que você já tem)
   materias.forEach(m => {
     const div = document.createElement("div");
     div.classList.add("materia-bloco");
@@ -916,7 +1072,8 @@ function renderMaterias() {
     div.id = m.id;
     div.draggable = true;
     div.ondragstart = (e) => e.dataTransfer.setData("id", m.id);
-    // editar
+    
+    // Editar (duplo clique)
     div.addEventListener("dblclick", () => {
       Swal.fire({
         title: `Editar Matéria`,
@@ -929,11 +1086,9 @@ function renderMaterias() {
         confirmButtonText: "Salvar",
         denyButtonText: "Excluir"
       }).then(result => {
-        // ✅ EDITAR
         if (result.isConfirmed) {
           const novoNome = document.getElementById("editNome").value.trim();
           const novaCor = document.getElementById("editCor").value;
-
           if (!novoNome) {
             Swal.fire({ icon: 'error', title: 'Digite um nome!' });
             return;
@@ -943,39 +1098,44 @@ function renderMaterias() {
           salvarMaterias();
           renderMaterias();
           renderCronogramaNovo();
-        }
-        // ❌ EXCLUIR
-        else if (result.isDenied) {
+          renderTabelaMaterias();
+        } else if (result.isDenied) {
           materias = materias.filter(mat => mat.id !== m.id);
           cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
           renderCronogramaNovo();
+          renderTabelaMaterias();
         }
       });
     });
-    // excluir (clique direito)
+    
+    // Excluir (clique direito)
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       Swal.fire({
         title: `Excluir ${m.nome}?`,
+        text: "Isso também removerá a matéria de TODOS os dias do cronograma!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Sim, excluir',
+        confirmButtonText: 'Sim, excluir tudo',
         cancelButtonText: 'Cancelar'
       }).then(res => {
         if (res.isConfirmed) {
           materias = materias.filter(mat => mat.id !== m.id);
           cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
-
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
           renderCronogramaNovo();
+          renderTabelaMaterias();
+          renderizarResumoHoje();
+          Swal.fire({ icon: 'success', title: 'Matéria excluída!', timer: 1500, showConfirmButton: false });
         }
       });
     });
+    
     container.appendChild(div);
   });
 }
@@ -1133,52 +1293,40 @@ function adicionarMateria() {
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hojeSemana = dias[new Date().getDay()];
   const agora = new Date();
-  const horaAtual =
-    String(agora.getHours()).padStart(2, '0') + ":" +
-    String(agora.getMinutes()).padStart(2, '0');
+  const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
 
-  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-  const blocoAtual = cronogramaNovo.find(b =>
+  const cronogramaNovoLocal = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  const blocoAtual = cronogramaNovoLocal.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
     horaAtual < b.fim
   );
 
-  // VERIFICA SE MODO ESTUDO EXISTE
-  if (typeof modoEstudo !== 'undefined' && modoEstudo === "auto") {
+  // Só entra no modo automático se não estiver em modo foco
+  const modoFocoAtivo = document.getElementById("modoFocoContainer")?.style.display === "flex";
+  
+  if (!modoFocoAtivo && modoEstudo === "auto") {
     if (blocoAtual) {
       const idMateria = blocoAtual.materia.id;
-      if (estudoAtual !== idMateria) {
-        if (typeof iniciarEstudo === 'function') {
-          iniciarEstudo(idMateria);
-        }
-      }
-    }
-  }
-
-  if (blocoAtual) {
-    const idMateria = blocoAtual.materia.id;
-    if (typeof modoEstudo !== 'undefined' && modoEstudo === "auto" && estudoAtual !== idMateria) {
-      if (typeof pausarEstudo === 'function') {
-        pausarEstudo();
-      }
-      if (typeof iniciarEstudo === 'function') {
+      if (estudoAtual !== idMateria && typeof iniciarEstudo === 'function') {
+        if (estudoAtual) pausarEstudo();
         iniciarEstudo(idMateria);
       }
+      if (notificarMudanca && materiaAnterior !== idMateria) {
+        Swal.fire({
+          icon: "info",
+          title: "Hora de estudar!",
+          text: `Agora é ${blocoAtual.materia.nome}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+      materiaAnterior = idMateria;
+      materiaAtualAuto = blocoAtual.materia.nome;
+    } else {
+      if (estudoAtual && typeof pausarEstudo === 'function') pausarEstudo();
+      materiaAtualAuto = null;
     }
-    if (notificarMudanca && materiaAnterior !== idMateria) {
-      Swal.fire({
-        icon: "info",
-        title: "Hora de estudar!",
-        text: `Agora é ${blocoAtual.materia.nome}`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-    }
-    materiaAnterior = idMateria;
-    materiaAtualAuto = blocoAtual.materia.nome;
-  } else {
-    materiaAtualAuto = null;
   }
 }
 
@@ -1246,28 +1394,21 @@ function pararTimer() {
   clearInterval(timerInterval);
 }
 /* ================= TEMPO POR MATERIA ================= */
-/* ================= TEMPO POR MATERIA ================= */
 function renderTabelaMaterias() {
   const tabela = document.getElementById("tabelaMateriasTempo");
   if (!tabela) return;
-
   tabela.innerHTML = "";
+  
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let tempo = 0;
-
     if (dados) {
-      if (typeof dados === 'number') {
-        tempo = dados;
-      } else {
-        tempo = dados.total || 0;
-      }
+      if (typeof dados === 'number') tempo = dados;
+      else tempo = dados.total || 0;
     }
-
     const h = String(Math.floor(tempo / 3600)).padStart(2, "0");
     const min = String(Math.floor((tempo % 3600) / 60)).padStart(2, "0");
     const seg = String(tempo % 60).padStart(2, "0");
-
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${m.nome}</td>
@@ -1279,51 +1420,185 @@ function renderTabelaMaterias() {
     `;
     tabela.appendChild(tr);
   });
-}
-/* ================= POMODORO ================= */
+}/* ================= POMODORO CORRIGIDO (APENAS ESTE BLOCO) ================= */
 let pomodoroTempo = 1500;
-let pomodoroInterval;
+let pomodoroInterval = null;
 let pomodoroRodando = false;
-let modoPomodoro = "foco";
-function iniciarPomodoro() {
-  if (!pomodoroRodando) {
-    pomodoroTempo = 1500;
+let modoPomodoro = "foco"; // "foco" ou "pausa"
+let estudoIdPomodoro = null;
+
+function atualizarDisplayPomodoro() {
+  const min = String(Math.floor(pomodoroTempo / 60)).padStart(2, "0");
+  const seg = String(pomodoroTempo % 60).padStart(2, "0");
+  const display = document.getElementById("pomodoroDisplay");
+  if (display) display.textContent = `${min}:${seg}`;
+}
+
+function iniciarPomodoroPadrao() {
+  if (pomodoroRodando) {
+    Swal.fire({ icon: 'warning', title: 'Já rodando!', text: 'Pause ou resete primeiro.', timer: 1500, showConfirmButton: false });
+    return;
   }
-  document.getElementById("pomodoroDisplay").textContent = "25:00";
-  if (pomodoroRodando) return;
+  
+  modoPomodoro = "foco";
+  pomodoroTempo = 1500;
   pomodoroRodando = true;
+  const statusEl = document.getElementById("pomodoroStatus");
+  if (statusEl) statusEl.textContent = "🍅 Estudando...";
+  atualizarDisplayPomodoro();
+  
   pomodoroInterval = setInterval(() => {
-    pomodoroTempo--;
-    const min = String(Math.floor(pomodoroTempo / 60)).padStart(2, "0");
-    const seg = String(pomodoroTempo % 60).padStart(2, "0");
-    document.getElementById("pomodoroDisplay").textContent = `${min}:${seg}`;
+    if (!pomodoroRodando) return;
+    
     if (pomodoroTempo <= 0) {
       clearInterval(pomodoroInterval);
+      pomodoroRodando = false;
+      
       if (modoPomodoro === "foco") {
-        Swal.fire({
-          icon: "success",
-          title: "Hora da pausa! ☕",
-          timer: 2000,
-          showConfirmButton: false
-        });
+        // Pausar estudo se tiver
+        if (estudoIdPomodoro) {
+          if (typeof pausarEstudo === 'function') pausarEstudo();
+          estudoIdPomodoro = null;
+        }
+        
+        Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: 'Hora da pausa! ☕', timer: 2000, showConfirmButton: false });
         modoPomodoro = "pausa";
         pomodoroTempo = 300;
+        if (statusEl) statusEl.textContent = "☕ Em pausa...";
+        iniciarPomodoroPadrao();
       } else {
-        Swal.fire({
-          icon: "info",
-          title: "Hora de estudar! 📚",
-          timer: 2000,
-          showConfirmButton: false
-        });
+        Swal.fire({ icon: 'info', title: '☕ Pausa concluída!', text: 'Hora de estudar!', timer: 2000, showConfirmButton: false });
         modoPomodoro = "foco";
         pomodoroTempo = 1500;
+        if (statusEl) statusEl.textContent = "⚪ Parado";
       }
-      pomodoroRodando = false;
-      iniciarPomodoro();
+      atualizarDisplayPomodoro();
+      return;
     }
-  }, 1000)
+    
+    pomodoroTempo--;
+    atualizarDisplayPomodoro();
+  }, 1000);
 }
-/* ================= INICIAR ESTUDO ================= */
+
+function pausarPomodoro() {
+  if (!pomodoroRodando) return;
+  pomodoroRodando = false;
+  clearInterval(pomodoroInterval);
+  const statusEl = document.getElementById("pomodoroStatus");
+  if (statusEl) statusEl.textContent = "⏸ Pausado";
+  if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
+}
+
+function resetarPomodoro() {
+  clearInterval(pomodoroInterval);
+  pomodoroRodando = false;
+  modoPomodoro = "foco";
+  pomodoroTempo = 1500;
+  atualizarDisplayPomodoro();
+  const statusEl = document.getElementById("pomodoroStatus");
+  if (statusEl) statusEl.textContent = "⚪ Parado";
+  if (estudoIdPomodoro) {
+    if (typeof pausarEstudo === 'function') pausarEstudo();
+    estudoIdPomodoro = null;
+  }
+}
+
+function abrirModalPomodoro() {
+  const select = document.getElementById('pomodoroMateria');
+  if (select && materias) {
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    materias.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+    });
+  }
+
+  const tempoEstudoInput = document.getElementById('pomodoroTempoEstudo');
+  const tempoPausaInput = document.getElementById('pomodoroTempoPausa');
+  if (tempoEstudoInput) tempoEstudoInput.value = 25;
+  if (tempoPausaInput) tempoPausaInput.value = 5;
+
+  const modal = new bootstrap.Modal(document.getElementById('modalPomodoro'));
+  modal.show();
+}
+
+function iniciarPomodoroPersonalizado() {
+  const materiaId = document.getElementById('pomodoroMateria')?.value;
+  const tempoEstudo = parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25);
+  const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5);
+
+  if (!materiaId) {
+    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+
+  const materia = materias.find(m => m.id == materiaId);
+  if (!materia) return;
+
+  // Configurar o Pomodoro personalizado
+  if (pomodoroRodando) resetarPomodoro();
+  
+  modoPomodoro = "foco";
+  pomodoroTempo = tempoEstudo * 60;
+  pomodoroRodando = true;
+  estudoIdPomodoro = materiaId;
+  
+  // Iniciar estudo
+  if (typeof iniciarEstudo === 'function') iniciarEstudo(materiaId);
+  
+  const statusEl = document.getElementById("pomodoroStatus");
+  if (statusEl) statusEl.textContent = "🍅 Estudando...";
+  atualizarDisplayPomodoro();
+  
+  // Fechar modal
+  bootstrap.Modal.getInstance(document.getElementById('modalPomodoro'))?.hide();
+  
+  // Iniciar timer
+  if (pomodoroInterval) clearInterval(pomodoroInterval);
+  pomodoroInterval = setInterval(() => {
+    if (!pomodoroRodando) return;
+    
+    if (pomodoroTempo <= 0) {
+      clearInterval(pomodoroInterval);
+      pomodoroRodando = false;
+      
+      if (modoPomodoro === "foco") {
+        if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
+        
+        Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: `${tempoPausa} min de pausa ☕`, timer: 2000, showConfirmButton: false });
+        modoPomodoro = "pausa";
+        pomodoroTempo = tempoPausa * 60;
+        if (statusEl) statusEl.textContent = "☕ Em pausa...";
+        atualizarDisplayPomodoro();
+        
+        // Continuar para a pausa
+        setTimeout(() => {
+          if (!pomodoroRodando) {
+            pomodoroRodando = true;
+            pomodoroInterval = setInterval(() => {
+              if (!pomodoroRodando) return;
+              if (pomodoroTempo <= 0) {
+                clearInterval(pomodoroInterval);
+                pomodoroRodando = false;
+                Swal.fire({ icon: 'info', title: '☕ Pausa concluída!', text: 'Pronto para outro ciclo!', timer: 2000, showConfirmButton: false });
+                if (statusEl) statusEl.textContent = "⚪ Parado";
+                estudoIdPomodoro = null;
+              } else {
+                pomodoroTempo--;
+                atualizarDisplayPomodoro();
+              }
+            }, 1000);
+          }
+        }, 100);
+      }
+      return;
+    }
+    
+    pomodoroTempo--;
+    atualizarDisplayPomodoro();
+  }, 1000);
+}
+
 /* ================= INICIAR ESTUDO ================= */
 function iniciarEstudo(id) {
   atualizarStreak();
@@ -1362,6 +1637,12 @@ function iniciarEstudo(id) {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     renderTabelaMaterias();
     atualizarMeta(); // Atualizar a meta em tempo real
+     if (typeof carregarEstatisticas === 'function' && document.getElementById("estatisticaSection")?.style.display === "block") {
+      carregarEstatisticas();
+    }
+    if (typeof atualizarRelogioInfo === 'function') {
+      atualizarRelogioInfo();
+    }
   }, 1000);
 }/* ================= MODO FOCO PERSONALIZADO ================= */
 
@@ -1829,176 +2110,28 @@ function pausarEstudo() {
 function adicionarMateriaRelogio() {
   const nome = document.getElementById("novaMateriaRelogio").value.trim();
   if (!nome) return;
+  
   const novaMateria = {
     id: "m" + Date.now(),
-    nome: nome
+    nome: nome,
+    cor: "#9f042c"
   };
+  
   materias.push(novaMateria);
   localStorage.setItem("materias", JSON.stringify(materias));
   document.getElementById("novaMateriaRelogio").value = "";
   renderTabelaMaterias();
-  Swal.fire({
-    icon: "success",
-    title: "Matéria adicionada!",
-    timer: 1500,
-    showConfirmButton: false
-  });
+  renderMaterias(); // atualiza o cronograma também
+  Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
 }
 function finalizarEstudo() {
   clearInterval(intervaloEstudo);
   estudoAtual = null;
-  Swal.fire({
-    icon: "success",
-    title: "Sessão finalizada!",
-    timer: 1500,
-    showConfirmButton: false
-  });
-}
-
-
-/* ================= POMODORO PERSONALIZADO ================= */
-let pomodoroConfig = {
-  tempoEstudo: 25,
-  tempoPausa: 5,
-  materiaId: null,
-  materiaNome: null
-};
-
-function abrirModalPomodoro() {
-  // Atualizar lista de matérias no select
-  const select = document.getElementById('pomodoroMateria');
-  if (select) {
-    select.innerHTML = '<option value="">Selecione uma matéria</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
+  if (typeof carregarEstatisticas === 'function') {
+    carregarEstatisticas(); // 👈 ADICIONE
   }
-
-  // Resetar valores padrão
-  document.getElementById('pomodoroTempoEstudo').value = 25;
-  document.getElementById('pomodoroTempoPausa').value = 5;
-
-  const modal = new bootstrap.Modal(document.getElementById('modalPomodoro'));
-  modal.show();
+  Swal.fire({ icon: "success", title: "Sessão finalizada!", timer: 1500, showConfirmButton: false });
 }
-
-function iniciarPomodoroPersonalizado() {
-  const materiaId = document.getElementById('pomodoroMateria').value;
-  const tempoEstudo = parseInt(document.getElementById('pomodoroTempoEstudo').value);
-  const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa').value);
-
-  if (!materiaId) {
-    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
-    return;
-  }
-
-  const materia = materias.find(m => m.id == materiaId);
-
-  pomodoroConfig = {
-    tempoEstudo: tempoEstudo,
-    tempoPausa: tempoPausa,
-    materiaId: materiaId,
-    materiaNome: materia.nome
-  };
-
-  // Fechar modal
-  bootstrap.Modal.getInstance(document.getElementById('modalPomodoro')).hide();
-
-  // Iniciar Pomodoro
-  iniciarPomodoroComConfig();
-}
-
-function iniciarPomodoroComConfig() {
-  if (pomodoroInterval) clearInterval(pomodoroInterval);
-
-  pomodoroRodando = true;
-  modoPomodoro = "foco";
-  pomodoroTempo = pomodoroConfig.tempoEstudo * 60;
-
-  document.getElementById("pomodoroDisplay").textContent =
-    `${String(pomodoroConfig.tempoEstudo).padStart(2, '0')}:00`;
-
-  pomodoroInterval = setInterval(() => {
-    if (!pomodoroRodando) return;
-
-    pomodoroTempo--;
-    const min = String(Math.floor(pomodoroTempo / 60)).padStart(2, "0");
-    const seg = String(pomodoroTempo % 60).padStart(2, "0");
-    document.getElementById("pomodoroDisplay").textContent = `${min}:${seg}`;
-
-    if (pomodoroTempo <= 0) {
-      clearInterval(pomodoroInterval);
-
-      if (modoPomodoro === "foco") {
-        // Salvar tempo estudado
-        if (pomodoroConfig.materiaId) {
-          if (!tempoEstudo[pomodoroConfig.materiaId]) tempoEstudo[pomodoroConfig.materiaId] = 0;
-          tempoEstudo[pomodoroConfig.materiaId] += pomodoroConfig.tempoEstudo * 60;
-          localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-          renderTabelaMaterias();
-        }
-
-        Swal.fire({
-          icon: "success",
-          title: "Hora da pausa! ☕",
-          text: `${pomodoroConfig.tempoPausa} minutos de descanso`,
-          timer: 2000,
-          showConfirmButton: false
-        });
-
-        modoPomodoro = "pausa";
-        pomodoroTempo = pomodoroConfig.tempoPausa * 60;
-        document.getElementById("pomodoroDisplay").textContent =
-          `${String(pomodoroConfig.tempoPausa).padStart(2, '0')}:00`;
-        pomodoroRodando = false;
-        iniciarPomodoroComConfig();
-      } else {
-        Swal.fire({
-          icon: "info",
-          title: "Hora de estudar! 📚",
-          text: `${pomodoroConfig.tempoEstudo} minutos de foco`,
-          timer: 2000,
-          showConfirmButton: false
-        });
-
-        modoPomodoro = "foco";
-        pomodoroTempo = pomodoroConfig.tempoEstudo * 60;
-        document.getElementById("pomodoroDisplay").textContent =
-          `${String(pomodoroConfig.tempoEstudo).padStart(2, '0')}:00`;
-        pomodoroRodando = false;
-        iniciarPomodoroComConfig();
-      }
-    }
-  }, 1000);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2207,40 +2340,43 @@ setInterval(atualizarSistema, 10000); function voltarModoAuto() {
 // ===== MENU HAMBÚRGUER PARA CELULAR =====
 function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.overlay');
-
+  const overlay = document.getElementById('overlay');
+  
   if (!sidebar) return;
-
+  
+  // Alterna a classe show na sidebar
   sidebar.classList.toggle('show');
-
-  // Criar overlay se não existir
-  if (!overlay) {
-    const newOverlay = document.createElement('div');
-    newOverlay.className = 'overlay';
-    newOverlay.onclick = closeSidebar;
-    document.body.appendChild(newOverlay);
-  }
-
-  const overlayEl = document.querySelector('.overlay');
-  if (sidebar.classList.contains('show')) {
-    if (overlayEl) overlayEl.classList.add('show');
-    document.body.style.overflow = 'hidden'; // impede rolagem do fundo
-  } else {
-    if (overlayEl) overlayEl.classList.remove('show');
-    document.body.style.overflow = '';
+  
+  // Gerencia o overlay
+  if (overlay) {
+    if (sidebar.classList.contains('show')) {
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    } else {
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
   }
 }
 
 function closeSidebar() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.overlay');
-
+  const overlay = document.getElementById('overlay');
+  
   if (sidebar) sidebar.classList.remove('show');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
 
-// Fechar menu ao clicar em um link (opcional)
+// Fechar sidebar ao clicar no overlay
+document.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('overlay');
+  if (overlay) {
+    overlay.onclick = closeSidebar;
+  }
+});
+
+// Fechar menu ao clicar em um link (no celular)
 function closeSidebarOnLinkClick() {
   const links = document.querySelectorAll('#menuLateral .nav-link');
   links.forEach(link => {
@@ -2256,20 +2392,20 @@ function closeSidebarOnLinkClick() {
 window.addEventListener('resize', function () {
   if (window.innerWidth > 768) {
     closeSidebar();
-    const overlay = document.querySelector('.overlay');
-    if (overlay) overlay.classList.remove('show');
-    document.body.style.overflow = '';
   }
 });
 
-// Inicializar ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-  // Seu código existente...
-  closeSidebarOnLinkClick();
-});
-
-
-
+// Fechar menu ao clicar em um link (no celular)
+function closeSidebarOnLinkClick() {
+  const links = document.querySelectorAll('#menuLateral .nav-link');
+  links.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+}
 
 /* ================= ESTATÍSTICAS ================= */
 
@@ -2739,15 +2875,16 @@ function salvarFlashcards() {
 // ==================== VERIFICAR PROVAS NO CALENDÁRIO ====================
 function verificarProvasProximas() {
   if (!calendar) return;
-
   const hoje = new Date();
   const eventos = calendar.getEvents();
   const provasProximas = [];
 
   eventos.forEach(evento => {
+    // Só considera se for do tipo "prova"
+    if (evento.extendedProps?.tipo !== "prova") return;
+    
     const dataEvento = new Date(evento.start);
     const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
-
     if (diasRestantes <= 7 && diasRestantes > 0) {
       provasProximas.push({
         titulo: evento.title,
@@ -2778,7 +2915,6 @@ function criarRevisaoPorProva() {
 
 // ==================== MODAL E CRIAÇÃO ====================
 function abrirModalFlashcard() {
-  // Popular o select do modal CORRETO
   const select = document.getElementById("revisaoMateria");
   if (select && materias) {
     select.innerHTML = '<option value="">Selecione uma matéria</option>';
@@ -2893,11 +3029,10 @@ function renderizarFlashcards() {
     flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
   }
 
-  const materiaFiltro = document.getElementById("filtroMateria")?.value;
-  if (materiaFiltro) {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.materiaId == materiaFiltro);
-  }
-
+const materiaFiltro = document.getElementById("filtroMateria")?.value;
+if (materiaFiltro && materiaFiltro !== "") {
+  flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
+}
   const busca = document.getElementById("buscaRevisao")?.value.toLowerCase();
   if (busca) {
     flashcardsFiltrados = flashcardsFiltrados.filter(f =>
@@ -2927,6 +3062,23 @@ function renderizarFlashcards() {
 function criarCardHTML(flashcard) {
   const isAtrasada = flashcard.dataProxima < hoje();
   const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
+  
+  // Calcular dias até a próxima revisão
+  const hojeDate = new Date();
+  const proximaDate = new Date(flashcard.dataProxima);
+  const diffTime = proximaDate - hojeDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  let mensagemRevisao = "";
+  if (isAtrasada) {
+    mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;">⚠️ Atrasada! Revise hoje!</span>`;
+  } else if (diffDays === 0) {
+    mensagemRevisao = `<span style="color: #22c55e; font-size: 0.7rem;">📅 Hoje! Revise agora!</span>`;
+  } else if (diffDays === 1) {
+    mensagemRevisao = `<span style="color: #f59e0b; font-size: 0.7rem;">⏰ Amanhã</span>`;
+  } else {
+    mensagemRevisao = `<span style="color: #6b7280; font-size: 0.7rem;">🔄 Próxima revisão em ${diffDays} dias</span>`;
+  }
 
   return `
     <div class="flashcard-item" data-id="${flashcard.id}">
@@ -2941,6 +3093,9 @@ function criarCardHTML(flashcard) {
       </div>
       <div class="flashcard-pergunta">${flashcard.pergunta}</div>
       <div class="flashcard-resposta">${flashcard.resposta}</div>
+      <div style="margin-top: 8px; font-size: 0.7rem;">
+        ${mensagemRevisao}
+      </div>
       <div class="flashcard-acoes">
         <button class="btn-editar-flashcard" onclick="editarFlashcard(${flashcard.id})">✏️ Editar</button>
         <button class="btn-excluir-flashcard" onclick="excluirFlashcard(${flashcard.id})">🗑️ Excluir</button>
@@ -2949,7 +3104,6 @@ function criarCardHTML(flashcard) {
     </div>
   `;
 }
-
 function adicionarEventosCards() {
   document.querySelectorAll('.flashcard-item').forEach(card => {
     const pergunta = card.querySelector('.flashcard-pergunta');
@@ -3193,116 +3347,65 @@ function adicionarModalFlashcardHTML() {
   document.body.insertAdjacentHTML('beforeend', modalHTML);
 }// ==================== TRANSFORMAR NOTA EM FLASHCARD ====================
 function transformarNotaEmFlashcard(idx) {
-  console.log("Transformando nota índice:", idx);
-  console.log("Notas disponíveis:", notas);
-
-  // Verificar se notas existe e tem conteúdo
-  if (!notas || notas.length === 0) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Erro!',
-      text: 'Nenhuma nota encontrada!',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    return;
-  }
-
   const nota = notas[idx];
   if (!nota) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Erro!',
-      text: 'Nota não encontrada!',
-      timer: 2000,
-      showConfirmButton: false
-    });
+    Swal.fire({ icon: 'error', title: 'Erro!', text: 'Nota não encontrada!' });
     return;
   }
 
-  // Verificar se já existe flashcard com esta nota
-  const existe = flashcards.some(f => f.pergunta === nota.titulo && f.tipo === "nota");
-
-  if (existe) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Já existe!',
-      text: 'Esta nota já foi transformada em flashcard!',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    return;
-  }
-
-  // Abrir modal para confirmar
+  // Abrir modal com opções
   Swal.fire({
-    title: 'Transformar em Flashcard?',
+    title: 'Transformar em Flashcard',
     html: `
-      <p>Nota: <strong>${nota.titulo.replace(/"/g, '&quot;')}</strong></p>
-      <p>Conteúdo: ${nota.texto ? nota.texto.substring(0, 100).replace(/"/g, '&quot;') : 'Sem conteúdo'}...</p>
-      <div class="mb-3 mt-3">
-        <label class="form-label fw-bold">📚 Matéria <span style="color: red;">*</span></label>
-        <select id="flashcardMateriaNota" class="form-select" required>
-          <option value="">Selecione uma matéria</option>
+      <div style="text-align: left;">
+        <p><strong>Nota:</strong> ${nota.titulo}</p>
+        <p><strong>Conteúdo:</strong> ${nota.texto.substring(0, 150)}...</p>
+        <hr>
+        <label>📚 Matéria:</label>
+        <select id="flashcardMateria" class="swal2-select" style="width:100%; margin-bottom:15px;">
           ${materias.map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
         </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">📂 Tema (opcional)</label>
-        <input type="text" id="flashcardTemaNota" class="form-control" placeholder="Ex: Resumo, Revisão...">
+        <label>📝 Pergunta (o que você quer aprender?):</label>
+        <input id="flashcardPergunta" class="swal2-input" placeholder="Ex: O que é mitocôndria?" value="Sobre: ${nota.titulo}">
+        <label>✅ Resposta (pode extrair da nota):</label>
+        <textarea id="flashcardResposta" class="swal2-textarea" rows="4" placeholder="Cole a resposta aqui...">${nota.texto.substring(0, 300)}</textarea>
       </div>
     `,
     showCancelButton: true,
-    confirmButtonText: 'Sim, transformar!',
+    confirmButtonText: 'Criar Flashcard',
     cancelButtonText: 'Cancelar',
     preConfirm: () => {
-      const materiaId = document.getElementById('flashcardMateriaNota').value;
-      const tema = document.getElementById('flashcardTemaNota').value;
-
-      // Validar se matéria foi selecionada
-      if (!materiaId) {
-        Swal.showValidationMessage('❌ Selecione uma matéria!');
-        return false;
-      }
-
+      const materiaId = document.getElementById('flashcardMateria').value;
+      const pergunta = document.getElementById('flashcardPergunta').value;
+      const resposta = document.getElementById('flashcardResposta').value;
+      
+      if (!materiaId) return Swal.showValidationMessage('Selecione uma matéria!');
+      if (!pergunta) return Swal.showValidationMessage('Digite uma pergunta!');
+      if (!resposta) return Swal.showValidationMessage('Digite uma resposta!');
+      
       const materia = materias.find(m => m.id == materiaId);
-
-      return {
-        materiaId: materiaId,
-        materiaNome: materia ? materia.nome : "Matéria",
-        tema: tema || "Nota"
-      };
+      return { materiaId, materiaNome: materia.nome, pergunta, resposta };
     }
   }).then(result => {
     if (result.isConfirmed) {
-      const { materiaId, materiaNome, tema } = result.value;
-
-      const novoFlashcard = {
+      const { materiaId, materiaNome, pergunta, resposta } = result.value;
+      flashcards.push({
         id: Date.now(),
         materiaId: materiaId,
         materiaNome: materiaNome,
-        tema: tema,
-        pergunta: nota.titulo,
-        resposta: nota.texto || "Sem conteúdo detalhado",
+        tema: nota.titulo,
+        pergunta: pergunta,
+        resposta: resposta,
         nivel: 0,
         dataProxima: hoje(),
         acertos: 0,
         erros: 0,
         tipo: "nota",
         notaOriginalId: nota.id
-      };
-
-      flashcards.push(novoFlashcard);
+      });
       salvarFlashcards();
       renderizarFlashcards();
-
-      Swal.fire({
-        icon: 'success',
-        title: '✅ Flashcard criado!',
-        text: `"${nota.titulo.substring(0, 50)}..." agora é um flashcard da matéria ${materiaNome}!`,
-        timer: 2500,
-        showConfirmButton: false
-      });
+      Swal.fire({ icon: 'success', title: '✅ Flashcard criado!', timer: 2000, showConfirmButton: false });
     }
   });
 }
@@ -3322,3 +3425,73 @@ if (typeof document !== 'undefined') {
 
 // ADICIONE no final do arquivo, após todas as funções:
 window.transformarNotaEmFlashcard = transformarNotaEmFlashcard;
+
+function exportarDados() {
+  const dados = {
+    tarefas: tarefas,
+    notas: notas,
+    eventos: calendar?.getEvents().map(e => ({ title: e.title, start: e.startStr })),
+    tempoEstudo: tempoEstudo,
+    metas: metas,
+    flashcards: flashcards
+  };
+  const dataStr = JSON.stringify(dados, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sectio_aurea_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  Swal.fire({ icon: 'success', title: 'Exportado!', text: 'Backup salvo com sucesso!', timer: 2000, showConfirmButton: false });
+}
+
+
+// Adicione esta linha dentro do DOMContentLoaded principal
+// loadDarkModePreference();
+
+// ===== NOTIFICAÇÕES DE TAREFAS =====
+function verificarNotificacoesTarefas() {
+  // Verifica se o navegador suporta notificações
+  if (!("Notification" in window)) {
+    console.log("Este navegador não suporta notificações");
+    return;
+  }
+  
+  // Pede permissão se ainda não tiver
+  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission();
+  }
+  
+  if (Notification.permission !== "granted") return;
+  
+  const hoje = new Date();
+  const amanha = new Date(hoje);
+  amanha.setDate(hoje.getDate() + 1);
+  const amanhaStr = amanha.toISOString().split('T')[0];
+  
+  // Busca tarefas para amanhã
+  const tarefasAmanha = tarefas.filter(t => t.data === amanhaStr && !t.concluida);
+  
+  // Verifica se já notificou hoje
+  const ultimaNotificacao = localStorage.getItem('ultimaNotificacaoTarefas');
+  const hojeStr = hoje.toISOString().split('T')[0];
+  
+  if (tarefasAmanha.length > 0 && ultimaNotificacao !== hojeStr) {
+    const titulo = `📋 Você tem ${tarefasAmanha.length} tarefa(s) para amanhã!`;
+    const corpo = tarefasAmanha.map(t => `• ${t.titulo} (${t.prioridade})`).join('\n');
+    
+    new Notification(titulo, { body: corpo, icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' });
+    localStorage.setItem('ultimaNotificacaoTarefas', hojeStr);
+  }
+}
+
+// Chamar a função uma vez por dia
+setInterval(() => {
+  verificarNotificacoesTarefas();
+}, 3600000); // a cada hora
+
+// Chamar também ao carregar a página
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(verificarNotificacoesTarefas, 5000);
+});
