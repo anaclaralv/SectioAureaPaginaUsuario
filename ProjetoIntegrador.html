@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sectio Áurea</title>
+  <link href="style.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body style="background-color: #f4f1eb;">
+  <nav id="navbar" class="navbar navbar-expand fixed-top col-md-12">
+    <div class="container-fluid d-flex justify-content-center align-items-center">
+      <a class="navbar-brand d-flex flex-column align-items-center mx-1" href="#">
+        <img id="logoNavbar" src="Icones/LogoPreta.png" alt="Logo">
+        <span id="tituloNavbar" class="fw-bold">Sectio Áurea</span>
+      </a>
+
+      <div class="theme-toggle" onclick="toggleDark()">
+        <span id="iconTheme">🌙</span>
+      </div>
+    </div>
+  </nav>
+
+  <section class=" d-flex align-items-center mb-5" style="height: 100%;">
+    <div class="container">
+      <div class="row align-items-center">
+
+        <!-- ICONE PRINCIPAL -->
+        <div class="col-md-12 col-lg-8  text-center mb-4 mb-md-0">
+          <img src="Icones/todas.png" alt="Mascote ou logo" class="hero-img img-fluid">
+        </div>
+
+
+        <div class="col-md-12 col-lg-4 text-center text-center mb-3">
+          <h3 class="fw-bold mb-5">
+            Aprender não é sobre se encaixar em um modelo único. É sobre descobrir o seu jeito de aprender.
+          </h3>
+          <div class="d-flex flex-column gap-3">
+
+            <a href="#" class="btn btn-lg shadow btn-success-custom" data-bs-toggle="modal" data-bs-target="#cadastro"
+              data-bs-dismiss="modal">
+              COMECE AGORA</a>
+
+
+            <a href="#" class="btn btn-lg shadow btn-success-custom" data-bs-toggle="modal" data-bs-target="#loginModal"
+              data-bs-dismiss="modal">
+              JÁ TENHO UMA CONTA</a>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- INTELIGÊNCIAS -->
+  <div class="inteligencias-box border-top border-bottom py-3 mb-2">
+    <div class="inteligenciasNome">
+
+      <a class="socorro" href="#linguistica">
+        <h5 class="linguistica">LINGUÍSTICA</h5>
+      </a>
+      <a class="socorro" href="#logico-matematica">
+        <h5 class="logico">LÓGICO</h5>
+      </a>
+      <a class="socorro" href="#corporal">
+        <h5 class="corporal">CORPORAL</h5>
+      </a>
+      <a class="socorro" href="#intrapessoal">
+        <h5 class="intrapessoal">INTRAPESSOAL</h5>
+      </a>
+      <a class="socorro" href="#interpessoal">
+        <h5 class="interpessoal">INTERPESSOAL</h5>
+      </a>
+      <a class="socorro" href="#musical">
+        <h5 class="musical">MUSICAL</h5>
+      </a>
+      <a class="socorro" href="#espacial">
+        <h5 class="espacial">ESPACIAL</h5>
+      </a>
+
+    </div>
+  </div>
+
+
+
+
+  <!-- FORMULÁRIO DE CADASTRO -->
+  <div class="modal fade" id="cadastro" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Criar Conta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+
+
+          <form id="cadastroForm">
+
+            <div class="mb-3">
+              <label class="form-label">Nome</label>
+              <input type="text" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Senha</label>
+              <input type="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn w-100 btn-success-custom mb-3">
+              Criar Conta
+            </button>
+
+            <p style="text-align:center; color:#aaa;">- ou -</p>
+
+            <div class="google-btn">
+              <div class="g_id_signin"></div>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal de Login -->
+  <div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Entrar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <form id="loginForm">
+
+            <div class="mb-3">
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Senha</label>
+              <input type="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn w-100 btn-success-custom mb-3">
+              Entrar
+            </button>
+
+            <p style="text-align:center; color:#aaa;">- ou -</p>
+
+            <div class="google-btn">
+              <div class="g_id_signin"></div>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= TESTE DE INTELIGÊNCIA ================= -->
+  <section>
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between g-5">
+
+        <!-- TEXTO -->
+        <div class="col-lg-6">
+
+
+          <h1 class="titulo-teste mt-3">
+            Teste de Inteligência
+          </h1>
+
+          <p class="lead">
+            Cada pessoa aprende de um jeito único.
+          </p>
+
+          <p class="texto-teste">
+            Pensando nisso, este site foi desenvolvido com base na
+            <strong>Teoria das Inteligências Múltiplas</strong>, criada pelo psicólogo
+            Howard Gardner.
+          </p>
+
+          <p class="texto-teste">
+            Ao identificar suas inteligências predominantes, a plataforma pode sugerir
+            métodos de estudo, recursos e estratégias que combinam melhor com você.
+          </p>
+
+          <p class="frase-final">
+            Porque aprender não é sobre se encaixar em um único modelo.
+            É sobre descobrir o seu próprio jeito de aprender.
+          </p>
+
+
+          <div class="col-9 mt-3">
+            <a href="TesteInteligencia.html" id="menuTeste" class="menu-link d-none text-center text-center">
+              TESTE DE INTELIGÊNCIA
+            </a>
+          </div>
+        </div>
+
+        <!-- IMAGEM -->
+        <div class="col-lg-5 d-flex justify-content-center">
+          <div class="card-img-teste text-center row">
+            <img src="Icones/homem.png" alt="Howard Gardner." class="mt-3">
+            <h6 class="mt-3">Howard Gardner, criador da Teoria das Inteligências Múltiplas.</h6>
+          </div>
+        </div>
+
+
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LÓGICO-MATEMÁTICA ================= -->
+  <section id="logico-matematica" data-color="#ffbd59">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Lógico-Matemática</h1>
+          <p class="lead mb-4">
+            Habilidade de raciocínio lógico, resolução de problemas e análise de padrões.
+          </p>
+        </div>
+
+        <div class="col-lg-6 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/logico.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Lógico-Matemática" data-cor="#ffbd59"
+              data-pontos="Raciocínio lógico, pensamento crítico, resolução de problemas e análise estratégica."
+              data-areas="Engenheiro(a), Programador(a), Matemático(a), Cientista, Analista de Sistemas, Contador(a)">
+              LÓGICA
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= LINGUÍSTICA ================= -->
+  <section id="linguistica" data-color="#9f042c">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/linguistica.png" class="img-fluid">
+            <a href="#" class=" btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Linguística" data-cor="#9f042c"
+              data-pontos="Boa comunicação, argumentação, escrita clara e interpretação de textos."
+              data-areas="Escritor(a), Jornalista, Professor(a), Advogado(a), Redator(a), Roteirista, Tradutor(a)">
+              LINGUÍSTICA
+            </a>
+          </div>
+        </div>
+
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start mt-5 ">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Linguística</h1>
+          <p class="lead mb-4">
+            Gostam de ler, escrever, contar histórias, debater ideias e aprender novos idiomas.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= MUSICAL ================= -->
+  <section id="musical" data-color="#8a03d2">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Musical</h1>
+          <p class="lead mb-4">
+            Sensibilidade a sons, ritmos, melodias e facilidade com instrumentos musicais.
+          </p>
+        </div>
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/musical.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Musical" data-cor="#8a03d2"
+              data-pontos="Percepção rítmica, criatividade sonora e facilidade para composição."
+              data-areas="Músico(a), Cantor(a), Compositor(a), Produtor(a) Musical, Professor(a) de Música">
+              MUSICAL
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= INTERPESSOAL ================= -->
+  <section id="interpessoal" data-color="#ff5f00">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/interpessoal.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Interpessoal" data-cor="#ff5f00"
+              data-pontos="Empatia, liderança, comunicação e trabalho em equipe."
+              data-areas="Psicólogo(a), Professor(a), Líder de equipe, Recursos Humanos, Assistente Social">
+              INTERPESSOAL
+            </a>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start mt-5">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Interpessoal</h1>
+          <p class="lead mb-4">
+            Capacidade de entender emoções, intenções e sentimentos das outras pessoas.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= INTRAPESSOAL ================= -->
+  <section id="intrapessoal" data-color="#5170ff">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Intrapessoal</h1>
+          <p class="lead mb-4">
+            Capacidade de compreender a si mesmo, suas emoções e objetivos pessoais.
+          </p>
+        </div>
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/intrapessoal.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Intrapessoal" data-cor="#5170ff"
+              data-pontos="Autoconhecimento, disciplina, reflexão e controle emocional."
+              data-areas="Psicólogo(a), Escritor(a), Filósofo(a), Coach, Pesquisador(a)">
+              INTRAPESSOAL
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= ESPACIAL ================= -->
+  <section id="espacial" data-color="#d203a4">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/espacial.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Espacial" data-cor="#d203a4"
+              data-pontos="Criatividade visual, percepção espacial e imaginação."
+              data-areas="Arquiteto(a), Designer, Engenheiro(a), Ilustrador(a), Fotógrafo(a)">
+              ESPACIAL
+            </a>
+          </div>
+        </div>
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start mt-5">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Espacial</h1>
+          <p class="lead mb-4">
+            Habilidade de visualizar objetos, espaços e formas mentalmente.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= CORPORAL-CINESTÉSICA ================= -->
+  <section id="corporal" data-color="#00bf63">
+    <div class="container py-5">
+      <div class="row align-items-center justify-content-between">
+
+        <div class="col-lg-6 col-md-12 text-center text-md-start">
+          <h1 class=" mb-3" style="
+  font-weight: 900;">Inteligência Corporal-Cinestésica</h1>
+          <p class="lead mb-4">
+            Habilidade de usar o corpo para resolver problemas ou expressar ideias e emoções.
+          </p>
+        </div>
+
+        <div class="col-lg-5 col-md-12 d-flex justify-content-center mt-4 mt-md-0">
+          <div class="card-inteligencia">
+            <img src="Icones/corporal.png" class="img-fluid">
+            <a href="#" class="btn-inteligencia abrir-modal" data-bs-toggle="modal" data-bs-target="#modalInteligencia"
+              data-nome="Inteligência Corporal-Cinestésica" data-cor="#00bf63"
+              data-pontos="Coordenação motora, expressão corporal e habilidades físicas."
+              data-areas="Atleta, Dançarino(a), Fisioterapeuta, Educador(a) Físico, Ator/Atriz">
+              CORPORAL
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- ================= PLANOS ================= -->
+
+  <section id="planos">
+    <div class="container py-5">
+
+      <h1 class="text-center fw-bold mb-5">
+        Nossos Planos
+      </h1>
+
+      <div class="row g-5 justify-content-center">
+
+        <!-- GRATUITO -->
+        <div class="col-md-4">
+          <div class="card card-planos text-center">
+
+            <h3>Gratuito</h3>
+
+            <h2 class="preco">
+              R$0
+            </h2>
+
+            <ul class="lista-planos">
+              <li>✔ Teste de inteligência</li>
+              <li>✔ Resultado básico</li>
+              <li>✔ Acesso limitado aos métodos</li>
+            </ul>
+
+            <button class="btn btn-dark w-100">
+              Assinar
+            </button>
+
+          </div>
+        </div>
+
+
+        <!-- PRO -->
+        <div class="col-md-4">
+          <div class="card card-planos destaque text-center">
+
+            <h3>Pro</h3>
+
+            <h2 class="preco">
+              R$39/mês
+            </h2>
+
+            <ul class="lista-planos">
+              <li>✔ Tudo do plano Básico</li>
+              <li>✔ Relatório completo</li>
+              <li>✔ Sugestões de carreira</li>
+            </ul>
+
+            <button class="btn btn-destaque w-100">
+              Assinar
+            </button>
+
+          </div>
+        </div>
+
+        <!-- BASICO -->
+        <div class="col-md-4">
+          <div class="card card-planos text-center">
+
+            <h3>Básico</h3>
+
+            <h2 class="preco">
+              R$19/mês
+            </h2>
+
+            <ul class="lista-planos">
+              <li>✔ Teste completo</li>
+              <li>✔ Métodos de estudo personalizados</li>
+              <li>✔ Conteúdo exclusivo</li>
+            </ul>
+
+            <button class="btn btn-dark w-100">
+              Assinar
+            </button>
+
+          </div>
+        </div>
+
+
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MODAL ÚNICO ================= -->
+
+  <div class="modal fade" id="modalInteligencia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-custom" id="modalContent">
+
+        <div class="modal-header border-0" id="modalHeader">
+          <h4 class="fw-bold" id="modalTitulo"></h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <h5>Pontos Fortes</h5>
+          <p id="modalPontos"></p>
+
+          <h5 class="mt-4">Possíveis Áreas de Trabalho</h5>
+          <ul id="modalAreas"></ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal fade" id="modalConhecerTeste">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-conhecer text-center">
+
+        <h4>Descubra seu perfil de inteligência</h4>
+
+        <p>
+          Nosso teste identifica quais inteligências são mais fortes em você
+          e mostra formas de estudo que combinam com seu jeito de aprender.
+        </p>
+
+        <a href="TesteInteligencia.html" class="btn btn-teste mt-3" onclick="salvarTema()">
+          Começar o teste
+        </a>
+
+        <button onclick="liberarMenuTeste()" class="btn btn-teste mt-3" data-bs-dismiss="modal">
+          Talvez mais tarde
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+  <!-- TOAST SUCESSO -->
+  <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+
+    <div id="toastSucesso" class="toast align-items-center text-bg-success border-0" role="alert">
+
+      <div class="d-flex">
+        <div class="toast-body fw-semibold" id="toastMensagem">
+          Sucesso!
+        </div>
+
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="modal fade" id="modalReclame" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-reclame">
+
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">💬 Fale com a gente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <p class="text-muted">
+            Encontrou um problema ou quer sugerir algo?
+            Sua opinião ajuda a melhorar a plataforma.
+          </p>
+
+          <form id="formReclame">
+
+            <div class="mb-3">
+              <label class="form-label">Nome</label>
+              <input type="text" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Tipo de mensagem</label>
+              <select class="form-select">
+
+                <option>⚠️ Reclamação</option>
+                <option>💡 Sugestão</option>
+                <option>🐞 Erro no site</option>
+                <option>❓ Dúvida</option>
+
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Mensagem</label>
+              <textarea class="form-control" rows="4" required></textarea>
+            </div>
+
+            <button class="btn btn-success-custom w-100">
+              Enviar mensagem
+            </button>
+
+          </form>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  
+
+
+
+
+  <!--RODAPÉ-->
+  <footer class="corroda text-dark pt-5 pb-4 mt-5 border-top">
+    <div class="container">
+      <div class="row">
+
+        <!-- Coluna 1 -->
+        <div class="col-6 col-md-2 mb-3">
+          <h5>Quem somos</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Início</a></li>
+            <li class="nav-item mb-2"><a href="#logico-matematica" class="nav-link p-0 text-muted">Tipos de
+                Inteligência</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Métodos</a></li>
+          </ul>
+        </div>
+
+        <!-- Coluna 2 -->
+        <div class="col-6 col-md-2 mb-3">
+          <h5>Ajuda e Suporte</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Dúvidas</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Privacidade</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Entre em contato</a></li>
+            <li class="nav-item mb-2">
+              <a href="#" class="nav-link p-0 btn-reclame" data-bs-toggle="modal" data-bs-target="#modalReclame">
+                💬 Reclame Aqui!
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Coluna 3 -->
+        <div class="col-6 col-md-2 mb-3">
+          <h5>Redes Sociais</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Instagram</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">TikTok</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Twitter</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted">Youtube</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Linha final -->
+      <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top">
+        <p>© 2025 Sectio Áurea, Inc. Todos os direitos reservados.</p>
+        <ul class="list-unstyled d-flex">
+          <li class="ms-3"><a class="link-dark" href="#"><i class="bi bi-instagram" style="font-size: 1.5rem;"></i></a>
+          </li>
+          <li class="ms-3"><a class="link-dark" href="#"><i class="bi bi-facebook" style="font-size: 1.5rem;"></i></a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

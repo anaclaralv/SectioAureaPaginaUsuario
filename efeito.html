@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sectio Áurea - Sua Inteligência</title>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    body {
+      height: 200vh;
+      overflow-x: hidden;
+      color: white;
+      transition: background 0.6s ease-in-out;
+    }
+    
+    .inteligencia {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 1s ease-out, transform 0.6s ease-out;
+      padding: 20px;
+    }
+    
+    .inteligencia img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      margin-bottom: 30px;
+      filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.3));
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .inteligencia h1 {
+      font-size: 3rem;
+      max-width: 90%;
+      margin-bottom: 20px;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .inteligencia p {
+      font-size: 1.3rem;
+      max-width: 700px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      opacity: 0.95;
+    }
+    
+    
+    .scroll-tip {
+      position: absolute;
+      bottom: 40px;
+      font-size: 1.1rem;
+      opacity: 0.9;
+      animation: bounce 2s infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .scroll-tip span {
+      font-size: 1.2rem;
+    }
+    
+    .scroll-tip i {
+      font-size: 2rem;
+      font-style: normal;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 3;
+    }
+    
+    @keyframes spin {
+      to { transform: translateX(-50%) rotate(360deg); }
+    }
+    
+    .loading-spinner.show {
+      opacity: 1;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .inteligencia h1 {
+        font-size: 2.2rem;
+      }
+      
+      .inteligencia p {
+        font-size: 1.1rem;
+      }
+      
+      .inteligencia img {
+        width: 140px;
+        height: 140px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .inteligencia h1 {
+        font-size: 1.8rem;
+      }
+      
+      .inteligencia p {
+        font-size: 1rem;
+      }
+      
+      .inteligencia img {
+        width: 120px;
+        height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="inteligencia" id="inteligencia">
+  <img id="icone" alt="Ícone da inteligência">
+  <h1 id="titulo"></h1>
+  <p id="mensagem"></p>
+  <div class="descricao-detalhada" id="descricaoDetalhada"></div>
+  <div class="scroll-tip">
+    <span>Arraste para descobrir sua página</span>
+    <i>↓</i>
+  </div>
+</div>
+
+<div class="loading-spinner" id="loadingSpinner"></div>
+
+<script>
+  const cores = {
+    linguistica: "#9f042c",
+    logico: "#ffbd59",
+    musical: "#8a03d2",
+    corporal: "#00bf63",
+    espacial: "#d203a4",
+    interpessoal: "#ff5f00",
+    intrapessoal: "#5170ff"
+  };
+
+  const nomesBonitos = {
+    linguistica: "Linguística",
+    logico: "Lógico-Matemática",
+    musical: "Musical",
+    corporal: "Corporal-Cinestésica",
+    espacial: "Espacial",
+    interpessoal: "Interpessoal",
+    intrapessoal: "Intrapessoal"
+  };
+
+  const conteudoPorTipo = {
+       linguistica: "Palavras são sua ferramenta principal. Você se destaca em leitura, escrita, discursos e aprendizado de idiomas. Escritores, poetas e jornalistas costumam ter esta inteligência desenvolvida.",
+    logico: "Você tem facilidade com números, padrões e raciocínio abstrato. Cientistas, matemáticos e programadores geralmente possuem esta inteligência em destaque.",
+    musical: "Ritmo, melodia e harmonia fazem parte do seu mundo. Você percebe sons que outros não notam e tem sensibilidade para música. Músicos e compositores são exemplos desta inteligência.",
+    corporal: "Seu corpo é sua principal ferramenta de expressão. Coordenação, equilíbrio e habilidades manuais são seus diferenciais. Atletas e artesãos têm esta inteligência desenvolvida.",
+    espacial: "Você pensa em imagens e visualiza o mundo tridimensionalmente. Arquitetos, pilotos e artistas visuais costumam ter esta inteligência aguçada.",
+    interpessoal: "Você entende as pessoas com facilidade. Empatia e habilidades sociais são seus pontos fortes. Professores e líderes geralmente possuem esta inteligência.",
+    intrapessoal: "Você se conhece profundamente. Reflexão e autoconhecimento são suas principais características. Filósofos e terapeutas exemplificam esta inteligência."
+  };
+
+
+  const icones = {
+    linguistica: "Icones/linguistica.png",
+    logico: "Icones/logico.png",
+    musical: "Icones/musical.png",
+    corporal: "Icones/corporal.png",
+    espacial: "Icones/espacial.png",
+    interpessoal: "Icones/interpessoal.png",
+    intrapessoal: "Icones/intrapessoal.png"
+  };
+
+  // Fallback para ícones usando emojis
+  const iconesFallback = {
+    linguistica: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%239f042c'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E📖%3C/text%3E%3C/svg%3E",
+    logico: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23ffbd59'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E🔢%3C/text%3E%3C/svg%3E",
+    musical: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%238a03d2'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E🎵%3C/text%3E%3C/svg%3E",
+    corporal: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300bf63'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E🏃%3C/text%3E%3C/svg%3E",
+    espacial: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23d203a4'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E🎨%3C/text%3E%3C/svg%3E",
+    interpessoal: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23ff5f00'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E👥%3C/text%3E%3C/svg%3E",
+    intrapessoal: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%235170ff'/%3E%3Ctext x='50' y='65' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E🧘%3C/text%3E%3C/svg%3E"
+  };
+
+  const params = new URLSearchParams(window.location.search);
+  const tipo = params.get("tipo");
+
+  const inteligencia = document.getElementById("inteligencia");
+  const icone = document.getElementById("icone");
+  const titulo = document.getElementById("titulo");
+  const mensagem = document.getElementById("mensagem");
+  const loadingSpinner = document.getElementById("loadingSpinner");
+
+  if (!tipo || !cores[tipo]) {
+    titulo.innerText = "Resultado não encontrado";
+    mensagem.innerText = "Refaça o teste para descobrir sua inteligência dominante.";
+    
+    // Redireciona de volta após 5 segundos
+    setTimeout(() => {
+      window.location.href = "ProjetoIntegrador.html";
+    }, 5000);
+  } else {
+    titulo.innerText = `Inteligência ${nomesBonitos[tipo]}`;
+    mensagem.innerText = conteudoPorTipo[tipo];
+    
+    // Tenta carregar o ícone, se falhar usa o fallback
+    icone.onerror = function() {
+      this.src = iconesFallback[tipo];
+    };
+    icone.src = icones[tipo];
+
+    document.body.style.backgroundColor = cores[tipo];
+    inteligencia.style.backgroundColor = cores[tipo];
+  }
+
+  window.onload = () => {
+    inteligencia.style.opacity = 1;
+  };
+
+  let redirecionado = false;
+
+  window.addEventListener("scroll", () => {
+  const scrollY = window.scrollY;
+  const windowH = window.innerHeight;
+  const progress = Math.min(scrollY / windowH, 1);
+
+  console.log('📊 Progresso:', progress.toFixed(2), '| Tipo:', tipo); // DEBUG
+
+  inteligencia.style.transform = `translateY(-${progress * 100}vh)`;
+  inteligencia.style.opacity = 1 - progress * 1.5;
+
+  if (cores[tipo]) {
+    const rgb = hexToRgb(cores[tipo]);
+    const r = Math.round(rgb.r + (255 - rgb.r) * progress);
+    const g = Math.round(rgb.g + (255 - rgb.g) * progress);
+    const b = Math.round(rgb.b + (255 - rgb.b) * progress);
+    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+  }
+
+  if (progress > 0.8) {
+    loadingSpinner.classList.add('show');
+  }
+
+  // Mudei para 0.95 (mais fácil de atingir)
+  if (progress >= 0.95 && !redirecionado && tipo) {
+    redirecionado = true;
+    console.log('🚀 Redirecionando para:', `${tipo}.html`);
+    
+    setTimeout(() => {
+      window.location.href = `${tipo}.html`;
+    }, 500);
+  }
+});
+
+  function hexToRgb(hex) {
+    const bigint = parseInt(hex.replace("#", ""), 16);
+    return {
+      r: (bigint >> 16) & 255,
+      g: (bigint >> 8) & 255,
+      b: bigint & 255
+    };
+  }
+
+  // Previne scroll acidental antes do carregamento
+  let scrollPrevenido = true;
+  setTimeout(() => {
+    scrollPrevenido = false;
+  }, 500);
+</script>
+
+</body>
+</html>

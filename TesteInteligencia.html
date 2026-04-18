@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    crossorigin="anonymous">
+  <title>Sectio Áurea - Teste</title>
+  <link href="styleTesteInteligencia.css" rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+  <nav id="navbar" class="navbar navbar-expand fixed-top col-md-12">
+    <div class="container-fluid d-flex justify-content-center align-items-center">
+      <a class="navbar-brand d-flex flex-column align-items-center mx-1" href="ProjetoIntegrador.html">
+        <img id="logoNavbar" src="Icones/LogoPreta.png" alt="Logo">
+        <span id="tituloNavbar" class="fw-bold">Sectio Áurea</span>
+      </a>
+
+      <div class="theme-toggle" id="toggleTema">
+        <span id="iconTheme">🌙</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="centralizador">
+    <div id="quizContainer">
+      <form id="quizForm">
+        <h1 class="fw-bold">TESTE DE INTELIGÊNCIA</h1>
+
+        <div class="barra-progresso">
+          <div id="barraInterna"></div>
+        </div>
+
+        <!-- Área onde as perguntas serão injetadas -->
+        <div id="perguntasArea"></div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+
+          <button type="button" class="btn btn-lg fw-bold" id="btnPrev"
+            style="background: transparent; color: #1a1a1a; border: 1px solid #ccc; width: 200px; padding: 12px;">
+            Voltar
+          </button>
+
+          <button type="button" class="btn btn-lg cor" id="btnNext"
+            style="background: #000; color: white; width: 200px; padding: 12px;">
+            Próxima
+          </button>
+         
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de resultado -->
+  <div id="resultadoModal" class="modal fade" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content efeito" id="modalContent">
+        <div class="modal-body text-center p-4">
+          <h3 id="dominante" class="mb-4"></h3>
+          <canvas id="graficoPizza" width="300" height="300"></canvas>
+          <div class="d-flex justify-content-center mt-4">
+            <button type="button" id="btnVamo" class="btn btn-lg fw-bold px-5">
+              CONTINUAR
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Tutorial - Versão Clean e Profissional -->
+  <div class="modal fade" id="modalTutorial" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content"
+        style="border-radius: 16px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+
+        <!-- Header -->
+        <div class="modal-header border-0 px-4 pt-4 pb-2">
+          <h3 class="fw-bold" style="font-size: 1.5rem; letter-spacing: -0.5px; color: #1a1a1a;">Como funciona o teste
+          </h3>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body px-4 py-3">
+
+          <!-- Introdução -->
+          <div style="margin-bottom: 25px;">
+            <p style="color: #555; font-size: 0.95rem; line-height: 1.7; margin-bottom: 12px;">
+              Este questionário foi desenvolvido com base na <strong>Teoria das Inteligências Múltiplas</strong>
+              de Howard Gardner.
+            </p>
+            <p style="color: #555; font-size: 0.95rem; line-height: 1.7; margin-bottom: 0;">
+              <strong>Não existem respostas certas ou erradas.</strong> O objetivo é entender como
+              <strong>você</strong> aprende melhor. Responda com sinceridade e no seu ritmo.
+            </p>
+          </div>
+
+          <!-- Preview Visual da Interface -->
+          <div
+            style="background: #fafafa; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #eee;">
+            <p
+              style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; color: #999; margin-bottom: 15px; font-weight: 500;">
+              Visual da interface
+            </p>
+
+            <!-- Simulação de uma etapa -->
+            <div style="max-width: 500px; margin: 0 auto;">
+              <div style="text-align: center; margin-bottom: 15px;">
+                <span style="font-weight: 600; color: #1a1a1a; font-size: 1rem;">O que mais gosto de fazer:</span>
+                <span style="display: block; color: #999; font-size: 0.8rem; margin-top: 3px;">Etapa 1 de 10</span>
+              </div>
+
+              <div
+                style="border-left: 4px solid #00bf63; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <p style="font-weight: 500; color: #00bf63; margin-bottom: 15px; font-size: 1rem;">Praticar esportes</p>
+                <div style="display: flex; justify-content: center; gap: 12px;">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">1</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">2</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">3</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">4</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">5</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">6</span>
+                  </label>
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <input type="radio" disabled checked style="accent-color: #1a1a1a; width: 16px; height: 16px;">
+                    <span style="font-size: 0.75rem; color: #888; font-weight: 500;">7</span>
+                  </label>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 10px; padding: 0 10px;">
+                <span style="font-size: 0.75rem; color: #aaa;">Menos identificação</span>
+                <span style="font-size: 0.75rem; color: #aaa;">Mais identificação</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Ranking Forçado -->
+          <div
+            style="background: white; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <h5 style="margin: 0 0 12px 0; font-weight: 600; font-size: 1.1rem; color: #1a1a1a;">Ranking forçado</h5>
+            <p style="color: #555; font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px;">
+              Em cada etapa, você deve classificar 7 itens usando os números de 1 a 7.
+              <strong style="color: #1a1a1a;">Cada número só pode ser usado uma vez por etapa.</strong>
+            </p>
+            <div style="background: #f8f8f8; border-radius: 8px; padding: 15px; border-left: 3px solid #ccc;">
+              <p style="color: #555; font-size: 0.9rem; margin: 0;">
+                <strong style="color: #1a1a1a;">Exemplo:</strong> Se você atribuir 7 para "Praticar esportes",
+                o número 7 ficará indisponível para os outros itens da mesma etapa. Isso cria um ranking real
+                das suas preferências.
+              </p>
+            </div>
+          </div>
+
+          <!-- Informações adicionais -->
+          <div
+            style="display: flex; justify-content: space-between; color: #999; font-size: 0.8rem; padding-top: 15px; border-top: 1px solid #eee;">
+            <span>10 etapas • 7 itens cada</span>
+            <span>Pode revisar antes de finalizar</span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer border-0 px-4 pb-4 pt-2">
+          <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal"
+            style="text-decoration: none; font-size: 0.9rem;">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-dark px-5 py-2" id="btnComecarTeste" data-bs-dismiss="modal"
+            style="background: #1a1a1a; border: none; border-radius: 8px; font-weight: 500; font-size: 0.95rem;">
+            Começar teste
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="scriptTesteInteligencia.js"></script>
+</body>
+
+</html>

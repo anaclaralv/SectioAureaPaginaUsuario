@@ -1,0 +1,672 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Slab:wght@100..900&display=swap');
+
+:root {
+  --navbar-height: 95px;
+}
+
+body {
+  background-color: #f4f1eb;
+  margin: 0;
+  padding-top: var(--navbar-height);
+  font-family: "Poppins", sans-serif !important;
+}
+
+* {
+  font-family: "Poppins", sans-serif;
+
+}
+
+#navbar {
+  height: var(--navbar-height);
+  background-color: #f4f1eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#logoNavbar {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+}
+
+
+.titulo-teste {
+  font-weight: 900;
+  font-size: 42px;
+}
+
+/* Theme toggle - IGUAL À REFERÊNCIA */
+.theme-toggle {
+  position: absolute;
+  right: 25px;
+  top: 25px;
+  /* ← MUDOU de 50% para 25px */
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #1e1e1e;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 20px;
+  border: none;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  /* ← MUDOU: sem translateY */
+}
+
+/* Dark mode */
+body.dark .theme-toggle {
+  background: white !important;
+  color: #000 !important;
+}
+
+/* Dark mode - Navbar */
+body.dark #navbar {
+  background-color: #1e1e1e !important;
+  box-shadow: 0 2px 6px rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark #tituloNavbar {
+  color: white !important;
+}
+
+body.dark #logoNavbar {
+  content: url("Icones/LogoBranca.png");
+}
+
+
+/* ===== LAYOUT PRINCIPAL ===== */
+.centralizador {
+  min-height: calc(100vh - var(--navbar-height));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+#quizContainer {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+#quizForm {
+  max-width: 100%;
+  width: fit-content;
+  background-color: #ffffff;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  border: solid 1px #ddd;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #000000;
+}
+
+/* ===== BARRA DE PROGRESSO ===== */
+.barra-progresso {
+  width: 100%;
+  height: 8px;
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+#barraInterna {
+  width: 0%;
+  height: 100%;
+  background: #000;
+  transition: width 0.4s ease;
+}
+
+/* ===== ETAPA E ITENS ===== */
+.etapa-container {
+  animation: fade 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.etapa-titulo {
+  font-size: 1.5rem !important;
+  font-weight: 500;
+  text-decoration: underline;
+  margin-bottom: 10px;
+}
+
+.etapa-info {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.item-bloco {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  padding: 20px 30px;
+  margin-bottom: 15px;
+  transition: all 0.3s;
+  width: 100%;
+  max-width: 100%;
+  min-height: 120px;
+  /* NOVO - Altura mínima padronizada */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Centraliza verticalmente */
+  box-sizing: border-box;
+}
+
+.item-bloco h5 {
+  font-size: 1.2rem;
+  margin-bottom: 15px !important;
+  font-weight: 600;
+  text-align: center;
+  white-space: normal;
+  /* PERMITE QUEBRA */
+  word-break: break-word;
+  padding: 0 5px;
+}
+
+/* ===== RÁDIOS COM NÚMEROS ===== */
+.question {
+  display: flex;
+  justify-content: center;
+  /* MUDOU de flex-start para center */
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  min-width: 280px;
+  /* Garante espaço mínimo */
+}
+
+.radio-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-width: 35px;
+  flex-shrink: 0;
+  /* Não deixa encolher */
+}
+
+.radio-label input[type="radio"] {
+  cursor: pointer;
+  transition: 0.2s;
+  accent-color: #000000;
+  margin-bottom: 8px;
+  transform: scale(2.1);
+}
+
+.radio-label span {
+  font-weight: bold;
+  color: #333;
+  font-size: 1rem;
+}
+
+.radio-label input[type="radio"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.radio-label input[type="radio"]:disabled+span {
+  opacity: 0.4;
+}
+
+.radio-label input[type="radio"]:hover {
+  transform: scale(2.5);
+}
+
+
+/* ===== BOTÕES ===== */
+#btnPrev {
+  font-weight: bold;
+  margin-top: 30px;
+  transition: all 0.3s;
+  width: 250px;
+  padding: 12px;
+  font-size: 1.1rem;
+}
+
+#btnNext {
+  background-color: #000000;
+  color: #f0f0f0;
+  font-weight: bold;
+  margin-top: 30px;
+  transition: all 0.3s;
+  width: 250px;
+  padding: 12px;
+  font-size: 1.1rem;
+  border: none;
+}
+
+#btnNext:hover:not(:disabled) {
+  border: solid 1px #000000;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+#btnNext:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#btnVamo {
+  background-color: #000000;
+  color: #ffffff;
+  width: 200px;
+  padding: 12px;
+  font-size: 1.1rem;
+  border: none;
+}
+
+#btnVamo:hover {
+  background-color: #ffffff;
+  color: #000000;
+  border: solid 1px #000000;
+}
+
+/* ===== MODAL ===== */
+#modalContent {
+  padding: 30px;
+  text-align: center;
+}
+
+#modalContent h3 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+#graficoPizza {
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto 20px;
+}
+
+/* Modal Tutorial */
+#modalTutorial .modal-content {
+  border: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+#modalTutorial .modal-body {
+  padding: 30px;
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ===== DARK MODE ===== */
+/* Efeito de blur no fundo quando o modal abre */
+
+
+/* Dark Mode - Modal Tutorial */
+body.dark #modalTutorial .modal-content {
+  background-color: #1e1e1e;
+}
+
+body.dark #modalTutorial [style*="background: #fafafa"] {
+  background: #2a2a2a !important;
+  border-color: #444 !important;
+}
+
+body.dark #modalTutorial [style*="background: white"] {
+  background: #2a2a2a !important;
+  border-color: #444 !important;
+}
+
+body.dark #modalTutorial [style*="background: #f8f8f8"] {
+  background: #333 !important;
+}
+
+body.dark #modalTutorial [style*="color: #1a1a1a"],
+body.dark #modalTutorial [style*="color: #333"],
+body.dark #modalTutorial [style*="color: #555"] {
+  color: #e0e0e0 !important;
+}
+
+body.dark #modalTutorial [style*="border-left: 3px solid #ccc"] {
+  border-left-color: #555 !important;
+}
+
+body.dark #modalTutorial [style*="border-top: 1px solid #eee"] {
+  border-color: #444 !important;
+}
+
+body.dark #modalTutorial .btn-dark {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+body.dark #modalTutorial .btn-close {
+  filter: invert(1);
+}
+
+body.dark #modalTutorial input[type="radio"] {
+  accent-color: #cccccc !important;
+}
+
+
+body.dark {
+  background-color: #121212 !important;
+  color: #ffffff;
+}
+
+body.dark #quizForm {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: solid 1px #444;
+}
+
+body.dark .item-bloco {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body.dark .etapa-info {
+  color: #aaa;
+}
+
+body.dark .radio-label span {
+  color: #ddd;
+}
+
+body.dark h1 {
+  color: #ffffff !important;
+}
+
+body.dark .etapa-titulo {
+  filter: brightness(1.2);
+}
+
+body.dark input[type="radio"] {
+  accent-color: #bbbbbb !important;
+}
+
+body.dark .barra-progresso {
+  background: #333;
+}
+
+body.dark #barraInterna {
+  background: #ffffff;
+}
+
+body.dark #btnNext,
+body.dark #btnVamo {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.dark #btnPrev {
+  background: transparent;
+  color: #ffffff !important;
+  border: 1px solid #ccc;
+
+}
+
+body.dark #btnNext:hover:not(:disabled),
+body.dark #btnVamo:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.dark .modal-content {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+
+/* ===== RESPONSIVIDADE - TABLET ===== */
+@media (max-width: 768px) {
+
+
+  #quizForm {
+    padding: 30px 20px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .etapa-titulo {
+    font-size: 1.3rem !important;
+  }
+
+  .item-bloco {
+    padding: 15px 20px;
+  }
+
+  .item-bloco h5 {
+    font-size: 1.1rem;
+  }
+
+  .question {
+    gap: 20px;
+  }
+
+  .radio-label {
+    min-width: 35px;
+  }
+
+  .radio-label input[type="radio"] {
+    transform: scale(1.7);
+  }
+
+  .radio-label input[type="radio"]:hover {
+    transform: scale(1.9);
+  }
+
+  .radio-label span {
+    font-size: 0.9rem;
+  }
+
+
+}
+
+/* ===== RESPONSIVIDADE - CELULAR ===== */
+@media (max-width: 576px) {
+  .centralizador {
+    padding: 10px;
+  }
+
+  #quizForm {
+    padding: 25px 12px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+  }
+
+  .etapa-titulo {
+    font-size: 1.2rem !important;
+  }
+
+  .item-bloco {
+    padding: 12px 15px;
+    margin-bottom: 12px;
+  }
+
+  .item-bloco h5 {
+    white-space: normal;
+    /* Permite quebra em telas pequenas */
+    word-break: break-word;
+    font-size: 1rem;
+    margin-bottom: 10px !important;
+  }
+
+  .question {
+    gap: 12px;
+  }
+
+  .radio-label {
+    min-width: 28px;
+  }
+
+  .radio-label input[type="radio"] {
+    transform: scale(1.5);
+    margin-bottom: 5px;
+  }
+
+  .radio-label input[type="radio"]:hover {
+    transform: scale(1.7);
+  }
+
+  .radio-label span {
+    font-size: 0.8rem;
+  }
+
+  #btnNext,
+  #btnVamo
+  #btnPrev {
+    width: 100%;
+  }
+
+
+  .theme-toggle {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+    right: 12px;
+  }
+}
+
+/* ===== RESPONSIVIDADE - CELULAR PEQUENO ===== */
+@media (max-width: 400px) {
+  .item-bloco {
+    padding: 10px 12px;
+  }
+
+  .question {
+    gap: 8px;
+  }
+
+  .radio-label {
+    min-width: 22px;
+  }
+
+  .radio-label input[type="radio"] {
+    transform: scale(1.3);
+  }
+
+  .radio-label input[type="radio"]:hover {
+    transform: scale(1.5);
+  }
+
+  .radio-label span {
+    font-size: 0.7rem;
+  }
+}
+
+/* ===== SEPERAR EM 2 COLUNAS ===== */
+@media (min-width: 577px) {
+  .etapa-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 20px;
+    align-items: stretch;
+    /* MUDOU de start para stretch */
+  }
+
+  .item-bloco:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+    max-width: 500px;
+    min-height: 120px;
+    /* MESMA altura dos outros */
+  }
+
+  .item-bloco:last-child .question {
+    justify-content: center;
+  }
+
+  .etapa-titulo {
+    grid-column: 1 / -1;
+  }
+
+  .etapa-info {
+    grid-column: 1 / -1;
+    margin-bottom: 10px;
+  }
+
+  .item-bloco {
+    margin-bottom: 0;
+    height: 100%;
+    /* Ocupa toda altura do grid */
+    min-height: 130px;
+    /* Altura padronizada */
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  #btnNext {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-top: 30px;
+  }
+
+  .barra-progresso {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ===== Ajuste adicional para inputs ===== */
+@media (min-width: 577px) and (max-width: 900px) {
+
+  .question {
+    flex-wrap: nowrap !important;
+    /* Força ficar na mesma linha */
+    gap: 5px !important;
+  }
+
+  .radio-label {
+    min-width: 28px !important;
+  }
+
+  .radio-label input[type="radio"] {
+    transform: scale(1.4);
+  }
+
+  .radio-label input[type="radio"]:hover {
+    transform: scale(1.6);
+  }
+
+  .radio-label span {
+    font-size: 0.85rem;
+  }
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

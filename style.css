@@ -1,0 +1,650 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Slab:wght@100..900&display=swap');
+
+
+:root {
+  --navbar-height: 95px;
+  /* Ajuste conforme o tamanho real da sua navbar */
+}
+
+body {
+  margin: 0;
+  padding-top: var(--navbar-height);
+  overflow-x: hidden;
+  font-family: "Poppins", sans-serif;
+  background-color: #f4f1eb;
+
+}
+
+* {
+  font-family: "Poppins", sans-serif;
+
+}
+
+section {
+  padding-top: 90px;
+  /* Espaço por causa da navbar fixa */
+}
+
+#logoNavbar {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  transition: opacity 0.2s ease;
+}
+
+
+.navbar {
+  height: var(--navbar-height);
+  transition: background-color 0.35s ease-in-out, color 0.35s ease-in-out;
+  background-color: #f4f1eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-link {
+  text-decoration: none;
+  color: #000;
+  font-size: 1.1rem;
+  position: relative;
+  transition: 0.3s;
+  
+  background: #ffffff !important;
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  justify-items: center;
+  font-weight: bold;
+  border-radius: 12px;
+  border: 1px solid #1e1e1e;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.475);
+}
+
+.menu-link:hover {
+  transform: translateY(-3px);
+}
+
+
+.titulo-teste {
+  font-weight: 900;
+  font-size: 42px;
+}
+
+.texto-teste {
+  color: #555;
+  line-height: 1.7;
+}
+
+.frase-final {
+  font-weight: 600;
+  margin-top: 20px;
+}
+
+.card-img-teste {
+  border-radius: 20px;
+  display: flex;
+  max-width: 400px;
+  transition: 0.3s;
+  border: solid 10px rgb(255, 255, 255);
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.197);
+  background-color: #ffffff !important;
+  border: 1px solid black;
+}
+
+.card-img-teste img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 20px;
+}
+
+.card-img-teste:hover {
+  transform: translateY(-6px);
+}
+
+.container p {
+  line-height: 1.7;
+}
+
+
+
+
+.btn-success-custom {
+  background-color: #1e1e1e !important;
+  color: white !important;
+  border: 2px solid #1e1e1e !important;
+  font-weight: bold;
+}
+
+.btn-success-custom:hover {
+  background: rgb(255, 255, 255) !important;
+  color: #1e1e1e !important;
+}
+
+
+
+.card-inteligencia {
+  padding: 20px;
+  border-radius: 25px;
+  box-shadow: 2px 2px 10px #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 450px;
+}
+
+
+.btn-inteligencia {
+  color: white;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 7px 30px;
+  font-size: 1.1rem;
+  box-shadow: 4px 4px 0px #1e1e1e;
+  border: solid 2px #1e1e1e;
+  transition: 0.3s;
+  text-decoration: none;
+}
+
+.btn-inteligencia:hover {
+  transform: translateY(-3px);
+  box-shadow: 6px 6px 0px #1e1e1e;
+}
+
+
+/* Modal */
+
+#modalContent {
+  border-radius: 20px;
+  border: 15px solid transparent;
+  transform: scale(0.9);
+  transition: transform 0.4s ease, border-color 0.4s ease;
+}
+
+/* animação ao abrir */
+#modalInteligencia.show #modalContent {
+  transform: scale(1);
+}
+
+/* borda inferior do header para receber cor dinâmica */
+#modalHeader {
+  border-bottom: 5px solid transparent;
+  transition: border-color 0.4s ease;
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+
+.inteligenciasNome h5 {
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  margin: 5px;
+  transition: 0.3s ease;
+  position: relative;
+  min-width: auto;
+}
+
+.inteligenciasNome h5:hover {
+  transform: translateY(-5px);
+}
+
+/* Linha animada */
+.inteligenciasNome h5::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 0%;
+  height: 4px;
+  background-color: currentColor;
+  transition: 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.inteligenciasNome h5:hover::after {
+  width: 100%;
+}
+
+
+.linguistica {
+  color: #9f042c;
+}
+
+.logico {
+  color: #ffbd59;
+}
+
+.corporal {
+  color: #00bf63;
+}
+
+.intrapessoal {
+  color: #5170ff;
+}
+
+.interpessoal {
+  color: #ff5f00;
+}
+
+.musical {
+  color: #8a03d2;
+}
+
+.espacial {
+  color: #d203a4;
+}
+
+.inteligenciasNome {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.socorro {
+  text-decoration: none;
+}
+
+
+.card-inteligencia {
+  max-width: 450px;
+}
+
+
+
+.card-planos {
+  border-radius: 20px;
+  padding: 25px;
+  transition: 0.3s;
+}
+
+.card-planos:hover {
+  transform: translateY(-8px);
+  box-shadow: 5px 5px 1px #1e1e1e;
+}
+
+.preco {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 20px 0;
+}
+
+.lista-planos {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 25px;
+}
+
+.lista-planos li {
+  margin: 10px 0;
+}
+
+.destaque {
+  transform: scale(1.05);
+  background: #1e1e1e !important;
+  border: 2px solid rgb(255, 255, 255) !important;
+  color: white !important;
+}
+
+
+@keyframes modalAparecer {
+
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+}
+
+.modal-conhecer {
+  border-radius: 25px;
+  border: none;
+  padding: 35px;
+
+  background: white;
+
+  box-shadow:
+    0 20px 80px rgba(0, 0, 0, 0.25);
+
+  transform: scale(0.9);
+}
+
+/* animação quando abre */
+#modalConhecerTeste.show .modal-conhecer {
+  animation: modalAparecer 0.4s ease forwards;
+}
+
+.modal-conhecer h4 {
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.modal-conhecer p {
+  font-size: 17px;
+  color: #555;
+}
+
+.btn-teste {
+  background: #1e1e1e !important;
+  color: white !important;
+  border-radius: 12px;
+  padding: 12px 30px;
+  font-weight: 600;
+}
+
+.btn-reclame {
+  color: #1e1e1e !important;
+  text-decoration: none;
+}
+
+.modal-reclame {
+  border-top: 6px solid;
+}
+
+
+/* ===== TELAS MÉDIAS (tablet / notebook pequeno) ===== */
+@media (max-width: 992px) {
+
+  .card-inteligencia {
+    max-width: 340px;
+    padding: 22px;
+  }
+
+  .card-inteligencia img {
+    max-width: 200px;
+  }
+
+  .btn-inteligencia {
+    font-size: 1rem;
+    padding: 6px 22px;
+  }
+
+}
+
+/* ===== CELULAR ===== */
+@media (max-width:576px) {
+
+  .inteligenciasNome {
+    gap: 12px;
+  }
+
+  .card-inteligencia {
+    max-width: 260px;
+    padding: 18px;
+  }
+
+
+  .card-inteligencia img {
+    max-width: 150px;
+  }
+
+  .btn-inteligencia {
+    font-size: 0.9rem;
+    padding: 6px 16px;
+  }
+
+}
+
+
+@media (max-width: 768px) {
+  .modal-dialog {
+    min-height: calc(100vh - var(--navbar-height));
+  }
+}
+
+
+/* notebook */
+@media (min-width: 1200px) {
+  body {
+    zoom: 1.0;
+  }
+}
+
+/* desktop grande */
+@media (min-width: 1400px) {
+  body {
+    zoom: 1.05;
+  }
+}
+
+/* monitores MUITO grandes */
+@media (min-width: 1800px) {
+  body {
+    zoom: 1.2;
+  }
+}
+
+
+
+
+
+/* Botão do PRO (invertido) */
+.card-planos.destaque .btn {
+  background-color: #1e1e1e;
+  color: rgb(255, 255, 255);
+  border: 2px solid rgb(255, 255, 255);
+}
+
+.card-planos.destaque .btn:hover {
+  background-color: rgb(255, 255, 255);
+  color: #1e1e1e !important;
+}
+
+
+/* BOTÕES PLANOS */
+.card-planos .btn {
+  background-color: rgb(255, 255, 255);
+  color: #1e1e1e;
+}
+
+.card-planos .btn:hover {
+  background-color: #1e1e1e;
+  color: rgb(255, 255, 255);
+}
+
+
+
+/* ================= DARK MODE ================= */
+
+body.dark {
+  background-color: #121212 !important;
+  color: white;
+}
+
+/* navbar */
+body.dark .navbar {
+  background-color: #1e1e1e !important;
+  box-shadow: 0 2px 6px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* logo + nome branco */
+body.dark #tituloNavbar {
+  color: white !important;
+}
+
+body.dark #logoNavbar {
+  content: url("Icones/LogoBranca.png");
+}
+
+/* menu */
+body.dark {
+  background: #1e1e1e !important;
+  border: 1px solid rgb(255, 255, 255);
+}
+
+body.dark .menu-link {
+  color: rgb(255, 255, 255);
+  background-color: #1e1e1e !important;
+  border: 2px solid #ffffff;
+}
+
+/* textos */
+body.dark p,
+body.dark .lead,
+body.dark .texto-teste body.dark .card-inteligencia {
+  color: #ffffff;
+}
+
+
+/* outros cards */
+body.dark .card,
+body.dark .card-planos,
+body.dark .card-img-teste {
+  background-color: #1e1e1e !important;
+  color: white;
+  border: 2px solid white;
+}
+
+/*botão outros cards*/
+body.dark .card-planos .btn {
+  background-color: #1e1e1e;
+  border: 2px solid white;
+  color: rgb(255, 255, 255);
+}
+
+body.dark .card-planos .btn:hover {
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+}
+
+
+/* card PRO */
+body.dark .destaque {
+  background: white !important;
+  color: #1e1e1e !important;
+  border: 2px solid #1e1e1e !important;
+}
+
+/*botão card PRO*/
+body.dark .card-planos.destaque .btn {
+  background-color: rgb(255, 255, 255);
+  color: #1e1e1e;
+  border: 2px solid #1e1e1e;
+}
+
+body.dark .card-planos.destaque .btn:hover {
+  background-color: #1e1e1e;
+  color: rgb(255, 255, 255) !important;
+}
+
+
+
+/* botões */
+body.dark .btn-success-custom,
+body.dark .btn.btn-teste {
+  color: #ffffff !important;
+  border-color: white !important;
+}
+
+body.dark .btn-success-custom:hover,
+body.dark .btn.btn-teste:hover {
+  background: #ffffff !important;
+  color: #1e1e1e !important;
+}
+
+
+/* modais */
+body.dark .modal-content {
+  background-color: #1e1e1e;
+  color: white;
+  border: 2px solid white;
+}
+
+/* rodapé */
+body.dark footer {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+body.dark footer h5,
+body.dark footer p,
+body.dark footer a {
+  color: white !important;
+}
+
+body.dark .text-muted {
+  color: #cccccc !important;
+}
+
+.theme-toggle {
+  position: absolute;
+  right: 25px;
+  top: 25px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #1e1e1e;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 20px;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* modo dark */
+body.dark .theme-toggle {
+  background: white;
+}
+
+.google-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #1e1e1e;
+  width: fit-content;
+  margin: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.489);
+  background: #fff;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.google-btn:hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+
+
+/* DARK MODE */
+body.dark .google-btn {
+  background: #1e1e1e;
+  border: 1px solid #fff;
+   box-shadow: 0 4px 10px rgba(255, 255, 255, 0.3);
+}
+
+body.dark .google-btn:hover {
+  transform: translateY(-2px);
+}
+
+.modal input {
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #ccc;
+}
+
+body.dark .modal input {
+  background: #121212;
+  border: 1px solid #555;
+  color: white;
+}
+
