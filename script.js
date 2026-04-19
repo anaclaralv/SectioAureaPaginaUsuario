@@ -126,10 +126,9 @@ function handleCredentialResponse(response) {
   console.log("Email:", dados.email);
 }
 
-
 window.onload = function () {
   google.accounts.id.initialize({
-    client_id: "882150648839-q3mofg4u56c2qms5nm6qok0r6aapkfc8.apps.googleusercontent.com",
+    client_id: "882150648839-9jlqshioa5loeae8drkfm9s4ggivjesr.apps.googleusercontent.com",
     callback: handleCredentialResponse
   });
 
