@@ -38,6 +38,49 @@ function mostrarTela(tela) {
     renderTabelaMaterias();
   }
 }
+
+// CONEXÃO COM EFEITO
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const tipoInteligencia = params.get('tipo');
+  
+  if (tipoInteligencia) {
+    aplicarTemaInteligencia(tipoInteligencia);
+  } else {
+    const tipoSalvo = localStorage.getItem('inteligenciaUsuario');
+    if (tipoSalvo) {
+      aplicarTemaInteligencia(tipoSalvo);
+    }
+  }
+});
+
+function aplicarTemaInteligencia(tipo) {
+  const cores = {
+    linguistica: "#9f042c",   // Vermelho
+    logico: "#ffbd59",        // Amarelo/Laranja
+    musical: "#8a03d2",       // Roxo
+    corporal: "#00bf63",      // Verde
+    espacial: "#d203a4",      // Rosa
+    interpessoal: "#ff5f00",  // Laranja
+    intrapessoal: "#5170ff"   // Azul
+  };
+  
+  const corPrimaria = cores[tipo] || "#9f042c";
+  
+  // Atualiza a variável CSS
+  document.documentElement.style.setProperty('--cor-primaria', corPrimaria);
+  
+  // Atualiza elementos que não usam variáveis CSS
+  document.querySelectorAll('.user-avatar, .foto-usuario-container img').forEach(el => {
+    el.style.borderColor = corPrimaria;
+  });
+  
+  // Salva no localStorage
+  localStorage.setItem('inteligenciaUsuario', tipo);
+  localStorage.setItem('corPrimaria', corPrimaria);
+}
+
+
 // ---------- ATIVAR MENU ----------
 function mudarPagina(elemento) {
   const links = document.querySelectorAll('#menuLateral .nav-link');
@@ -104,24 +147,24 @@ function renderizarTarefas() {
   const hojeLista = document.getElementById("tarefasHoje");
   const futurasLista = document.getElementById("tarefasFuturas");
   if (!hojeLista || !futurasLista) return;
-  
+
   hojeLista.innerHTML = "";
   futurasLista.innerHTML = "";
-  
+
   const hoje = hojeFormatado();
   const prioridadeOrdem = { alta: 3, media: 2, baixa: 1 };
-  
+
   // Aplicar filtro de prioridade
   let tarefasFiltradas = [...tarefas];
   if (filtroPrioridadeAtual !== "todas") {
     tarefasFiltradas = tarefasFiltradas.filter(t => t.prioridade === filtroPrioridadeAtual);
   }
-  
+
   function criarCard(tarefa) {
     const card = document.createElement("div");
     card.classList.add("tarefa-card");
     if (tarefa.concluida) card.classList.add("concluida");
-    
+
     const info = document.createElement("div");
     info.classList.add("tarefa-info");
     const spanTitulo = document.createElement("span");
@@ -131,7 +174,7 @@ function renderizarTarefas() {
     badge.textContent = tarefa.prioridade.toUpperCase();
     info.appendChild(spanTitulo);
     info.appendChild(badge);
-    
+
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
     btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
@@ -142,7 +185,7 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
-    
+
     const btnEditar = document.createElement("button");
     btnEditar.classList.add("btn-editar");
     btnEditar.textContent = "✏️ Editar";
@@ -178,7 +221,7 @@ function renderizarTarefas() {
         }
       });
     };
-    
+
     const btnExcluir = document.createElement("button");
     btnExcluir.classList.add("btn-excluir");
     btnExcluir.textContent = "❌ Excluir";
@@ -189,22 +232,22 @@ function renderizarTarefas() {
       atualizarResumoInicio();
       atualizarEventosTarefas();
     };
-    
+
     card.appendChild(info);
     card.appendChild(btnConcluir);
     card.appendChild(btnEditar);
     card.appendChild(btnExcluir);
     return card;
   }
-  
+
   const tarefasHoje = tarefasFiltradas.filter(t => t.data === hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
   const tarefasFuturas = tarefasFiltradas.filter(t => t.data > hoje)
     .sort((a, b) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
-  
+
   if (tarefasHoje.length === 0) hojeLista.innerHTML = "<p>Nenhuma tarefa cadastrada hoje!</p>";
   else tarefasHoje.forEach(t => hojeLista.appendChild(criarCard(t)));
-  
+
   if (tarefasFuturas.length === 0) futurasLista.innerHTML = "<p>Nenhuma tarefa futura cadastrada!</p>";
   else tarefasFuturas.forEach(t => futurasLista.appendChild(criarCard(t)));
 }
@@ -267,7 +310,7 @@ function adicionarEvento() {
     const dataInicio = new Date(data);
     let datasRecorrentes = [];
     let maxIteracoes = 0;
-    
+
     if (recorrencia === "diaria") {
       maxIteracoes = 30;
       for (let i = 1; i <= maxIteracoes; i++) {
@@ -290,7 +333,7 @@ function adicionarEvento() {
         datasRecorrentes.push(novaData);
       }
     }
-    
+
     datasRecorrentes.forEach(novaData => {
       calendar.addEvent({
         title: titulo,
@@ -303,7 +346,7 @@ function adicionarEvento() {
   }
 
   salvarEventos();
-  
+
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
   document.getElementById("corEvento").value = "#3788d8";
@@ -392,112 +435,112 @@ document.addEventListener('DOMContentLoaded', function () {
     editable: true,
     selectable: true,
     eventClick: function (info) {
-  const event = info.event;
-  
-  // Verificar se é um evento recorrente
-  const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
-  const isRecorrenciaFilha = event.extendedProps?.isRecorrente === true;
-  
-  if (event.extendedProps?.isTarefa === true) {
-    // ===== TAREFA =====
-    const tarefaId = event.extendedProps.tarefaId;
-    const tarefa = tarefas.find(t => t.id === tarefaId);
-    if (!tarefa) {
-      event.remove();
-      salvarEventos();
-      return;
-    }
+      const event = info.event;
 
-    Swal.fire({
-      title: 'Editar tarefa',
-      html: `
+      // Verificar se é um evento recorrente
+      const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
+      const isRecorrenciaFilha = event.extendedProps?.isRecorrente === true;
+
+      if (event.extendedProps?.isTarefa === true) {
+        // ===== TAREFA =====
+        const tarefaId = event.extendedProps.tarefaId;
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (!tarefa) {
+          event.remove();
+          salvarEventos();
+          return;
+        }
+
+        Swal.fire({
+          title: 'Editar tarefa',
+          html: `
         <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
         <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
       `,
-      showCancelButton: true,
-      confirmButtonText: 'Salvar',
-      denyButtonText: 'Excluir',
-      showDenyButton: true
-    }).then(result => {
-      if (result.isConfirmed) {
-        const novoTitulo = document.getElementById('editTitulo').value.trim();
-        const novaData = document.getElementById('editData').value;
-        if (novoTitulo && novaData) {
-          tarefa.titulo = novoTitulo;
-          tarefa.data = novaData;
-          salvarTarefas();
-          atualizarTudo();
-          atualizarEventosTarefas();
-        }
-      } else if (result.isDenied) {
-        tarefas = tarefas.filter(t => t.id !== tarefa.id);
-        salvarTarefas();
-        atualizarTudo();
-        atualizarEventosTarefas();
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            if (novoTitulo && novaData) {
+              tarefa.titulo = novoTitulo;
+              tarefa.data = novaData;
+              salvarTarefas();
+              atualizarTudo();
+              atualizarEventosTarefas();
+            }
+          } else if (result.isDenied) {
+            tarefas = tarefas.filter(t => t.id !== tarefa.id);
+            salvarTarefas();
+            atualizarTudo();
+            atualizarEventosTarefas();
+          }
+        });
       }
-    });
-  } 
-  // ===== EVENTO RECORRENTE =====
-  else if (isRecorrente) {
-    Swal.fire({
-      title: 'Excluir evento recorrente',
-      text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
-      icon: 'warning',
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: 'Excluir apenas este dia',
-      denyButtonText: 'Excluir todas as repetições',
-      cancelButtonText: 'Cancelar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        // Excluir APENAS esta ocorrência
-        event.remove();
-        salvarEventos();
-        Swal.fire({ icon: 'success', title: 'Evento removido!', text: 'Apenas esta data foi removida.', timer: 1500, showConfirmButton: false });
-      } else if (result.isDenied) {
-        // Excluir TODAS as ocorrências (eventos com o mesmo título e mesma recorrência)
-        const eventosParaRemover = calendar.getEvents().filter(e => 
-          e.title === event.title && 
-          e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
-        );
-        eventosParaRemover.forEach(e => e.remove());
-        salvarEventos();
-        Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: 'Todas as repetições foram removidas.', timer: 1500, showConfirmButton: false });
+      // ===== EVENTO RECORRENTE =====
+      else if (isRecorrente) {
+        Swal.fire({
+          title: 'Excluir evento recorrente',
+          text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
+          icon: 'warning',
+          showCancelButton: true,
+          showDenyButton: true,
+          confirmButtonText: 'Excluir apenas este dia',
+          denyButtonText: 'Excluir todas as repetições',
+          cancelButtonText: 'Cancelar'
+        }).then(result => {
+          if (result.isConfirmed) {
+            // Excluir APENAS esta ocorrência
+            event.remove();
+            salvarEventos();
+            Swal.fire({ icon: 'success', title: 'Evento removido!', text: 'Apenas esta data foi removida.', timer: 1500, showConfirmButton: false });
+          } else if (result.isDenied) {
+            // Excluir TODAS as ocorrências (eventos com o mesmo título e mesma recorrência)
+            const eventosParaRemover = calendar.getEvents().filter(e =>
+              e.title === event.title &&
+              e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
+            );
+            eventosParaRemover.forEach(e => e.remove());
+            salvarEventos();
+            Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: 'Todas as repetições foram removidas.', timer: 1500, showConfirmButton: false });
+          }
+        });
       }
-    });
-  }
-  // ===== EVENTO NORMAL (não recorrente) =====
-  else {
-    Swal.fire({
-      title: 'Editar evento',
-      html: `
+      // ===== EVENTO NORMAL (não recorrente) =====
+      else {
+        Swal.fire({
+          title: 'Editar evento',
+          html: `
         <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
         <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
         <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
       `,
-      showCancelButton: true,
-      confirmButtonText: 'Salvar',
-      denyButtonText: 'Excluir',
-      showDenyButton: true
-    }).then(result => {
-      if (result.isConfirmed) {
-        const novoTitulo = document.getElementById('editTitulo').value.trim();
-        const novaData = document.getElementById('editData').value;
-        const novaCor = document.getElementById('editCor').value;
-        if (novoTitulo && novaData) {
-          event.setProp('title', novoTitulo);
-          event.setStart(novaData);
-          event.setProp('backgroundColor', novaCor);
-          event.setProp('borderColor', novaCor);
-          salvarEventos();
-        }
-      } else if (result.isDenied) {
-        event.remove();
-        salvarEventos();
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            const novaCor = document.getElementById('editCor').value;
+            if (novoTitulo && novaData) {
+              event.setProp('title', novoTitulo);
+              event.setStart(novaData);
+              event.setProp('backgroundColor', novaCor);
+              event.setProp('borderColor', novaCor);
+              salvarEventos();
+            }
+          } else if (result.isDenied) {
+            event.remove();
+            salvarEventos();
+          }
+        });
       }
-    });
-  }
-},
+    },
     events: carregarEventos()
   });
 
@@ -512,33 +555,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
   function renderNotas() {
-  notasContainer.innerHTML = "";
-  const filtro = searchInput.value.toLowerCase();
-  notas
-    .filter(n =>
-      n.titulo.toLowerCase().includes(filtro) ||
-      n.texto.toLowerCase().includes(filtro)
-    )
-    .sort((a, b) => {
-      if (b.favorito !== a.favorito) return b.favorito - a.favorito;
-      return a.titulo.localeCompare(b.titulo);
-    })
-    .forEach((nota, idx) => {
-      // Calcular estatísticas do checklist
-      const totalItens = nota.checklist?.length || 0;
-      const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
-      const pendentes = totalItens - itensConcluidos;
-      
-      let checklistStats = "";
-      if (totalItens > 0) {
-        const statsClass = pendentes === 0 ? "concluido" : "pendente";
-        const statsIcon = pendentes === 0 ? "✅" : "📋";
-        checklistStats = `<div class="checklist-stats ${statsClass}">${statsIcon} ${itensConcluidos}/${totalItens} itens ${pendentes === 0 ? 'concluídos' : 'pendentes'}</div>`;
-      }
-      
-      const card = document.createElement("div");
-      card.className = "col-md-4";
-      card.innerHTML = `
+    notasContainer.innerHTML = "";
+    const filtro = searchInput.value.toLowerCase();
+    notas
+      .filter(n =>
+        n.titulo.toLowerCase().includes(filtro) ||
+        n.texto.toLowerCase().includes(filtro)
+      )
+      .sort((a, b) => {
+        if (b.favorito !== a.favorito) return b.favorito - a.favorito;
+        return a.titulo.localeCompare(b.titulo);
+      })
+      .forEach((nota, idx) => {
+        // Calcular estatísticas do checklist
+        const totalItens = nota.checklist?.length || 0;
+        const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
+        const pendentes = totalItens - itensConcluidos;
+
+        let checklistStats = "";
+        if (totalItens > 0) {
+          const statsClass = pendentes === 0 ? "concluido" : "pendente";
+          const statsIcon = pendentes === 0 ? "✅" : "📋";
+          checklistStats = `<div class="checklist-stats ${statsClass}">${statsIcon} ${itensConcluidos}/${totalItens} itens ${pendentes === 0 ? 'concluídos' : 'pendentes'}</div>`;
+        }
+
+        const card = document.createElement("div");
+        card.className = "col-md-4";
+        card.innerHTML = `
         <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
           <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
           <h5>${nota.titulo}</h5>
@@ -565,8 +608,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-      notasContainer.appendChild(card);
-    });
+        notasContainer.appendChild(card);
+      });
     document.querySelectorAll(".check-item input").forEach(input => {
       input.addEventListener("change", (e) => {
         const div = e.target.parentElement;
@@ -591,57 +634,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Contador de caracteres da nota
-function atualizarContadorCaracteres() {
-  const textoDiv = document.getElementById("notaTexto");
-  const contadorSpan = document.getElementById("contadorTexto");
-  
-  if (!textoDiv || !contadorSpan) return;
-  
-  const texto = textoDiv.innerText || textoDiv.textContent || "";
-  const caracteres = texto.length;
-  contadorSpan.textContent = caracteres;
-  
-  const contadorDiv = document.querySelector(".contador-caracteres");
-  if (caracteres > 5000) {
-    contadorDiv?.classList.add("alerta");
-  } else {
-    contadorDiv?.classList.remove("alerta");
-  }
-}
+  function atualizarContadorCaracteres() {
+    const textoDiv = document.getElementById("notaTexto");
+    const contadorSpan = document.getElementById("contadorTexto");
 
-// Função para monitorar mudanças no texto
-function iniciarMonitoramentoTexto() {
-  const textoDiv = document.getElementById("notaTexto");
-  if (!textoDiv) return;
-  
-  // Atualiza contador ao digitar
-  textoDiv.addEventListener("input", atualizarContadorCaracteres);
-  textoDiv.addEventListener("keyup", atualizarContadorCaracteres);
-  
-  // Atualiza ao abrir modal com nota existente
-  const observer = new MutationObserver(() => {
-    atualizarContadorCaracteres();
-  });
-  observer.observe(textoDiv, { childList: true, subtree: true, characterData: true });
-}
+    if (!textoDiv || !contadorSpan) return;
+
+    const texto = textoDiv.innerText || textoDiv.textContent || "";
+    const caracteres = texto.length;
+    contadorSpan.textContent = caracteres;
+
+    const contadorDiv = document.querySelector(".contador-caracteres");
+    if (caracteres > 5000) {
+      contadorDiv?.classList.add("alerta");
+    } else {
+      contadorDiv?.classList.remove("alerta");
+    }
+  }
+
+  // Função para monitorar mudanças no texto
+  function iniciarMonitoramentoTexto() {
+    const textoDiv = document.getElementById("notaTexto");
+    if (!textoDiv) return;
+
+    // Atualiza contador ao digitar
+    textoDiv.addEventListener("input", atualizarContadorCaracteres);
+    textoDiv.addEventListener("keyup", atualizarContadorCaracteres);
+
+    // Atualiza ao abrir modal com nota existente
+    const observer = new MutationObserver(() => {
+      atualizarContadorCaracteres();
+    });
+    observer.observe(textoDiv, { childList: true, subtree: true, characterData: true });
+  }
 
   function salvarNotas() {
     localStorage.setItem("notas", JSON.stringify(notas));
   }
   document.getElementById("notaTexto").addEventListener("input", salvarNotas);
   function abrirModal(nota = null, idx = null) {
-  notaAtual = idx;
-  document.getElementById("notaTitulo").value = nota?.titulo || "";
-  document.getElementById("notaTexto").innerHTML = nota?.texto || "";
-  document.getElementById("notaCor").value = nota?.cor || "#ffffff";
-  renderChecklist(nota?.checklist || []);
-  notaModal.show();
-  
-  // Atualizar contador após abrir o modal (dar tempo para o DOM carregar)
-  setTimeout(() => {
-    atualizarContadorCaracteres();
-  }, 100);
-}
+    notaAtual = idx;
+    document.getElementById("notaTitulo").value = nota?.titulo || "";
+    document.getElementById("notaTexto").innerHTML = nota?.texto || "";
+    document.getElementById("notaCor").value = nota?.cor || "#ffffff";
+    renderChecklist(nota?.checklist || []);
+    notaModal.show();
+
+    // Atualizar contador após abrir o modal (dar tempo para o DOM carregar)
+    setTimeout(() => {
+      atualizarContadorCaracteres();
+    }, 100);
+  }
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
     container.innerHTML = "";
@@ -873,7 +916,7 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarTudo();
   closeSidebarOnLinkClick();
 
-    const fotoSalva = localStorage.getItem("userFoto");
+  const fotoSalva = localStorage.getItem("userFoto");
   if (fotoSalva) {
     const sidebarFoto = document.getElementById('sidebarFoto');
     const previewFoto = document.getElementById('previewFoto');
@@ -916,7 +959,7 @@ function salvarConfiguracao() {
   const novoNome = document.getElementById('novoNome').value;
   const novoEmail = document.getElementById('novoEmail').value;
   const novaFotoInput = document.getElementById('novaFoto');
-  
+
   document.getElementById('sidebarNome').textContent = novoNome;
   document.getElementById('sidebarEmail').textContent = novoEmail;
 
@@ -927,20 +970,20 @@ function salvarConfiguracao() {
       // Atualiza a foto da sidebar E do preview
       const sidebarFoto = document.getElementById('sidebarFoto');
       const previewFoto = document.getElementById('previewFoto');
-      
+
       if (sidebarFoto) sidebarFoto.src = e.target.result;
       if (previewFoto) previewFoto.src = e.target.result;
-      
+
       // Salva a foto no localStorage para persistir
       localStorage.setItem("userFoto", e.target.result);
     }
     reader.readAsDataURL(novaFotoInput.files[0]);
   }
-  
+
   // Salvar nome e email no localStorage
   localStorage.setItem("userName", novoNome);
   localStorage.setItem("userEmail", novoEmail);
-  
+
   Swal.fire({
     icon: 'success',
     title: 'Sucesso!',
@@ -948,7 +991,7 @@ function salvarConfiguracao() {
     timer: 1500,
     showConfirmButton: false
   });
-  
+
   bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
 
@@ -956,10 +999,10 @@ function salvarConfiguracao() {
 function previewFotoSelecionada() {
   const input = document.getElementById('novaFoto');
   const preview = document.getElementById('previewFoto');
-  
+
   if (input.files && input.files[0]) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       preview.src = e.target.result;  // Atualiza o preview no modal
     }
     reader.readAsDataURL(input.files[0]);
@@ -974,7 +1017,7 @@ let modoEstudo = "auto";
 let materias = [];  // APENAS UM ARRAY para todas as matérias
 let cronogramaNovo = [];
 let notas = [];
-let materiasCronograma = []; 
+let materiasCronograma = [];
 let materiasRelogio = [];
 let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
 
@@ -994,25 +1037,25 @@ function allowDrop(ev) {
 function setupNotaTextFormatting() {
   const textoDiv = document.getElementById("notaTexto");
   if (!textoDiv) return;
-  
+
   const btnBold = document.getElementById("btnBoldNota");
   const btnItalic = document.getElementById("btnItalicNota");
   const btnUnderline = document.getElementById("btnUnderlineNota");
-  
+
   if (btnBold) {
     btnBold.addEventListener("click", () => {
       document.execCommand('bold', false, null);
       textoDiv.focus();
     });
   }
-  
+
   if (btnItalic) {
     btnItalic.addEventListener("click", () => {
       document.execCommand('italic', false, null);
       textoDiv.focus();
     });
   }
-  
+
   if (btnUnderline) {
     btnUnderline.addEventListener("click", () => {
       document.execCommand('underline', false, null);
@@ -1062,7 +1105,7 @@ function renderMaterias() {
   const container = document.getElementById("materiasContainer");
   if (!container) return;
   container.innerHTML = "";
-  
+
   // Usar 'materias' diretamente (é o array principal que você já tem)
   materias.forEach(m => {
     const div = document.createElement("div");
@@ -1072,7 +1115,7 @@ function renderMaterias() {
     div.id = m.id;
     div.draggable = true;
     div.ondragstart = (e) => e.dataTransfer.setData("id", m.id);
-    
+
     // Editar (duplo clique)
     div.addEventListener("dblclick", () => {
       Swal.fire({
@@ -1110,7 +1153,7 @@ function renderMaterias() {
         }
       });
     });
-    
+
     // Excluir (clique direito)
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
@@ -1135,7 +1178,7 @@ function renderMaterias() {
         }
       });
     });
-    
+
     container.appendChild(div);
   });
 }
@@ -1304,7 +1347,7 @@ function adicionarMateria() {
 
   // Só entra no modo automático se não estiver em modo foco
   const modoFocoAtivo = document.getElementById("modoFocoContainer")?.style.display === "flex";
-  
+
   if (!modoFocoAtivo && modoEstudo === "auto") {
     if (blocoAtual) {
       const idMateria = blocoAtual.materia.id;
@@ -1398,7 +1441,7 @@ function renderTabelaMaterias() {
   const tabela = document.getElementById("tabelaMateriasTempo");
   if (!tabela) return;
   tabela.innerHTML = "";
-  
+
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let tempo = 0;
@@ -1439,28 +1482,28 @@ function iniciarPomodoroPadrao() {
     Swal.fire({ icon: 'warning', title: 'Já rodando!', text: 'Pause ou resete primeiro.', timer: 1500, showConfirmButton: false });
     return;
   }
-  
+
   modoPomodoro = "foco";
   pomodoroTempo = 1500;
   pomodoroRodando = true;
   const statusEl = document.getElementById("pomodoroStatus");
   if (statusEl) statusEl.textContent = "🍅 Estudando...";
   atualizarDisplayPomodoro();
-  
+
   pomodoroInterval = setInterval(() => {
     if (!pomodoroRodando) return;
-    
+
     if (pomodoroTempo <= 0) {
       clearInterval(pomodoroInterval);
       pomodoroRodando = false;
-      
+
       if (modoPomodoro === "foco") {
         // Pausar estudo se tiver
         if (estudoIdPomodoro) {
           if (typeof pausarEstudo === 'function') pausarEstudo();
           estudoIdPomodoro = null;
         }
-        
+
         Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: 'Hora da pausa! ☕', timer: 2000, showConfirmButton: false });
         modoPomodoro = "pausa";
         pomodoroTempo = 300;
@@ -1475,7 +1518,7 @@ function iniciarPomodoroPadrao() {
       atualizarDisplayPomodoro();
       return;
     }
-    
+
     pomodoroTempo--;
     atualizarDisplayPomodoro();
   }, 1000);
@@ -1537,40 +1580,40 @@ function iniciarPomodoroPersonalizado() {
 
   // Configurar o Pomodoro personalizado
   if (pomodoroRodando) resetarPomodoro();
-  
+
   modoPomodoro = "foco";
   pomodoroTempo = tempoEstudo * 60;
   pomodoroRodando = true;
   estudoIdPomodoro = materiaId;
-  
+
   // Iniciar estudo
   if (typeof iniciarEstudo === 'function') iniciarEstudo(materiaId);
-  
+
   const statusEl = document.getElementById("pomodoroStatus");
   if (statusEl) statusEl.textContent = "🍅 Estudando...";
   atualizarDisplayPomodoro();
-  
+
   // Fechar modal
   bootstrap.Modal.getInstance(document.getElementById('modalPomodoro'))?.hide();
-  
+
   // Iniciar timer
   if (pomodoroInterval) clearInterval(pomodoroInterval);
   pomodoroInterval = setInterval(() => {
     if (!pomodoroRodando) return;
-    
+
     if (pomodoroTempo <= 0) {
       clearInterval(pomodoroInterval);
       pomodoroRodando = false;
-      
+
       if (modoPomodoro === "foco") {
         if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
-        
+
         Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: `${tempoPausa} min de pausa ☕`, timer: 2000, showConfirmButton: false });
         modoPomodoro = "pausa";
         pomodoroTempo = tempoPausa * 60;
         if (statusEl) statusEl.textContent = "☕ Em pausa...";
         atualizarDisplayPomodoro();
-        
+
         // Continuar para a pausa
         setTimeout(() => {
           if (!pomodoroRodando) {
@@ -1593,7 +1636,7 @@ function iniciarPomodoroPersonalizado() {
       }
       return;
     }
-    
+
     pomodoroTempo--;
     atualizarDisplayPomodoro();
   }, 1000);
@@ -1637,7 +1680,7 @@ function iniciarEstudo(id) {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     renderTabelaMaterias();
     atualizarMeta(); // Atualizar a meta em tempo real
-     if (typeof carregarEstatisticas === 'function' && document.getElementById("estatisticaSection")?.style.display === "block") {
+    if (typeof carregarEstatisticas === 'function' && document.getElementById("estatisticaSection")?.style.display === "block") {
       carregarEstatisticas();
     }
     if (typeof atualizarRelogioInfo === 'function') {
@@ -2110,13 +2153,13 @@ function pausarEstudo() {
 function adicionarMateriaRelogio() {
   const nome = document.getElementById("novaMateriaRelogio").value.trim();
   if (!nome) return;
-  
+
   const novaMateria = {
     id: "m" + Date.now(),
     nome: nome,
     cor: "#9f042c"
   };
-  
+
   materias.push(novaMateria);
   localStorage.setItem("materias", JSON.stringify(materias));
   document.getElementById("novaMateriaRelogio").value = "";
@@ -2341,12 +2384,12 @@ setInterval(atualizarSistema, 10000); function voltarModoAuto() {
 function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('overlay');
-  
+
   if (!sidebar) return;
-  
+
   // Alterna a classe show na sidebar
   sidebar.classList.toggle('show');
-  
+
   // Gerencia o overlay
   if (overlay) {
     if (sidebar.classList.contains('show')) {
@@ -2362,14 +2405,14 @@ function toggleSidebar() {
 function closeSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('overlay');
-  
+
   if (sidebar) sidebar.classList.remove('show');
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
 
 // Fechar sidebar ao clicar no overlay
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const overlay = document.getElementById('overlay');
   if (overlay) {
     overlay.onclick = closeSidebar;
@@ -2882,7 +2925,7 @@ function verificarProvasProximas() {
   eventos.forEach(evento => {
     // Só considera se for do tipo "prova"
     if (evento.extendedProps?.tipo !== "prova") return;
-    
+
     const dataEvento = new Date(evento.start);
     const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
     if (diasRestantes <= 7 && diasRestantes > 0) {
@@ -3029,10 +3072,10 @@ function renderizarFlashcards() {
     flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
   }
 
-const materiaFiltro = document.getElementById("filtroMateria")?.value;
-if (materiaFiltro && materiaFiltro !== "") {
-  flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
-}
+  const materiaFiltro = document.getElementById("filtroMateria")?.value;
+  if (materiaFiltro && materiaFiltro !== "") {
+    flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
+  }
   const busca = document.getElementById("buscaRevisao")?.value.toLowerCase();
   if (busca) {
     flashcardsFiltrados = flashcardsFiltrados.filter(f =>
@@ -3062,13 +3105,13 @@ if (materiaFiltro && materiaFiltro !== "") {
 function criarCardHTML(flashcard) {
   const isAtrasada = flashcard.dataProxima < hoje();
   const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
-  
+
   // Calcular dias até a próxima revisão
   const hojeDate = new Date();
   const proximaDate = new Date(flashcard.dataProxima);
   const diffTime = proximaDate - hojeDate;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   let mensagemRevisao = "";
   if (isAtrasada) {
     mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;">⚠️ Atrasada! Revise hoje!</span>`;
@@ -3302,8 +3345,8 @@ function configurarFiltros() {
 // ==================== MODAL FLASHCARD HTML ====================
 // Adicione este modal no final do body
 function adicionarModalFlashcardHTML() {
-   if (document.getElementById("modalRevisao")) {
-   // console.log("Modal já existe no HTML");
+  if (document.getElementById("modalRevisao")) {
+    // console.log("Modal já existe no HTML");
     return;
   }
 
@@ -3378,11 +3421,11 @@ function transformarNotaEmFlashcard(idx) {
       const materiaId = document.getElementById('flashcardMateria').value;
       const pergunta = document.getElementById('flashcardPergunta').value;
       const resposta = document.getElementById('flashcardResposta').value;
-      
+
       if (!materiaId) return Swal.showValidationMessage('Selecione uma matéria!');
       if (!pergunta) return Swal.showValidationMessage('Digite uma pergunta!');
       if (!resposta) return Swal.showValidationMessage('Digite uma resposta!');
-      
+
       const materia = materias.find(m => m.id == materiaId);
       return { materiaId, materiaNome: materia.nome, pergunta, resposta };
     }
@@ -3457,30 +3500,30 @@ function verificarNotificacoesTarefas() {
     console.log("Este navegador não suporta notificações");
     return;
   }
-  
+
   // Pede permissão se ainda não tiver
   if (Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
   }
-  
+
   if (Notification.permission !== "granted") return;
-  
+
   const hoje = new Date();
   const amanha = new Date(hoje);
   amanha.setDate(hoje.getDate() + 1);
   const amanhaStr = amanha.toISOString().split('T')[0];
-  
+
   // Busca tarefas para amanhã
   const tarefasAmanha = tarefas.filter(t => t.data === amanhaStr && !t.concluida);
-  
+
   // Verifica se já notificou hoje
   const ultimaNotificacao = localStorage.getItem('ultimaNotificacaoTarefas');
   const hojeStr = hoje.toISOString().split('T')[0];
-  
+
   if (tarefasAmanha.length > 0 && ultimaNotificacao !== hojeStr) {
     const titulo = `📋 Você tem ${tarefasAmanha.length} tarefa(s) para amanhã!`;
     const corpo = tarefasAmanha.map(t => `• ${t.titulo} (${t.prioridade})`).join('\n');
-    
+
     new Notification(titulo, { body: corpo, icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' });
     localStorage.setItem('ultimaNotificacaoTarefas', hojeStr);
   }
