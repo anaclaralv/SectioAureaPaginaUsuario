@@ -40,10 +40,10 @@ function mostrarTela(tela) {
 }
 
 // CONEXÃO COM EFEITO
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   const tipoInteligencia = params.get('tipo');
-  
+
   if (tipoInteligencia) {
     aplicarTemaInteligencia(tipoInteligencia);
   } else {
@@ -64,17 +64,17 @@ function aplicarTemaInteligencia(tipo) {
     interpessoal: "#ff5f00",  // Laranja
     intrapessoal: "#5170ff"   // Azul
   };
-  
+
   const corPrimaria = cores[tipo] || "#9f042c";
-  
+
   // Atualiza a variável CSS
   document.documentElement.style.setProperty('--cor-primaria', corPrimaria);
-  
+
   // Atualiza elementos que não usam variáveis CSS
   document.querySelectorAll('.user-avatar, .foto-usuario-container img').forEach(el => {
     el.style.borderColor = corPrimaria;
   });
-  
+
   // Salva no localStorage
   localStorage.setItem('inteligenciaUsuario', tipo);
   localStorage.setItem('corPrimaria', corPrimaria);
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
-  notas = JSON.parse(localStorage.getItem("notas")) || [];
+  let notas = JSON.parse(localStorage.getItem("notas")) || [];
   let notaAtual = null;
   const notasContainer = document.getElementById("notasContainer");
   const searchInput = document.getElementById("search");
@@ -602,9 +602,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="mt-2">
             <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
             <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
-            <button class="btn-nota-to-flashcard" onclick="transformarNotaEmFlashcard(${idx})">
-              <i class="bi bi-stack"></i> Virar Flashcard
-            </button>
           </div>
         </div>
       `;
@@ -2438,18 +2435,6 @@ window.addEventListener('resize', function () {
   }
 });
 
-// Fechar menu ao clicar em um link (no celular)
-function closeSidebarOnLinkClick() {
-  const links = document.querySelectorAll('#menuLateral .nav-link');
-  links.forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        closeSidebar();
-      }
-    });
-  });
-}
-
 /* ================= ESTATÍSTICAS ================= */
 
 // Variável para controlar o gráfico atual
@@ -2907,7 +2892,9 @@ function carregarFlashcards() {
   } catch (e) {
     flashcards = [];
   }
-  renderizarFlashcards();
+  popularFiltroMaterias();  // ← NOVO
+  renderizarFlashcardsAgrupados();
+  atualizarEstatisticas();
   verificarProvasProximas();
 }
 
@@ -2954,6 +2941,164 @@ function criarRevisaoPorProva() {
   if (window.provaAtual) {
     abrirModalFlashcardComProva(window.provaAtual.titulo);
   }
+}
+
+//REVISAO
+function configurarAbasRevisao() {
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const aba = btn.dataset.aba;
+      document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
+      document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
+      
+      if (aba === 'revisar') {
+        atualizarMensagemRevisar();
+      }
+      
+      // Recarrega os cards com o filtro atual
+      renderizarFlashcardsAgrupados();
+    });
+  });
+}
+
+// NOVO: Atualizar mensagem da aba revisar
+function atualizarMensagemRevisar() {
+  const hojeData = hoje();
+  const pendentes = flashcards.filter(f => f.dataProxima <= hojeData).length;
+  document.getElementById('countPendentes').textContent = pendentes;
+}
+
+// NOVO: Renderizar flashcards agrupados com acordeão
+function renderizarFlashcardsAgrupados() {
+  const container = document.getElementById('listaFlashcardsAgrupada');
+  if (!container) return;
+  
+  // Pega o filtro de matéria
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+  
+  // Filtra por matéria se necessário
+  let cardsFiltrados = [...flashcards];
+  if (filtroMateria !== 'todas') {
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaId === filtroMateria);
+  }
+  
+  if (cardsFiltrados.length === 0) {
+    container.innerHTML = '<p class="vazio">✨ Nenhum flashcard encontrado!</p>';
+    return;
+  }
+  
+  // Agrupar por matéria
+  const porMateria = {};
+  cardsFiltrados.forEach(f => {
+    if (!porMateria[f.materiaNome]) {
+      porMateria[f.materiaNome] = { temas: {}, count: 0 };
+    }
+    if (!porMateria[f.materiaNome].temas[f.tema]) {
+      porMateria[f.materiaNome].temas[f.tema] = [];
+    }
+    porMateria[f.materiaNome].temas[f.tema].push(f);
+    porMateria[f.materiaNome].count++;
+  });
+  
+  // Ordenar cards dentro de cada tema
+  const ordenarCards = (cards) => {
+    const hojeData = hoje();
+    return cards.sort((a, b) => {
+      const aAtrasado = a.dataProxima < hojeData;
+      const bAtrasado = b.dataProxima < hojeData;
+      if (aAtrasado && !bAtrasado) return -1;
+      if (!aAtrasado && bAtrasado) return 1;
+      return a.dataProxima.localeCompare(b.dataProxima);
+    });
+  };
+  
+  // Renderizar com acordeão
+  let html = '';
+  let index = 0;
+  
+  for (const materia in porMateria) {
+    const materiaData = porMateria[materia];
+    const materiaId = `materia-${index}`;
+    
+    html += `
+      <div class="materia-acordeon">
+        <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
+          <div class="materia-titulo">
+            <i class="bi bi-journal-bookmark-fill"></i>
+            <h3>${materia}</h3>
+            <span class="materia-badge-count">${materiaData.count}</span>
+          </div>
+          <span class="materia-seta" id="${materiaId}-seta">▶</span>
+        </div>
+        <div class="materia-conteudo" id="${materiaId}-conteudo">
+    `;
+    
+    for (const tema in materiaData.temas) {
+      const cards = ordenarCards(materiaData.temas[tema]);
+      const temaCount = cards.length;
+      
+      html += `
+        <div class="tema-grupo">
+          <div class="tema-header">
+            <i class="bi bi-folder2"></i>
+            <h4>${tema}</h4>
+            <span class="tema-badge-count">${temaCount}</span>
+          </div>
+      `;
+      
+      cards.forEach(f => {
+        const isAtrasada = f.dataProxima < hoje();
+        const isHoje = f.dataProxima === hoje();
+        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
+        
+        html += `
+          <div class="card-flashcard ${classeDestaque}">
+            <div class="card-pergunta">${f.pergunta}</div>
+            <div class="card-data">📅 ${formatarData(f.dataProxima)}</div>
+            <div class="card-acoes">
+              <button onclick="editarFlashcard(${f.id})" title="Editar">✏️</button>
+              <button onclick="excluirFlashcard(${f.id})" title="Excluir">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `</div>`;
+    }
+    
+    html += `
+        </div>
+      </div>
+    `;
+    index++;
+  }
+  
+  container.innerHTML = html;
+}
+
+// NOVO: Função para toggle do acordeão
+function toggleAcordeon(materiaId) {
+  const conteudo = document.getElementById(`${materiaId}-conteudo`);
+  const seta = document.getElementById(`${materiaId}-seta`);
+  
+  if (conteudo.style.display === 'block') {
+    conteudo.style.display = 'none';
+    seta.classList.remove('aberto');
+    seta.textContent = '▶';
+  } else {
+    conteudo.style.display = 'block';
+    seta.classList.add('aberto');
+    seta.textContent = '▼';
+  }
+}
+
+// NOVO: Formatar data
+function formatarData(dataStr) {
+  const data = new Date(dataStr);
+  return data.toLocaleDateString('pt-BR');
 }
 
 // ==================== MODAL E CRIAÇÃO ====================
@@ -3183,79 +3328,113 @@ function atualizarEstatisticas() {
 // ==================== MODO FOCO ====================
 function iniciarRevisao() {
   const hojeData = hoje();
-  revisoesEmAndamento = flashcards.filter(f => f.dataProxima <= hojeData);
-
-  if (revisoesEmAndamento.length === 0) {
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+  
+  // Filtra cards pendentes
+  let cardsPendentes = flashcards.filter(f => f.dataProxima <= hojeData);
+  
+  // Aplica filtro de matéria
+  if (filtroMateria !== 'todas') {
+    cardsPendentes = cardsPendentes.filter(f => f.materiaId === filtroMateria);
+  }
+  
+  if (cardsPendentes.length === 0) {
     Swal.fire({
       icon: 'info',
       title: 'Nenhuma revisão pendente!',
-      text: 'Você já revisou tudo por hoje. Volte amanhã!',
+      text: filtroMateria !== 'todas' ? 
+        'Não há cards para revisar nesta matéria.' : 
+        'Você já revisou tudo por hoje. Volte amanhã!',
       timer: 2000,
       showConfirmButton: false
     });
     return;
   }
-
+  
+  revisoesEmAndamento = cardsPendentes;
   indiceAtualFoco = 0;
   mostrarCardFoco();
 }
 
+// NOVO: Mostrar card no modo foco
 function mostrarCardFoco() {
   if (indiceAtualFoco >= revisoesEmAndamento.length) {
     finalizarRevisao();
     return;
   }
-
+  
   const card = revisoesEmAndamento[indiceAtualFoco];
-
-  document.getElementById("focoMateria").textContent = card.materiaNome;
-  document.getElementById("focoTema").textContent = `📂 ${card.tema}`;
-  document.getElementById("focoPergunta").textContent = card.pergunta;
-  document.getElementById("focoResposta").innerHTML = card.resposta;
-  document.getElementById("focoResposta").style.display = "none";
-  document.getElementById("botoesDificuldade").style.display = "none";
-  document.getElementById("btnMostrarResposta").style.display = "block";
-
+  
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = `📂 ${card.tema}`;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+  document.getElementById('focoResposta').innerHTML = card.resposta;
+  document.getElementById('focoResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+  
   const total = revisoesEmAndamento.length;
   const atual = indiceAtualFoco + 1;
-  document.getElementById("focoContador").textContent = `Card ${atual} de ${total}`;
-
+  document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
+  
   const progresso = (atual / total) * 100;
-  document.getElementById("focoProgressoBarra").style.width = `${progresso}%`;
-
-  document.getElementById("modoFocoContainer").style.display = "flex";
+  document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
+  
+  document.getElementById('modoFocoContainer').style.display = 'flex';
 }
 
+// NOVO: Popular select de matérias no filtro
+function popularFiltroMaterias() {
+  const select = document.getElementById('filtroMateriaRevisao');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="todas">📚 Todas as matérias</option>';
+  
+  // Pega matérias únicas dos flashcards
+  const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))];
+  
+  materiasUnicas.sort().forEach(materia => {
+    select.innerHTML += `<option value="${materia}">${materia}</option>`;
+  });
+}
+
+// Mostrar resposta e botões
 function mostrarRespostaFoco() {
-  document.getElementById("focoResposta").style.display = "block";
-  document.getElementById("btnMostrarResposta").style.display = "none";
-  document.getElementById("botoesDificuldade").style.display = "flex";
+  document.getElementById('focoResposta').style.display = 'block';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'flex';
 }
 
-function responderDificuldade(dificuldade) {
+// NOVO: Responder com Acertou/Errou
+function responderFlashcard(resultado) {
   const card = revisoesEmAndamento[indiceAtualFoco];
   const flashcardOriginal = flashcards.find(f => f.id === card.id);
-
+  
   if (!flashcardOriginal) return;
-
-  if (dificuldade === "facil") {
+  
+  if (resultado === 'acertei') {
+    // Aumenta o nível (espaça mais)
     flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
     flashcardOriginal.acertos++;
-  } else if (dificuldade === "medio") {
-    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
-    flashcardOriginal.acertos++;
-  } else if (dificuldade === "dificil") {
+  } else {
+    // Diminui o nível (revisar mais vezes)
     flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
     flashcardOriginal.erros++;
   }
-
-  flashcardOriginal.dataProxima = proximaRevisao(flashcardOriginal.nivel, dificuldade);
-
+  
+  // Define próxima data baseado no nível
+  const intervalos = [1, 3, 7, 14, 30]; // dias
+  const dias = intervalos[flashcardOriginal.nivel] || 1;
+  const novaData = new Date();
+  novaData.setDate(novaData.getDate() + dias);
+  flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
+  
   salvarFlashcards();
-
+  
   indiceAtualFoco++;
   mostrarCardFoco();
 }
+
 
 function finalizarRevisao() {
   document.getElementById("modoFocoContainer").style.display = "none";
@@ -3388,75 +3567,12 @@ function adicionarModalFlashcardHTML() {
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-}// ==================== TRANSFORMAR NOTA EM FLASHCARD ====================
-function transformarNotaEmFlashcard(idx) {
-  const nota = notas[idx];
-  if (!nota) {
-    Swal.fire({ icon: 'error', title: 'Erro!', text: 'Nota não encontrada!' });
-    return;
-  }
-
-  // Abrir modal com opções
-  Swal.fire({
-    title: 'Transformar em Flashcard',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Nota:</strong> ${nota.titulo}</p>
-        <p><strong>Conteúdo:</strong> ${nota.texto.substring(0, 150)}...</p>
-        <hr>
-        <label>📚 Matéria:</label>
-        <select id="flashcardMateria" class="swal2-select" style="width:100%; margin-bottom:15px;">
-          ${materias.map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
-        </select>
-        <label>📝 Pergunta (o que você quer aprender?):</label>
-        <input id="flashcardPergunta" class="swal2-input" placeholder="Ex: O que é mitocôndria?" value="Sobre: ${nota.titulo}">
-        <label>✅ Resposta (pode extrair da nota):</label>
-        <textarea id="flashcardResposta" class="swal2-textarea" rows="4" placeholder="Cole a resposta aqui...">${nota.texto.substring(0, 300)}</textarea>
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Criar Flashcard',
-    cancelButtonText: 'Cancelar',
-    preConfirm: () => {
-      const materiaId = document.getElementById('flashcardMateria').value;
-      const pergunta = document.getElementById('flashcardPergunta').value;
-      const resposta = document.getElementById('flashcardResposta').value;
-
-      if (!materiaId) return Swal.showValidationMessage('Selecione uma matéria!');
-      if (!pergunta) return Swal.showValidationMessage('Digite uma pergunta!');
-      if (!resposta) return Swal.showValidationMessage('Digite uma resposta!');
-
-      const materia = materias.find(m => m.id == materiaId);
-      return { materiaId, materiaNome: materia.nome, pergunta, resposta };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const { materiaId, materiaNome, pergunta, resposta } = result.value;
-      flashcards.push({
-        id: Date.now(),
-        materiaId: materiaId,
-        materiaNome: materiaNome,
-        tema: nota.titulo,
-        pergunta: pergunta,
-        resposta: resposta,
-        nivel: 0,
-        dataProxima: hoje(),
-        acertos: 0,
-        erros: 0,
-        tipo: "nota",
-        notaOriginalId: nota.id
-      });
-      salvarFlashcards();
-      renderizarFlashcards();
-      Swal.fire({ icon: 'success', title: '✅ Flashcard criado!', timer: 2000, showConfirmButton: false });
-    }
-  });
 }
 // ==================== INICIALIZAR ====================
 function initRevisao() {
   adicionarModalFlashcardHTML();
   carregarFlashcards();
-  configurarFiltros();
+  configurarAbasRevisao(); 
 }
 
 // Chamar no DOMContentLoaded
@@ -3466,8 +3582,6 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// ADICIONE no final do arquivo, após todas as funções:
-window.transformarNotaEmFlashcard = transformarNotaEmFlashcard;
 
 function exportarDados() {
   const dados = {

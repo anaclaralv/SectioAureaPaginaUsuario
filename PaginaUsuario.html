@@ -690,159 +690,113 @@
 
     </section>
 
-    <!-- ==================== REVISÃO INTELIGENTE ==================== -->
-    <section id="revisaoSection" style="display:none;">
+    <!-- ==================== REVISÃO INTELIGENTE ==================== --><!-- ==================== REVISÃO INTELIGENTE ==================== -->
+<section id="revisaoSection" style="display:none;">
 
-      <!-- CABEÇALHO -->
-      <div class="revisao-header">
-        <h2>🔁 Revisão Inteligente</h2>
-        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-          <i class="bi bi-plus-lg"></i> Novo Flashcard
+  <!-- CABEÇALHO -->
+  <div class="revisao-header">
+    <h2>🔁 Revisão Inteligente</h2>
+    <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+      <i class="bi bi-plus-lg"></i> Novo Flashcard
+    </button>
+  </div>
+
+  <!-- AVISO DE PROVA -->
+  <div id="avisoProva" class="aviso-prova" style="display: none;">
+    <div class="aviso-conteudo">
+      <i class="bi bi-calendar-exclamation"></i>
+      <div>
+        <strong>📅 Prova se aproximando!</strong>
+        <p id="textoAvisoProva"></p>
+      </div>
+      <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+    </div>
+  </div>
+
+  <!-- ESTATÍSTICAS FIXAS -->
+  <div class="revisao-stats-fixas">
+    <div class="stat-box">
+      <span>📅 Hoje</span>
+      <strong id="totalHoje">0</strong>
+    </div>
+    <div class="stat-box">
+      <span>⏰ Atrasadas</span>
+      <strong id="totalAtrasadas">0</strong>
+    </div>
+    <div class="stat-box">
+      <span>✅ Concluídas</span>
+      <strong id="totalConcluidas">0</strong>
+    </div>
+    <div class="stat-box">
+      <span>🎯 Taxa Acerto</span>
+      <strong id="taxaAcertoGeral">0%</strong>
+    </div>
+  </div>
+
+  <!-- REGRAS -->
+  <div class="revisao-regras">
+    💡 Acertei = próximo nível | Errei = revisar amanhã
+  </div>
+
+  <!-- ABAS -->
+  <div class="revisao-abas">
+    <button class="aba-btn active" data-aba="meusCards">📚 Meus Cards</button>
+    <button class="aba-btn" data-aba="revisar">🧠 Revisar</button>
+  </div>
+
+  <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
+  <div class="revisao-filtro">
+    <select id="filtroMateriaRevisao" class="filtro-materia-select">
+      <option value="todas">📚 Todas as matérias</option>
+    </select>
+  </div>
+
+  <!-- CONTEÚDO ABA: MEUS CARDS -->
+  <div id="abaMeusCards" class="aba-conteudo">
+    <div id="listaFlashcardsAgrupada"></div>
+  </div>
+
+  <!-- CONTEÚDO ABA: REVISAR -->
+  <div id="abaRevisar" class="aba-conteudo" style="display: none;">
+    <div class="revisar-centro">
+      <p id="mensagemRevisar">Você tem <span id="countPendentes">0</span> cards para revisar!</p>
+      <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶ Iniciar Revisão</button>
+    </div>
+  </div>
+
+  <!-- MODO FOCO (REVISÃO) -->
+  <div id="modoFocoContainer" class="modo-foco-container" style="display: none;">
+    <div class="foco-card">
+      <div class="foco-header">
+        <div>
+          <span class="materia-badge" id="focoMateria">Matéria</span>
+          <span class="tema-badge" id="focoTema">Tema</span>
+        </div>
+        <button class="foco-fechar" onclick="fecharModoFoco()">
+          <i class="bi bi-x-lg"></i>
         </button>
       </div>
-
-      <!-- AVISO DE PROVA (CALENDÁRIO) -->
-      <div id="avisoProva" class="aviso-prova" style="display: none;">
-        <div class="aviso-conteudo">
-          <i class="bi bi-calendar-exclamation"></i>
-          <div>
-            <strong>📅 Prova se aproximando!</strong>
-            <p id="textoAvisoProva"></p>
-          </div>
-          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+      <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
+      <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+      <div class="foco-botoes">
+        <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
+          <i class="bi bi-eye"></i> Mostrar Resposta
+        </button>
+        <div id="botoesResposta" class="botoes-resposta" style="display: none;">
+          <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
+          <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
         </div>
       </div>
-
-      <!-- FILTROS -->
-      <div class="filtros-revisao">
-        <div class="filtros-rapidos">
-          <button class="filtro-btn active" data-filtro="hoje">📅 Hoje</button>
-          <button class="filtro-btn" data-filtro="atrasadas">⏰ Vencidas (precisam revisar)</button>
-          <button class="filtro-btn" data-filtro="semana">📆 Esta Semana</button>
-          <button class="filtro-btn" data-filtro="todas">📚 Todas</button>
-        </div>
-        <div class="filtros-avancados">
-          <select id="filtroMateria" class="filtro-select">
-            <option value="">Todas as matérias</option>
-          </select>
-          <select id="filtroTipo" class="filtro-select">
-            <option value="">Todos os tipos</option>
-            <option value="flashcard">🧠 Flashcards</option>
-            <option value="nota">📒 Notas</option>
-            <option value="prova">📅 Provas</option>
-          </select>
-          <input type="text" id="buscaRevisao" class="filtro-busca" placeholder="🔍 Buscar revisão...">
-        </div>
-        <div class="dica-revisao"
-          style="font-size: 12px; color: #6c757d; margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
-          <i class="bi bi-info-circle"></i>
-          <strong>Como funciona:</strong> Após estudar um card, escolha a dificuldade.
-          "Fácil" = rever em 3 dias, "Médio" = 7 dias, "Difícil" = 1 dia.
-          Cards "Vencidas" são os que já passaram da data de revisão!
-        </div>
-      </div>
-
-      <!-- ESTATÍSTICAS RÁPIDAS -->
-      <div class="stats-rapidas">
-        <div class="stat-item">
-          <i class="bi bi-calendar-check"></i>
-          <span>Hoje</span>
-          <strong id="totalHoje">0</strong>
-        </div>
-        <div class="stat-item">
-          <i class="bi bi-exclamation-triangle"></i>
-          <span>Atrasadas</span>
-          <strong id="totalAtrasadas">0</strong>
-        </div>
-        <div class="stat-item">
-          <i class="bi bi-check-circle"></i>
-          <span>Concluídas</span>
-          <strong id="totalConcluidas">0</strong>
-        </div>
-        <div class="stat-item">
-          <i class="bi bi-graph-up"></i>
-          <span>Taxa Acerto</span>
-          <strong id="taxaAcertoGeral">0%</strong>
-        </div>
-      </div>
-
-      <!-- LISTA DE FLASHCARDS (MODO LISTA) -->
-      <div id="listaFlashcards" class="lista-flashcards">
-        <div class="empty-message">🎉 Nenhum flashcard criado ainda!</div>
-      </div>
-
-      <!-- MODO FOCO (CARD ÚNICO) -->
-      <div id="modoFocoContainer" class="modo-foco-container" style="display: none;">
-        <div class="foco-card">
-          <div class="foco-header">
-            <div>
-              <span class="materia-badge" id="focoMateria">Matéria</span>
-              <span class="tema-badge" id="focoTema">Tema</span>
-            </div>
-            <button class="foco-fechar" onclick="fecharModoFoco()">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
-          <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
-          <div class="foco-botoes">
-            <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
-              <i class="bi bi-eye"></i> Mostrar Resposta
-            </button>
-            <div id="botoesDificuldade" class="botoes-dificuldade" style="display: none;">
-              <button class="btn-dificil" onclick="responderDificuldade('dificil')">😰 Difícil</button>
-              <button class="btn-medio" onclick="responderDificuldade('medio')">😐 Médio</button>
-              <button class="btn-facil" onclick="responderDificuldade('facil')">😊 Fácil</button>
-            </div>
-          </div>
-          <div class="foco-progresso">
-            <span id="focoContador">Card 0 de 0</span>
-            <div class="progresso-barra">
-              <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- MODAL FLASHCARD -->
-    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">🧠 Novo Flashcard</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">📚 Matéria</label>
-              <select id="revisaoMateria" class="form-select">
-                <option value="">Selecione uma matéria</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">📂 Tema</label>
-              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">❓ Pergunta</label>
-              <textarea id="revisaoPergunta" class="form-control" rows="2"
-                placeholder="Digite a pergunta..."></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">✅ Resposta</label>
-              <textarea id="revisaoResposta" class="form-control" rows="3"
-                placeholder="Digite a resposta..."></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
-          </div>
+      <div class="foco-progresso">
+        <span id="focoContador">Card 0 de 0</span>
+        <div class="progresso-barra">
+          <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
         </div>
       </div>
     </div>
+  </div>
+
+</section>
 
     <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
     <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
