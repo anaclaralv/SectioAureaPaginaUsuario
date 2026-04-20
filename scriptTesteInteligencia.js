@@ -448,20 +448,25 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 
-// Inicia
-mostrarEtapa();
-
 // Abre o tutorial automaticamente (só na primeira vez)
 document.addEventListener('DOMContentLoaded', function() {
   const tutorialVisto = localStorage.getItem('tutorialVisto');
   
   if (!tutorialVisto) {
+    // Pequeno delay para garantir que o Bootstrap carregou
     setTimeout(() => {
-      const modalTutorial = new bootstrap.Modal(document.getElementById('modalTutorial'));
-      modalTutorial.show();
-      localStorage.setItem('tutorialVisto', 'true');
-    }, 300);
+      const modalEl = document.getElementById('modalTutorial');
+      if (modalEl) {
+        const modalTutorial = new bootstrap.Modal(modalEl);
+        modalTutorial.show();
+        localStorage.setItem('tutorialVisto', 'true');
+      } else {
+        console.error('Modal não encontrado!');
+      }
+    }, 500);
   }
+  
+  // Também inicia o teste
+  mostrarEtapa();
 });
-
 // Opcional: Botão "Revisar tutorial" na navbar ou rodapé

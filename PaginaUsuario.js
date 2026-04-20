@@ -21,17 +21,13 @@ function mostrarTela(tela) {
   }
   atualizarTudo();
   if (tela === "calendario" && calendar) {
-    setTimeout(() => {
-      calendar.updateSize();
-    }, 100);
+    calendar.updateSize();  // ← SEM setTimeout!
   }
   if (tela === "cronogramaNovo") {
     renderCronogramaNovo();
   }
   if (tela === "estatistica") {
-    setTimeout(() => {
-      carregarEstatisticas();
-    }, 100);
+    carregarEstatisticas();  // ← SEM setTimeout!
   }
   // funções específicas
   if (tela === "relogio") {
@@ -678,9 +674,8 @@ document.addEventListener("DOMContentLoaded", () => {
     notaModal.show();
 
     // Atualizar contador após abrir o modal (dar tempo para o DOM carregar)
-    setTimeout(() => {
-      atualizarContadorCaracteres();
-    }, 100);
+    atualizarContadorCaracteres();
+
   }
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
@@ -1629,7 +1624,7 @@ function iniciarPomodoroPersonalizado() {
               }
             }, 1000);
           }
-        }, 100);
+        }, 10);
       }
       return;
     }
@@ -2338,7 +2333,7 @@ function forcarAtualizacaoPainel() {
   console.log("🔄 Forçando atualização do painel...");
   setTimeout(() => {
     atualizarPainelEstudos();
-  }, 100);
+  }, 10);
 }
 
 // Adicionar listener para quando o cronograma for alterado
@@ -2357,9 +2352,8 @@ setInterval(() => {
 }, 30000); // atualiza a cada 30 segundos
 
 // Forçar atualização inicial
-setTimeout(() => {
-  forcarAtualizacaoPainel();
-}, 500);
+forcarAtualizacaoPainel();
+
 
 setInterval(atualizarSistema, 10000); function voltarModoAuto() {
   modoEstudo = "auto";
@@ -2949,15 +2943,15 @@ function configurarAbasRevisao() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
+
       const aba = btn.dataset.aba;
       document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
       document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
-      
+
       if (aba === 'revisar') {
         atualizarMensagemRevisar();
       }
-      
+
       // Recarrega os cards com o filtro atual
       renderizarFlashcardsAgrupados();
     });
@@ -2975,21 +2969,21 @@ function atualizarMensagemRevisar() {
 function renderizarFlashcardsAgrupados() {
   const container = document.getElementById('listaFlashcardsAgrupada');
   if (!container) return;
-  
+
   // Pega o filtro de matéria
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  
+
   // Filtra por matéria se necessário
   let cardsFiltrados = [...flashcards];
   if (filtroMateria !== 'todas') {
     cardsFiltrados = cardsFiltrados.filter(f => f.materiaId === filtroMateria);
   }
-  
+
   if (cardsFiltrados.length === 0) {
     container.innerHTML = '<p class="vazio">✨ Nenhum flashcard encontrado!</p>';
     return;
   }
-  
+
   // Agrupar por matéria
   const porMateria = {};
   cardsFiltrados.forEach(f => {
@@ -3002,7 +2996,7 @@ function renderizarFlashcardsAgrupados() {
     porMateria[f.materiaNome].temas[f.tema].push(f);
     porMateria[f.materiaNome].count++;
   });
-  
+
   // Ordenar cards dentro de cada tema
   const ordenarCards = (cards) => {
     const hojeData = hoje();
@@ -3014,15 +3008,15 @@ function renderizarFlashcardsAgrupados() {
       return a.dataProxima.localeCompare(b.dataProxima);
     });
   };
-  
+
   // Renderizar com acordeão
   let html = '';
   let index = 0;
-  
+
   for (const materia in porMateria) {
     const materiaData = porMateria[materia];
     const materiaId = `materia-${index}`;
-    
+
     html += `
       <div class="materia-acordeon">
         <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
@@ -3035,11 +3029,11 @@ function renderizarFlashcardsAgrupados() {
         </div>
         <div class="materia-conteudo" id="${materiaId}-conteudo">
     `;
-    
+
     for (const tema in materiaData.temas) {
       const cards = ordenarCards(materiaData.temas[tema]);
       const temaCount = cards.length;
-      
+
       html += `
         <div class="tema-grupo">
           <div class="tema-header">
@@ -3048,12 +3042,12 @@ function renderizarFlashcardsAgrupados() {
             <span class="tema-badge-count">${temaCount}</span>
           </div>
       `;
-      
+
       cards.forEach(f => {
         const isAtrasada = f.dataProxima < hoje();
         const isHoje = f.dataProxima === hoje();
         const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
-        
+
         html += `
           <div class="card-flashcard ${classeDestaque}">
             <div class="card-pergunta">${f.pergunta}</div>
@@ -3065,17 +3059,17 @@ function renderizarFlashcardsAgrupados() {
           </div>
         `;
       });
-      
+
       html += `</div>`;
     }
-    
+
     html += `
         </div>
       </div>
     `;
     index++;
   }
-  
+
   container.innerHTML = html;
 }
 
@@ -3083,7 +3077,7 @@ function renderizarFlashcardsAgrupados() {
 function toggleAcordeon(materiaId) {
   const conteudo = document.getElementById(`${materiaId}-conteudo`);
   const seta = document.getElementById(`${materiaId}-seta`);
-  
+
   if (conteudo.style.display === 'block') {
     conteudo.style.display = 'none';
     seta.classList.remove('aberto');
@@ -3169,7 +3163,8 @@ function salvarFlashcard() {
   });
 
   salvarFlashcards();
-  renderizarFlashcards();
+  renderizarFlashcardsAgrupados();
+  atualizarEstatisticas();
 
   bootstrap.Modal.getInstance(document.getElementById("modalRevisao")).hide();
   Swal.fire({
@@ -3329,28 +3324,28 @@ function atualizarEstatisticas() {
 function iniciarRevisao() {
   const hojeData = hoje();
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  
+
   // Filtra cards pendentes
   let cardsPendentes = flashcards.filter(f => f.dataProxima <= hojeData);
-  
+
   // Aplica filtro de matéria
   if (filtroMateria !== 'todas') {
     cardsPendentes = cardsPendentes.filter(f => f.materiaId === filtroMateria);
   }
-  
+
   if (cardsPendentes.length === 0) {
     Swal.fire({
       icon: 'info',
       title: 'Nenhuma revisão pendente!',
-      text: filtroMateria !== 'todas' ? 
-        'Não há cards para revisar nesta matéria.' : 
+      text: filtroMateria !== 'todas' ?
+        'Não há cards para revisar nesta matéria.' :
         'Você já revisou tudo por hoje. Volte amanhã!',
       timer: 2000,
       showConfirmButton: false
     });
     return;
   }
-  
+
   revisoesEmAndamento = cardsPendentes;
   indiceAtualFoco = 0;
   mostrarCardFoco();
@@ -3362,9 +3357,9 @@ function mostrarCardFoco() {
     finalizarRevisao();
     return;
   }
-  
+
   const card = revisoesEmAndamento[indiceAtualFoco];
-  
+
   document.getElementById('focoMateria').textContent = card.materiaNome;
   document.getElementById('focoTema').textContent = `📂 ${card.tema}`;
   document.getElementById('focoPergunta').textContent = card.pergunta;
@@ -3372,14 +3367,14 @@ function mostrarCardFoco() {
   document.getElementById('focoResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'none';
   document.getElementById('btnMostrarResposta').style.display = 'block';
-  
+
   const total = revisoesEmAndamento.length;
   const atual = indiceAtualFoco + 1;
   document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
-  
+
   const progresso = (atual / total) * 100;
   document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
-  
+
   document.getElementById('modoFocoContainer').style.display = 'flex';
 }
 
@@ -3387,12 +3382,12 @@ function mostrarCardFoco() {
 function popularFiltroMaterias() {
   const select = document.getElementById('filtroMateriaRevisao');
   if (!select) return;
-  
+
   select.innerHTML = '<option value="todas">📚 Todas as matérias</option>';
-  
+
   // Pega matérias únicas dos flashcards
   const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))];
-  
+
   materiasUnicas.sort().forEach(materia => {
     select.innerHTML += `<option value="${materia}">${materia}</option>`;
   });
@@ -3409,9 +3404,9 @@ function mostrarRespostaFoco() {
 function responderFlashcard(resultado) {
   const card = revisoesEmAndamento[indiceAtualFoco];
   const flashcardOriginal = flashcards.find(f => f.id === card.id);
-  
+
   if (!flashcardOriginal) return;
-  
+
   if (resultado === 'acertei') {
     // Aumenta o nível (espaça mais)
     flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
@@ -3421,16 +3416,15 @@ function responderFlashcard(resultado) {
     flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
     flashcardOriginal.erros++;
   }
-  
+
   // Define próxima data baseado no nível
   const intervalos = [1, 3, 7, 14, 30]; // dias
   const dias = intervalos[flashcardOriginal.nivel] || 1;
   const novaData = new Date();
   novaData.setDate(novaData.getDate() + dias);
   flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
-  
   salvarFlashcards();
-  
+  atualizarEstatisticas();
   indiceAtualFoco++;
   mostrarCardFoco();
 }
@@ -3481,7 +3475,8 @@ function editarFlashcard(id) {
       flashcard.resposta = resposta;
       flashcard.tema = tema || "Geral";
       salvarFlashcards();
-      renderizarFlashcards();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
 
       Swal.fire('Atualizado!', '', 'success');
     }
@@ -3500,7 +3495,8 @@ function excluirFlashcard(id) {
     if (result.isConfirmed) {
       flashcards = flashcards.filter(f => f.id !== id);
       salvarFlashcards();
-      renderizarFlashcards();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
       Swal.fire('Excluído!', '', 'success');
     }
   });
@@ -3572,7 +3568,7 @@ function adicionarModalFlashcardHTML() {
 function initRevisao() {
   adicionarModalFlashcardHTML();
   carregarFlashcards();
-  configurarAbasRevisao(); 
+  configurarAbasRevisao();
 }
 
 // Chamar no DOMContentLoaded
@@ -3652,3 +3648,19 @@ setInterval(() => {
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(verificarNotificacoesTarefas, 5000);
 });
+
+// ==================== FORÇAR ATUALIZAÇÃO IMEDIATA ====================
+function forcarAtualizacaoImediata() {
+  // Atualiza tudo AGORA, sem delay
+  if (typeof atualizarTudo === 'function') atualizarTudo();
+  if (typeof renderizarTarefas === 'function') renderizarTarefas();
+  if (typeof renderizarFlashcardsAgrupados === 'function') renderizarFlashcardsAgrupados();
+  if (typeof atualizarResumoInicio === 'function') atualizarResumoInicio();
+  if (typeof atualizarPainelEstudos === 'function') atualizarPainelEstudos();
+
+  // Força o calendário a redimensionar
+  if (calendar) setTimeout(() => calendar.updateSize(), 10);
+}
+
+// Executa AGORA (sem esperar eventos)
+setTimeout(forcarAtualizacaoImediata, 10);
