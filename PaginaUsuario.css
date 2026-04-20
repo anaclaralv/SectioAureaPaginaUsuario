@@ -1667,16 +1667,7 @@ body {
   position: relative;
   display: block;
 }
-section[style*="display: none"] {
-  display: none !important;
-}
 
-/* Garante que seções visíveis fiquem no fluxo normal */
-section[style*="display: block"] {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
 #inicioSection h1,
 #tarefasSection h1,
 #notasSection h1,
