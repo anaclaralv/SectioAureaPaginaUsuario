@@ -26,7 +26,7 @@ window.abrirLightbox = function (src) {
 function mostrarTela(tela) {
   const telas = [
     "inicio", "tarefas", "notas", "calendario", "relogio",
-    "estatistica", "cronogramaNovo", "revisao"
+    "estatistica", "cronogramaNovo", "metodos", "revisao"
   ];
   // esconde tudo
   telas.forEach(t => {
