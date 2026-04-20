@@ -113,35 +113,33 @@
     </ul>
   </div>
 
-
   <div class="app-main">
     <section id="inicioSection">
-      <h2 style="margin-bottom: 20px;">Dashboard</h2>
-
+      <h1 style="margin-bottom: 20px;">Início</h1>
       <div class="dashboard-grid">
         <!-- TAREFAS -->
         <div class="row">
           <div class="col-12 col-md-4 mb-3">
             <div class="card p-3">
-              <h5>📋 Tarefas</h5>
+              <h5><i class="bi bi-card-checklist mx-2"></i> Tarefas</h5>
               <ul id="tarefasResumo" style="padding-left:15px; margin-top:10px;"></ul>
             </div>
           </div>
           <div class="col-12 col-md-4 mb-3">
             <div class="card p-3">
-              <h5>📅 Próximos Eventos</h5>
+              <h5><i class="bi bi-calendar-week mx-2"></i> Próximos Eventos</h5>
               <ul id="eventosResumo" style="padding-left:15px; margin-top:10px;"></ul>
             </div>
           </div>
           <div class="col-12 col-md-4 mb-3">
             <div class="card p-3" id="resumoHojeCronograma">
-              <h5>📝 Hoje você tem:</h5>
+              <h5><i class="bi bi-journal-bookmark mx-2"></i> Hoje você tem:</h5>
               <ul id="listaHojeCronograma" style="padding-left:15px; margin-top:10px;"></ul>
             </div>
           </div>
           <div class="painel-estudos">
             <div class="card p-3 mt-3">
-              <h3>📚 Agora</h3>
+              <h3><i class="bi bi-exclamation-circle mx-2"></i> Agora</h3>
               <p id="materiaAgoraInicio">Nenhuma matéria</p>
               <p id="horarioAgoraInicio"></p>
               <p id="tempoRestanteInicio"></p>
@@ -160,9 +158,10 @@
 
       <h1 class="mb-3">Minhas Tarefas</h1>
       <div class="filtro-prioridade" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn-filtro-prioridade active" data-prioridade="todas">📋 Todas</button>
+        <button class="btn-filtro-prioridade active" data-prioridade="todas"> <i class="bi bi-check2-square me-2"></i>
+          Todas</button>
         <button class="btn-filtro-prioridade" data-prioridade="alta">🔴 Alta</button>
-        <button class="btn-filtro-prioridade" data-prioridade="media">🟠 Média</button>
+        <button class="btn-filtro-prioridade" data-prioridade="media">🟡 Média</button>
         <button class="btn-filtro-prioridade" data-prioridade="baixa">🟢 Baixa</button>
       </div>
       <div class="tarefa-form">
@@ -176,10 +175,13 @@
         <button onclick="adicionarTarefa()">Adicionar</button>
       </div>
 
-      <h3>📅 Tarefas de Hoje</h3>
+      <h3> <i class="bi bi-calendar-week mx-2"></i>Tarefas de Hoje
+      </h3>
       <div class="tarefas-container" id="tarefasHoje"></div>
-
-      <h3>📆 Tarefas Futuras</h3>
+      <h3>
+        <i class="bi bi-calendar-week mx-2"></i>
+        Tarefas Futuras
+      </h3>
       <div class="tarefas-container" id="tarefasFuturas"></div>
 
     </section>
@@ -228,6 +230,20 @@
               <label>Checklist</label>
               <div id="checklistContainer" class="mb-2"></div>
               <button class="btn btn-success btn-sm" id="addCheck">Adicionar Item</button>
+
+<br>
+              <label class="mt-3">Anexos</label>
+              <div class="anexos-area"
+                style="border: 2px dashed #ccc; border-radius: 10px; padding: 15px; text-align: center; background: #fafafa;">
+                <i class="bi bi-cloud-upload" style="font-size: 2rem; color: var(--cor-primaria);"></i>
+                <p style="margin: 5px 0; font-size: 0.9rem;">Arraste imagens ou clique para anexar</p>
+                <input type="file" id="notaAnexos" accept="image/*" multiple style="display: none;">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  onclick="document.getElementById('notaAnexos').click()">
+                  📁 Selecionar imagens
+                </button>
+              </div>
+              <div id="previewAnexos" class="d-flex flex-wrap gap-2 mt-3"></div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" id="btnSalvar">Salvar</button>
@@ -241,7 +257,7 @@
     <!-- CALENDÁRIO -->
     <section id="calendarioSection" style="display:none;">
       <div class="calendario-container">
-        <h2>📅 Calendário</h2>
+        <h1 class="mb-3">Calendário</h1>
 
         <!-- FORMULÁRIO SIMPLIFICADO -->
         <div class="form-evento">
@@ -249,15 +265,14 @@
           <input type="date" id="dataEvento">
           <input type="color" id="corEvento" value="#3788d8">
           <select id="tipoEvento">
-            <option value="compromisso">📅 Compromisso</option>
-            <option value="prova">📝 Prova</option>
-            <option value="tarefa">✅ Tarefa</option>
+            <option value="compromisso">Compromisso</option>
+            <option value="prova"> Prova</option>
           </select>
           <select id="recorrenciaEvento">
-            <option value="nenhuma">🔁 Não repetir</option>
-            <option value="diaria">📅 Repetir diariamente</option>
-            <option value="semanal">📆 Repetir semanalmente</option>
-            <option value="mensal">🗓️ Repetir mensalmente</option>
+            <option value="nenhuma">Não repetir</option>
+            <option value="diaria">Repetir diariamente</option>
+            <option value="semanal">Repetir semanalmente</option>
+            <option value="mensal">Repetir mensalmente</option>
           </select>
           <button onclick="adicionarEvento()">Adicionar</button>
         </div>
@@ -268,9 +283,10 @@
     </section>
 
     <!-- ==================== RELÓGIO DE ESTUDOS ==================== -->
-    <section id="relogioSection" style="display:none;">
 
-      <h2>⏱ Relógio de Estudos</h2>
+
+    <section id="relogioSection" style="display:none;">
+      <h1>Relógio de Estudos</h1>
 
       <!-- ESTUDO POR MATÉRIA -->
       <div class="add-materia-relogio">
@@ -278,7 +294,7 @@
         <button onclick="adicionarMateriaRelogio()">Adicionar</button>
       </div>
 
-      <h3 class="titulo-materia">📚 Estudo por Matéria</h3>
+      <h3 class="titulo-materia">Estudo por Matéria</h3>
       <table class="tabela-estudo mb-5">
         <thead>
           <tr>
@@ -294,7 +310,7 @@
       <div class="relogio-container mt-5 mb-5">
         <!-- TIMER -->
         <div class="relogio-card">
-          <h3>⏳ Timer</h3>
+          <h3><i class="bi bi-hourglass-split mx-2"></i> Timer</h3>
           <input type="number" id="timerMinutos" placeholder="Minutos">
           <div class="relogio-botoes">
             <button onclick="iniciarTimer()">Iniciar</button>
@@ -490,7 +506,7 @@
 
     <!--=================ESTATISTICA===================-->
     <section id="estatisticaSection" style="display:none;">
-      <h2>📊 Estatísticas</h2>
+      <h1>Estatísticas</h1>
 
       <!-- CARDS DE RESUMO RÁPIDO -->
       <div class="stats-cards">
@@ -625,7 +641,7 @@
     <section id="cronogramaNovoSection" style="display:none;">
       <div class="layout-container">
 
-        <h2>📅 Cronograma Inteligente</h2>
+        <h1>Cronograma Inteligente</h1>
 
 
         <!-- CRIAR MATÉRIA -->
@@ -689,13 +705,20 @@
       </div>
 
     </section>
-
-    <!-- ==================== REVISÃO INTELIGENTE ==================== --><!-- ==================== REVISÃO INTELIGENTE ==================== -->
+    <!-- ==================== METODOS ==================== -->
+    <section id="metodosSection" style="display:none;">
+      <h1>Métodos de Estudo</h1>
+      <div style="text-align: center; padding: 60px 20px;">
+        <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
+        <h3>Em breve!</h3>
+        <p>Estamos preparando conteúdos incríveis para você.</p>
+      </div>
+    </section>
+    <!-- ==================== REVISÃO INTELIGENTE ==================== -->
     <section id="revisaoSection" style="display:none;">
-
       <!-- CABEÇALHO -->
       <div class="revisao-header">
-        <h2>🔁 Revisão Inteligente</h2>
+        <h1>Revisão Inteligente</h1>
         <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
           <i class="bi bi-plus-lg"></i> Novo Flashcard
         </button>
@@ -765,7 +788,7 @@
       </div>
 
       <!-- MODO FOCO (REVISÃO) -->
-      <div id="modoFocoContainer" class="modo-foco-container" style="display: none;">
+      <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
         <div class="foco-card">
           <div class="foco-header">
             <div>

@@ -102,8 +102,8 @@ body {
 
 .layout-container {
   width: 100%;
-  max-width: 1100px;
-  /* controla largura máxima */
+  max-width: 1400px;
+  margin: 0 auto; 
 }
 
 .linha-inferior {
@@ -155,6 +155,7 @@ body {
   padding: 20px;
   max-width: 1100px;
   margin: 0 auto;
+  text-align: left;
 }
 
 #calendario {
@@ -212,18 +213,13 @@ body {
   margin-top: 80px;
   background-color: #f8f9fa;
   min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza o conteúdo das seções */
 }
 
 
 /* ==================== RELÓGIO DE ESTUDOS ==================== */
-
-/* Títulos das seções */
-#relogioSection h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #1f2937;
-  font-weight: 700;
-}
 
 .titulo-materia {
   font-size: 1.3rem;
@@ -244,6 +240,7 @@ body {
   align-items: center;
   justify-content: center;
   margin: 30px 0;
+  text-align: center;
 }
 
 .relogio-card {
@@ -429,7 +426,7 @@ body {
   align-items: stretch;
 }
 
-.relogio-duas-colunas > div {
+.relogio-duas-colunas>div {
   flex: 1;
   min-width: 280px;
   display: flex;
@@ -450,12 +447,6 @@ body {
   border: 1px solid #eef2ff;
 }
 
-.relogio-topo h2 {
-  font-size: 1.3rem;
-  margin-bottom: 8px;
-  color: #1f2937 !important;
-  text-align: left;
-}
 
 .relogio-topo p {
   color: #6b7280;
@@ -616,7 +607,7 @@ body {
 }
 
 .meta-barra-escuro {
- background: linear-gradient(90deg, var(--cor-primaria), #9ca3af);
+  background: linear-gradient(90deg, var(--cor-primaria), #9ca3af);
   width: 0%;
   height: 100%;
   border-radius: 20px;
@@ -632,7 +623,7 @@ body {
 
 /* ===== CARD EXPLICATIVO ===== */
 .info-relogio-card {
-   background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   padding: 16px 24px;
@@ -765,6 +756,7 @@ body {
   flex-direction: column;
   gap: 10px;
   margin-top: 15px;
+  text-align: center;
 }
 
 /* Card de tarefa */
@@ -834,17 +826,32 @@ body {
 
 .btn-excluir {
   background: #ef4444;
-   color: white;
+  color: white;
 }
 
 .btn-excluir:hover {
- background: #ef4444;
+  background: #ef4444;
 }
 
-/* Tarefa concluída */
-.concluida span {
-  text-decoration: line-through;
-  opacity: 0.6;
+/* Tarefa concluída - risca APENAS o título */
+.tarefa-card.concluida .tarefa-titulo {
+  text-decoration: line-through !important;
+  opacity: 0.6 !important;
+}
+
+/* Garante que botões NUNCA sejam riscados */
+.tarefa-card.concluida button,
+.tarefa-card.concluida .btn-concluir,
+.tarefa-card.concluida .btn-editar,
+.tarefa-card.concluida .btn-excluir,
+.tarefa-card.concluida .tarefa-prioridade {
+  text-decoration: none !important;
+  opacity: 1 !important;
+}
+
+/* Remove qualquer risco residual */
+.tarefa-card.concluida {
+  text-decoration: none !important;
 }
 
 /* Títulos das listas */
@@ -882,9 +889,19 @@ body {
 
 
 /* ===== CRONOGRAMA MODERNO ===== */
+
+.cronogramaNovo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  justify-content: center; /* Centraliza os dias */
+}
+
 #cronogramaNovoSection {
-  margin: 20px;
+  margin: 20px auto;
   padding: 20px;
+  max-width: 1400px;
+  width: 100%;
 }
 
 .dia {
@@ -957,8 +974,139 @@ body {
 
 
 /* BLOCO DE NOTAS */
+/* ===== ANEXOS NAS NOTAS ===== */
+.anexo-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.anexo-thumb:hover {
+  transform: scale(1.05);
+}
+
+.anexo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.anexo-thumb .btn-remover-anexo {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.anexo-thumb:hover .btn-remover-anexo {
+  opacity: 1;
+}
+
+.anexos-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.anexo-mini {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+.anexo-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Visualizador de imagem em tela cheia */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+
+.lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.lightbox .btn-fechar-lightbox {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.lightbox .btn-fechar-lightbox:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.anexo-indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+.anexo-indicador i {
+  font-size: 0.8rem;
+}
 
 /* Contador de checklist nas notas */
+.notas-container {
+  text-align: left;
+}
+
 .checklist-stats {
   display: inline-block;
   background: rgba(0, 0, 0, 0.05);
@@ -1073,6 +1221,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
+  text-align: left;
 }
 
 /* CARDS */
@@ -1116,13 +1265,6 @@ body {
   text-decoration: line-through;
   opacity: 0.6;
 }
-
-@media(max-width: 500px) {
-  h2 {
-    font-size: 1.5rem;
-  }
-}
-
 
 #resumoHojeCronograma ul {
   list-style: disc;
@@ -1237,36 +1379,6 @@ body {
 }
 
 
-.foto-usuario-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.foto-usuario-container img {
-  width: 150px;
-  /* largura desejada */
-  aspect-ratio: 1 / 1;
-  /* força quadrado */
-  border-radius: 50%;
-  /* círculo perfeito */
-  object-fit: cover;
-  /* recorta se necessário */
-  border: 4px solid var(--cor-primaria);
-  margin-bottom: 10px;
-}
-
-input[type="color"] {
-  width: 50px;
-  height: 40px;
-  border-radius: 8px;
-  border: 2px solid #ddd;
-  padding: 2px;
-  cursor: pointer;
-}
-
-
 /* Matéria atual - mais clean */
 #materiaAgoraInicio {
   font-size: 1.3rem;
@@ -1351,49 +1463,51 @@ input[type="color"] {
     margin-left: 0;
     padding: 20px;
   }
-  
+
   .filtros-avancados {
     flex-direction: column;
   }
-  
+
   .foco-card {
     padding: 25px;
   }
-  
+
   .foco-pergunta {
     font-size: 1.2rem;
   }
-.relogio-duas-colunas {
+
+  .relogio-duas-colunas {
     flex-direction: column;
   }
-  
+
   .botoes-controle {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .botoes-controle .btn-foco,
   .botoes-controle .btn-auto {
     width: 100%;
     max-width: 280px;
   }
-  
+
   .relogio-card {
     width: 100%;
     max-width: 180px;
   }
-  
+
   .modal-dialog {
     max-width: 95% !important;
     min-width: 95% !important;
   }
-  
+
   .tabela-estudo th,
   .tabela-estudo td {
     padding: 10px 8px;
     font-size: 0.8rem;
   }
-    .calendario-container {
+
+  .calendario-container {
     padding: 10px;
   }
 
@@ -1423,11 +1537,6 @@ input[type="color"] {
     font-size: 12px;
     padding: 5px;
   }
-
-  .menu-hamburger {
-    display: block;
-  }
-
   .app-main {
     margin-left: 0 !important;
     padding: 15px;
@@ -1437,7 +1546,7 @@ input[type="color"] {
   .graficos-lado-a-lado {
     flex-direction: column;
   }
-  
+
   .graficos-lado-a-lado .grafico-card {
     margin-bottom: 20px;
   }
@@ -1445,35 +1554,35 @@ input[type="color"] {
   .stats-cards {
     gap: 12px;
   }
-  
+
   .stat-card {
     min-width: calc(50% - 6px);
     padding: 15px;
   }
-  
+
   .stat-card strong {
     font-size: 1.2rem;
   }
-  
+
   .periodo-selector {
     border-radius: 30px;
     padding: 6px;
   }
-  
+
   .periodo-btn {
     padding: 6px 12px;
     font-size: 0.75rem;
   }
-  
+
   .badges-container {
     gap: 8px;
   }
-  
+
   .badge {
     padding: 5px 12px;
     font-size: 0.7rem;
   }
-  
+
   .sugestoes-container li {
     font-size: 0.8rem;
     gap: 8px;
@@ -1492,11 +1601,6 @@ input[type="color"] {
     font-size: 14px;
   }
 
-  /* Mostra o botão hambúrguer */
-  .menu-hamburger {
-    display: block;
-  }
-
   /* Sidebar escondida por padrão no celular */
   .sidebar {
     top: 60px;
@@ -1509,14 +1613,6 @@ input[type="color"] {
 
   .sidebar.show {
     left: 0;
-  }
-
-  /* Conteúdo principal no celular */
-   .app-main {
-    margin-left: 0 !important;
-    margin-top: 60px !important;
-    padding: 15px;
-    width: 100%;
   }
 
   /* PERFIL NO CELULAR - MAIS COMPACTO */
@@ -1550,32 +1646,40 @@ input[type="color"] {
     margin: auto;
   }
 
-  .menu-hamburger {
-    display: block;
-  }
+}
 
-  .app-main {
-    margin-left: 0 !important;
-    padding: 15px;
-    width: 100%;
-  }
+#inicioSection,
+#tarefasSection,
+#notasSection,
+#calendarioSection,
+#relogioSection,
+#estatisticaSection,
+#cronogramaNovoSection,
+#revisaoSection,
+#metodosSection {
+  padding: 20px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-  /* Mantém as seções no lugar */
-  #tarefasSection,
-  #notasSection,
-  #calendarioSection,
-  #relogioSection,
-  #estatisticaSection,
-  #cronogramaNovoSection,
-  #revisaoSection,
-  #inicioSection {
-    position: relative !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
+#inicioSection h1,
+#tarefasSection h1,
+#notasSection h1,
+#calendarioSection h1,
+#relogioSection h1,
+#estatisticaSection h1,
+#cronogramaNovoSection h1,
+#revisaoSection h1,
+#metodosSection h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #1f2937;
+  text-align: left;
+  border-bottom: 2px solid var(--cor-primaria);
+  padding-bottom: 10px;
+  display: inline-block;
 }
 
 .user-avatar {
@@ -1608,15 +1712,6 @@ input[type="color"] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.foto-usuario-container img {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-  margin: 0 auto;
 }
 
 
@@ -1825,6 +1920,7 @@ input[type="color"] {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  text-align: center;
   margin-bottom: 30px;
 }
 
@@ -1893,6 +1989,7 @@ input[type="color"] {
   border-radius: 50px;
   border: 1px solid #eef2ff;
   justify-content: center;
+  text-align: center;
 }
 
 .periodo-btn {
@@ -2143,6 +2240,10 @@ input[type="color"] {
 
 
 /* Ajuste para o gráfico de barras horizontais */
+.materias-area{
+  text-align: left;
+}
+
 #graficoMaterias {
   max-height: 300px;
   width: 100%;
@@ -2156,10 +2257,12 @@ input[type="color"] {
 /* ==================== REVISÃO INTELIGENTE ==================== */
 
 #revisaoSection {
-  margin-left: 250px;
-  padding: 30px;
+  margin-left: 0 !important;
+  /* Remove a margem que estava desalinhando */
+  padding: 20px;
   background: #f8fafc;
   min-height: calc(100vh - 80px);
+  text-align: left;
 }
 
 /* CABEÇALHO */
@@ -2262,7 +2365,7 @@ input[type="color"] {
   padding: 15px 20px;
   text-align: center;
   min-width: 100px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   flex: 1;
 }
 
@@ -2440,7 +2543,7 @@ input[type="color"] {
   margin-bottom: 10px;
   margin-left: 25px;
   border-left: 4px solid #ccc;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 .card-flashcard.atrasada {
@@ -2533,7 +2636,8 @@ input[type="color"] {
   margin-top: 20px;
 }
 
-.btn-errei, .btn-acertei {
+.btn-errei,
+.btn-acertei {
   border: none;
   padding: 12px 30px;
   border-radius: 40px;
@@ -2574,42 +2678,53 @@ input[type="color"] {
 }
 
 @keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* RESPONSIVO */
+@media (min-width: 1200px) {
+  .calendario-container {
+    max-width: 1200px; /* Aumenta em telas grandes */
+  }
+}
+
 @media (max-width: 768px) {
   #revisaoSection {
     margin-left: 0;
     padding: 20px;
   }
-  
+
   .revisao-stats-fixas {
     gap: 10px;
   }
-  
+
   .stat-box {
     padding: 12px 10px;
     min-width: 70px;
   }
-  
+
   .stat-box strong {
     font-size: 1.2rem;
   }
-  
+
   .aba-btn {
     padding: 10px 15px;
     font-size: 0.9rem;
   }
-  
+
   .card-flashcard {
     margin-left: 10px;
   }
 }
 
 /* MODO FOCO */
-.modo-foco-container {
+.revisao-foco-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -2688,7 +2803,9 @@ input[type="color"] {
   margin-top: 20px;
 }
 
-.btn-dificil, .btn-medio, .btn-facil {
+.btn-dificil,
+.btn-medio,
+.btn-facil {
   border: none;
   padding: 10px 20px;
   border-radius: 40px;
@@ -2746,18 +2863,6 @@ input[type="color"] {
   filter: brightness(0) invert(1);
 }
 
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* Botão transformar nota em flashcard */
 .btn-nota-to-flashcard {
   background: var(--cor-primaria);
@@ -2773,4 +2878,3 @@ input[type="color"] {
 .btn-nota-to-flashcard:hover {
   background: var(--cor-primaria);
 }
-

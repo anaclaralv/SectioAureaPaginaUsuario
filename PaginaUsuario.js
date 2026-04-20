@@ -1,14 +1,32 @@
+// ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
+window.removerAnexo = function (index) {
+  if (typeof anexosTemp !== 'undefined') {
+    anexosTemp.splice(index, 1);
+    if (typeof renderizarPreviews === 'function') {
+      renderizarPreviews();
+    }
+  }
+};
+
+window.abrirLightbox = function (src) {
+  const lightbox = document.createElement('div');
+  lightbox.className = 'lightbox';
+  lightbox.onclick = (e) => {
+    if (e.target === lightbox || e.target.classList.contains('btn-fechar-lightbox')) {
+      lightbox.remove();
+    }
+  };
+  lightbox.innerHTML = `
+    <button class="btn-fechar-lightbox" onclick="this.closest('.lightbox').remove()">✕</button>
+    <img src="${src}" alt="Visualização">
+  `;
+  document.body.appendChild(lightbox);
+};
+
 function mostrarTela(tela) {
   const telas = [
-    "inicio",
-    "tarefas",
-    "notas",
-    "calendario",
-    "relogio",
-    "estatistica",
-    "cronogramaNovo",
-    "metodos",
-    "revisao"
+    "inicio", "tarefas", "notas", "calendario", "relogio",
+    "estatistica", "cronogramaNovo", "revisao"
   ];
   // esconde tudo
   telas.forEach(t => {
@@ -164,6 +182,7 @@ function renderizarTarefas() {
     const info = document.createElement("div");
     info.classList.add("tarefa-info");
     const spanTitulo = document.createElement("span");
+    spanTitulo.className = "tarefa-titulo";
     spanTitulo.textContent = `${tarefa.titulo} (${tarefa.data})`;
     const badge = document.createElement("span");
     badge.classList.add("tarefa-prioridade", `tarefa-${tarefa.prioridade}`);
@@ -271,7 +290,7 @@ function toggle(id) {
 }
 function corPrioridade(prioridade) {
   if (prioridade === "alta") return "#ef4444";   // vermelho
-  if (prioridade === "media") return "#f59e0b";  // laranja
+  if (prioridade === "media") return "#f5d60b";  // laranja
   if (prioridade === "baixa") return "#22c55e";  // verde
   return "#6b7280";
 }
@@ -416,6 +435,7 @@ function atualizarEventosTarefas() {
 }
 
 // Inicialização do calendário
+// Inicialização do calendário
 document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendario');
   if (!calendarEl) return;
@@ -430,112 +450,212 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     editable: true,
     selectable: true,
+
+    // ===== NOVO: Quando arrasta evento =====
+    eventDrop: function (info) {
+      const event = info.event;
+
+      // Se for tarefa, atualiza a data da tarefa
+      if (event.extendedProps?.isTarefa) {
+        const tarefaId = event.extendedProps.tarefaId;
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (tarefa) {
+          tarefa.data = event.startStr;
+          salvarTarefas();
+          atualizarTudo();
+        }
+      }
+      salvarEventos();
+      calendar.refetchEvents();  // ← ADICIONE ISSO
+      atualizarTudo();           // ← ADICIONE ISSO
+      atualizarResumoInicio();
+      // Função para formatar data corretamente (sem problemas de fuso)
+      function formatarDataLocal(dataStr) {
+        const [ano, mes, dia] = dataStr.split('-');
+        return `${dia}/${mes}/${ano}`;
+      }
+
+      // No eventDrop:
+      Swal.fire({
+        icon: 'success',
+        title: 'Movido!',
+        text: `Nova data: ${formatarDataLocal(event.startStr)}`,
+        timer: 1200,
+        showConfirmButton: false
+      });
+    },
+
+    // ===== NOVO: Quando redimensiona evento =====
+    eventResize: function (info) {
+      salvarEventos();
+      calendar.refetchEvents();  // ← ADICIONE ISSO
+      atualizarTudo();           // ← ADICIONE ISSO
+      atualizarResumoInicio();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Duração alterada!',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    },
+
     eventClick: function (info) {
       const event = info.event;
 
-      // Verificar se é um evento recorrente
-      const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
-      const isRecorrenciaFilha = event.extendedProps?.isRecorrente === true;
+      // Delay para evitar travamento
+      setTimeout(() => {
+        const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
 
-      if (event.extendedProps?.isTarefa === true) {
-        // ===== TAREFA =====
-        const tarefaId = event.extendedProps.tarefaId;
-        const tarefa = tarefas.find(t => t.id === tarefaId);
-        if (!tarefa) {
-          event.remove();
-          salvarEventos();
-          return;
-        }
+        if (event.extendedProps?.isTarefa === true) {
+          const tarefaId = event.extendedProps.tarefaId;
+          const tarefa = tarefas.find(t => t.id === tarefaId);
+          if (!tarefa) {
+            event.remove();
+            salvarEventos();
+            return;
+          }
 
-        Swal.fire({
-          title: 'Editar tarefa',
-          html: `
-        <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
-        <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
-      `,
-          showCancelButton: true,
-          confirmButtonText: 'Salvar',
-          denyButtonText: 'Excluir',
-          showDenyButton: true
-        }).then(result => {
-          if (result.isConfirmed) {
-            const novoTitulo = document.getElementById('editTitulo').value.trim();
-            const novaData = document.getElementById('editData').value;
-            if (novoTitulo && novaData) {
-              tarefa.titulo = novoTitulo;
-              tarefa.data = novaData;
+          Swal.fire({
+            title: 'Editar tarefa',
+            html: `
+          <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+          <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+        `,
+            showCancelButton: true,
+            confirmButtonText: 'Salvar',
+            denyButtonText: 'Excluir',
+            showDenyButton: true,
+            didOpen: () => {
+              document.getElementById('editData').value = tarefa.data;
+            }
+          }).then(result => {
+            if (result.isConfirmed) {
+              const novoTitulo = document.getElementById('editTitulo').value.trim();
+              const novaData = document.getElementById('editData').value;
+              if (novoTitulo && novaData) {
+                tarefa.titulo = novoTitulo;
+                tarefa.data = novaData;
+                salvarTarefas();
+                salvarEventos();
+                calendar.refetchEvents();
+                atualizarTudo();
+
+                // Alerta de confirmação
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Tarefa atualizada!',
+                  text: `"${novoTitulo}" foi atualizada.`,
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+              }
+            } else if (result.isDenied) {
+              const nomeTarefa = tarefa.titulo; // Guarda o nome antes de excluir
+              tarefas = tarefas.filter(t => t.id !== tarefa.id);
               salvarTarefas();
-              atualizarTudo();
-              atualizarEventosTarefas();
-            }
-          } else if (result.isDenied) {
-            tarefas = tarefas.filter(t => t.id !== tarefa.id);
-            salvarTarefas();
-            atualizarTudo();
-            atualizarEventosTarefas();
-          }
-        });
-      }
-      // ===== EVENTO RECORRENTE =====
-      else if (isRecorrente) {
-        Swal.fire({
-          title: 'Excluir evento recorrente',
-          text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
-          icon: 'warning',
-          showCancelButton: true,
-          showDenyButton: true,
-          confirmButtonText: 'Excluir apenas este dia',
-          denyButtonText: 'Excluir todas as repetições',
-          cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (result.isConfirmed) {
-            // Excluir APENAS esta ocorrência
-            event.remove();
-            salvarEventos();
-            Swal.fire({ icon: 'success', title: 'Evento removido!', text: 'Apenas esta data foi removida.', timer: 1500, showConfirmButton: false });
-          } else if (result.isDenied) {
-            // Excluir TODAS as ocorrências (eventos com o mesmo título e mesma recorrência)
-            const eventosParaRemover = calendar.getEvents().filter(e =>
-              e.title === event.title &&
-              e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
-            );
-            eventosParaRemover.forEach(e => e.remove());
-            salvarEventos();
-            Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: 'Todas as repetições foram removidas.', timer: 1500, showConfirmButton: false });
-          }
-        });
-      }
-      // ===== EVENTO NORMAL (não recorrente) =====
-      else {
-        Swal.fire({
-          title: 'Editar evento',
-          html: `
-        <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
-        <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-        <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor}">
-      `,
-          showCancelButton: true,
-          confirmButtonText: 'Salvar',
-          denyButtonText: 'Excluir',
-          showDenyButton: true
-        }).then(result => {
-          if (result.isConfirmed) {
-            const novoTitulo = document.getElementById('editTitulo').value.trim();
-            const novaData = document.getElementById('editData').value;
-            const novaCor = document.getElementById('editCor').value;
-            if (novoTitulo && novaData) {
-              event.setProp('title', novoTitulo);
-              event.setStart(novaData);
-              event.setProp('backgroundColor', novaCor);
-              event.setProp('borderColor', novaCor);
               salvarEventos();
+              calendar.refetchEvents();
+              atualizarTudo();
+
+              // Alerta de confirmação
+              Swal.fire({
+                icon: 'success',
+                title: 'Tarefa excluída!',
+                text: `"${nomeTarefa}" foi removida.`,
+                timer: 1500,
+                showConfirmButton: false
+              });
             }
-          } else if (result.isDenied) {
-            event.remove();
-            salvarEventos();
-          }
-        });
-      }
+          });
+        } else if (isRecorrente) {
+          Swal.fire({
+            title: 'Excluir evento recorrente',
+            text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
+            icon: 'warning',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'Excluir apenas este dia',
+            denyButtonText: 'Excluir todas as repetições',
+            cancelButtonText: 'Cancelar'
+          }).then(result => {
+            if (result.isConfirmed) {
+              const nomeEvento = event.title;
+              event.remove();
+              salvarEventos();
+              calendar.refetchEvents();
+              atualizarTudo();
+              Swal.fire({ icon: 'success', title: 'Evento removido!', text: `"${nomeEvento}" foi removido desta data.`, timer: 1500, showConfirmButton: false });
+            } else if (result.isDenied) {
+              const nomeEvento = event.title;
+              const eventosParaRemover = calendar.getEvents().filter(e =>
+                e.title === event.title &&
+                e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
+              );
+              eventosParaRemover.forEach(e => e.remove());
+              salvarEventos();
+              calendar.refetchEvents();
+              atualizarTudo();
+              Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: `Todas as repetições de "${nomeEvento}" foram removidas.`, timer: 1500, showConfirmButton: false });
+            }
+          });
+        } else {
+          Swal.fire({
+            title: 'Editar evento',
+            html: `
+          <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
+          <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+          <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}">
+        `,
+            showCancelButton: true,
+            confirmButtonText: 'Salvar',
+            denyButtonText: 'Excluir',
+            showDenyButton: true,
+            didOpen: () => {
+              document.getElementById('editData').value = event.startStr;
+            }
+          }).then(result => {
+            if (result.isConfirmed) {
+              const novoTitulo = document.getElementById('editTitulo').value.trim();
+              const novaData = document.getElementById('editData').value;
+              const novaCor = document.getElementById('editCor').value;
+              if (novoTitulo && novaData) {
+                event.setProp('title', novoTitulo);
+                event.setStart(novaData);
+                event.setProp('backgroundColor', novaCor);
+                event.setProp('borderColor', novaCor);
+                salvarEventos();
+                calendar.refetchEvents();
+                atualizarTudo();
+
+                // Alerta de confirmação
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Evento atualizado!',
+                  text: `"${novoTitulo}" foi atualizado.`,
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+              }
+            } else if (result.isDenied) {
+              const nomeEvento = event.title; // Guarda o nome antes de excluir
+              event.remove();
+              salvarEventos();
+              calendar.refetchEvents();
+              atualizarTudo();
+
+              // Alerta de confirmação
+              Swal.fire({
+                icon: 'success',
+                title: 'Evento excluído!',
+                text: `"${nomeEvento}" foi removido.`,
+                timer: 1500,
+                showConfirmButton: false
+              });
+            }
+          });
+        }
+      }, 100);
     },
     events: carregarEventos()
   });
@@ -563,7 +683,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return a.titulo.localeCompare(b.titulo);
       })
       .forEach((nota, idx) => {
-        // Calcular estatísticas do checklist
         const totalItens = nota.checklist?.length || 0;
         const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
         const pendentes = totalItens - itensConcluidos;
@@ -595,6 +714,8 @@ document.addEventListener("DOMContentLoaded", () => {
               `).join("")}
             </div>
           </div>
+          ${renderizarIndicadorAnexos(nota.anexos)}
+    ${renderizarAnexosCard(nota.anexos)}
           <div class="mt-2">
             <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
             <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
@@ -622,11 +743,10 @@ document.addEventListener("DOMContentLoaded", () => {
         notas[cardidx].checklist.splice(idx, 1);
         salvarNotas();
         renderNotas();
+
       });
     });
   }
-
-  // Contador de caracteres da nota
   function atualizarContadorCaracteres() {
     const textoDiv = document.getElementById("notaTexto");
     const contadorSpan = document.getElementById("contadorTexto");
@@ -644,21 +764,128 @@ document.addEventListener("DOMContentLoaded", () => {
       contadorDiv?.classList.remove("alerta");
     }
   }
-
-  // Função para monitorar mudanças no texto
   function iniciarMonitoramentoTexto() {
     const textoDiv = document.getElementById("notaTexto");
     if (!textoDiv) return;
-
-    // Atualiza contador ao digitar
     textoDiv.addEventListener("input", atualizarContadorCaracteres);
     textoDiv.addEventListener("keyup", atualizarContadorCaracteres);
-
-    // Atualiza ao abrir modal com nota existente
     const observer = new MutationObserver(() => {
       atualizarContadorCaracteres();
     });
     observer.observe(textoDiv, { childList: true, subtree: true, characterData: true });
+  }
+  function renderizarPreviews() {
+    const container = document.getElementById("previewAnexos");
+    if (!container) return;
+
+    if (anexosTemp.length === 0) {
+      container.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem; width: 100%;">Nenhuma imagem anexada</p>';
+      return;
+    }
+
+    container.innerHTML = anexosTemp.map((anexo, index) => `
+    <div class="anexo-thumb" onclick="abrirLightbox('${anexo.data}')">
+      <img src="${anexo.data}" alt="Anexo ${index + 1}">
+      <button class="btn-remover-anexo" onclick="event.stopPropagation(); removerAnexo(${index})">✕</button>
+    </div>
+  `).join('');
+  }
+  function processarImagens(files) {
+    if (!files || files.length === 0) return;
+
+    let processadas = 0;
+    const total = files.length;
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        processadas++;
+        if (processadas === total && total > 0) {
+          Swal.fire({ icon: 'warning', title: 'Apenas imagens são permitidas!', timer: 1500 });
+        }
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        Swal.fire({ icon: 'warning', title: 'Imagem muito grande!', text: 'Máximo 5MB por imagem.', timer: 2000 });
+        processadas++;
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        anexosTemp.push({
+          nome: file.name,
+          data: e.target.result,
+          tipo: file.type,
+          tamanho: file.size
+        });
+        processadas++;
+
+        if (processadas === total) {
+          renderizarPreviews();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  window.removerAnexo = function (index) {
+    anexosTemp.splice(index, 1);
+    renderizarPreviews();
+  };
+
+  window.abrirLightbox = function (src) {
+    const lightbox = document.createElement('div');
+    lightbox.className = 'lightbox';
+    lightbox.onclick = (e) => {
+      if (e.target === lightbox || e.target.classList.contains('btn-fechar-lightbox')) {
+        lightbox.remove();
+      }
+    };
+
+    lightbox.innerHTML = `
+    <button class="btn-fechar-lightbox" onclick="this.closest('.lightbox').remove()">✕</button>
+    <img src="${src}" alt="Visualização">
+  `;
+
+    document.body.appendChild(lightbox);
+  }
+
+  function renderizarAnexosCard(anexos) {
+    if (!anexos || anexos.length === 0) return '';
+
+    if (anexos.length === 1) {
+      return `
+      <div class="anexos-card">
+        <div class="anexo-mini" onclick="abrirLightbox('${anexos[0].data}')">
+          <img src="${anexos[0].data}" alt="Anexo">
+        </div>
+      </div>
+    `;
+    }
+
+    const miniaturas = anexos.slice(0, 3).map((a, i) => `
+    <div class="anexo-mini" onclick="abrirLightbox('${a.data}')">
+      <img src="${a.data}" alt="Anexo ${i + 1}">
+    </div>
+  `).join('');
+
+    const extras = anexos.length > 3 ? `<span style="font-size: 0.75rem; color: #6b7280;">+${anexos.length - 3}</span>` : '';
+
+    return `
+    <div class="anexos-card">
+      ${miniaturas}
+      ${extras}
+    </div>
+  `;
+  }
+  function renderizarIndicadorAnexos(anexos) {
+    if (!anexos || anexos.length === 0) return '';
+
+    return `
+    <div class="anexo-indicador">
+      <i class="bi bi-image"></i>
+      <span>${anexos.length} anexo${anexos.length > 1 ? 's' : ''}</span>
+    </div>
+  `;
   }
 
   function salvarNotas() {
@@ -670,67 +897,118 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("notaTitulo").value = nota?.titulo || "";
     document.getElementById("notaTexto").innerHTML = nota?.texto || "";
     document.getElementById("notaCor").value = nota?.cor || "#ffffff";
-    renderChecklist(nota?.checklist || []);
+
+    // Carregar checklist existente
+    const checklist = nota?.checklist ? [...nota.checklist] : [];
+    renderChecklist(checklist);
+
+    // Carregar anexos existentes
+    anexosTemp = nota?.anexos ? [...nota.anexos] : [];
+    renderizarPreviews();
+
     notaModal.show();
-
-    // Atualizar contador após abrir o modal (dar tempo para o DOM carregar)
     atualizarContadorCaracteres();
-
   }
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
+    if (!container) return;
+
     container.innerHTML = "";
-    items.forEach((c, i) => {
+
+    // Garante que items é um array
+    if (!Array.isArray(items)) {
+      items = [];
+    }
+
+    items.forEach((item, i) => {
       const div = document.createElement("div");
-      div.className = "check-item" + (c.checked ? "completed" : "");
-      div.style.display = "flex"; div.style.alignItems = "center"; div.style.marginBottom = "5px";
+      div.className = "check-item" + (item.checked ? " completed" : "");
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.marginBottom = "5px";
+
       div.innerHTML = `
-        <input type="checkbox" ${c.checked ? 'checked' : ''} style="margin-right:5px;">
-        <input type="text" class="form-control form-control-sm" value="${c.texto}" style="flex:1; margin-right:5px;">
-        <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
-      `;
-      const checkbox = div.querySelector("input[type=checkbox]");
-      const textoInput = div.querySelector("input[type=text]");
-      checkbox.addEventListener("change", () => {
-        c.checked = checkbox.checked;
-        renderChecklist(items);
+      <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
+      <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
+      <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
+    `;
+
+      const checkbox = div.querySelector('input[type="checkbox"]');
+      const textoInput = div.querySelector('input[type="text"]');
+      const btnExcluir = div.querySelector('.btn-excluir-check');
+
+      // Atualizar item quando checkbox mudar
+      checkbox.addEventListener('change', () => {
+        item.checked = checkbox.checked;
+        div.classList.toggle('completed', item.checked);
       });
-      textoInput.addEventListener("input", () => {
-        c.texto = textoInput.value;
+
+      // Atualizar item quando texto mudar
+      textoInput.addEventListener('input', () => {
+        item.texto = textoInput.value;
       });
-      div.querySelector(".btn-excluir-check").addEventListener("click", () => {
+
+      // Remover item
+      btnExcluir.addEventListener('click', () => {
         items.splice(i, 1);
         renderChecklist(items);
       });
+
       container.appendChild(div);
     });
   }
   document.getElementById("addCheck").addEventListener("click", () => {
-    const checklist = notaAtual !== null ? notas[notaAtual].checklist : [];
-    checklist.push({ texto: "Novo item", checked: false });
-    renderChecklist(checklist);
+    const container = document.getElementById("checklistContainer");
+    const items = [];
+    container.querySelectorAll('.check-item').forEach(item => {
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      const textoInput = item.querySelector('input[type="text"]');
+      if (textoInput) {
+        items.push({
+          texto: textoInput.value,
+          checked: checkbox ? checkbox.checked : false
+        });
+      }
+    });
+    items.push({ texto: "", checked: false });
+    renderChecklist(items);
   });
   document.getElementById("btnSalvar").addEventListener("click", () => {
     const titulo = document.getElementById("notaTitulo").value;
     const texto = document.getElementById("notaTexto").innerHTML;
     const cor = document.getElementById("notaCor").value;
-    const checklist = Array.from(document.querySelectorAll("#checklistContainer .check-item")).map(item => ({
-      texto: item.querySelector("input[type=text]").value,
-      checked: item.querySelector("input[type=checkbox]").checked
-    }));
+    const checklist = [];
+    const container = document.getElementById("checklistContainer");
+    if (container) {
+      container.querySelectorAll('.check-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        const textoInput = item.querySelector('input[type="text"]');
+        if (textoInput) {
+          checklist.push({
+            texto: textoInput.value || "",
+            checked: checkbox ? checkbox.checked : false
+          });
+        }
+      });
+    }
     const novaNota = {
       titulo,
       texto,
       cor,
-      checklist,
-      favorito: false,
-      dataCriacao: notaAtual !== null
+      checklist: checklist,
+      anexos: [...anexosTemp],
+      favorito: notaAtual !== null && notas[notaAtual] ? notas[notaAtual].favorito : false,
+      dataCriacao: notaAtual !== null && notas[notaAtual]
         ? notas[notaAtual].dataCriacao
         : new Date().toLocaleString()
     };
-    if (notaAtual !== null) notas[notaAtual] = novaNota;
-    else notas.push(novaNota);
-    salvarNotas();
+    if (notaAtual !== null && notas[notaAtual]) {
+      notas[notaAtual] = novaNota;
+    } else {
+      notas.push(novaNota);
+    }
+    localStorage.setItem("notas", JSON.stringify(notas));
+    anexosTemp = [];
     notaModal.hide();
     renderNotas();
     Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
@@ -741,6 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.classList.contains("estrela")) {
       notas[idx].favorito = !notas[idx].favorito;
       salvarNotas();
+      anexosTemp = [];
       renderNotas();
     }
     if (e.target.classList.contains("btn-excluir")) {
@@ -770,17 +1049,54 @@ document.addEventListener("DOMContentLoaded", () => {
   renderNotas();
   iniciarMonitoramentoTexto();
   setupNotaTextFormatting();
+  const anexoInput = document.getElementById('notaAnexos');
+  if (anexoInput) {
+    anexoInput.addEventListener('change', (e) => {
+      processarImagens(e.target.files);
+      anexoInput.value = '';
+    });
+  }
+  const anexosArea = document.querySelector('.anexos-area');
+  if (anexosArea) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      anexosArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    anexosArea.addEventListener('dragover', () => {
+      anexosArea.style.background = '#fef2f2';
+      anexosArea.style.borderColor = 'var(--cor-primaria)';
+    });
+
+    anexosArea.addEventListener('dragleave', () => {
+      anexosArea.style.background = '#fafafa';
+      anexosArea.style.borderColor = '#ccc';
+    });
+
+    anexosArea.addEventListener('drop', (e) => {
+      anexosArea.style.background = '#fafafa';
+      anexosArea.style.borderColor = '#ccc';
+      const files = e.dataTransfer.files;
+      processarImagens(files);
+    });
+  }
 });
-//INICIO
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
   const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
-  // TAREFAS
+  const hojeDate = new Date(hoje);
+  const limiteDate = new Date(hojeDate);
+  limiteDate.setDate(hojeDate.getDate() + 7);
+  const limite = limiteDate.toISOString().split('T')[0];
+
   const tarefasResumo = document.getElementById("tarefasResumo");
   if (tarefasResumo) {
     tarefasResumo.innerHTML = "";
     const tarefasHoje = tarefas.filter(t => t.data === hoje);
-    const tarefasFuturas = tarefas.filter(t => t.data > hoje);
+    const tarefasFuturas = tarefas.filter(t => t.data > hoje && t.data <= limite);
+
     function criarLiTarefa(tarefa) {
       const li = document.createElement("li");
       const checkbox = document.createElement("input");
@@ -1009,6 +1325,7 @@ let modoEstudo = "auto";
 let materias = [];  // APENAS UM ARRAY para todas as matérias
 let cronogramaNovo = [];
 let notas = [];
+let anexosTemp = [];
 let materiasCronograma = [];
 let materiasRelogio = [];
 let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
@@ -1751,7 +2068,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
 
   // Criar o HTML do modo foco
   const focoHTML = `
-    <div id="modoFocoContainer" class="modo-foco-container">
+    <div id="modoFocoRelogioContainer" class="modo-foco-container">
       <div class="modo-foco-card">
         <div class="modo-foco-icon" style="background: ${materiaCor}; box-shadow: 0 0 30px ${materiaCor}80;">
           <i class="bi bi-brain"></i>
@@ -2098,7 +2415,7 @@ function atualizarRelogioInfo() {
       tempoRestanteEl.textContent = "⏳ terminou";
     }
   } else {
-    materiaEl.textContent = "😴 Descanso";
+    materiaEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
     horarioEl.textContent = "";
     tempoRestanteEl.textContent = "";
   }
@@ -2216,7 +2533,7 @@ function atualizarPainelEstudos() {
     const horarioProximaEl = document.getElementById("horarioProximaInicio");
     const tempoProximaEl = document.getElementById("tempoProximaInicio");
 
-    if (materiaAgoraEl) materiaAgoraEl.textContent = "😴 Descanso";
+    if (materiaAgoraEl) materiaAgoraEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
     if (horarioAgoraEl) horarioAgoraEl.textContent = "";
     if (tempoRestanteEl) tempoRestanteEl.textContent = "";
     if (materiaProximaEl) materiaProximaEl.textContent = "Nenhuma matéria agendada";
@@ -2290,7 +2607,7 @@ function atualizarPainelEstudos() {
 
     console.log(`✅ Painel atualizado: ${blocoAtual.materia.nome}`);
   } else {
-    if (materiaAtualEl) materiaAtualEl.textContent = "😴 Descanso";
+    if (materiaAtualEl) materiaAtualEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
     if (horarioAtualEl) horarioAtualEl.textContent = "";
     if (tempoRestanteEl) tempoRestanteEl.textContent = "";
     console.log("😴 Nenhuma matéria no momento");
