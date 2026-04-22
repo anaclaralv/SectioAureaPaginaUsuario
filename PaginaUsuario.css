@@ -1143,6 +1143,36 @@ body {
 .card-nota .estrela.favorito {
   opacity: 1;
 }
+.card-nota button {
+  color: inherit;
+}
+
+.card-nota .btn-editar {
+  background-color: #ffc107;
+  color: #000 !important;
+}
+
+.card-nota .btn-excluir {
+  background-color: #dc3545;
+  color: #fff !important;
+}
+
+.card-nota .estrela {
+  color: gold !important;
+  text-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
+.card-nota .estrela:not(.favorito) {
+  opacity: 0.5;
+  color: #ccc !important;
+}
+
+/* Manter cores originais dos badges e indicadores */
+.card-nota .checklist-stats,
+.card-nota .anexo-indicador {
+  color: inherit !important;
+  opacity: 0.8;
+}
 
 .card-nota .card-conteudo {
   margin-top: 10px;

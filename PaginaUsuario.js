@@ -192,7 +192,7 @@ function renderizarTarefas() {
 
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
-    btnConcluir.textContent = tarefa.concluida ? " ↩ ": " ✔ ";
+    btnConcluir.textContent = tarefa.concluida ? " ↩ " : " ✔ ";
     btnConcluir.onclick = () => {
       tarefa.concluida = !tarefa.concluida;
       salvarTarefas();
@@ -666,13 +666,28 @@ document.addEventListener('DOMContentLoaded', function () {
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
   let notas = JSON.parse(localStorage.getItem("notas")) || [];
+
+  // Garantir que todas as notas tenham ID
+  notas = notas.map(nota => {
+    if (!nota.id) {
+      nota.id = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    return nota;
+  });
+
   let notaAtual = null;
   const notasContainer = document.getElementById("notasContainer");
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
+
+  function salvarNotas() {
+    localStorage.setItem("notas", JSON.stringify(notas));
+  }
+
   function renderNotas() {
     notasContainer.innerHTML = "";
     const filtro = searchInput.value.toLowerCase();
+
     notas
       .filter(n =>
         n.titulo.toLowerCase().includes(filtro) ||
@@ -682,7 +697,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (b.favorito !== a.favorito) return b.favorito - a.favorito;
         return a.titulo.localeCompare(b.titulo);
       })
-      .forEach((nota, idx) => {
+      .forEach((nota) => {
+        // Garantir ID
+        if (!nota.id) {
+          nota.id = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
         const totalItens = nota.checklist?.length || 0;
         const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
         const pendentes = totalItens - itensConcluidos;
@@ -696,67 +716,137 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const card = document.createElement("div");
         card.className = "col-md-4";
+        card.dataset.notaId = nota.id;
+
         card.innerHTML = `
-        <div class="card-nota" style="background-color:${nota.cor}; padding:10px; border-radius:5px;">
-          <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-idx="${idx}" style="cursor:pointer;"></i>
-          <h5>${nota.titulo}</h5>
-          <small>${nota.dataCriacao || ""}</small>
-          ${checklistStats}
-          <div class="card-conteudo">
-            ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
-            <div class="checklist-card">
-              ${nota.checklist.map((c, i) => `
-                <div class="check-item ${c.checked ? 'completed' : ''}" data-idx="${i}" data-cardidx="${idx}">
-                  <input type="checkbox" ${c.checked ? 'checked' : ''}>
-                  <span>${c.texto}</span>
-                  <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
-                </div>
-              `).join("")}
+          <div class="card-nota" style="background-color:${nota.cor}; color:${nota.corTexto || '#000000'}; padding:10px; border-radius:5px;">
+            <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-nota-id="${nota.id}" style="cursor:pointer;"></i>
+            <h5>${nota.titulo}</h5>
+            <small>${nota.dataCriacao || ""}</small>
+            ${checklistStats}
+            <div class="card-conteudo">
+              ${nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
+              <div class="checklist-card">
+                ${nota.checklist.map((c, i) => `
+                  <div class="check-item ${c.checked ? 'completed' : ''}" data-check-index="${i}" data-nota-id="${nota.id}">
+                    <input type="checkbox" ${c.checked ? 'checked' : ''}>
+                    <span>${c.texto}</span>
+                    <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;">✕</button>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+            ${renderizarIndicadorAnexos(nota.anexos)}
+            ${renderizarAnexosCard(nota.anexos)}
+            <div class="mt-2">
+              <button class="btn btn-sm btn-warning btn-editar" data-nota-id="${nota.id}">Editar</button>
+              <button class="btn btn-sm btn-danger btn-excluir" data-nota-id="${nota.id}">Excluir</button>
             </div>
           </div>
-          ${renderizarIndicadorAnexos(nota.anexos)}
-    ${renderizarAnexosCard(nota.anexos)}
-          <div class="mt-2">
-            <button class="btn btn-sm btn-warning btn-editar" data-idx="${idx}">Editar</button>
-            <button class="btn btn-sm btn-danger btn-excluir" data-idx="${idx}">Excluir</button>
-          </div>
-        </div>
-      `;
+        `;
         notasContainer.appendChild(card);
       });
+
+    // ===== EVENT LISTENERS (USANDO IDs) =====
+
+    // Checkbox do checklist
     document.querySelectorAll(".check-item input").forEach(input => {
       input.addEventListener("change", (e) => {
-        const div = e.target.parentElement;
-        const idx = div.dataset.idx;
-        const cardidx = div.dataset.cardidx;
-        notas[cardidx].checklist[idx].checked = e.target.checked;
-        salvarNotas();
-        renderNotas();
+        const div = e.target.closest('.check-item');
+        const notaId = div.dataset.notaId;
+        const checkIndex = parseInt(div.dataset.checkIndex);
+
+        const nota = notas.find(n => n.id === notaId);
+        if (nota && nota.checklist[checkIndex]) {
+          nota.checklist[checkIndex].checked = e.target.checked;
+          salvarNotas();
+          renderNotas();
+        }
       });
     });
 
+    // Botão excluir item do checklist
     document.querySelectorAll(".btn-excluir-check").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const div = e.target.parentElement;
-        const idx = div.dataset.idx;
-        const cardidx = div.dataset.cardidx;
-        notas[cardidx].checklist.splice(idx, 1);
-        salvarNotas();
-        renderNotas();
+        e.stopPropagation();
+        const div = e.target.closest('.check-item');
+        const notaId = div.dataset.notaId;
+        const checkIndex = parseInt(div.dataset.checkIndex);
 
+        const nota = notas.find(n => n.id === notaId);
+        if (nota) {
+          nota.checklist.splice(checkIndex, 1);
+          salvarNotas();
+          renderNotas();
+        }
+      });
+    });
+
+    // Estrela (favorito)
+    document.querySelectorAll(".estrela").forEach(estrela => {
+      estrela.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const notaId = e.target.dataset.notaId;
+        const nota = notas.find(n => n.id === notaId);
+        if (nota) {
+          nota.favorito = !nota.favorito;
+          salvarNotas();
+          renderNotas();
+        }
+      });
+    });
+
+    // Botão Editar
+    document.querySelectorAll(".btn-editar").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const notaId = e.target.dataset.notaId;
+        const nota = notas.find(n => n.id === notaId);
+        const index = notas.findIndex(n => n.id === notaId);
+        if (nota) {
+          abrirModal(nota, index);
+        }
+      });
+    });
+
+    // Botão Excluir
+    document.querySelectorAll(".btn-excluir").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const notaId = e.target.dataset.notaId;
+        const nota = notas.find(n => n.id === notaId);
+
+        if (nota) {
+          Swal.fire({
+            title: 'Excluir nota?',
+            text: "Essa ação não pode ser desfeita!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sim, excluir'
+          }).then(result => {
+            if (result.isConfirmed) {
+              notas = notas.filter(n => n.id !== notaId);
+              salvarNotas();
+              renderNotas();
+              Swal.fire('Excluída!', '', 'success');
+            }
+          });
+        }
       });
     });
   }
+
+  // ===== FUNÇÕES AUXILIARES (mantidas como estavam) =====
+
   function atualizarContadorCaracteres() {
     const textoDiv = document.getElementById("notaTexto");
     const contadorSpan = document.getElementById("contadorTexto");
-
     if (!textoDiv || !contadorSpan) return;
-
     const texto = textoDiv.innerText || textoDiv.textContent || "";
     const caracteres = texto.length;
     contadorSpan.textContent = caracteres;
-
     const contadorDiv = document.querySelector(".contador-caracteres");
     if (caracteres > 5000) {
       contadorDiv?.classList.add("alerta");
@@ -764,38 +854,35 @@ document.addEventListener("DOMContentLoaded", () => {
       contadorDiv?.classList.remove("alerta");
     }
   }
+
   function iniciarMonitoramentoTexto() {
     const textoDiv = document.getElementById("notaTexto");
     if (!textoDiv) return;
     textoDiv.addEventListener("input", atualizarContadorCaracteres);
     textoDiv.addEventListener("keyup", atualizarContadorCaracteres);
-    const observer = new MutationObserver(() => {
-      atualizarContadorCaracteres();
-    });
+    const observer = new MutationObserver(() => atualizarContadorCaracteres());
     observer.observe(textoDiv, { childList: true, subtree: true, characterData: true });
   }
+
   function renderizarPreviews() {
     const container = document.getElementById("previewAnexos");
     if (!container) return;
-
     if (anexosTemp.length === 0) {
       container.innerHTML = '<p style="color: #9ca3af; font-size: 0.85rem; width: 100%;">Nenhuma imagem anexada</p>';
       return;
     }
-
     container.innerHTML = anexosTemp.map((anexo, index) => `
-    <div class="anexo-thumb" onclick="abrirLightbox('${anexo.data}')">
-      <img src="${anexo.data}" alt="Anexo ${index + 1}">
-      <button class="btn-remover-anexo" onclick="event.stopPropagation(); removerAnexo(${index})">✕</button>
-    </div>
-  `).join('');
+      <div class="anexo-thumb" onclick="abrirLightbox('${anexo.data}')">
+        <img src="${anexo.data}" alt="Anexo ${index + 1}">
+        <button class="btn-remover-anexo" onclick="event.stopPropagation(); removerAnexo(${index})">✕</button>
+      </div>
+    `).join('');
   }
+
   function processarImagens(files) {
     if (!files || files.length === 0) return;
-
     let processadas = 0;
     const total = files.length;
-
     Array.from(files).forEach(file => {
       if (!file.type.startsWith('image/')) {
         processadas++;
@@ -809,7 +896,6 @@ document.addEventListener("DOMContentLoaded", () => {
         processadas++;
         return;
       }
-
       const reader = new FileReader();
       reader.onload = (e) => {
         anexosTemp.push({
@@ -819,7 +905,6 @@ document.addEventListener("DOMContentLoaded", () => {
           tamanho: file.size
         });
         processadas++;
-
         if (processadas === total) {
           renderizarPreviews();
         }
@@ -827,6 +912,7 @@ document.addEventListener("DOMContentLoaded", () => {
       reader.readAsDataURL(file);
     });
   }
+
   window.removerAnexo = function (index) {
     anexosTemp.splice(index, 1);
     renderizarPreviews();
@@ -840,123 +926,97 @@ document.addEventListener("DOMContentLoaded", () => {
         lightbox.remove();
       }
     };
-
     lightbox.innerHTML = `
-    <button class="btn-fechar-lightbox" onclick="this.closest('.lightbox').remove()">✕</button>
-    <img src="${src}" alt="Visualização">
-  `;
-
+      <button class="btn-fechar-lightbox" onclick="this.closest('.lightbox').remove()">✕</button>
+      <img src="${src}" alt="Visualização">
+    `;
     document.body.appendChild(lightbox);
-  }
+  };
 
   function renderizarAnexosCard(anexos) {
     if (!anexos || anexos.length === 0) return '';
-
     if (anexos.length === 1) {
       return `
-      <div class="anexos-card">
-        <div class="anexo-mini" onclick="abrirLightbox('${anexos[0].data}')">
-          <img src="${anexos[0].data}" alt="Anexo">
+        <div class="anexos-card">
+          <div class="anexo-mini" onclick="abrirLightbox('${anexos[0].data}')">
+            <img src="${anexos[0].data}" alt="Anexo">
+          </div>
         </div>
+      `;
+    }
+    const miniaturas = anexos.slice(0, 3).map((a, i) => `
+      <div class="anexo-mini" onclick="abrirLightbox('${a.data}')">
+        <img src="${a.data}" alt="Anexo ${i + 1}">
+      </div>
+    `).join('');
+    const extras = anexos.length > 3 ? `<span style="font-size: 0.75rem; color: #6b7280;">+${anexos.length - 3}</span>` : '';
+    return `
+      <div class="anexos-card">
+        ${miniaturas}
+        ${extras}
       </div>
     `;
-    }
-
-    const miniaturas = anexos.slice(0, 3).map((a, i) => `
-    <div class="anexo-mini" onclick="abrirLightbox('${a.data}')">
-      <img src="${a.data}" alt="Anexo ${i + 1}">
-    </div>
-  `).join('');
-
-    const extras = anexos.length > 3 ? `<span style="font-size: 0.75rem; color: #6b7280;">+${anexos.length - 3}</span>` : '';
-
-    return `
-    <div class="anexos-card">
-      ${miniaturas}
-      ${extras}
-    </div>
-  `;
   }
+
   function renderizarIndicadorAnexos(anexos) {
     if (!anexos || anexos.length === 0) return '';
-
     return `
-    <div class="anexo-indicador">
-      <i class="bi bi-image"></i>
-      <span>${anexos.length} anexo${anexos.length > 1 ? 's' : ''}</span>
-    </div>
-  `;
+      <div class="anexo-indicador">
+        <i class="bi bi-image"></i>
+        <span>${anexos.length} anexo${anexos.length > 1 ? 's' : ''}</span>
+      </div>
+    `;
   }
 
-  function salvarNotas() {
-    localStorage.setItem("notas", JSON.stringify(notas));
-  }
-  document.getElementById("notaTexto").addEventListener("input", salvarNotas);
   function abrirModal(nota = null, idx = null) {
     notaAtual = idx;
     document.getElementById("notaTitulo").value = nota?.titulo || "";
     document.getElementById("notaTexto").innerHTML = nota?.texto || "";
     document.getElementById("notaCor").value = nota?.cor || "#ffffff";
-
-    // Carregar checklist existente
+    document.getElementById("notaCorTexto").value = nota?.corTexto || "#000000";
     const checklist = nota?.checklist ? [...nota.checklist] : [];
     renderChecklist(checklist);
-
-    // Carregar anexos existentes
     anexosTemp = nota?.anexos ? [...nota.anexos] : [];
     renderizarPreviews();
-
     notaModal.show();
     atualizarContadorCaracteres();
   }
+
   function renderChecklist(items) {
     const container = document.getElementById("checklistContainer");
     if (!container) return;
-
     container.innerHTML = "";
-
-    // Garante que items é um array
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-
+    if (!Array.isArray(items)) items = [];
     items.forEach((item, i) => {
       const div = document.createElement("div");
       div.className = "check-item" + (item.checked ? " completed" : "");
       div.style.display = "flex";
       div.style.alignItems = "center";
       div.style.marginBottom = "5px";
-
       div.innerHTML = `
-      <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
-      <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
-      <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
-    `;
-
+        <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
+        <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
+        <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
+      `;
       const checkbox = div.querySelector('input[type="checkbox"]');
       const textoInput = div.querySelector('input[type="text"]');
       const btnExcluir = div.querySelector('.btn-excluir-check');
-
-      // Atualizar item quando checkbox mudar
       checkbox.addEventListener('change', () => {
         item.checked = checkbox.checked;
         div.classList.toggle('completed', item.checked);
       });
-
-      // Atualizar item quando texto mudar
       textoInput.addEventListener('input', () => {
         item.texto = textoInput.value;
       });
-
-      // Remover item
       btnExcluir.addEventListener('click', () => {
         items.splice(i, 1);
         renderChecklist(items);
       });
-
       container.appendChild(div);
     });
   }
+
+  // ===== INICIALIZAÇÃO =====
   document.getElementById("addCheck").addEventListener("click", () => {
     const container = document.getElementById("checklistContainer");
     const items = [];
@@ -973,10 +1033,12 @@ document.addEventListener("DOMContentLoaded", () => {
     items.push({ texto: "", checked: false });
     renderChecklist(items);
   });
+
   document.getElementById("btnSalvar").addEventListener("click", () => {
     const titulo = document.getElementById("notaTitulo").value;
     const texto = document.getElementById("notaTexto").innerHTML;
     const cor = document.getElementById("notaCor").value;
+    const corTexto = document.getElementById("notaCorTexto").value;
     const checklist = [];
     const container = document.getElementById("checklistContainer");
     if (container) {
@@ -991,10 +1053,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    // Garantir ID para nova nota
+    const novoId = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
     const novaNota = {
+      id: (notaAtual !== null && notas[notaAtual]) ? notas[notaAtual].id : novoId,
       titulo,
       texto,
       cor,
+      corTexto,
       checklist: checklist,
       anexos: [...anexosTemp],
       favorito: notaAtual !== null && notas[notaAtual] ? notas[notaAtual].favorito : false,
@@ -1002,53 +1070,27 @@ document.addEventListener("DOMContentLoaded", () => {
         ? notas[notaAtual].dataCriacao
         : new Date().toLocaleString()
     };
+
     if (notaAtual !== null && notas[notaAtual]) {
       notas[notaAtual] = novaNota;
     } else {
       notas.push(novaNota);
     }
-    localStorage.setItem("notas", JSON.stringify(notas));
+
+    salvarNotas();
     anexosTemp = [];
     notaModal.hide();
     renderNotas();
     Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
   });
-  notasContainer.addEventListener("click", e => {
-    const idx = e.target.dataset.idx;
 
-    if (e.target.classList.contains("estrela")) {
-      notas[idx].favorito = !notas[idx].favorito;
-      salvarNotas();
-      anexosTemp = [];
-      renderNotas();
-    }
-    if (e.target.classList.contains("btn-excluir")) {
-      Swal.fire({
-        title: 'Excluir nota?',
-        text: "Essa ação não pode ser desfeita!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sim, excluir'
-      }).then(result => {
-        if (result.isConfirmed) {
-          notas.splice(idx, 1);
-          salvarNotas();
-          renderNotas();
-          Swal.fire('Excluída!', '', 'success');
-        }
-      });
-    }
-    if (e.target.classList.contains("btn-editar")) {
-      abrirModal(notas[idx], idx);
-    }
-  });
   document.getElementById("btnNova").addEventListener("click", () => abrirModal());
   searchInput.addEventListener("input", renderNotas);
+
   renderNotas();
   iniciarMonitoramentoTexto();
   setupNotaTextFormatting();
+
   const anexoInput = document.getElementById('notaAnexos');
   if (anexoInput) {
     anexoInput.addEventListener('change', (e) => {
@@ -1056,6 +1098,7 @@ document.addEventListener("DOMContentLoaded", () => {
       anexoInput.value = '';
     });
   }
+
   const anexosArea = document.querySelector('.anexos-area');
   if (anexosArea) {
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -1064,17 +1107,14 @@ document.addEventListener("DOMContentLoaded", () => {
         e.stopPropagation();
       });
     });
-
     anexosArea.addEventListener('dragover', () => {
       anexosArea.style.background = '#fef2f2';
       anexosArea.style.borderColor = 'var(--cor-primaria)';
     });
-
     anexosArea.addEventListener('dragleave', () => {
       anexosArea.style.background = '#fafafa';
       anexosArea.style.borderColor = '#ccc';
     });
-
     anexosArea.addEventListener('drop', (e) => {
       anexosArea.style.background = '#fafafa';
       anexosArea.style.borderColor = '#ccc';
