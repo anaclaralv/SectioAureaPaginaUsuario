@@ -79,7 +79,7 @@ function aplicarTemaInteligencia(tipo) {
     intrapessoal: "#5170ff"   // Azul
   };
 
-  const corPrimaria = cores[tipo] || "#9f042c";
+  const corPrimaria = cores[tipo] || "#6c757d";
 
   // Atualiza a variável CSS
   document.documentElement.style.setProperty('--cor-primaria', corPrimaria);

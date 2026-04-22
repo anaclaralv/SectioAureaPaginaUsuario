@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 :root {
-  --cor-primaria: #9f042c;
+  --cor-primaria: #6c757d;
 }
 
 html,
@@ -2883,4 +2883,68 @@ body {
 
 .btn-nota-to-flashcard:hover {
   background: var(--cor-primaria);
+}
+
+/* ===== MENU HAMBÚRGUER - SÓ APARECE NO CELULAR ===== */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+}
+
+/* ===== CELULAR (tela pequena) ===== */
+@media (max-width: 768px) {
+    /* Mostra o botão do menu */
+    .menu-toggle {
+        display: block;
+    }
+    
+    /* Ajusta a navbar no celular */
+    .navbar-left {
+        flex: 1;
+    }
+    
+    .navbar-brand .brand-text {
+        font-size: 14px;
+    }
+    
+    .navbar-brand img {
+        width: 35px;
+    }
+    
+    /* Esconde a sidebar (começa fechada) */
+    .sidebar {
+        top: 60px;
+        left: -280px;
+        width: 280px;
+        height: calc(100vh - 60px);
+    }
+    
+    .sidebar.show {
+        z-index: 1046;
+    }
+  
+    
+    /* Conteúdo sem margem */
+    .app-main {
+        margin-left: 0;
+        margin-top: 60px;
+        padding: 15px;
+    }
+    
+    /* Ajusta a navbar */
+    .navbar {
+        height: 60px;
+    }
+}
+
+/* ===== DESKTOP (tela grande) ===== */
+@media (min-width: 769px) {
+    .sidebar {
+        left: 0 !important;
+    }
 }
