@@ -192,7 +192,7 @@ function renderizarTarefas() {
 
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
-    btnConcluir.textContent = tarefa.concluida ? "↩ Desfazer" : "✔ Concluir";
+    btnConcluir.textContent = tarefa.concluida ? " ↩ ": " ✔ ";
     btnConcluir.onclick = () => {
       tarefa.concluida = !tarefa.concluida;
       salvarTarefas();
@@ -203,7 +203,7 @@ function renderizarTarefas() {
 
     const btnEditar = document.createElement("button");
     btnEditar.classList.add("btn-editar");
-    btnEditar.textContent = "✏️ Editar";
+    btnEditar.textContent = " ✏️ ";
     btnEditar.onclick = () => {
       Swal.fire({
         title: 'Editar Tarefa',
@@ -239,7 +239,7 @@ function renderizarTarefas() {
 
     const btnExcluir = document.createElement("button");
     btnExcluir.classList.add("btn-excluir");
-    btnExcluir.textContent = "❌ Excluir";
+    btnExcluir.textContent = " ❌ ";
     btnExcluir.onclick = () => {
       tarefas = tarefas.filter(t => t.id !== tarefa.id);
       salvarTarefas();
@@ -2153,7 +2153,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
       });
 
       setTimeout(() => {
-        const container = document.getElementById("modoFocoContainer");
+        const container = document.getElementById("modoFocoRelogioContainer");
         if (container) container.remove();
       }, 3000);
     }
@@ -2187,7 +2187,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
   if (sairBtn) {
     sairBtn.onclick = () => {
       if (intervalId) clearInterval(intervalId);
-      const container = document.getElementById("modoFocoContainer");
+      const container = document.getElementById("modoFocoRelogioContainer");
       if (container) container.remove();
     };
   }

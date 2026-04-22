@@ -763,6 +763,7 @@ body {
 /* Card de tarefa */
 .tarefa-card {
   width: 100%;
+  width: fit-content;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -861,33 +862,6 @@ body {
   margin-bottom: 10px;
   font-size: 16px;
 }
-
-/* ===== RESPONSIVO ===== */
-@media(max-width: 768px) {
-  #tarefasSection {
-    left: 15px;
-    right: 15px;
-    top: 90px;
-    bottom: 15px;
-    padding: 15px;
-  }
-
-  .tarefa-form {
-    flex-direction: column;
-    align-items: stretch;
-    /* ocupa toda largura */
-  }
-
-  .tarefas-container {
-    max-width: 100%;
-  }
-
-  .tarefa-card {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-}
-
 
 /* ===== CRONOGRAMA MODERNO ===== */
 
@@ -1371,16 +1345,6 @@ body {
   transform: scale(1.02);
 }
 
-/* ===== RESPONSIVO ===== */
-@media (max-height: 600px) {
-  #configuracaoSection {
-    align-items: flex-start;
-    /* Se a tela for muito pequena, evita corte */
-    padding-top: 40px;
-  }
-}
-
-
 /* Matéria atual - mais clean */
 #materiaAgoraInicio {
   font-size: 1.3rem;
@@ -1459,197 +1423,6 @@ body {
   z-index: 1100;
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-  #revisaoSection {
-    margin-left: 0;
-    padding: 20px;
-  }
-
-  .filtros-avancados {
-    flex-direction: column;
-  }
-
-  .foco-card {
-    padding: 25px;
-  }
-
-  .foco-pergunta {
-    font-size: 1.2rem;
-  }
-
-  .relogio-duas-colunas {
-    flex-direction: column;
-  }
-
-  .botoes-controle {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .botoes-controle .btn-foco,
-  .botoes-controle .btn-auto {
-    width: 100%;
-    max-width: 280px;
-  }
-
-  .relogio-card {
-    width: 100%;
-    max-width: 180px;
-  }
-
-  .modal-dialog {
-    max-width: 95% !important;
-    min-width: 95% !important;
-  }
-
-  .tabela-estudo th,
-  .tabela-estudo td {
-    padding: 10px 8px;
-    font-size: 0.8rem;
-  }
-
-  .calendario-container {
-    padding: 10px;
-  }
-
-  .fc-toolbar {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .relogio-container {
-    padding: 10px;
-  }
-
-  .tempo {
-    font-size: 20px;
-  }
-
-  .linha-inferior {
-    flex-direction: column;
-  }
-
-  .dia {
-    min-height: 150px;
-    padding: 8px;
-  }
-
-  .bloco-materia {
-    font-size: 12px;
-    padding: 5px;
-  }
-
-  .app-main {
-    margin-left: 0 !important;
-    padding: 15px;
-    width: 100%;
-  }
-
-  .graficos-lado-a-lado {
-    flex-direction: column;
-  }
-
-  .graficos-lado-a-lado .grafico-card {
-    margin-bottom: 20px;
-  }
-
-  .stats-cards {
-    gap: 12px;
-  }
-
-  .stat-card {
-    min-width: calc(50% - 6px);
-    padding: 15px;
-  }
-
-  .stat-card strong {
-    font-size: 1.2rem;
-  }
-
-  .periodo-selector {
-    border-radius: 30px;
-    padding: 6px;
-  }
-
-  .periodo-btn {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-  }
-
-  .badges-container {
-    gap: 8px;
-  }
-
-  .badge {
-    padding: 5px 12px;
-    font-size: 0.7rem;
-  }
-
-  .sugestoes-container li {
-    font-size: 0.8rem;
-    gap: 8px;
-  }
-
-  .navbar {
-    height: 60px;
-    padding: 0 12px;
-  }
-
-  .navbar-brand img {
-    width: 35px;
-  }
-
-  .brand-text {
-    font-size: 14px;
-  }
-
-  /* Sidebar escondida por padrão no celular */
-  .sidebar {
-    top: 60px;
-    left: -280px;
-    width: 260px;
-    height: calc(100vh - 60px);
-    transition: left 0.3s ease;
-    z-index: 1050;
-  }
-
-  .sidebar.show {
-    left: 0;
-  }
-
-  /* PERFIL NO CELULAR - MAIS COMPACTO */
-  .navbar-right {
-    padding: 3px 8px;
-    gap: 5px;
-    max-width: 130px;
-  }
-
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .user-text {
-    max-width: 80px;
-  }
-
-  .user-name {
-    font-size: 11px;
-  }
-
-  .user-email {
-    font-size: 9px;
-  }
-
-  .modal-dialog {
-    max-width: 90% !important;
-    min-width: 90% !important;
-    width: auto;
-    margin: auto;
-  }
-
-}
 
 #inicioSection,
 #tarefasSection,
@@ -1717,36 +1490,6 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-
-/* ===== TABLET ===== */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .navbar {
-    height: 70px;
-  }
-
-  .sidebar {
-    top: 70px;
-    height: calc(100vh - 70px);
-  }
-
-  .app-main {
-    margin-top: 70px;
-  }
-
-  .user-avatar {
-    width: 40px;
-    height: 40px;
-  }
-
-  .user-name {
-    font-size: 13px;
-  }
-
-  .user-email {
-    font-size: 10px;
-  }
 }
 
 /* Overlay para escurecer o fundo quando o menu está aberto */
@@ -2692,42 +2435,6 @@ body {
   }
 }
 
-/* RESPONSIVO */
-@media (min-width: 1200px) {
-  .calendario-container {
-    max-width: 1200px;
-    /* Aumenta em telas grandes */
-  }
-}
-
-@media (max-width: 768px) {
-  #revisaoSection {
-    margin-left: 0;
-    padding: 20px;
-  }
-
-  .revisao-stats-fixas {
-    gap: 10px;
-  }
-
-  .stat-box {
-    padding: 12px 10px;
-    min-width: 70px;
-  }
-
-  .stat-box strong {
-    font-size: 1.2rem;
-  }
-
-  .aba-btn {
-    padding: 10px 15px;
-    font-size: 0.9rem;
-  }
-
-  .card-flashcard {
-    margin-left: 10px;
-  }
-}
 
 /* MODO FOCO */
 .revisao-foco-container {
@@ -2895,56 +2602,364 @@ body {
     cursor: pointer;
     padding: 5px 10px;
 }
-
-/* ===== CELULAR (tela pequena) ===== */
+/* ============================================
+   RESPONSIVIDADE - TELAS PEQUENAS (até 768px)
+   ============================================ */
 @media (max-width: 768px) {
-    /* Mostra o botão do menu */
-    .menu-toggle {
-        display: block;
-    }
-    
-    /* Ajusta a navbar no celular */
-    .navbar-left {
-        flex: 1;
-    }
-    
-    .navbar-brand .brand-text {
-        font-size: 14px;
-    }
-    
-    .navbar-brand img {
-        width: 35px;
-    }
-    
-    /* Esconde a sidebar (começa fechada) */
-    .sidebar {
-        top: 60px;
-        left: -280px;
-        width: 280px;
-        height: calc(100vh - 60px);
-    }
-    
-    .sidebar.show {
-        z-index: 1046;
-    }
   
-    
-    /* Conteúdo sem margem */
-    .app-main {
-        margin-left: 0;
-        margin-top: 60px;
-        padding: 15px;
-    }
-    
-    /* Ajusta a navbar */
-    .navbar {
-        height: 60px;
-    }
+  /* ---------- MENU HAMBÚRGUER ---------- */
+  .menu-toggle {
+    display: block;
+  }
+  
+  .navbar {
+    height: 60px;
+    padding: 0 12px;
+  }
+  
+  .navbar-left {
+    flex: 1;
+  }
+  
+  .navbar-brand .brand-text {
+    font-size: 14px;
+  }
+  
+  .navbar-brand img {
+    width: 35px;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    top: 60px;
+    left: -280px;
+    width: 280px;
+    height: calc(100vh - 60px);
+    transition: left 0.3s ease;
+    z-index: 1050;
+  }
+  
+  .sidebar.show {
+    left: 0;
+    z-index: 1046;
+  }
+  
+  /* Perfil na navbar */
+  .navbar-right {
+    padding: 3px 8px;
+    gap: 5px;
+    max-width: 130px;
+  }
+  
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .user-text {
+    max-width: 80px;
+  }
+  
+  .user-name {
+    font-size: 11px;
+  }
+  
+  .user-email {
+    font-size: 9px;
+  }
+  
+  /* Conteúdo principal */
+  .app-main {
+    margin-left: 0 !important;
+    margin-top: 60px;
+    padding: 15px;
+    width: 100%;
+  }
+
+  /* ---------- MODAIS ---------- */
+  .modal-dialog {
+    max-width: 95% !important;
+    min-width: 95% !important;
+    width: auto;
+    margin: auto;
+  }
+
+  /* ---------- SEÇÃO REVISÃO ---------- */
+  #revisaoSection {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .revisao-stats-fixas {
+    gap: 10px;
+  }
+
+  .stat-box {
+    padding: 12px 10px;
+    min-width: 70px;
+  }
+
+  .stat-box strong {
+    font-size: 1.2rem;
+  }
+
+  .aba-btn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+
+  .card-flashcard {
+    margin-left: 10px;
+  }
+
+  .foco-card {
+    padding: 25px;
+  }
+
+  .foco-pergunta {
+    font-size: 1.2rem;
+  }
+
+  /* ---------- SEÇÃO RELÓGIO ---------- */
+  .relogio-duas-colunas {
+    flex-direction: column;
+  }
+
+  .relogio-container {
+    padding: 10px;
+  }
+
+  .relogio-card {
+    width: 100%;
+    max-width: 180px;
+  }
+
+  .botoes-controle {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .botoes-controle .btn-foco,
+  .botoes-controle .btn-auto {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .tabela-estudo th,
+  .tabela-estudo td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+
+  .tempo {
+    font-size: 20px;
+  }
+
+  /* ---------- SEÇÃO CALENDÁRIO ---------- */
+  .calendario-container {
+    padding: 10px;
+  }
+
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ---------- SEÇÃO CRONOGRAMA ---------- */
+  .linha-inferior {
+    flex-direction: column;
+  }
+
+  .dia {
+    min-height: 150px;
+    padding: 8px;
+  }
+
+  .bloco-materia {
+    font-size: 12px;
+    padding: 5px;
+  }
+
+  /* ---------- SEÇÃO ESTATÍSTICAS ---------- */
+  .graficos-lado-a-lado {
+    flex-direction: column;
+  }
+
+  .graficos-lado-a-lado .grafico-card {
+    margin-bottom: 20px;
+  }
+
+  .stats-cards {
+    gap: 12px;
+  }
+
+  .stat-card {
+    min-width: calc(50% - 6px);
+    padding: 15px;
+  }
+
+  .stat-card strong {
+    font-size: 1.2rem;
+  }
+
+  .periodo-selector {
+    border-radius: 30px;
+    padding: 6px;
+  }
+
+  .periodo-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  .badges-container {
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+
+  .sugestoes-container li {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+
+  /* ---------- FILTROS ---------- */
+  .filtros-avancados {
+    flex-direction: column;
+  }
+
+  /* ---------- TAREFAS (CORREÇÃO DOS BOTÕES) ---------- */
+  #tarefasSection {
+    padding: 10px !important;
+  }
+
+  .tarefa-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tarefas-container {
+    max-width: 100%;
+  }
+
+  .tarefa-card {
+    font-size: 13px;
+    padding: 10px 12px !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .tarefa-info {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+
+  .tarefa-titulo {
+    font-size: 13px !important;
+  }
+
+  .tarefa-prioridade {
+    font-size: 9px !important;
+    padding: 2px 5px !important;
+  }
+
+  /* Botões menores, lado a lado */
+  .tarefa-card button {
+    font-size: 11px !important;
+    padding: 4px 6px !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-concluir,
+  .btn-editar,
+  .btn-excluir {
+    font-size: 11px !important;
+    padding: 4px 6px !important;
+  }
 }
 
-/* ===== DESKTOP (tela grande) ===== */
+/* ============================================
+   TELAS MUITO PEQUENAS (até 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .tarefa-card {
+    padding: 12px !important;
+  }
+
+  .tarefa-titulo {
+    font-size: 12px !important;
+  }
+
+  .tarefa-prioridade {
+    font-size: 8px !important;
+    padding: 2px 4px !important;
+  }
+
+  .tarefa-card button {
+    font-size: 10px !important;
+    padding: 4px 5px !important;
+  }
+}
+
+/* ============================================
+   TABLET (769px até 1024px)
+   ============================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .navbar {
+    height: 70px;
+  }
+
+  .sidebar {
+    top: 70px;
+    height: calc(100vh - 70px);
+  }
+
+  .app-main {
+    margin-top: 70px;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-email {
+    font-size: 10px;
+  }
+}
+
+/* ============================================
+   DESKTOP (a partir de 769px)
+   ============================================ */
 @media (min-width: 769px) {
-    .sidebar {
-        left: 0 !important;
-    }
+  .sidebar {
+    left: 0 !important;
+  }
+}
+
+/* ============================================
+   TELAS GRANDES (a partir de 1200px)
+   ============================================ */
+@media (min-width: 1200px) {
+  .calendario-container {
+    max-width: 1200px;
+  }
+}
+
+/* ============================================
+   ALTURA MUITO PEQUENA (até 600px)
+   ============================================ */
+@media (max-height: 600px) {
+  #configuracaoSection {
+    align-items: flex-start;
+    padding-top: 40px;
+  }
 }
