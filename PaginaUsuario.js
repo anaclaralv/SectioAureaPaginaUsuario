@@ -299,6 +299,8 @@ window.adicionarTarefa = adicionarTarefa;
 window.toggle = toggle;
 // ---------- CALENDÁRIO ----------
 let calendar;
+let isUpdating = false;
+let updateTimeout = null;
 
 // Função para adicionar evento do formulário
 function adicionarEvento() {
@@ -361,22 +363,54 @@ function adicionarEvento() {
   }
 
   salvarEventos();
+  atualizarResumoInicio();
 
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
   document.getElementById("corEvento").value = "#3788d8";
   document.getElementById("recorrenciaEvento").value = "nenhuma";
+  Swal.fire({
+    icon: 'success',
+    title: 'Evento adicionado!',
+    timer: 1000,
+    showConfirmButton: false
+  });
 }
 
-// Salvar todos eventos no localStorage
 function salvarEventos() {
-  const eventos = calendar.getEvents().map(ev => ({
-    title: ev.title,
-    start: ev.startStr,
-    backgroundColor: ev.backgroundColor,
-    extendedProps: ev.extendedProps
-  }));
-  localStorage.setItem("eventosCalendario", JSON.stringify(eventos));
+  if (isUpdating || !calendar) return;
+  
+  console.log('💾 salvarEventos foi chamada!'); // ← ADICIONE
+  
+  try {
+    const eventos = calendar.getEvents();
+    console.log('📊 Total de eventos no calendário:', eventos.length); // ← ADICIONE
+    
+    const eventosParaSalvar = eventos.map(ev => ({
+      title: ev.title,
+      start: ev.startStr,
+      backgroundColor: ev.backgroundColor,
+      extendedProps: ev.extendedProps
+    }));
+    
+    console.log('💿 Salvando no localStorage:', eventosParaSalvar.length, 'eventos'); // ← ADICIONE
+    localStorage.setItem("eventosCalendario", JSON.stringify(eventosParaSalvar));
+  } catch (error) {
+    console.error("Erro ao salvar eventos:", error);
+  }
+}
+
+// ADICIONE esta nova função logo abaixo:
+function atualizarAposMudancaCalendario() {
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+
+  updateTimeout = setTimeout(() => {
+    salvarEventos();
+    atualizarResumoInicio();
+    updateTimeout = null;
+  }, 200);
 }
 
 // Carregar eventos do localStorage
@@ -398,19 +432,12 @@ function carregarEventos() {
       }
     }));
 
-  // Garantir que eventos salvos tenham a flag isTarefa definida
-  const eventosLimpos = eventosSalvos.map(ev => ({
-    ...ev,
-    extendedProps: ev.extendedProps || { isTarefa: false }
-  }));
-
-  const eventos = [...eventosLimpos, ...eventosTarefas];
-
   // Remover duplicações
+  const todosEventos = [...eventosSalvos, ...eventosTarefas];
   const eventosUnicos = [];
   const ids = new Set();
 
-  eventos.forEach(ev => {
+  todosEventos.forEach(ev => {
     const id = ev.extendedProps?.tarefaId || ev.title + ev.start;
     if (!ids.has(id)) {
       ids.add(id);
@@ -424,17 +451,37 @@ function carregarEventos() {
 function atualizarEventosTarefas() {
   if (!calendar) return;
 
+  isUpdating = true;
   // Remove todos os eventos
-  calendar.getEvents().forEach(ev => ev.remove());
+  try {
+    // Remove apenas eventos de tarefas
+    calendar.getEvents()
+      .filter(ev => ev.extendedProps?.isTarefa === true)
+      .forEach(ev => ev.remove());
 
-  // Recria tudo (eventos + tarefas)
-  const eventos = carregarEventos();
-  eventos.forEach(ev => {
-    calendar.addEvent(ev);
-  });
+    const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
+    tarefasLS
+      .filter(t => t.data && !t.concluida)
+      .forEach(t => {
+        calendar.addEvent({
+          title: `📋 ${t.titulo}`,
+          start: t.data,
+          backgroundColor: corPrioridade(t.prioridade),
+          borderColor: corPrioridade(t.prioridade),
+          textColor: '#ffffff',
+          extendedProps: {
+            isTarefa: true,
+            tarefaId: t.id
+          }
+        });
+      });
+  } catch (error) {
+    console.error("Erro ao atualizar tarefas:", error);
+  } finally {
+    isUpdating = false;
+  }
 }
 
-// Inicialização do calendário
 // Inicialização do calendário
 document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendario');
@@ -443,6 +490,8 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     locale: 'pt-br',
+    lazyFetching: true,
+    progressiveEventRendering: true,
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -450,219 +499,225 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     editable: true,
     selectable: true,
+eventDrop: function (info) {
+  const event = info.event;
+  const novaData = event.startStr;
+  const titulo = event.title;
+  const cor = event.backgroundColor;
+  const props = event.extendedProps;
+  
+  console.log('🎯 Movendo evento:', titulo, 'para', novaData);
+  
+  // Atualiza tarefa se necessário
+  if (props?.isTarefa) {
+    const tarefaId = props.tarefaId;
+    const tarefa = tarefas.find(t => t.id === tarefaId);
+    if (tarefa) {
+      tarefa.data = novaData;
+      salvarTarefas();
+    }
+  }
+  
+  // 🔥 SOLUÇÃO RADICAL: Remove o evento antigo
+  event.remove();
+  
+  // 🔥 Recria o evento na nova data
+  calendar.addEvent({
+    title: titulo,
+    start: novaData,
+    backgroundColor: cor,
+    borderColor: cor,
+    extendedProps: props
+  });
+  
+  // Salva e atualiza
+  salvarEventos();
+  atualizarResumoInicio();
+  
+  // Feedback
+  const dataFormatada = novaData.split('-').reverse().join('/');
+  Swal.fire({
+    icon: 'success',
+    title: 'Movido!',
+    text: `Nova data: ${dataFormatada}`,
+    timer: 800,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+  
+  console.log('✅ Evento recriado na nova data!');
+},
 
-    // ===== NOVO: Quando arrasta evento =====
-    eventDrop: function (info) {
-      const event = info.event;
-
-      // Se for tarefa, atualiza a data da tarefa
-      if (event.extendedProps?.isTarefa) {
-        const tarefaId = event.extendedProps.tarefaId;
-        const tarefa = tarefas.find(t => t.id === tarefaId);
-        if (tarefa) {
-          tarefa.data = event.startStr;
-          salvarTarefas();
-          atualizarTudo();
-        }
-      }
-      salvarEventos();
-      calendar.refetchEvents();  // ← ADICIONE ISSO
-      atualizarTudo();           // ← ADICIONE ISSO
-      atualizarResumoInicio();
-      // Função para formatar data corretamente (sem problemas de fuso)
-      function formatarDataLocal(dataStr) {
-        const [ano, mes, dia] = dataStr.split('-');
-        return `${dia}/${mes}/${ano}`;
-      }
-
-      // No eventDrop:
-      Swal.fire({
-        icon: 'success',
-        title: 'Movido!',
-        text: `Nova data: ${formatarDataLocal(event.startStr)}`,
-        timer: 1200,
-        showConfirmButton: false
-      });
-    },
-
-    // ===== NOVO: Quando redimensiona evento =====
     eventResize: function (info) {
       salvarEventos();
-      calendar.refetchEvents();  // ← ADICIONE ISSO
-      atualizarTudo();           // ← ADICIONE ISSO
       atualizarResumoInicio();
 
       Swal.fire({
         icon: 'success',
         title: 'Duração alterada!',
-        timer: 1000,
-        showConfirmButton: false
+        timer: 800,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
       });
     },
 
     eventClick: function (info) {
       const event = info.event;
+      const isRecorrente = event.extendedProps?.recorrencia && event.extendedProps.recorrencia !== "nenhuma";
 
-      // Delay para evitar travamento
-      setTimeout(() => {
-        const isRecorrente = event.extendedProps?.recorrencia !== "nenhuma" && event.extendedProps?.recorrencia !== undefined;
+      if (event.extendedProps?.isTarefa === true) {
+        const tarefaId = event.extendedProps.tarefaId;
+        const tarefa = tarefas.find(t => t.id === tarefaId);
 
-        if (event.extendedProps?.isTarefa === true) {
-          const tarefaId = event.extendedProps.tarefaId;
-          const tarefa = tarefas.find(t => t.id === tarefaId);
-          if (!tarefa) {
+        if (!tarefa) {
+          event.remove();
+          salvarEventos();
+          return;
+        }
+
+        Swal.fire({
+          title: 'Editar tarefa',
+          html: `
+            <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
+            <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            if (novoTitulo && novaData) {
+              tarefa.titulo = novoTitulo;
+              tarefa.data = novaData;
+              salvarTarefas();
+              atualizarEventosTarefas();
+              atualizarResumoInicio();
+              renderizarTarefas();
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Tarefa atualizada!',
+                timer: 1000,
+                showConfirmButton: false
+              });
+            }
+          } else if (result.isDenied) {
+            tarefas = tarefas.filter(t => t.id !== tarefa.id);
+            salvarTarefas();
+            atualizarEventosTarefas();
+            atualizarResumoInicio();
+            renderizarTarefas();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Tarefa excluída!',
+              timer: 1000,
+              showConfirmButton: false
+            });
+          }
+        });
+
+      } else if (isRecorrente) {
+        Swal.fire({
+          title: 'Excluir evento recorrente',
+          text: `"${event.title}" se repete ${event.extendedProps.recorrencia}`,
+          icon: 'warning',
+          showCancelButton: true,
+          showDenyButton: true,
+          confirmButtonText: 'Apenas este dia',
+          denyButtonText: 'Todas repetições',
+          cancelButtonText: 'Cancelar'
+        }).then(result => {
+          if (result.isConfirmed) {
             event.remove();
             salvarEventos();
-            return;
+            atualizarResumoInicio();
+          } else if (result.isDenied) {
+            const eventosParaRemover = calendar.getEvents().filter(e =>
+              e.title === event.title &&
+              e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
+            );
+            eventosParaRemover.forEach(e => e.remove());
+            salvarEventos();
+            atualizarResumoInicio();
           }
+        });
 
-          Swal.fire({
-            title: 'Editar tarefa',
-            html: `
-          <input type="text" id="editTitulo" class="swal2-input" value="${tarefa.titulo}">
-          <input type="date" id="editData" class="swal2-input" value="${tarefa.data}">
-        `,
-            showCancelButton: true,
-            confirmButtonText: 'Salvar',
-            denyButtonText: 'Excluir',
-            showDenyButton: true,
-            didOpen: () => {
-              document.getElementById('editData').value = tarefa.data;
-            }
-          }).then(result => {
-            if (result.isConfirmed) {
-              const novoTitulo = document.getElementById('editTitulo').value.trim();
-              const novaData = document.getElementById('editData').value;
-              if (novoTitulo && novaData) {
-                tarefa.titulo = novoTitulo;
-                tarefa.data = novaData;
-                salvarTarefas();
-                salvarEventos();
-                calendar.refetchEvents();
-                atualizarTudo();
+      } else {
+        // Evento normal
+        Swal.fire({
+          title: 'Editar evento',
+          html: `
+            <input type="text" id="editTitulo" class="swal2-input" value="${event.title.replace(/"/g, '&quot;')}">
+            <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+            <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}">
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir',
+          showDenyButton: true
+        }).then(result => {
+          if (result.isConfirmed) {
+            const novoTitulo = document.getElementById('editTitulo').value.trim();
+            const novaData = document.getElementById('editData').value;
+            const novaCor = document.getElementById('editCor').value;
 
-                // Alerta de confirmação
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Tarefa atualizada!',
-                  text: `"${novoTitulo}" foi atualizada.`,
-                  timer: 1500,
-                  showConfirmButton: false
-                });
-              }
-            } else if (result.isDenied) {
-              const nomeTarefa = tarefa.titulo; // Guarda o nome antes de excluir
-              tarefas = tarefas.filter(t => t.id !== tarefa.id);
-              salvarTarefas();
+            if (novoTitulo && novaData) {
+              event.setProp('title', novoTitulo);
+              event.setStart(novaData);
+              event.setProp('backgroundColor', novaCor);
+              event.setProp('borderColor', novaCor);
+              
+              // 🔥 SALVA IMEDIATAMENTE
               salvarEventos();
-              calendar.refetchEvents();
-              atualizarTudo();
+              atualizarResumoInicio();
 
-              // Alerta de confirmação
               Swal.fire({
                 icon: 'success',
-                title: 'Tarefa excluída!',
-                text: `"${nomeTarefa}" foi removida.`,
-                timer: 1500,
-                showConfirmButton: false
+                title: 'Evento atualizado!',
+                timer: 800,
+                showConfirmButton: false,
+                position: 'top-end',
+                toast: true
               });
             }
-          });
-        } else if (isRecorrente) {
-          Swal.fire({
-            title: 'Excluir evento recorrente',
-            text: `"${event.title}" se repete ${event.extendedProps.recorrencia === 'diaria' ? 'diariamente' : event.extendedProps.recorrencia === 'semanal' ? 'semanalmente' : 'mensalmente'}`,
-            icon: 'warning',
-            showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonText: 'Excluir apenas este dia',
-            denyButtonText: 'Excluir todas as repetições',
-            cancelButtonText: 'Cancelar'
-          }).then(result => {
-            if (result.isConfirmed) {
-              const nomeEvento = event.title;
-              event.remove();
-              salvarEventos();
-              calendar.refetchEvents();
-              atualizarTudo();
-              Swal.fire({ icon: 'success', title: 'Evento removido!', text: `"${nomeEvento}" foi removido desta data.`, timer: 1500, showConfirmButton: false });
-            } else if (result.isDenied) {
-              const nomeEvento = event.title;
-              const eventosParaRemover = calendar.getEvents().filter(e =>
-                e.title === event.title &&
-                e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
-              );
-              eventosParaRemover.forEach(e => e.remove());
-              salvarEventos();
-              calendar.refetchEvents();
-              atualizarTudo();
-              Swal.fire({ icon: 'success', title: 'Eventos removidos!', text: `Todas as repetições de "${nomeEvento}" foram removidas.`, timer: 1500, showConfirmButton: false });
-            }
-          });
-        } else {
-          Swal.fire({
-            title: 'Editar evento',
-            html: `
-          <input type="text" id="editTitulo" class="swal2-input" value="${event.title}">
-          <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-          <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}">
-        `,
-            showCancelButton: true,
-            confirmButtonText: 'Salvar',
-            denyButtonText: 'Excluir',
-            showDenyButton: true,
-            didOpen: () => {
-              document.getElementById('editData').value = event.startStr;
-            }
-          }).then(result => {
-            if (result.isConfirmed) {
-              const novoTitulo = document.getElementById('editTitulo').value.trim();
-              const novaData = document.getElementById('editData').value;
-              const novaCor = document.getElementById('editCor').value;
-              if (novoTitulo && novaData) {
-                event.setProp('title', novoTitulo);
-                event.setStart(novaData);
-                event.setProp('backgroundColor', novaCor);
-                event.setProp('borderColor', novaCor);
-                salvarEventos();
-                calendar.refetchEvents();
-                atualizarTudo();
+          } else if (result.isDenied) {
+            event.remove();
+            salvarEventos();
+            atualizarResumoInicio();
 
-                // Alerta de confirmação
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Evento atualizado!',
-                  text: `"${novoTitulo}" foi atualizado.`,
-                  timer: 1500,
-                  showConfirmButton: false
-                });
-              }
-            } else if (result.isDenied) {
-              const nomeEvento = event.title; // Guarda o nome antes de excluir
-              event.remove();
-              salvarEventos();
-              calendar.refetchEvents();
-              atualizarTudo();
-
-              // Alerta de confirmação
-              Swal.fire({
-                icon: 'success',
-                title: 'Evento excluído!',
-                text: `"${nomeEvento}" foi removido.`,
-                timer: 1500,
-                showConfirmButton: false
-              });
-            }
-          });
-        }
-      }, 100);
+            Swal.fire({
+              icon: 'success',
+              title: 'Evento excluído!',
+              timer: 800,
+              showConfirmButton: false,
+              position: 'top-end',
+              toast: true
+            });
+          }
+        });
+      }
     },
+
     events: carregarEventos()
   });
 
   calendar.render();
-  atualizarEventosTarefas();
+
+  setTimeout(() => {
+    atualizarEventosTarefas();
+    atualizarResumoInicio();
+  }, 100);
 });
+
+// Expor funções globalmente
+window.adicionarEvento = adicionarEvento;
+
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
   let notas = JSON.parse(localStorage.getItem("notas")) || [];
@@ -2702,17 +2757,18 @@ function atualizarCronogramaCompleto() {
 }
 
 // Substituir a chamada do setInterval por uma mais confiável
-setInterval(() => {
+/*setInterval(() => {
   if (typeof atualizarPainelEstudos === 'function') {
     atualizarPainelEstudos();
   }
 }, 30000); // atualiza a cada 30 segundos
-
+*/
 // Forçar atualização inicial
 forcarAtualizacaoPainel();
 
 
-setInterval(atualizarSistema, 10000); function voltarModoAuto() {
+/*setInterval(atualizarSistema, 10000); */
+function voltarModoAuto() {
   modoEstudo = "auto";
   notificarMudanca = true;
   Swal.fire({
