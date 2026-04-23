@@ -302,16 +302,30 @@ let calendar;
 let isUpdating = false;
 let updateTimeout = null;
 
-// Função para adicionar evento do formulário
 function adicionarEvento() {
   if (!calendar) return;
+
   const titulo = document.getElementById("tituloEvento").value.trim();
   const data = document.getElementById("dataEvento").value;
   const cor = document.getElementById("corEvento").value;
   const tipo = document.getElementById("tipoEvento").value;
   const recorrencia = document.getElementById("recorrenciaEvento").value;
 
-  if (!titulo || !data) return alert("Preencha os campos!");
+  // Validação com SweetAlert2
+  if (!titulo || !data) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos',
+      text: 'Por favor, preencha o título e a data do evento!',
+      confirmButtonText: 'Entendi',
+      confirmButtonColor: '#9f042c',
+      iconColor: '#f59e0b',
+      background: '#fff',
+      borderRadius: '20px',
+      padding: '1.5rem'
+    });
+    return;
+  }
 
   // Adicionar evento principal
   calendar.addEvent({
@@ -324,34 +338,24 @@ function adicionarEvento() {
 
   // Adicionar eventos recorrentes
   if (recorrencia !== "nenhuma") {
-    const dataInicio = new Date(data);
-    let datasRecorrentes = [];
+    const dataInicio = new Date(data + 'T12:00:00'); // Evita problema de fuso
     let maxIteracoes = 0;
 
-    if (recorrencia === "diaria") {
-      maxIteracoes = 30;
-      for (let i = 1; i <= maxIteracoes; i++) {
-        const novaData = new Date(dataInicio);
-        novaData.setDate(dataInicio.getDate() + i);
-        datasRecorrentes.push(novaData);
-      }
-    } else if (recorrencia === "semanal") {
-      maxIteracoes = 12;
-      for (let i = 1; i <= maxIteracoes; i++) {
-        const novaData = new Date(dataInicio);
-        novaData.setDate(dataInicio.getDate() + (i * 7));
-        datasRecorrentes.push(novaData);
-      }
-    } else if (recorrencia === "mensal") {
-      maxIteracoes = 6;
-      for (let i = 1; i <= maxIteracoes; i++) {
-        const novaData = new Date(dataInicio);
-        novaData.setMonth(dataInicio.getMonth() + i);
-        datasRecorrentes.push(novaData);
-      }
-    }
+    if (recorrencia === "diaria") maxIteracoes = 30;
+    else if (recorrencia === "semanal") maxIteracoes = 12;
+    else if (recorrencia === "mensal") maxIteracoes = 6;
 
-    datasRecorrentes.forEach(novaData => {
+    for (let i = 1; i <= maxIteracoes; i++) {
+      const novaData = new Date(dataInicio);
+
+      if (recorrencia === "diaria") {
+        novaData.setDate(dataInicio.getDate() + i);
+      } else if (recorrencia === "semanal") {
+        novaData.setDate(dataInicio.getDate() + (i * 7));
+      } else if (recorrencia === "mensal") {
+        novaData.setMonth(dataInicio.getMonth() + i);
+      }
+
       calendar.addEvent({
         title: titulo,
         start: novaData.toISOString().split('T')[0],
@@ -359,40 +363,48 @@ function adicionarEvento() {
         borderColor: cor,
         extendedProps: { isTarefa: false, tipo: tipo, recorrencia: recorrencia, isRecorrente: true }
       });
-    });
+    }
   }
 
+  calendar.render();
   salvarEventos();
   atualizarResumoInicio();
 
+  // Limpar formulário
   document.getElementById("tituloEvento").value = "";
   document.getElementById("dataEvento").value = "";
   document.getElementById("corEvento").value = "#3788d8";
   document.getElementById("recorrenciaEvento").value = "nenhuma";
+
+  // Feedback de sucesso
   Swal.fire({
     icon: 'success',
     title: 'Evento adicionado!',
-    timer: 1000,
-    showConfirmButton: false
+    text: `"${titulo}" foi agendado com sucesso!`,
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true,
+    iconColor: '#22c55e'
   });
 }
 
 function salvarEventos() {
   if (isUpdating || !calendar) return;
-  
+
   console.log('💾 salvarEventos foi chamada!'); // ← ADICIONE
-  
+
   try {
     const eventos = calendar.getEvents();
     console.log('📊 Total de eventos no calendário:', eventos.length); // ← ADICIONE
-    
+
     const eventosParaSalvar = eventos.map(ev => ({
       title: ev.title,
       start: ev.startStr,
       backgroundColor: ev.backgroundColor,
       extendedProps: ev.extendedProps
     }));
-    
+
     console.log('💿 Salvando no localStorage:', eventosParaSalvar.length, 'eventos'); // ← ADICIONE
     localStorage.setItem("eventosCalendario", JSON.stringify(eventosParaSalvar));
   } catch (error) {
@@ -499,55 +511,55 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     editable: true,
     selectable: true,
-eventDrop: function (info) {
-  const event = info.event;
-  const novaData = event.startStr;
-  const titulo = event.title;
-  const cor = event.backgroundColor;
-  const props = event.extendedProps;
-  
-  console.log('🎯 Movendo evento:', titulo, 'para', novaData);
-  
-  // Atualiza tarefa se necessário
-  if (props?.isTarefa) {
-    const tarefaId = props.tarefaId;
-    const tarefa = tarefas.find(t => t.id === tarefaId);
-    if (tarefa) {
-      tarefa.data = novaData;
-      salvarTarefas();
-    }
-  }
-  
-  // 🔥 SOLUÇÃO RADICAL: Remove o evento antigo
-  event.remove();
-  
-  // 🔥 Recria o evento na nova data
-  calendar.addEvent({
-    title: titulo,
-    start: novaData,
-    backgroundColor: cor,
-    borderColor: cor,
-    extendedProps: props
-  });
-  
-  // Salva e atualiza
-  salvarEventos();
-  atualizarResumoInicio();
-  
-  // Feedback
-  const dataFormatada = novaData.split('-').reverse().join('/');
-  Swal.fire({
-    icon: 'success',
-    title: 'Movido!',
-    text: `Nova data: ${dataFormatada}`,
-    timer: 800,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-  
-  console.log('✅ Evento recriado na nova data!');
-},
+    eventDrop: function (info) {
+      const event = info.event;
+      const novaData = event.startStr;
+      const titulo = event.title;
+      const cor = event.backgroundColor;
+      const props = event.extendedProps;
+
+      console.log('🎯 Movendo evento:', titulo, 'para', novaData);
+
+      // Atualiza tarefa se necessário
+      if (props?.isTarefa) {
+        const tarefaId = props.tarefaId;
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (tarefa) {
+          tarefa.data = novaData;
+          salvarTarefas();
+        }
+      }
+
+      // 🔥 SOLUÇÃO RADICAL: Remove o evento antigo
+      event.remove();
+
+      // 🔥 Recria o evento na nova data
+      calendar.addEvent({
+        title: titulo,
+        start: novaData,
+        backgroundColor: cor,
+        borderColor: cor,
+        extendedProps: props
+      });
+
+      // Salva e atualiza
+      salvarEventos();
+      atualizarResumoInicio();
+
+      // Feedback
+      const dataFormatada = novaData.split('-').reverse().join('/');
+      Swal.fire({
+        icon: 'success',
+        title: 'Movido!',
+        text: `Nova data: ${dataFormatada}`,
+        timer: 800,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+
+      console.log('✅ Evento recriado na nova data!');
+    },
 
     eventResize: function (info) {
       salvarEventos();
@@ -653,10 +665,10 @@ eventDrop: function (info) {
         Swal.fire({
           title: 'Editar evento',
           html: `
-            <input type="text" id="editTitulo" class="swal2-input" value="${event.title.replace(/"/g, '&quot;')}">
-            <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-            <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}">
-          `,
+    <input type="text" id="editTitulo" class="swal2-input" value="${event.title.replace(/"/g, '&quot;')}" placeholder="Título">
+    <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+    <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}" style="width: 100%; height: 45px; padding: 5px; border-radius: 8px; cursor: pointer;">
+  `,
           showCancelButton: true,
           confirmButtonText: 'Salvar',
           denyButtonText: 'Excluir',
@@ -667,43 +679,73 @@ eventDrop: function (info) {
             const novaData = document.getElementById('editData').value;
             const novaCor = document.getElementById('editCor').value;
 
-            if (novoTitulo && novaData) {
-              event.setProp('title', novoTitulo);
-              event.setStart(novaData);
-              event.setProp('backgroundColor', novaCor);
-              event.setProp('borderColor', novaCor);
-              
-              // 🔥 SALVA IMEDIATAMENTE
-              salvarEventos();
-              atualizarResumoInicio();
-
+            if (!novoTitulo || !novaData) {
               Swal.fire({
-                icon: 'success',
-                title: 'Evento atualizado!',
-                timer: 800,
-                showConfirmButton: false,
-                position: 'top-end',
-                toast: true
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor, preencha o título e a data!',
+                confirmButtonColor: '#9f042c'
               });
+              return;
             }
-          } else if (result.isDenied) {
-            event.remove();
+            const eventoAntigo = event;
+            const props = eventoAntigo.extendedProps;
+            eventoAntigo.remove();
+            event.setProp('title', novoTitulo);
+            event.setStart(novaData);
+            event.setProp('backgroundColor', novaCor);
+            event.setProp('borderColor', novaCor);
+            calendar.addEvent({
+              title: novoTitulo,
+              start: novaData,
+              backgroundColor: novaCor,
+              borderColor: novaCor,
+              extendedProps: props
+            });
+            calendar.render();
             salvarEventos();
             atualizarResumoInicio();
+            calendar.refetchEvents();
 
             Swal.fire({
               icon: 'success',
-              title: 'Evento excluído!',
-              timer: 800,
+              title: 'Evento atualizado!',
+              timer: 1200,
               showConfirmButton: false,
               position: 'top-end',
               toast: true
+            });
+          } else if (result.isDenied) {
+            // Excluir evento
+            Swal.fire({
+              title: 'Confirmar exclusão',
+              text: 'Tem certeza que deseja excluir este evento?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, excluir',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#dc3545'
+            }).then(confirmResult => {
+              if (confirmResult.isConfirmed) {
+                event.remove();
+                calendar.render();
+                salvarEventos();
+                atualizarResumoInicio();
+
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Evento excluído!',
+                  timer: 1200,
+                  showConfirmButton: false,
+                  position: 'top-end',
+                  toast: true
+                });
+              }
             });
           }
         });
       }
     },
-
     events: carregarEventos()
   });
 
