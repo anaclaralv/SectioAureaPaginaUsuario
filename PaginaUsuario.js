@@ -1546,14 +1546,79 @@ function salvarMaterias() {
 function salvarCronogramaNovo() {
   localStorage.setItem("cronogramaNovo", JSON.stringify(cronogramaNovo));
 }
+// ===== ADICIONAR MATÉRIA (NOVA) =====
+function adicionarMateria() {
+  const inputNome = document.getElementById("novaMateriaNome");
+  const inputCor = document.getElementById("novaMateriaCor");
+  
+  if (!inputNome || !inputCor) return;
+  
+  const nome = inputNome.value.trim();
+  const cor = inputCor.value;
+  
+  if (!nome) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Ops!',
+      text: 'Digite o nome da matéria!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+  
+  // Verificar se já existe
+  const existe = materias.some(m => m.nome.toLowerCase() === nome.toLowerCase());
+  if (existe) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Já existe!',
+      text: `A matéria "${nome}" já foi cadastrada.`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+  
+  const novaMateria = {
+    id: Date.now().toString(),
+    nome: nome,
+    cor: cor
+  };
+  
+  materias.push(novaMateria);
+  salvarMaterias();
+  
+  inputNome.value = "";
+  inputCor.value = "#9f042c";
+  
+  renderMaterias();
+  renderCronogramaNovo();
+  renderTabelaMaterias();
+  
+  Swal.fire({
+    icon: 'success',
+    title: 'Pronto!',
+    text: `Matéria "${nome}" adicionada!`,
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
 
-// ---------- RENDERIZAR MATÉRIAS ----------
+// ===== RENDERIZAR MATÉRIAS (NOVA) =====
 function renderMaterias() {
   const container = document.getElementById("materiasContainer");
   if (!container) return;
+  
   container.innerHTML = "";
-
-  // Usar 'materias' diretamente (é o array principal que você já tem)
+  
+  if (materias.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #9ca3af; width: 100%;">Nenhuma matéria cadastrada. Adicione acima! 👆</p>';
+    return;
+  }
+  
   materias.forEach(m => {
     const div = document.createElement("div");
     div.classList.add("materia-bloco");
@@ -1561,188 +1626,178 @@ function renderMaterias() {
     div.textContent = m.nome;
     div.id = m.id;
     div.draggable = true;
-    div.ondragstart = (e) => e.dataTransfer.setData("id", m.id);
-
-    // Editar (duplo clique)
+    
+    div.ondragstart = (e) => {
+      e.dataTransfer.setData("text/plain", m.id);
+    };
+    
+    // Duplo clique para editar
     div.addEventListener("dblclick", () => {
       Swal.fire({
-        title: `Editar Matéria`,
+        title: 'Editar Matéria',
         html: `
           <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
           <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
         `,
         showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: "Salvar",
-        denyButtonText: "Excluir"
+        confirmButtonText: 'Salvar'
       }).then(result => {
         if (result.isConfirmed) {
-          const novoNome = document.getElementById("editNome").value.trim();
-          const novaCor = document.getElementById("editCor").value;
-          if (!novoNome) {
-            Swal.fire({ icon: 'error', title: 'Digite um nome!' });
-            return;
+          const novoNome = document.getElementById('editNome').value.trim();
+          const novaCor = document.getElementById('editCor').value;
+          if (novoNome) {
+            m.nome = novoNome;
+            m.cor = novaCor;
+            salvarMaterias();
+            renderMaterias();
+            renderCronogramaNovo();
           }
-          m.nome = novoNome;
-          m.cor = novaCor;
-          salvarMaterias();
-          renderMaterias();
-          renderCronogramaNovo();
-          renderTabelaMaterias();
-        } else if (result.isDenied) {
-          materias = materias.filter(mat => mat.id !== m.id);
-          cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
-          salvarMaterias();
-          salvarCronogramaNovo();
-          renderMaterias();
-          renderCronogramaNovo();
-          renderTabelaMaterias();
         }
       });
     });
-
-    // Excluir (clique direito)
+    
+    // Clique direito para excluir
     div.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       Swal.fire({
         title: `Excluir ${m.nome}?`,
-        text: "Isso também removerá a matéria de TODOS os dias do cronograma!",
+        text: "Também será removida do cronograma!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Sim, excluir tudo',
-        cancelButtonText: 'Cancelar'
-      }).then(res => {
-        if (res.isConfirmed) {
+        confirmButtonText: 'Sim, excluir',
+        confirmButtonColor: '#dc3545'
+      }).then(result => {
+        if (result.isConfirmed) {
           materias = materias.filter(mat => mat.id !== m.id);
-          cronogramaNovo = cronogramaNovo.filter(c => c.materia.id !== m.id);
+          cronogramaNovo = cronogramaNovo.filter(b => b.materia.id !== m.id);
           salvarMaterias();
           salvarCronogramaNovo();
           renderMaterias();
           renderCronogramaNovo();
-          renderTabelaMaterias();
           renderizarResumoHoje();
-          Swal.fire({ icon: 'success', title: 'Matéria excluída!', timer: 1500, showConfirmButton: false });
         }
       });
     });
-
+    
     container.appendChild(div);
   });
 }
 
-// ---------- RENDERIZAR CRONOGRAMA ----------
+// ===== RENDERIZAR CRONOGRAMA (NOVA) =====
 function renderCronogramaNovo() {
   const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+  
   dias.forEach(dia => {
     const coluna = document.getElementById(dia);
     if (!coluna) return;
-    coluna.innerHTML = `<h5>${dia.toUpperCase()}</h5><div class="dia-drop" ondragover="event.preventDefault()"></div>`;
+    
+    coluna.innerHTML = `
+      <h5>${dia.charAt(0).toUpperCase() + dia.slice(1)}</h5>
+      <div class="dia-drop"></div>
+    `;
+    
     const dropArea = coluna.querySelector(".dia-drop");
-
-    const blocos = cronogramaNovo.filter(b => b.dia === dia)
+    
+    const blocos = cronogramaNovo
+      .filter(b => b.dia === dia)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));
-
-    blocos.forEach(b => {
+    
+    blocos.forEach(bloco => {
       const div = document.createElement("div");
       div.classList.add("bloco-materia");
-      div.style.background = b.materia.cor;
-      div.textContent = `${b.materia.nome} (${b.inicio} - ${b.fim})`;
-
-      // editar horário ou excluir
+      div.style.background = bloco.materia.cor || '#9f042c';
+      div.textContent = `${bloco.materia.nome} (${bloco.inicio} - ${bloco.fim})`;
+      
       div.addEventListener("dblclick", () => {
         Swal.fire({
-          title: `Editar ${b.materia.nome}`,
+          title: 'Editar Horário',
           html: `
-            <input type="time" id="editInicio" class="swal2-input" value="${b.inicio}">
-            <input type="time" id="editFim" class="swal2-input" value="${b.fim}">
+            <input type="time" id="editInicio" class="swal2-input" value="${bloco.inicio}">
+            <input type="time" id="editFim" class="swal2-input" value="${bloco.fim}">
           `,
           showCancelButton: true,
           showDenyButton: true,
-          confirmButtonText: "Salvar",
-          denyButtonText: "Excluir"
-        }).then(res => {
-          if (res.isConfirmed) {
-            const inicio = document.getElementById("editInicio").value;
-            const fim = document.getElementById("editFim").value;
-            if (!inicio || !fim || fim <= inicio) {
-              Swal.fire({ icon: 'error', title: 'Horário inválido!' });
-              return;
+          confirmButtonText: 'Salvar',
+          denyButtonText: 'Excluir'
+        }).then(result => {
+          if (result.isConfirmed) {
+            const inicio = document.getElementById('editInicio').value;
+            const fim = document.getElementById('editFim').value;
+            if (inicio && fim && fim > inicio) {
+              bloco.inicio = inicio;
+              bloco.fim = fim;
+              salvarCronogramaNovo();
+              renderCronogramaNovo();
             }
-            b.inicio = inicio;
-            b.fim = fim;
+          } else if (result.isDenied) {
+            cronogramaNovo = cronogramaNovo.filter(b => b.id !== bloco.id);
             salvarCronogramaNovo();
             renderCronogramaNovo();
-          } else if (res.isDenied) {
-            cronogramaNovo = cronogramaNovo.filter(c => c.id !== b.id);
-            salvarCronogramaNovo();
-            renderCronogramaNovo();
+            renderizarResumoHoje();
           }
         });
       });
+      
       dropArea.appendChild(div);
     });
   });
 }
 
-// ---------- DROP ----------
+// ===== DROP (NOVO) =====
 function drop(ev) {
   ev.preventDefault();
-  const id = ev.dataTransfer.getData("id");
-  const materia = materias.find(m => m.id == id);
-  const dia = ev.currentTarget.closest('.dia').id;
-  if (!materia) return;
+  
+  const materiaId = ev.dataTransfer.getData("text/plain");
+  const materia = materias.find(m => m.id === materiaId);
+  const dia = ev.target.closest('.dia')?.id;
+  
+  if (!materia || !dia) return;
+  
   Swal.fire({
     title: `Horário de ${materia.nome}`,
     html: `
-      <input type="time" id="inicio" class="swal2-input">
-      <input type="time" id="fim" class="swal2-input">
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <div>
+          <label>Início</label>
+          <input type="time" id="inicio" class="swal2-input" value="08:00">
+        </div>
+        <div>
+          <label>Fim</label>
+          <input type="time" id="fim" class="swal2-input" value="09:00">
+        </div>
+      </div>
     `,
-    confirmButtonText: "Salvar",
+    confirmButtonText: 'Salvar',
+    showCancelButton: true,
     preConfirm: () => {
       const inicio = document.getElementById("inicio").value;
       const fim = document.getElementById("fim").value;
+      
       if (!inicio || !fim || fim <= inicio) {
-        Swal.showValidationMessage("Preencha horários válidos!");
+        Swal.showValidationMessage("Horário inválido!");
         return false;
       }
+      
       return { inicio, fim };
     }
   }).then(result => {
-    if (!result.isConfirmed) return;
-    const inicio = result.value.inicio;
-    const fim = result.value.fim;
-    // 🚨 VERIFICAR CONFLITO DE HORÁRIO
-    const conflito = cronogramaNovo.some(b =>
-      b.dia === dia &&
-      (
-        (inicio >= b.inicio && inicio < b.fim) ||
-        (fim > b.inicio && fim <= b.fim) ||
-        (inicio <= b.inicio && fim >= b.fim)
-      )
-    );
-    if (conflito) {
-      Swal.fire({
-        icon: "error",
-        title: "Horário ocupado!",
-        text: "Já existe uma matéria nesse horário."
+    if (result.isConfirmed) {
+      cronogramaNovo.push({
+        id: Date.now(),
+        materia: materia,
+        dia: dia,
+        inicio: result.value.inicio,
+        fim: result.value.fim
       });
-      return;
+      
+      salvarCronogramaNovo();
+      renderCronogramaNovo();
+      renderizarResumoHoje();
+      atualizarMateriaAgora();
     }
-    const bloco = {
-      id: Date.now(),
-      materia,
-      dia,
-      inicio,
-      fim
-    };
-    cronogramaNovo.push(bloco);
-    salvarCronogramaNovo();
-    renderCronogramaNovo();
-    renderizarResumoHoje();
-    atualizarMateriaAgora();
-
   });
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const cronogramaItens = document.querySelectorAll(".bloco-materia");
@@ -1764,19 +1819,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function adicionarMateria() {
-  const nome = document.getElementById("novaMateriaNome").value.trim();
-  const cor = document.getElementById("novaMateriaCor").value;
-  if (!nome) return Swal.fire({ icon: 'error', title: 'Digite o nome da matéria!' });
-  const novaMateria = {
-    id: Date.now().toString(),
-    nome,
-    cor
-  };
-  materias.push(novaMateria);
-  salvarMaterias();
-  renderMaterias();
-} function atualizarMateriaAgora() {
+ function atualizarMateriaAgora() {
   const el = document.getElementById("materiaAgoraInicio");
   if (!el) return;
 
@@ -3408,38 +3451,93 @@ window.addEventListener('resize', function () {
   }
 });
 
-/* ================= ESTATÍSTICAS ================= */
+/* ==================== ESTATÍSTICAS (VERSÃO CORRIGIDA) ==================== */
 
-// Variável para controlar o gráfico atual
 let graficoPrincipalAtual = null;
+let graficoMateriasAtual = null;
 let periodoAtual = "semana";
+let estatisticasAtualizando = false;
 
-// Calcular estudo de hoje
-function calcularEstudoHoje() {
-  const hoje = new Date().toISOString().split('T')[0];
+// ==================== CALCULAR TOTAIS (UNIFICADO) ====================
+function calcularTotais() {
   let totalSegundos = 0;
-
+  const diasEstudados = new Set();
+  
   Object.values(tempoEstudo).forEach(materia => {
-    if (materia.historico && materia.historico[hoje]) {
-      totalSegundos += materia.historico[hoje];
+    if (typeof materia === 'number') {
+      totalSegundos += materia;
+      // Assume que estudou hoje se tem tempo registrado
+      diasEstudados.add(new Date().toISOString().split('T')[0]);
+    } else if (materia && materia.historico) {
+      Object.entries(materia.historico).forEach(([data, segundos]) => {
+        if (segundos > 0) {
+          totalSegundos += segundos;
+          diasEstudados.add(data);
+        }
+      });
+    } else if (materia && materia.total) {
+      totalSegundos += materia.total;
     }
   });
 
-  return totalSegundos / 3600;
+  const totalHoras = totalSegundos / 3600;
+  const dias = diasEstudados.size;
+  const maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
+  const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
+
+  return { 
+    totalHoras: totalHoras || 0, 
+    dias: dias || 0, 
+    maiorStreak: maiorStreak || 0, 
+    mediaDiaria: mediaDiaria || 0 
+  };
 }
 
-// Calcular estudo semanal (últimos 7 dias)
-function calcularEstudoSemanal() {
+// ==================== CALCULAR HORAS POR MATÉRIA ====================
+function calcularHorasPorMateria() {
+  const materiasEstudo = [];
+  
+  if (!materias || materias.length === 0) {
+    return materiasEstudo;
+  }
+
+  materias.forEach(m => {
+    const dados = tempoEstudo[m.id];
+    let totalSegundos = 0;
+    
+    if (dados) {
+      if (typeof dados === 'number') {
+        totalSegundos = dados;
+      } else if (dados.total) {
+        totalSegundos = dados.total;
+      }
+    }
+    
+    // Só inclui matérias com tempo > 0
+    if (totalSegundos > 0) {
+      materiasEstudo.push({ 
+        nome: m.nome, 
+        horas: totalSegundos / 3600,
+        cor: m.cor || '#9f042c'
+      });
+    }
+  });
+
+  return materiasEstudo.sort((a, b) => b.horas - a.horas);
+}
+
+// ==================== CALCULAR ESTUDO POR PERÍODO ====================
+function calcularEstudoPeriodo(dias) {
   const hoje = new Date();
   let totalSegundos = 0;
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < dias; i++) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
 
     Object.values(tempoEstudo).forEach(materia => {
-      if (materia.historico && materia.historico[dataStr]) {
+      if (materia && materia.historico && materia.historico[dataStr]) {
         totalSegundos += materia.historico[dataStr];
       }
     });
@@ -3448,37 +3546,21 @@ function calcularEstudoSemanal() {
   return totalSegundos / 3600;
 }
 
-// Calcular estudo mensal (últimos 30 dias)
-function calcularEstudoMensal() {
-  const hoje = new Date();
-  let totalSegundos = 0;
-
-  for (let i = 0; i < 30; i++) {
-    const data = new Date();
-    data.setDate(hoje.getDate() - i);
-    const dataStr = data.toISOString().split('T')[0];
-
-    Object.values(tempoEstudo).forEach(materia => {
-      if (materia.historico && materia.historico[dataStr]) {
-        totalSegundos += materia.historico[dataStr];
-      }
-    });
-  }
-
-  return totalSegundos / 3600;
-}
-
-// Dados para gráfico por dia da semana
+// ==================== DADOS PARA GRÁFICOS ====================
 function getDadosPorDiaSemana() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const horasPorDia = [0, 0, 0, 0, 0, 0, 0];
 
   Object.values(tempoEstudo).forEach(materia => {
-    if (materia.historico) {
+    if (materia && materia.historico) {
       Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
-        const data = new Date(dataStr);
-        const diaSemana = data.getDay();
-        horasPorDia[diaSemana] += segundos / 3600;
+        if (segundos > 0) {
+          const data = new Date(dataStr + 'T12:00:00'); // Evita problema de fuso
+          if (!isNaN(data.getTime())) {
+            const diaSemana = data.getDay();
+            horasPorDia[diaSemana] += segundos / 3600;
+          }
+        }
       });
     }
   });
@@ -3486,23 +3568,25 @@ function getDadosPorDiaSemana() {
   return { labels: diasSemana, dados: horasPorDia };
 }
 
-// Dados para gráfico de hoje (por matéria)
 function getDadosEstudoHoje() {
   const hoje = new Date().toISOString().split('T')[0];
   const dadosPorMateria = [];
 
+  if (!materias || materias.length === 0) {
+    return { labels: ['Sem dados'], dados: [0] };
+  }
+
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let segundos = 0;
+    
     if (dados && dados.historico && dados.historico[hoje]) {
       segundos = dados.historico[hoje];
     }
-    if (segundos > 0) {
-      dadosPorMateria.push({ nome: m.nome, horas: segundos / 3600 });
-    }
+    
+    // Inclui todas as matérias, mesmo com 0 horas
+    dadosPorMateria.push({ nome: m.nome, horas: segundos / 3600 });
   });
-
-  dadosPorMateria.sort((a, b) => b.horas - a.horas);
 
   return {
     labels: dadosPorMateria.map(d => d.nome),
@@ -3510,7 +3594,6 @@ function getDadosEstudoHoje() {
   };
 }
 
-// Dados para gráfico semanal (últimos 7 dias)
 function getDadosEstudoSemanal() {
   const hoje = new Date();
   const labels = [];
@@ -3525,7 +3608,7 @@ function getDadosEstudoSemanal() {
 
     let total = 0;
     Object.values(tempoEstudo).forEach(materia => {
-      if (materia.historico && materia.historico[dataStr]) {
+      if (materia && materia.historico && materia.historico[dataStr]) {
         total += materia.historico[dataStr];
       }
     });
@@ -3535,319 +3618,757 @@ function getDadosEstudoSemanal() {
   return { labels, dados };
 }
 
-// Dados para gráfico mensal (últimos 30 dias)
 function getDadosEstudoMensal() {
   const hoje = new Date();
   const labels = [];
   const dados = [];
+  
+  // Mostrar a cada 2 dias para não ficar muito poluído
+  const step = 1; // Pode ajustar para 2 se quiser menos barras
 
-  for (let i = 29; i >= 0; i--) {
+  for (let i = 29; i >= 0; i -= step) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
     labels.push(`${data.getDate()}/${data.getMonth() + 1}`);
 
     let total = 0;
-    Object.values(tempoEstudo).forEach(materia => {
-      if (materia.historico && materia.historico[dataStr]) {
-        total += materia.historico[dataStr];
-      }
-    });
-    dados.push(total / 3600);
+    // Para steps > 1, calcula a média do período
+    for (let j = 0; j < step; j++) {
+      const dataInterna = new Date(data);
+      dataInterna.setDate(data.getDate() - j);
+      const dataInternaStr = dataInterna.toISOString().split('T')[0];
+      
+      Object.values(tempoEstudo).forEach(materia => {
+        if (materia && materia.historico && materia.historico[dataInternaStr]) {
+          total += materia.historico[dataInternaStr];
+        }
+      });
+    }
+    dados.push((total / 3600) / step); // Média do período
   }
 
   return { labels, dados };
 }
 
-// Atualizar gráfico principal conforme período
+// ==================== ATUALIZAR GRÁFICO PRINCIPAL ====================
 function atualizarGraficoPrincipal() {
+  const ctx = document.getElementById('graficoPrincipal');
+  if (!ctx) {
+    console.warn('Canvas do gráfico principal não encontrado');
+    return;
+  }
+
   let dados, titulo;
 
-  if (periodoAtual === "semana") {
-    dados = getDadosPorDiaSemana();
-    titulo = "📅 Estudos por Dia da Semana";
-  } else if (periodoAtual === "hoje") {
-    dados = getDadosEstudoHoje();
-    titulo = "📆 Estudo de Hoje (por matéria)";
-  } else if (periodoAtual === "semanal") {
-    dados = getDadosEstudoSemanal();
-    titulo = "📊 Estudo Semanal (últimos 7 dias)";
-  } else {
-    dados = getDadosEstudoMensal();
-    titulo = "📈 Estudo Mensal (últimos 30 dias)";
-  }
-
-  document.getElementById("graficoTitulo").textContent = titulo;
-
-  const ctx = document.getElementById('graficoPrincipal').getContext('2d');
-  if (graficoPrincipalAtual) graficoPrincipalAtual.destroy();
-
-  graficoPrincipalAtual = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: dados.labels,
-      datasets: [{
-        label: 'Horas Estudadas',
-        data: dados.dados,
-        backgroundColor: '#9f042c',
-        borderRadius: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: { legend: { position: 'top' } }
+  try {
+    switch (periodoAtual) {
+      case "semana":
+        dados = getDadosPorDiaSemana();
+        titulo = "Estudos por Dia da Semana";
+        break;
+      case "hoje":
+        dados = getDadosEstudoHoje();
+        titulo = "Estudo de Hoje (por matéria)";
+        break;
+      case "semanal":
+        dados = getDadosEstudoSemanal();
+        titulo = "Estudo Semanal (últimos 7 dias)";
+        break;
+      case "mensal":
+        dados = getDadosEstudoMensal();
+        titulo = "Estudo Mensal (últimos 30 dias)";
+        break;
+      default:
+        dados = getDadosPorDiaSemana();
+        titulo = "Estudos por Dia da Semana";
     }
-  });
-}
 
-// Atualizar todas as metas
-function atualizarMetas() {
-  const totalHoje = calcularEstudoHoje();
-  const totalSemana = calcularEstudoSemanal();
-  const totalMes = calcularHorasEstudadas("mensal");
+    const tituloEl = document.getElementById("graficoTitulo");
+    if (tituloEl) tituloEl.textContent = titulo;
 
-  // Meta Diaria
-  const metaDiaria = metas.diaria;
-  const progressoDiario = Math.min((totalHoje / metaDiaria) * 100, 100);
-  document.getElementById("barraMetaDiaria").style.width = `${progressoDiario}%`;
-  document.getElementById("metaDiariaTexto").textContent = formatarMeta(metaDiaria);
-  document.getElementById("metaDiariaRestante").textContent = `${totalHoje.toFixed(1)}h de ${formatarMeta(metaDiaria)}`;
-
-  // Meta Semanal
-  const metaSemanal = metas.semanal;
-  const progressoSemanal = Math.min((totalSemana / metaSemanal) * 100, 100);
-  document.getElementById("barraMetaSemanal").style.width = `${progressoSemanal}%`;
-  document.getElementById("metaSemanalTexto").textContent = formatarMeta(metaSemanal);
-  document.getElementById("metaSemanalRestante").textContent = `${totalSemana.toFixed(1)}h de ${formatarMeta(metaSemanal)}`;
-
-  // Meta Mensal
-  const metaMensal = metas.mensal;
-  const progressoMensal = Math.min((totalMes / metaMensal) * 100, 100);
-  document.getElementById("barraMetaMensal").style.width = `${progressoMensal}%`;
-  document.getElementById("metaMensalTexto").textContent = formatarMeta(metaMensal);
-  document.getElementById("metaMensalRestante").textContent = `${totalMes.toFixed(1)}h de ${formatarMeta(metaMensal)}`;
-}
-
-// Atualizar conquistas separadas
-function atualizarConquistasSeparadas() {
-  const totalHoras = calcularTotais().totalHoras;
-  const streak = parseInt(localStorage.getItem("streak")) || 0;
-  const qtdMaterias = materias.length;
-
-  const conquistas = [
-    { id: "primeiro-estudo", nome: "⭐ Primeiro Estudo", condicao: totalHoras > 0 },
-    { id: "7-dias", nome: "🔥 7 Dias Seguidos", condicao: streak >= 7 },
-    { id: "30-dias", nome: "🏆 30 Dias Seguidos", condicao: streak >= 30 },
-    { id: "10-horas", nome: "⏱️ 10 Horas Totais", condicao: totalHoras >= 10 },
-    { id: "50-horas", nome: "⚡ 50 Horas Totais", condicao: totalHoras >= 50 },
-    { id: "100-horas", nome: "💪 100 Horas Totais", condicao: totalHoras >= 100 },
-    { id: "5-materias", nome: "📚 5 Matérias", condicao: qtdMaterias >= 5 }
-  ];
-
-  const desbloqueadas = conquistas.filter(c => c.condicao);
-  const bloqueadas = conquistas.filter(c => !c.condicao);
-
-  const containerDesbloq = document.getElementById("conquistasDesbloqueadas");
-  const containerBloq = document.getElementById("conquistasBloqueadas");
-
-  if (desbloqueadas.length > 0) {
-    containerDesbloq.innerHTML = desbloqueadas.map(c => `
-      <div class="badge desbloqueado">
-        <i class="bi bi-check-circle-fill"></i> ${c.nome}
-      </div>
-    `).join('');
-  } else {
-    containerDesbloq.innerHTML = '<p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>';
-  }
-
-  if (bloqueadas.length > 0) {
-    containerBloq.innerHTML = bloqueadas.map(c => `
-      <div class="badge">
-        <i class="bi bi-lock-fill"></i> ${c.nome}
-      </div>
-    `).join('');
-  }
-}
-
-/* ================= CALCULAR TOTAIS ================= */
-function calcularTotais() {
-  let totalSegundos = 0;
-  let diasEstudados = new Set();
-  let maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
-
-  Object.values(tempoEstudo).forEach(materia => {
-    if (typeof materia === 'number') {
-      totalSegundos += materia;
-    } else if (materia.historico) {
-      Object.entries(materia.historico).forEach(([data, segundos]) => {
-        totalSegundos += segundos;
-        diasEstudados.add(data);
-      });
-    } else if (materia.total) {
-      totalSegundos += materia.total;
+    // Destruir gráfico anterior se existir
+    if (graficoPrincipalAtual) {
+      graficoPrincipalAtual.destroy();
+      graficoPrincipalAtual = null;
     }
-  });
 
-  const totalHoras = totalSegundos / 3600;
-  const dias = diasEstudados.size;
-  const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
+    // Verificar se há dados
+    const temDados = dados.dados.some(v => v > 0);
 
-  return { totalHoras, dias, maiorStreak, mediaDiaria };
-}
-
-/* ================= CALCULAR HORAS POR MATÉRIA ================= */
-function calcularHorasPorMateria() {
-  const materiasEstudo = [];
-
-  materias.forEach(m => {
-    const dados = tempoEstudo[m.id];
-    let tempo = 0;
-    if (dados) {
-      if (typeof dados === 'number') {
-        tempo = dados;
-      } else {
-        tempo = dados.total || 0;
-      }
-    }
-    if (tempo > 0) {
-      materiasEstudo.push({ nome: m.nome, horas: tempo / 3600 });
-    }
-  });
-
-  materiasEstudo.sort((a, b) => b.horas - a.horas);
-  return materiasEstudo.slice(0, 5);
-}
-
-// Função principal
-function carregarEstatisticas() {
-  // Totais
-  const { totalHoras, dias, maiorStreak, mediaDiaria } = calcularTotais();
-  document.getElementById("totalGeralEstat").textContent = `${totalHoras.toFixed(1)}h`;
-  document.getElementById("diasEstudadosEstat").textContent = dias;
-  document.getElementById("maiorStreakEstat").textContent = maiorStreak;
-  document.getElementById("mediaDiariaEstat").textContent = `${mediaDiaria.toFixed(1)}h`;
-
-  // Gráfico de matérias (top 5)
-  // Gráfico de matérias (barras horizontais)
-  const materiasTop = calcularHorasPorMateria();
-  const ctxMaterias = document.getElementById('graficoMaterias').getContext('2d');
-
-  // Destruir gráfico anterior se existir
-  if (window.graficoMateriasAtual) {
-    window.graficoMateriasAtual.destroy();
-  }
-
-  window.graficoMateriasAtual = new Chart(ctxMaterias, {
-    type: 'bar',
-    data: {
-      labels: materiasTop.map(m => m.nome),
-      datasets: [{
-        label: 'Horas Estudadas',
-        data: materiasTop.map(m => m.horas),
-        backgroundColor: '#9f042c',
-        borderRadius: 8,
-        barPercentage: 0.6,
-        categoryPercentage: 0.8
-      }]
-    },
-    options: {
-      indexAxis: 'y', // 👈 ISSO FAZ O GRÁFICO FICAR HORIZONTAL
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: { font: { size: 11 } }
+    graficoPrincipalAtual = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: dados.labels,
+        datasets: [{
+          label: 'Horas Estudadas',
+          data: dados.dados,
+          backgroundColor: dados.dados.map(v => v > 0 ? '#9f042c' : '#e5e7eb'),
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            display: true,
+            position: 'top',
+            labels: {
+              font: { size: 12 }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.raw.toFixed(2)} horas`;
+              }
+            }
+          }
         },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              return `${context.raw.toFixed(1)} horas`;
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Horas'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toFixed(1) + 'h';
+              }
             }
           }
         }
-      },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: 'Horas',
-            font: { size: 11 }
-          },
-          grid: { color: '#e5e7eb' }
+      }
+    });
+
+    if (!temDados) {
+      console.log('Sem dados para o período:', periodoAtual);
+    }
+
+  } catch (error) {
+    console.error('Erro ao atualizar gráfico principal:', error);
+  }
+}
+
+// ==================== ATUALIZAR GRÁFICO DE MATÉRIAS (PIZZA) ====================
+function atualizarGraficoMaterias() {
+  const ctx = document.getElementById('graficoMaterias');
+  if (!ctx) {
+    console.warn('Canvas do gráfico de matérias não encontrado');
+    return;
+  }
+
+  try {
+    const materiasTop = calcularHorasPorMateria();
+
+    // Destruir gráfico anterior se existir
+    if (graficoMateriasAtual) {
+      graficoMateriasAtual.destroy();
+      graficoMateriasAtual = null;
+    }
+
+    // Se não houver matérias com tempo, mostrar gráfico vazio com mensagem
+    if (materiasTop.length === 0) {
+      graficoMateriasAtual = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Sem dados'],
+          datasets: [{
+            data: [1],
+            backgroundColor: ['#e5e7eb'],
+            borderColor: ['#d1d5db'],
+            borderWidth: 2
+          }]
         },
-        y: {
-          ticks: {
-            font: { size: 11 }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return 'Nenhum estudo registrado';
+                }
+              }
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    // Cores vibrantes para o gráfico
+    const cores = [
+      '#9f042c', // Vermelho principal
+      '#ff6b6b', // Vermelho claro
+      '#4ecdc4', // Turquesa
+      '#45b7d1', // Azul
+      '#96ceb4', // Verde
+      '#ffeaa7', // Amarelo
+      '#dfe6e9', // Cinza claro
+      '#6c5ce7', // Roxo
+      '#a29bfe', // Lilás
+      '#fd79a8', // Rosa
+      '#00b894', // Verde escuro
+      '#fdcb6e', // Laranja
+      '#e17055', // Coral
+      '#74b9ff', // Azul claro
+      '#55efc4'  // Verde menta
+    ];
+
+    // Preparar dados
+    const labels = materiasTop.map(m => m.nome);
+    const dados = materiasTop.map(m => m.horas);
+    const coresUsar = materiasTop.map((_, i) => cores[i % cores.length]);
+
+    // Calcular total para porcentagens
+    const totalHoras = dados.reduce((a, b) => a + b, 0);
+
+    graficoMateriasAtual = new Chart(ctx, {
+      type: 'doughnut', // ou 'pie' se preferir pizza tradicional
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dados,
+          backgroundColor: coresUsar,
+          borderColor: '#ffffff',
+          borderWidth: 3,
+          hoverBorderWidth: 4,
+          hoverBorderColor: '#f8f9fa'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%', // Tamanho do buraco no meio (60% = doughnut, 0% = pizza)
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              pointStyleWidth: 12,
+              font: {
+                size: 11,
+                family: "'Poppins', sans-serif"
+              },
+              generateLabels: function(chart) {
+                const data = chart.data;
+                return data.labels.map((label, i) => ({
+                  text: `${label} (${((data.datasets[0].data[i] / totalHoras) * 100).toFixed(1)}%)`,
+                  fillStyle: data.datasets[0].backgroundColor[i],
+                  strokeStyle: data.datasets[0].borderColor,
+                  lineWidth: 2,
+                  hidden: false,
+                  index: i,
+                  pointStyle: 'circle',
+                  rotation: 0
+                }));
+              }
+            }
           },
-          grid: { display: false }
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: {
+              size: 13,
+              family: "'Poppins', sans-serif"
+            },
+            bodyFont: {
+              size: 12,
+              family: "'Poppins', sans-serif"
+            },
+            callbacks: {
+              title: function(context) {
+                return context[0].label;
+              },
+              label: function(context) {
+                const horas = context.raw;
+                const porcentagem = ((horas / totalHoras) * 100).toFixed(1);
+                const h = Math.floor(horas);
+                const m = Math.round((horas - h) * 60);
+                
+                let tempoFormatado;
+                if (h === 0 && m === 0) tempoFormatado = '0min';
+                else if (h === 0) tempoFormatado = `${m}min`;
+                else if (m === 0) tempoFormatado = `${h}h`;
+                else tempoFormatado = `${h}h ${m}min`;
+                
+                return [
+                  `⏱️ ${tempoFormatado}`,
+                  `📊 ${porcentagem}% do total`
+                ];
+              }
+            }
+          }
+        },
+        // Animação
+        animation: {
+          animateScale: true,
+          animateRotate: true,
+          duration: 1000
+        }
+      },
+      // Plugin para texto no centro
+      plugins: [{
+        id: 'centerText',
+        afterDraw: function(chart) {
+          const { ctx, chartArea: { top, bottom, left, right } } = chart;
+          const centerX = (left + right) / 2;
+          const centerY = (top + bottom) / 2;
+
+          ctx.save();
+          ctx.font = "bold 14px 'Poppins', sans-serif";
+          ctx.fillStyle = '#6b7280';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Texto principal
+          ctx.fillText('Total', centerX, centerY - 10);
+          
+          // Total de horas
+          ctx.font = "bold 18px 'Poppins', sans-serif";
+          ctx.fillStyle = '#1f2937';
+          const totalFormatado = totalHoras.toFixed(1) + 'h';
+          ctx.fillText(totalFormatado, centerX, centerY + 15);
+          
+          ctx.restore();
+        }
+      }]
+    });
+
+  } catch (error) {
+    console.error('Erro ao atualizar gráfico de matérias:', error);
+  }
+}
+
+// ==================== ATUALIZAR METAS ====================
+function atualizarMetas() {
+  try {
+    const hoje = new Date().toISOString().split('T')[0];
+    
+    // Calcular horas estudadas hoje
+    let totalHoje = 0;
+    Object.values(tempoEstudo).forEach(materia => {
+      if (materia && materia.historico && materia.historico[hoje]) {
+        totalHoje += materia.historico[hoje];
+      }
+    });
+    totalHoje = totalHoje / 3600;
+
+    // Calcular horas na semana (últimos 7 dias)
+    let totalSemana = 0;
+    for (let i = 0; i < 7; i++) {
+      const data = new Date();
+      data.setDate(data.getDate() - i);
+      const dataStr = data.toISOString().split('T')[0];
+      
+      Object.values(tempoEstudo).forEach(materia => {
+        if (materia && materia.historico && materia.historico[dataStr]) {
+          totalSemana += materia.historico[dataStr];
+        }
+      });
+    }
+    totalSemana = totalSemana / 3600;
+
+    // Calcular horas no mês (últimos 30 dias)
+    let totalMes = 0;
+    for (let i = 0; i < 30; i++) {
+      const data = new Date();
+      data.setDate(data.getDate() - i);
+      const dataStr = data.toISOString().split('T')[0];
+      
+      Object.values(tempoEstudo).forEach(materia => {
+        if (materia && materia.historico && materia.historico[dataStr]) {
+          totalMes += materia.historico[dataStr];
+        }
+      });
+    }
+    totalMes = totalMes / 3600;
+
+    // Atualizar barras de progresso
+    const metaDiaria = metas.diaria || 0.5;
+    const metaSemanal = metas.semanal || 3.5;
+    const metaMensal = metas.mensal || 14;
+
+    // Meta Diária
+    atualizarBarraMeta('barraMetaDiaria', 'metaDiariaRestante', totalHoje, metaDiaria);
+    
+    // Meta Semanal
+    atualizarBarraMeta('barraMetaSemanal', 'metaSemanalRestante', totalSemana, metaSemanal);
+    
+    // Meta Mensal
+    atualizarBarraMeta('barraMetaMensal', 'metaMensalRestante', totalMes, metaMensal);
+
+  } catch (error) {
+    console.error('Erro ao atualizar metas:', error);
+  }
+}
+
+function atualizarBarraMeta(barraId, textoId, atual, meta) {
+  const barra = document.getElementById(barraId);
+  const texto = document.getElementById(textoId);
+  
+  if (!barra || !texto) return;
+  
+  const progresso = meta > 0 ? Math.min((atual / meta) * 100, 100) : 0;
+  
+  barra.style.width = `${progresso}%`;
+  
+  // Mudar cor baseado no progresso
+  barra.classList.remove('baixa', 'media', 'alta');
+  if (progresso >= 100) {
+    barra.classList.add('alta');
+  } else if (progresso >= 50) {
+    barra.classList.add('media');
+  } else {
+    barra.classList.add('baixa');
+  }
+  
+  const faltam = Math.max(meta - atual, 0);
+  texto.textContent = `${atual.toFixed(1)}h de ${formatarMeta(meta)}`;
+  
+  if (faltam <= 0) {
+    texto.innerHTML += ' <span style="color: #16a34a;">✅ Concluído!</span>';
+  }
+}
+
+// ==================== ATUALIZAR CONQUISTAS ====================
+function atualizarConquistas() {
+  try {
+    const { totalHoras } = calcularTotais();
+    const streak = parseInt(localStorage.getItem("streak")) || 0;
+    const qtdMaterias = materias ? materias.length : 0;
+    const conquistas = [
+  { 
+    id: "primeiro-estudo", 
+    nome: "Primeiro Estudo", 
+    icone: "bi-star-fill", 
+    condicao: totalHoras > 0,
+    cor: "#f59e0b" // Amarelo
+  },
+  { 
+    id: "7-dias", 
+    nome: "7 Dias Seguidos", 
+    icone: "bi-fire", 
+    condicao: streak >= 7,
+    cor: "#ef4444" // Vermelho
+  },
+  { 
+    id: "30-dias", 
+    nome: "30 Dias Seguidos", 
+    icone: "bi-trophy-fill", 
+    condicao: streak >= 30,
+    cor: "#f59e0b" // Dourado
+  },
+  { 
+    id: "10-horas", 
+    nome: "10 Horas Totais", 
+    icone: "bi-hourglass-split", 
+    condicao: totalHoras >= 10,
+    cor: "#3b82f6" // Azul
+  },
+  { 
+    id: "50-horas", 
+    nome: "50 Horas Totais", 
+    icone: "bi-lightning-charge-fill", 
+    condicao: totalHoras >= 50,
+    cor: "#8b5cf6" // Roxo
+  },
+  { 
+    id: "100-horas", 
+    nome: "100 Horas Totais", 
+    icone: "bi-rocket-takeoff-fill", 
+    condicao: totalHoras >= 100,
+    cor: "#ec4899" // Rosa
+  },
+  { 
+    id: "5-materias", 
+    nome: "5 Matérias", 
+    icone: "bi-book-fill", 
+    condicao: qtdMaterias >= 5,
+    cor: "#10b981" // Verde
+  },
+  { 
+    id: "10-materias", 
+    nome: "10 Matérias", 
+    icone: "bi-journal-bookmark-fill", 
+    condicao: qtdMaterias >= 10,
+    cor: "#06b6d4" // Ciano
+  }
+    ];
+
+    const desbloqueadas = conquistas.filter(c => c.condicao);
+    const bloqueadas = conquistas.filter(c => !c.condicao);
+
+    const containerDesbloq = document.getElementById("conquistasDesbloqueadas");
+    const containerBloq = document.getElementById("conquistasBloqueadas");
+
+    if (containerDesbloq) {
+      if (desbloqueadas.length > 0) {
+        containerDesbloq.innerHTML = desbloqueadas.map(c => `
+          <div class="badge desbloqueado" title="${c.nome}">
+            <i class="bi ${c.icone}"></i> ${c.nome}
+          </div>
+        `).join('');
+      } else {
+        containerDesbloq.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Nenhuma conquista ainda. Continue estudando!</p>';
+      }
+    }
+
+    if (containerBloq) {
+      if (bloqueadas.length > 0) {
+        containerBloq.innerHTML = bloqueadas.map(c => `
+          <div class="badge" title="Ainda não desbloqueada">
+            <i class="bi bi-lock-fill"></i> ${c.nome}
+          </div>
+        `).join('');
+      } else {
+        containerBloq.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Todas as conquistas desbloqueadas! 🎉</p>';
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar conquistas:', error);
+  }
+}
+
+// ==================== GERAR SUGESTÕES ====================
+function gerarSugestoes() {
+  const sugestoesLista = document.getElementById("sugestoes");
+  if (!sugestoesLista) return;
+
+  try {
+    const { totalHoras, dias, maiorStreak } = calcularTotais();
+    const streak = parseInt(localStorage.getItem("streak")) || 0;
+    const materiasTop = calcularHorasPorMateria();
+
+    const sugestoes = [];
+
+    // Sugestões baseadas no progresso
+    if (totalHoras === 0) {
+      sugestoes.push("Comece seus estudos! Vá para o Relógio e clique em ▶ ao lado de uma matéria.");
+      sugestoes.push("Monte seu cronograma semanal para organizar os estudos.");
+    } else {
+      if (streak === 0 && totalHoras > 0) {
+        sugestoes.push("Estude hoje para começar um streak de dias consecutivos!");
+      }
+      
+      if (streak > 0 && streak < 7) {
+        const faltam = 7 - streak;
+        sugestoes.push(`Você está com ${streak} dia(s) de streak! Faltam ${faltam} para a conquista "7 Dias"!`);
+      } else if (streak >= 7 && streak < 30) {
+        const faltam = 30 - streak;
+        sugestoes.push(`Streak de ${streak} dias! Continue para alcançar 30 dias!`);
+      }
+
+      if (materiasTop.length > 0) {
+        const maisEstudada = materiasTop[0];
+        sugestoes.push(`Sua matéria mais estudada é "${maisEstudada.nome}" com ${maisEstudada.horas.toFixed(1)}h.`);
+        
+        // Matéria menos estudada (se houver mais de uma)
+        if (materiasTop.length > 1) {
+          const menosEstudada = materiasTop[materiasTop.length - 1];
+          sugestoes.push(`Que tal dar mais atenção para "${menosEstudada.nome}"?`);
+        }
+      }
+
+      if (dias > 0) {
+        const media = totalHoras / dias;
+        if (media < 0.5) {
+          sugestoes.push(`Sua média é de ${media.toFixed(1)}h/dia. Tente aumentar para 1h por dia!`);
+        } else if (media >= 2) {
+          sugestoes.push(`Excelente! Sua média de ${media.toFixed(1)}h/dia está ótima!`);
         }
       }
     }
-  });
 
-  // Configurar seletor de período
-  document.querySelectorAll('.periodo-btn').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      periodoAtual = btn.dataset.periodo;
-      atualizarGraficoPrincipal();
+    // Garantir pelo menos uma sugestão
+    if (sugestoes.length === 0) {
+      sugestoes.push("Continue com o ótimo trabalho! Consistência é a chave!");
+      sugestoes.push("Use a seção de Revisão para fixar o conteúdo com flashcards.");
+    }
+
+    sugestoesLista.innerHTML = sugestoes.map(s => 
+      `<li><i class="bi bi-lightbulb"></i> ${s}</li>`
+    ).join('');
+
+  } catch (error) {
+    console.error('Erro ao gerar sugestões:', error);
+    sugestoesLista.innerHTML = '<li>Carregando sugestões...</li>';
+  }
+}
+
+// ==================== EXPORTAR DADOS (CORRIGIDO) ====================
+function exportarDados() {
+  try {
+    const dados = {
+      versao: "1.0",
+      dataExportacao: new Date().toISOString(),
+      tarefas: tarefas || [],
+      notas: JSON.parse(localStorage.getItem("notas")) || [],
+      eventos: calendar ? calendar.getEvents().map(e => ({
+        title: e.title,
+        start: e.startStr,
+        backgroundColor: e.backgroundColor,
+        extendedProps: e.extendedProps
+      })) : [],
+      tempoEstudo: tempoEstudo || {},
+      metas: metas || {},
+      flashcards: JSON.parse(localStorage.getItem("flashcards_sistema")) || [],
+      cronograma: JSON.parse(localStorage.getItem("cronogramaNovo")) || [],
+      streak: parseInt(localStorage.getItem("streak")) || 0,
+      ultimoDiaEstudo: localStorage.getItem("ultimoDiaEstudo") || ""
     };
+
+    const dataStr = JSON.stringify(dados, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sectio_aurea_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Exportado!',
+      text: 'Backup salvo com sucesso!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Erro ao exportar:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Não foi possível exportar os dados.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }
+}
+
+// ==================== FUNÇÃO PRINCIPAL ====================
+function carregarEstatisticas() {
+  if (estatisticasAtualizando) {
+    console.log('Estatísticas já estão sendo atualizadas...');
+    return;
+  }
+
+  estatisticasAtualizando = true;
+
+  try {
+    // 1. Atualizar totais
+    const { totalHoras, dias, maiorStreak, mediaDiaria } = calcularTotais();
+    
+    const totalGeralEl = document.getElementById("totalGeralEstat");
+    const diasEstudadosEl = document.getElementById("diasEstudadosEstat");
+    const maiorStreakEl = document.getElementById("maiorStreakEstat");
+    const mediaDiariaEl = document.getElementById("mediaDiariaEstat");
+
+    if (totalGeralEl) totalGeralEl.textContent = `${totalHoras.toFixed(1)}h`;
+    if (diasEstudadosEl) diasEstudadosEl.textContent = dias;
+    if (maiorStreakEl) maiorStreakEl.textContent = maiorStreak;
+    if (mediaDiariaEl) mediaDiariaEl.textContent = `${mediaDiaria.toFixed(1)}h`;
+
+    // 2. Atualizar gráficos
+    atualizarGraficoPrincipal();
+    atualizarGraficoMaterias();
+
+    // 3. Atualizar metas
+    atualizarMetas();
+
+    // 4. Atualizar conquistas
+    atualizarConquistas();
+
+    // 5. Gerar sugestões
+    gerarSugestoes();
+
+    // 6. Resumo
+    const resumoEl = document.getElementById("resumoEstatisticas");
+    if (resumoEl) {
+      if (totalHoras > 0) {
+        resumoEl.innerHTML = `
+          <strong>${totalHoras.toFixed(1)} horas</strong> estudadas no total<br>
+          <strong>${dias} dias</strong> de estudo registrados<br>
+          Média de <strong>${mediaDiaria.toFixed(1)}h/dia</strong>
+        `;
+      } else {
+        resumoEl.innerHTML = 'Nenhum estudo registrado ainda. Comece agora!';
+      }
+    }
+
+    // 7. Configurar eventos dos botões de período
+    configurarBotoesPeriodo();
+
+  } catch (error) {
+    console.error('Erro ao carregar estatísticas:', error);
+  } finally {
+    estatisticasAtualizando = false;
+  }
+}
+
+// ==================== CONFIGURAR BOTÕES DE PERÍODO ====================
+function configurarBotoesPeriodo() {
+  document.querySelectorAll('.periodo-btn').forEach(btn => {
+    // Remove listeners antigos para não duplicar
+    const novoBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(novoBtn, btn);
+    
+    novoBtn.addEventListener('click', function() {
+      document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      periodoAtual = this.dataset.periodo;
+      atualizarGraficoPrincipal();
+    });
   });
 
-  // Atualizar gráfico inicial
-  atualizarGraficoPrincipal();
-
-  // Atualizar metas
-  atualizarMetas();
-
-  // Atualizar conquistas
-  atualizarConquistasSeparadas();
-
-  // Sugestões
-  gerarSugestoes();
-
-  // Resumo
-  const resumoEl = document.getElementById("resumoEstatisticas");
-  if (resumoEl) {
-    resumoEl.innerHTML = `📊 Você já estudou ${totalHoras.toFixed(1)} horas no total! ${dias > 0 ? `Isso dá uma média de ${mediaDiaria.toFixed(1)}h por dia.` : 'Comece hoje!'}`;
-  }
+  // Ativar o botão correto
+  document.querySelectorAll('.periodo-btn').forEach(btn => {
+    if (btn.dataset.periodo === periodoAtual) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
 }
 
-// Gerar sugestões personalizadas
-function gerarSugestoes() {
-  const { totalHoras, dias } = calcularTotais();
-  const streak = parseInt(localStorage.getItem("streak")) || 0;
-  const materiasEstudo = calcularHorasPorMateria();
+// ==================== INICIALIZAR ====================
+document.addEventListener('DOMContentLoaded', () => {
+  // Só carrega estatísticas quando a seção estiver visível
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.target.id === 'estatisticaSection' && 
+          mutation.target.style.display === 'block') {
+        setTimeout(carregarEstatisticas, 100);
+      }
+    });
+  });
 
-  const sugestoes = [];
-
-  if (totalHoras === 0) {
-    sugestoes.push("📚 Comece seus estudos! Clique em ▶ ao lado de uma matéria.");
-  }
-  if (streak === 0 && totalHoras > 0) {
-    sugestoes.push("🔥 Estude hoje para começar um streak de dias consecutivos!");
-  }
-  if (streak > 0 && streak < 7) {
-    sugestoes.push(`🔥 Você está com ${streak} dia(s) de streak! Mantenha por mais ${7 - streak} dias para ganhar a conquista "7 Dias"!`);
-  }
-  if (materiasEstudo.length === 0 && totalHoras === 0) {
-    sugestoes.push("➕ Adicione matérias no cronograma para começar a estudar!");
-  }
-  if (sugestoes.length === 0) {
-    sugestoes.push("🎉 Parabéns! Você está indo muito bem! Continue assim!");
+  const estatisticaSection = document.getElementById('estatisticaSection');
+  if (estatisticaSection) {
+    observer.observe(estatisticaSection, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
   }
 
-  const sugestoesLista = document.getElementById("sugestoes");
-  if (sugestoesLista) {
-    sugestoesLista.innerHTML = sugestoes.map(s => `<li><i class="bi bi-lightbulb"></i> ${s}</li>`).join('')
+  // Configurar botão de exportar
+  const btnExportar = document.querySelector('.btn-exportar');
+  if (btnExportar) {
+    btnExportar.addEventListener('click', exportarDados);
   }
-}
 
-
-
+  console.log('✅ Seção de Estatísticas inicializada');
+});
 /** ==================== REVISÃO INTELIGENTE ==================== */
 
 let flashcards = [];
@@ -4561,11 +5082,14 @@ if (typeof document !== 'undefined') {
 function exportarDados() {
   const dados = {
     tarefas: tarefas,
-    notas: notas,
-    eventos: calendar?.getEvents().map(e => ({ title: e.title, start: e.startStr })),
+    notas: JSON.parse(localStorage.getItem("notas")) || [],
+    eventos: calendar ? calendar.getEvents().map(e => ({
+      title: e.title,
+      start: e.startStr
+    })) : [],
     tempoEstudo: tempoEstudo,
     metas: metas,
-    flashcards: flashcards
+    flashcards: JSON.parse(localStorage.getItem("flashcards_sistema")) || []
   };
   const dataStr = JSON.stringify(dados, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });

@@ -658,10 +658,10 @@
 
     <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
     <div class="periodo-selector">
-      <button class="periodo-btn active" data-periodo="semana">📅 Por Dia da Semana</button>
-      <button class="periodo-btn" data-periodo="hoje">📆 Estudo de Hoje</button>
-      <button class="periodo-btn" data-periodo="semanal">📊 Estudo Semanal</button>
-      <button class="periodo-btn" data-periodo="mensal">📈 Estudo Mensal</button>
+      <button class="periodo-btn active" data-periodo="semana">Por Dia da Semana</button>
+      <button class="periodo-btn" data-periodo="hoje">Estudo de Hoje</button>
+      <button class="periodo-btn" data-periodo="semanal">Estudo Semanal</button>
+      <button class="periodo-btn" data-periodo="mensal">Estudo Mensal</button>
     </div>
 
     <!-- GRÁFICOS LADO A LADO -->
@@ -669,13 +669,13 @@
 
       <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
       <div class="grafico-card">
-        <h4 id="graficoTitulo">📅 Estudos por Dia da Semana</h4>
+        <h4 id="graficoTitulo">Estudos por Dia da Semana</h4>
         <canvas id="graficoPrincipal"></canvas>
       </div>
 
       <!-- TOP MATÉRIAS (fixo) -->
       <div class="grafico-card">
-        <h4>📚 Top Matérias</h4>
+        <h4>Top Matérias</h4>
         <canvas id="graficoMaterias"></canvas>
       </div>
 
@@ -683,10 +683,10 @@
 
     <!-- METAS (Diária, Semanal, Mensal) -->
     <div class="metas-container">
-      <h4>🎯 Minhas Metas</h4>
+      <h4>Minhas Metas</h4>
       <div class="meta-item">
         <div class="meta-header">
-          <span>📅 Meta Diária</span>
+          <span>Meta Diária</span>
           <span id="metaDiariaTexto">2h</span>
         </div>
         <div class="meta-progresso-container">
@@ -696,7 +696,7 @@
       </div>
       <div class="meta-item">
         <div class="meta-header">
-          <span>📆 Meta Semanal</span>
+          <span>Meta Semanal</span>
           <span id="metaSemanalTexto">14h</span>
         </div>
         <div class="meta-progresso-container">
@@ -706,7 +706,7 @@
       </div>
       <div class="meta-item">
         <div class="meta-header">
-          <span>📅 Meta Mensal</span>
+          <span>Meta Mensal</span>
           <span id="metaMensalTexto">60h</span>
         </div>
         <div class="meta-progresso-container">
@@ -730,21 +730,21 @@
       <div class="conquistas-grupo">
         <h5>🔒 A Desbloquear</h5>
         <div id="conquistasBloqueadas" class="badges-container">
-          <div class="badge">⭐ Primeiro Estudo</div>
-          <div class="badge">🔥 7 Dias Seguidos</div>
-          <div class="badge">🏆 30 Dias Seguidos</div>
-          <div class="badge">⏱️ 10 Horas Totais</div>
-          <div class="badge">⚡ 50 Horas Totais</div>
-          <div class="badge">💪 100 Horas Totais</div>
-          <div class="badge">📚 5 Matérias</div>
-          <div class="badge">🌙 Estudo Noturno</div>
+          <div class="badge"> Primeiro Estudo</div>
+          <div class="badge"> 7 Dias Seguidos</div>
+          <div class="badge"> 30 Dias Seguidos</div>
+          <div class="badge"> 10 Horas Totais</div>
+          <div class="badge"> 50 Horas Totais</div>
+          <div class="badge"> 100 Horas Totais</div>
+          <div class="badge"> 5 Matérias</div>
+          <div class="badge"> Estudo Noturno</div>
         </div>
       </div>
     </div>
 
     <!-- SUGESTÕES -->
     <div class="sugestoes-container">
-      <h4>🤖 Sugestões Personalizadas</h4>
+      <h4>Sugestões Personalizadas</h4>
       <ul id="sugestoes"></ul>
     </div>
 
@@ -776,12 +776,12 @@
       </div>
 
       <!-- BLOQUINHOS -->
-      <h4>📦 Matérias</h4>
+      <h4>Matérias</h4>
       <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
       <br>
-      <p class="drag-text">👉 Arraste a matéria para um dia da semana</p>
-      <p class="drag-text">
-        👉 Dica: <span>duplo clique no nome da matéria</span> para editar ou
+      <p class="drag-text"> Arraste a matéria para um dia da semana</p>
+      <p class="drag-text mb-5">
+        Dica: <span>duplo clique no nome da matéria</span> para editar ou
         <span>duplo clique no horário</span> para alterar.
       </p>
 
@@ -854,7 +854,7 @@
       <div class="aviso-conteudo">
         <i class="bi bi-calendar-exclamation"></i>
         <div>
-          <strong>📅 Prova se aproximando!</strong>
+          <strong>Prova se aproximando!</strong>
           <p id="textoAvisoProva"></p>
         </div>
         <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
@@ -864,19 +864,19 @@
     <!-- ESTATÍSTICAS FIXAS -->
     <div class="revisao-stats-fixas">
       <div class="stat-box">
-        <span>📅 Hoje</span>
+        <span>Hoje</span>
         <strong id="totalHoje">0</strong>
       </div>
       <div class="stat-box">
-        <span>⏰ Atrasadas</span>
+        <span>Atrasadas</span>
         <strong id="totalAtrasadas">0</strong>
       </div>
       <div class="stat-box">
-        <span>✅ Concluídas</span>
+        <span>Concluídas</span>
         <strong id="totalConcluidas">0</strong>
       </div>
       <div class="stat-box">
-        <span>🎯 Taxa Acerto</span>
+        <span>Taxa Acerto</span>
         <strong id="taxaAcertoGeral">0%</strong>
       </div>
     </div>
@@ -888,14 +888,14 @@
 
     <!-- ABAS -->
     <div class="revisao-abas">
-      <button class="aba-btn active" data-aba="meusCards">📚 Meus Cards</button>
-      <button class="aba-btn" data-aba="revisar">🧠 Revisar</button>
+      <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
+      <button class="aba-btn" data-aba="revisar"> Revisar</button>
     </div>
 
     <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
     <div class="revisao-filtro">
       <select id="filtroMateriaRevisao" class="filtro-materia-select">
-        <option value="todas">📚 Todas as matérias</option>
+        <option value="todas">Todas as matérias</option>
       </select>
     </div>
 
