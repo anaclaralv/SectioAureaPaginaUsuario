@@ -143,6 +143,12 @@
               <p id="materiaAgoraInicio">Nenhuma matéria</p>
               <p id="horarioAgoraInicio"></p>
               <p id="tempoRestanteInicio"></p>
+              <button onclick="irParaEstudar()"
+                style="display: none; width: 100%; margin-top: 10px; padding: 10px; background: var(--cor-primaria); color: white; border: none; border-radius: 40px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.2s;"
+                id="btnVamosLa" onmouseover="this.style.transform='scale(1.02)'"
+                onmouseout="this.style.transform='scale(1)'">
+                Vamos la! Ir para o Relogio
+              </button>
               <hr>
               <h3>➡ Próxima</h3>
               <p id="materiaProximaInicio">Nenhuma</p>
@@ -286,8 +292,6 @@
     </section>
 
     <!-- ==================== RELÓGIO DE ESTUDOS ==================== -->
-
-
     <section id="relogioSection" style="display:none;">
       <h1>Relógio de Estudos</h1>
 
@@ -309,564 +313,676 @@
         <tbody id="tabelaMateriasTempo"></tbody>
       </table>
 
-      <!-- CARDS: TIMER, CRONÔMETRO, POMODORO -->
-      <div class="relogio-container mt-5 mb-5">
+      <!-- CARDS: TIMER, CRONOMETRO, POMODORO, MODO FOCO -->
+      <div class="relogio-container"
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: stretch;">
+
         <!-- TIMER -->
-        <div class="relogio-card">
-          <h3><i class="bi bi-hourglass-split mx-2"></i> Timer</h3>
-          <input type="number" id="timerMinutos" placeholder="Minutos">
+        <div class="relogio-card" style="width: 100%;">
+          <h3><i class="bi bi-hourglass-split"></i> Timer</h3>
+          <div style="display: flex; gap: 8px; align-items: center; justify-content: center; margin: 10px 0;">
+            <div style="text-align: center;">
+              <input type="number" id="timerMinutos" placeholder="00" min="0" max="99"
+                style="width: 55px; text-align: center;">
+              <small style="display: block; font-size: 0.65rem;">Min</small>
+            </div>
+            <span style="font-size: 1.2rem;">:</span>
+            <div style="text-align: center;">
+              <input type="number" id="timerSegundos" placeholder="00" min="0" max="59"
+                style="width: 55px; text-align: center;">
+              <small style="display: block; font-size: 0.65rem;">Seg</small>
+            </div>
+          </div>
           <div class="relogio-botoes">
             <button onclick="iniciarTimer()">Iniciar</button>
             <button onclick="pararTimer()">Parar</button>
+            <button onclick="resetarTimer()">Reset</button>
           </div>
           <p id="timerDisplay">00:00</p>
         </div>
 
-        <!-- CRONÔMETRO -->
-        <div class="relogio-card">
-          <h3>⏱ Cronômetro</h3>
+        <!-- CRONOMETRO -->
+        <div class="relogio-card" style="width: 100%;">
+          <h3><i class="bi bi-stopwatch"></i> Cronometro</h3>
           <p id="cronometroDisplay">00:00:00</p>
           <div class="relogio-botoes">
             <button onclick="iniciarCronometro()">Iniciar</button>
             <button onclick="pausarCronometro()">Pausar</button>
-            <button onclick="resetarCronometro()">Resetar</button>
+            <button onclick="resetarCronometro()">Reset</button>
+          </div>
+
+          <!-- ACORDEAO DO HISTORICO -->
+          <div style="width: 100%; margin-top: 10px; text-align: left;">
+            <div onclick="toggleAcordeonCronometro()"
+              style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <span style="font-size: 0.8rem; font-weight: 600;">
+                Historico
+                <span id="cronometroHistoricoCount" style="color: var(--cor-primaria);">(0)</span>
+              </span>
+              <span id="cronometroSeta" style="font-size: 0.7rem;">&#9654;</span>
+            </div>
+
+            <div id="cronometroHistoricoConteudo"
+              style="display: none; max-height: 150px; overflow-y: auto; margin-top: 5px;">
+              <div id="cronometroHistoricoLista" style="font-size: 0.75rem;">
+              </div>
+              <button onclick="limparHistoricoCronometro()"
+                style="width: 100%; margin-top: 6px; padding: 5px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem;">
+                Limpar historico
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- POMODORO -->
-        <div class="relogio-card">
-          <h3>🍅 Pomodoro</h3>
+        <div class="relogio-card" style="width: 100%;">
+          <h3><i class="bi bi-circle-fill" style="color: #ef4444; font-size: 0.8rem;"></i> Pomodoro</h3>
           <p id="pomodoroDisplay">25:00</p>
           <div class="relogio-botoes">
-            <button onclick="abrirModalPomodoro()">▶ Iniciar</button>
-            <button onclick="pausarPomodoro()">⏸ Pausar</button>
-            <button onclick="resetarPomodoro()">🔄 Resetar</button>
-          </div>
-          <p id="pomodoroStatus" style="font-size: 0.8rem; margin-top: 5px;">⚪ Parado</p>
-        </div>
-
-        <!-- LAYOUT DOIS LADOS: RELÓGIO INTELIGENTE + META -->
-        <div class="relogio-duas-colunas">
-
-          <!-- LADO ESQUERDO: RELÓGIO INTELIGENTE -->
-          <div id="relogioInfo" class="relogio-info-card">
-            <div class="relogio-topo">
-              <h2 id="materiaRelogio">📚 Nenhuma matéria</h2>
-              <p id="horarioRelogio">--:-- - --:--</p>
-            </div>
-            <div class="relogio-meio">
-              <p id="tempoRestante">⏳ aguardando...</p>
-            </div>
-            <div class="relogio-stats">
-              <div class="stat">
-                <span>⏱ Hoje</span>
-                <strong id="tempoHoje">00:00:00</strong>
-              </div>
-              <div class="stat">
-                <span>🔥 Streak</span>
-                <strong id="streakRelogio">0 dias</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- LADO DIREITO: META DE ESTUDO -->
-          <div id="metaCard" class="meta-card-escuro">
-            <div class="meta-header-escuro">
-              <h3>🎯 Meta de Estudo</h3>
-              <button class="btn-editar-meta-escuro" onclick="abrirModalMeta()">
-                <i class="bi bi-pencil-fill"></i>
-              </button>
-            </div>
-            <div class="meta-tipo-selector">
-              <button class="meta-tipo-btn active" data-tipo="diaria">Diária</button>
-              <button class="meta-tipo-btn" data-tipo="semanal">Semanal</button>
-              <button class="meta-tipo-btn" data-tipo="mensal">Mensal</button>
-            </div>
-            <div class="meta-conteudo">
-              <p id="metaTextoResumo" class="meta-texto-resumo">Carregando...</p>
-              <div class="meta-progresso-escuro">
-                <div id="metaBarraResumo" class="meta-barra-escuro"></div>
-              </div>
-              <p id="metaRestanteResumo" class="meta-restante-escuro"></p>
-            </div>
-          </div>
-
-        </div>
-
-
-        <!-- MODAL PARA DEFINIR METAS -->
-        <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">🎯 Definir Metas de Estudo</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">📅 Meta Diária (horas)</label>
-                  <input type="number" id="metaDiaria" class="form-control" value="2" min="0.5" max="24" step="0.5">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold">📆 Meta Semanal (horas)</label>
-                  <input type="number" id="metaSemanal" class="form-control" value="14" min="1" max="168" step="0.5">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold">📅 Meta Mensal (horas)</label>
-                  <input type="number" id="metaMensal" class="form-control" value="60" min="1" max="720" step="0.5">
-                </div>
-                <div class="alert alert-info mt-3">
-                  <i class="bi bi-lightbulb"></i> Dica: Comece com metas realistas e aumente aos poucos!
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="salvarMeta()">Salvar Metas</button>
-              </div>
-            </div>
+            <button onclick="abrirModalPomodoro()">Iniciar</button>
+            <button onclick="pausarPomodoro()">Pausar</button>
+            <button onclick="resetarPomodoro()">Reset</button>
           </div>
         </div>
 
-        <!-- CARD EXPLICATIVO -->
-        <div class="info-relogio-card" onclick="mostrarInfoRelogio()">
-          <div class="info-relogio-content">
-            <i class="bi bi-question-circle-fill"></i>
-            <span>Como funciona o Relógio Inteligente?</span>
+        <!-- MODO FOCO -->
+        <div class="relogio-card" style="width: 100%;">
+          <h3><i class="bi bi-lightbulb"></i> Modo Foco</h3>
+          <p style="font-size: 0.85rem; color: #6b7280; margin: 15px 0;">Foco total em uma materia com tempo
+            personalizado</p>
+          <div class="relogio-botoes">
+            <button onclick="abrirModalModoFoco()">Iniciar Foco</button>
           </div>
+          <p style="font-size: 0.7rem; color: #9ca3af; margin-top: 10px;">25 min padrao</p>
         </div>
 
-        <!-- BOTÕES DE CONTROLE -->
-        <div class="botoes-controle mb-5">
-          <button class="btn-foco" onclick="abrirModalModoFoco()">🧠 Modo foco</button>
-          <button class="btn-auto" onclick="voltarModoAuto()">🔄 Voltar automático</button>
-        </div>
+      </div>
 
-        <!-- MODAL POMODORO PERSONALIZADO -->
-        <div class="modal fade" id="modalPomodoro" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">🍅 Personalizar Pomodoro</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">📚 Matéria</label>
-                  <select id="pomodoroMateria" class="form-select">
-                    <option value="">Selecione uma matéria</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold">⏱ Tempo de Estudo (minutos)</label>
-                  <input type="number" id="pomodoroTempoEstudo" class="form-control" value="25" min="1" max="120">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold">☕ Tempo de Pausa (minutos)</label>
-                  <input type="number" id="pomodoroTempoPausa" class="form-control" value="5" min="1" max="30">
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar
-                  Pomodoro</button>
-              </div>
+      <!-- RELÓGIO INTELIGENTE + META -->
+      <div class="relogio-duas-colunas">
+
+        <!-- LADO ESQUERDO: RELÓGIO INTELIGENTE -->
+        <div id="relogioInfo" class="relogio-info-card">
+          <div class="relogio-topo">
+            <h2 id="materiaRelogio">Nenhuma matéria</h2>
+            <p id="horarioRelogio">--:-- - --:--</p>
+          </div>
+          <div class="relogio-meio">
+            <p id="tempoRestante">aguardando...</p>
+          </div>
+          <div class="relogio-stats">
+            <div class="stat">
+              <span>Hoje</span>
+              <strong id="tempoHoje">00:00:00</strong>
+            </div>
+            <div class="stat">
+              <span>Streak</span>
+              <strong id="streakRelogio">0 dias</strong>
             </div>
           </div>
+
+          <!-- BOTÕES DE CONTROLE -->
+          <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+            <button id="btnModoAuto" onclick="voltarModoAuto()"
+              style="flex: 1; padding: 10px; border-radius: 40px; border: none; background: var(--cor-primaria); color: white; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;">
+              Modo Automatico
+            </button>
+            <button id="btnPausarAuto" onclick="pausarModoAuto()"
+              style="flex: 1; padding: 10px; border-radius: 40px; border: 2px solid var(--cor-primaria); background: white; color: var(--cor-primaria); cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;">
+              Pausar Automatico
+            </button>
+          </div>
+
+          <!-- TOGGLE DE NOTIFICAÇÕES -->
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+            <span style="font-size: 0.75rem; color: #374151;">Notificar ao iniciar materia</span>
+            <label style="position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer;">
+              <input type="checkbox" id="toggleNotificacoes" onchange="toggleNotificacoes()" checked
+                style="opacity: 0; width: 0; height: 0;">
+              <span id="toggleNotificacoesSlider"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #22c55e; border-radius: 22px; transition: 0.3s;">
+                <span
+                  style="position: absolute; height: 18px; width: 18px; left: 3px; bottom: 2px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- STATUS DO MODO -->
+          <p id="statusModoAuto" style="font-size: 0.75rem; margin-top: 10px; text-align: center; color: #22c55e;">
+            Modo automatico ativo - Seguindo o cronograma
+          </p>
+
+          <!-- EXPLICAÇÃO INTEGRADA -->
+          <div
+            style="margin-top: 12px; padding: 10px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%;">
+            <p style="font-size: 0.7rem; color: #6b7280; margin: 0; text-align: left;">
+              <strong>Conectado ao Cronograma:</strong> Este relogio identifica automaticamente qual materia voce
+              deveria estar estudando agora, baseado no dia da semana e horario. O estudo inicia e pausa automaticamente
+              conforme seu cronograma.
+            </p>
+          </div>
         </div>
 
-        <!-- MODAL MODO FOCO PERSONALIZADO -->
-        <div class="modal fade" id="modalModoFoco" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">🧠 Personalizar Modo Foco</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label fw-bold">📚 Matéria</label>
-                  <select id="focoMateriaSelect" class="form-select">
-                    <option value="">Selecione uma matéria</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold">⏱ Tempo de Foco (minutos)</label>
-                  <input type="number" id="focoTempoPersonalizado" class="form-control" value="25" min="1" max="120">
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <!-- LADO DIREITO: META DE ESTUDO -->
+        <div id="metaCard" class="meta-card-escuro">
+          <div class="meta-header-escuro">
+            <h3>Meta de Estudo</h3>
+            <button class="btn-editar-meta-escuro" onclick="abrirModalMeta()">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+          </div>
+          <div class="meta-tipo-selector">
+            <button class="meta-tipo-btn active" data-tipo="diaria">Diaria</button>
+            <button class="meta-tipo-btn" data-tipo="semanal">Semanal</button>
+            <button class="meta-tipo-btn" data-tipo="mensal">Mensal</button>
+          </div>
+          <div class="meta-conteudo">
+            <p id="metaTextoResumo" class="meta-texto-resumo">Carregando...</p>
+            <div class="meta-progresso-escuro">
+              <div id="metaBarraResumo" class="meta-barra-escuro"></div>
+            </div>
+            <p id="metaRestanteResumo" class="meta-restante-escuro"></p>
+          </div>
+        </div>
 
-                <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar
-                  Foco</button>
+      </div>
+      <!-- MODAL PARA DEFINIR METAS -->
+      <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Definir Metas de Estudo</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+              <!-- META DIARIA -->
+              <div class="mb-3">
+                <label class="form-label fw-bold">Meta Diaria</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <div style="text-align: center;">
+                    <input type="number" id="metaDiariaHoras" class="form-control" value="0" min="0" max="24"
+                      style="width: 80px;">
+                    <small>Horas</small>
+                  </div>
+                  <div style="text-align: center;">
+                    <input type="number" id="metaDiariaMinutos" class="form-control" value="30" min="0" max="59"
+                      style="width: 80px;">
+                    <small>Minutos</small>
+                  </div>
+                </div>
               </div>
+
+              <!-- META SEMANAL -->
+              <div class="mb-3">
+                <label class="form-label fw-bold">Meta Semanal</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <div style="text-align: center;">
+                    <input type="number" id="metaSemanalHoras" class="form-control" value="3" min="0" max="168"
+                      style="width: 80px;">
+                    <small>Horas</small>
+                  </div>
+                  <div style="text-align: center;">
+                    <input type="number" id="metaSemanalMinutos" class="form-control" value="30" min="0" max="59"
+                      style="width: 80px;">
+                    <small>Minutos</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- META MENSAL -->
+              <div class="mb-3">
+                <label class="form-label fw-bold">Meta Mensal</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <div style="text-align: center;">
+                    <input type="number" id="metaMensalHoras" class="form-control" value="14" min="0" max="720"
+                      style="width: 80px;">
+                    <small>Horas</small>
+                  </div>
+                  <div style="text-align: center;">
+                    <input type="number" id="metaMensalMinutos" class="form-control" value="0" min="0" max="59"
+                      style="width: 80px;">
+                    <small>Minutos</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert alert-info mt-3">
+                <i class="bi bi-lightbulb"></i> Dica: Comece com metas realistas e aumente aos poucos!
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="salvarMeta()">Salvar Metas</button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+      <!-- MODAL POMODORO PERSONALIZADO -->
+      <div class="modal fade" id="modalPomodoro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Personalizar Pomodoro</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Matéria</label>
+                <select id="pomodoroMateria" class="form-select">
+                  <option value="">Selecione uma matéria</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">⏱ Tempo de Estudo (minutos)</label>
+                <input type="number" id="pomodoroTempoEstudo" class="form-control" value="25" min="1" max="120">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Tempo de Pausa (minutos)</label>
+                <input type="number" id="pomodoroTempoPausa" class="form-control" value="5" min="1" max="30">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="iniciarPomodoroPersonalizado()">Iniciar
+                Pomodoro</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <div class="overlay" id="overlay" onclick="closeSidebar()">
+      <!-- MODAL MODO FOCO PERSONALIZADO -->
+      <div class="modal fade" id="modalModoFoco" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">🧠 Personalizar Modo Foco</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-bold">📚 Matéria</label>
+                <select id="focoMateriaSelect" class="form-select">
+                  <option value="">Selecione uma matéria</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">⏱ Tempo de Foco (minutos)</label>
+                <input type="number" id="focoTempoPersonalizado" class="form-control" value="25" min="1" max="120">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+              <button type="button" class="btn btn-danger" onclick="iniciarModoFocoPersonalizado()">Iniciar
+                Foco</button>
+            </div>
+          </div>
+        </div>
+      </div>
+  </section>
+
+  <div class="overlay" id="overlay" onclick="closeSidebar()">
+  </div>
+
+
+
+  <!--=================ESTATISTICA===================-->
+  <section id="estatisticaSection" style="display:none;">
+    <h1>Estatísticas</h1>
+
+    <!-- CARDS DE RESUMO RÁPIDO -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <i class="bi bi-clock-history"></i>
+        <span>Total Geral</span>
+        <strong id="totalGeralEstat">0h</strong>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-calendar-check"></i>
+        <span>Dias Estudados</span>
+        <strong id="diasEstudadosEstat">0</strong>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-fire"></i>
+        <span>Maior Streak</span>
+        <strong id="maiorStreakEstat">0</strong>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-graph-up"></i>
+        <span>Média Diária</span>
+        <strong id="mediaDiariaEstat">0h</strong>
+      </div>
     </div>
 
+    <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
+    <div class="periodo-selector">
+      <button class="periodo-btn active" data-periodo="semana">📅 Por Dia da Semana</button>
+      <button class="periodo-btn" data-periodo="hoje">📆 Estudo de Hoje</button>
+      <button class="periodo-btn" data-periodo="semanal">📊 Estudo Semanal</button>
+      <button class="periodo-btn" data-periodo="mensal">📈 Estudo Mensal</button>
+    </div>
 
+    <!-- GRÁFICOS LADO A LADO -->
+    <div class="graficos-lado-a-lado">
 
-    <!--=================ESTATISTICA===================-->
-    <section id="estatisticaSection" style="display:none;">
-      <h1>Estatísticas</h1>
+      <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
+      <div class="grafico-card">
+        <h4 id="graficoTitulo">📅 Estudos por Dia da Semana</h4>
+        <canvas id="graficoPrincipal"></canvas>
+      </div>
 
-      <!-- CARDS DE RESUMO RÁPIDO -->
-      <div class="stats-cards">
-        <div class="stat-card">
-          <i class="bi bi-clock-history"></i>
-          <span>Total Geral</span>
-          <strong id="totalGeralEstat">0h</strong>
+      <!-- TOP MATÉRIAS (fixo) -->
+      <div class="grafico-card">
+        <h4>📚 Top Matérias</h4>
+        <canvas id="graficoMaterias"></canvas>
+      </div>
+
+    </div>
+
+    <!-- METAS (Diária, Semanal, Mensal) -->
+    <div class="metas-container">
+      <h4>🎯 Minhas Metas</h4>
+      <div class="meta-item">
+        <div class="meta-header">
+          <span>📅 Meta Diária</span>
+          <span id="metaDiariaTexto">2h</span>
         </div>
-        <div class="stat-card">
-          <i class="bi bi-calendar-check"></i>
-          <span>Dias Estudados</span>
-          <strong id="diasEstudadosEstat">0</strong>
+        <div class="meta-progresso-container">
+          <div id="barraMetaDiaria" class="meta-barra" style="width: 0%"></div>
         </div>
-        <div class="stat-card">
-          <i class="bi bi-fire"></i>
-          <span>Maior Streak</span>
-          <strong id="maiorStreakEstat">0</strong>
+        <p id="metaDiariaRestante" class="meta-restante">0h de 2h</p>
+      </div>
+      <div class="meta-item">
+        <div class="meta-header">
+          <span>📆 Meta Semanal</span>
+          <span id="metaSemanalTexto">14h</span>
         </div>
-        <div class="stat-card">
-          <i class="bi bi-graph-up"></i>
-          <span>Média Diária</span>
-          <strong id="mediaDiariaEstat">0h</strong>
+        <div class="meta-progresso-container">
+          <div id="barraMetaSemanal" class="meta-barra" style="width: 0%"></div>
+        </div>
+        <p id="metaSemanalRestante" class="meta-restante">0h de 14h</p>
+      </div>
+      <div class="meta-item">
+        <div class="meta-header">
+          <span>📅 Meta Mensal</span>
+          <span id="metaMensalTexto">60h</span>
+        </div>
+        <div class="meta-progresso-container">
+          <div id="barraMetaMensal" class="meta-barra" style="width: 0%"></div>
+        </div>
+        <p id="metaMensalRestante" class="meta-restante">0h de 60h</p>
+      </div>
+    </div>
+
+    <!-- CONQUISTAS (separadas) -->
+    <div class="conquistas-container">
+      <h4>🏆 Conquistas</h4>
+
+      <div class="conquistas-grupo">
+        <h5>✅ Desbloqueadas</h5>
+        <div id="conquistasDesbloqueadas" class="badges-container">
+          <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
         </div>
       </div>
 
-      <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
-      <div class="periodo-selector">
-        <button class="periodo-btn active" data-periodo="semana">📅 Por Dia da Semana</button>
-        <button class="periodo-btn" data-periodo="hoje">📆 Estudo de Hoje</button>
-        <button class="periodo-btn" data-periodo="semanal">📊 Estudo Semanal</button>
-        <button class="periodo-btn" data-periodo="mensal">📈 Estudo Mensal</button>
-      </div>
-
-      <!-- GRÁFICOS LADO A LADO -->
-      <div class="graficos-lado-a-lado">
-
-        <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
-        <div class="grafico-card">
-          <h4 id="graficoTitulo">📅 Estudos por Dia da Semana</h4>
-          <canvas id="graficoPrincipal"></canvas>
-        </div>
-
-        <!-- TOP MATÉRIAS (fixo) -->
-        <div class="grafico-card">
-          <h4>📚 Top Matérias</h4>
-          <canvas id="graficoMaterias"></canvas>
-        </div>
-
-      </div>
-
-      <!-- METAS (Diária, Semanal, Mensal) -->
-      <div class="metas-container">
-        <h4>🎯 Minhas Metas</h4>
-        <div class="meta-item">
-          <div class="meta-header">
-            <span>📅 Meta Diária</span>
-            <span id="metaDiariaTexto">2h</span>
-          </div>
-          <div class="meta-progresso-container">
-            <div id="barraMetaDiaria" class="meta-barra" style="width: 0%"></div>
-          </div>
-          <p id="metaDiariaRestante" class="meta-restante">0h de 2h</p>
-        </div>
-        <div class="meta-item">
-          <div class="meta-header">
-            <span>📆 Meta Semanal</span>
-            <span id="metaSemanalTexto">14h</span>
-          </div>
-          <div class="meta-progresso-container">
-            <div id="barraMetaSemanal" class="meta-barra" style="width: 0%"></div>
-          </div>
-          <p id="metaSemanalRestante" class="meta-restante">0h de 14h</p>
-        </div>
-        <div class="meta-item">
-          <div class="meta-header">
-            <span>📅 Meta Mensal</span>
-            <span id="metaMensalTexto">60h</span>
-          </div>
-          <div class="meta-progresso-container">
-            <div id="barraMetaMensal" class="meta-barra" style="width: 0%"></div>
-          </div>
-          <p id="metaMensalRestante" class="meta-restante">0h de 60h</p>
+      <div class="conquistas-grupo">
+        <h5>🔒 A Desbloquear</h5>
+        <div id="conquistasBloqueadas" class="badges-container">
+          <div class="badge">⭐ Primeiro Estudo</div>
+          <div class="badge">🔥 7 Dias Seguidos</div>
+          <div class="badge">🏆 30 Dias Seguidos</div>
+          <div class="badge">⏱️ 10 Horas Totais</div>
+          <div class="badge">⚡ 50 Horas Totais</div>
+          <div class="badge">💪 100 Horas Totais</div>
+          <div class="badge">📚 5 Matérias</div>
+          <div class="badge">🌙 Estudo Noturno</div>
         </div>
       </div>
+    </div>
 
-      <!-- CONQUISTAS (separadas) -->
-      <div class="conquistas-container">
-        <h4>🏆 Conquistas</h4>
+    <!-- SUGESTÕES -->
+    <div class="sugestoes-container">
+      <h4>🤖 Sugestões Personalizadas</h4>
+      <ul id="sugestoes"></ul>
+    </div>
 
-        <div class="conquistas-grupo">
-          <h5>✅ Desbloqueadas</h5>
-          <div id="conquistasDesbloqueadas" class="badges-container">
-            <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
-          </div>
+    <!-- RESUMO ESTATÍSTICAS -->
+    <div class="resumo-container">
+      <h4 id="resumoEstatisticas"></h4>
+    </div>
+
+    <!-- BOTÃO EXPORTAR -->
+    <div class="exportar-container">
+      <button class="btn-exportar" onclick="exportarDados()">
+        <i class="bi bi-download"></i> Exportar Relatório (JSON)
+      </button>
+    </div>
+  </section>
+
+
+  <section id="cronogramaNovoSection" style="display:none;">
+    <div class="layout-container">
+
+      <h1>Cronograma Inteligente</h1>
+
+
+      <!-- CRIAR MATÉRIA -->
+      <div class="mb-3 form-cronogramaNovo">
+        <input type="text" id="novaMateriaNome" placeholder="Nome da matéria">
+        <input type="color" id="novaMateriaCor" value="#9f042c">
+        <button onclick="adicionarMateria()">Adicionar Matéria</button>
+      </div>
+
+      <!-- BLOQUINHOS -->
+      <h4>📦 Matérias</h4>
+      <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+      <br>
+      <p class="drag-text">👉 Arraste a matéria para um dia da semana</p>
+      <p class="drag-text">
+        👉 Dica: <span>duplo clique no nome da matéria</span> para editar ou
+        <span>duplo clique no horário</span> para alterar.
+      </p>
+
+      <!-- GRID DOS DIAS -->
+      <div class="cronogramaNovo-grid"
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:15px;">
+
+        <div class="dia" id="segunda" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Segunda</h5>
+          <div class="dia-drop"></div>
         </div>
 
-        <div class="conquistas-grupo">
-          <h5>🔒 A Desbloquear</h5>
-          <div id="conquistasBloqueadas" class="badges-container">
-            <div class="badge">⭐ Primeiro Estudo</div>
-            <div class="badge">🔥 7 Dias Seguidos</div>
-            <div class="badge">🏆 30 Dias Seguidos</div>
-            <div class="badge">⏱️ 10 Horas Totais</div>
-            <div class="badge">⚡ 50 Horas Totais</div>
-            <div class="badge">💪 100 Horas Totais</div>
-            <div class="badge">📚 5 Matérias</div>
-            <div class="badge">🌙 Estudo Noturno</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUGESTÕES -->
-      <div class="sugestoes-container">
-        <h4>🤖 Sugestões Personalizadas</h4>
-        <ul id="sugestoes"></ul>
-      </div>
-
-      <!-- RESUMO ESTATÍSTICAS -->
-      <div class="resumo-container">
-        <h4 id="resumoEstatisticas"></h4>
-      </div>
-
-      <!-- BOTÃO EXPORTAR -->
-      <div class="exportar-container">
-        <button class="btn-exportar" onclick="exportarDados()">
-          <i class="bi bi-download"></i> Exportar Relatório (JSON)
-        </button>
-      </div>
-    </section>
-
-
-    <section id="cronogramaNovoSection" style="display:none;">
-      <div class="layout-container">
-
-        <h1>Cronograma Inteligente</h1>
-
-
-        <!-- CRIAR MATÉRIA -->
-        <div class="mb-3 form-cronogramaNovo">
-          <input type="text" id="novaMateriaNome" placeholder="Nome da matéria">
-          <input type="color" id="novaMateriaCor" value="#9f042c">
-          <button onclick="adicionarMateria()">Adicionar Matéria</button>
+        <div class="dia" id="terca" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Terça</h5>
+          <div class="dia-drop"></div>
         </div>
 
-        <!-- BLOQUINHOS -->
-        <h4>📦 Matérias</h4>
-        <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-        <br>
-        <p class="drag-text">👉 Arraste a matéria para um dia da semana</p>
-        <p class="drag-text">
-          👉 Dica: <span>duplo clique no nome da matéria</span> para editar ou
-          <span>duplo clique no horário</span> para alterar.
-        </p>
+        <div class="dia" id="quarta" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Quarta</h5>
+          <div class="dia-drop"></div>
+        </div>
 
-        <!-- GRID DOS DIAS -->
-        <div class="cronogramaNovo-grid"
-          style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:15px;">
+        <div class="dia" id="quinta" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Quinta</h5>
+          <div class="dia-drop"></div>
+        </div>
 
-          <div class="dia" id="segunda" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Segunda</h5>
-            <div class="dia-drop"></div>
-          </div>
+        <div class="dia" id="sexta" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Sexta</h5>
+          <div class="dia-drop"></div>
+        </div>
 
-          <div class="dia" id="terca" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Terça</h5>
-            <div class="dia-drop"></div>
-          </div>
+        <div class="dia" id="sabado" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Sábado</h5>
+          <div class="dia-drop"></div>
+        </div>
 
-          <div class="dia" id="quarta" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Quarta</h5>
-            <div class="dia-drop"></div>
-          </div>
-
-          <div class="dia" id="quinta" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Quinta</h5>
-            <div class="dia-drop"></div>
-          </div>
-
-          <div class="dia" id="sexta" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Sexta</h5>
-            <div class="dia-drop"></div>
-          </div>
-
-          <div class="dia" id="sabado" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Sábado</h5>
-            <div class="dia-drop"></div>
-          </div>
-
-          <div class="dia" id="domingo" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h5>Domingo</h5>
-            <div class="dia-drop"></div>
-          </div>
-
+        <div class="dia" id="domingo" ondrop="drop(event)" ondragover="allowDrop(event)">
+          <h5>Domingo</h5>
+          <div class="dia-drop"></div>
         </div>
 
       </div>
 
-    </section>
-    <!-- ==================== METODOS ==================== -->
-    <section id="metodosSection" style="display:none;">
-      <h1>Métodos de Estudo</h1>
-      <div style="text-align: center; padding: 60px 20px;">
-        <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
-        <h3>Em breve!</h3>
-        <p>Estamos preparando conteúdos incríveis para você.</p>
-      </div>
-    </section>
+    </div>
 
-    <!-- ==================== REVISÃO INTELIGENTE ==================== -->
-    <section id="revisaoSection" style="display:none;">
-      <!-- CABEÇALHO -->
-      <div class="revisao-header">
-        <h1>Revisão Inteligente</h1>
-        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-          <i class="bi bi-plus-lg"></i> Novo Flashcard
-        </button>
-      </div>
+  </section>
+  <!-- ==================== METODOS ==================== -->
+  <section id="metodosSection" style="display:none;">
+    <h1>Métodos de Estudo</h1>
+    <div style="text-align: center; padding: 60px 20px;">
+      <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
+      <h3>Em breve!</h3>
+      <p>Estamos preparando conteúdos incríveis para você.</p>
+    </div>
+  </section>
 
-      <!-- AVISO DE PROVA -->
-      <div id="avisoProva" class="aviso-prova" style="display: none;">
-        <div class="aviso-conteudo">
-          <i class="bi bi-calendar-exclamation"></i>
+  <!-- ==================== REVISÃO INTELIGENTE ==================== -->
+  <section id="revisaoSection" style="display:none;">
+    <!-- CABEÇALHO -->
+    <div class="revisao-header">
+      <h1>Revisão Inteligente</h1>
+      <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+        <i class="bi bi-plus-lg"></i> Novo Flashcard
+      </button>
+    </div>
+
+    <!-- AVISO DE PROVA -->
+    <div id="avisoProva" class="aviso-prova" style="display: none;">
+      <div class="aviso-conteudo">
+        <i class="bi bi-calendar-exclamation"></i>
+        <div>
+          <strong>📅 Prova se aproximando!</strong>
+          <p id="textoAvisoProva"></p>
+        </div>
+        <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+      </div>
+    </div>
+
+    <!-- ESTATÍSTICAS FIXAS -->
+    <div class="revisao-stats-fixas">
+      <div class="stat-box">
+        <span>📅 Hoje</span>
+        <strong id="totalHoje">0</strong>
+      </div>
+      <div class="stat-box">
+        <span>⏰ Atrasadas</span>
+        <strong id="totalAtrasadas">0</strong>
+      </div>
+      <div class="stat-box">
+        <span>✅ Concluídas</span>
+        <strong id="totalConcluidas">0</strong>
+      </div>
+      <div class="stat-box">
+        <span>🎯 Taxa Acerto</span>
+        <strong id="taxaAcertoGeral">0%</strong>
+      </div>
+    </div>
+
+    <!-- REGRAS -->
+    <div class="revisao-regras">
+      💡 Acertei = próximo nível | Errei = revisar amanhã
+    </div>
+
+    <!-- ABAS -->
+    <div class="revisao-abas">
+      <button class="aba-btn active" data-aba="meusCards">📚 Meus Cards</button>
+      <button class="aba-btn" data-aba="revisar">🧠 Revisar</button>
+    </div>
+
+    <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
+    <div class="revisao-filtro">
+      <select id="filtroMateriaRevisao" class="filtro-materia-select">
+        <option value="todas">📚 Todas as matérias</option>
+      </select>
+    </div>
+
+    <!-- CONTEÚDO ABA: MEUS CARDS -->
+    <div id="abaMeusCards" class="aba-conteudo">
+      <div id="listaFlashcardsAgrupada"></div>
+    </div>
+
+    <!-- CONTEÚDO ABA: REVISAR -->
+    <div id="abaRevisar" class="aba-conteudo" style="display: none;">
+      <div class="revisar-centro">
+        <p id="mensagemRevisar">Você tem <span id="countPendentes">0</span> cards para revisar!</p>
+        <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶ Iniciar Revisão</button>
+      </div>
+    </div>
+
+    <!-- MODO FOCO (REVISÃO) -->
+    <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
+      <div class="foco-card">
+        <div class="foco-header">
           <div>
-            <strong>📅 Prova se aproximando!</strong>
-            <p id="textoAvisoProva"></p>
+            <span class="materia-badge" id="focoMateria">Matéria</span>
+            <span class="tema-badge" id="focoTema">Tema</span>
           </div>
-          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+          <button class="foco-fechar" onclick="fecharModoFoco()">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
-      </div>
-
-      <!-- ESTATÍSTICAS FIXAS -->
-      <div class="revisao-stats-fixas">
-        <div class="stat-box">
-          <span>📅 Hoje</span>
-          <strong id="totalHoje">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>⏰ Atrasadas</span>
-          <strong id="totalAtrasadas">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>✅ Concluídas</span>
-          <strong id="totalConcluidas">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>🎯 Taxa Acerto</span>
-          <strong id="taxaAcertoGeral">0%</strong>
-        </div>
-      </div>
-
-      <!-- REGRAS -->
-      <div class="revisao-regras">
-        💡 Acertei = próximo nível | Errei = revisar amanhã
-      </div>
-
-      <!-- ABAS -->
-      <div class="revisao-abas">
-        <button class="aba-btn active" data-aba="meusCards">📚 Meus Cards</button>
-        <button class="aba-btn" data-aba="revisar">🧠 Revisar</button>
-      </div>
-
-      <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
-      <div class="revisao-filtro">
-        <select id="filtroMateriaRevisao" class="filtro-materia-select">
-          <option value="todas">📚 Todas as matérias</option>
-        </select>
-      </div>
-
-      <!-- CONTEÚDO ABA: MEUS CARDS -->
-      <div id="abaMeusCards" class="aba-conteudo">
-        <div id="listaFlashcardsAgrupada"></div>
-      </div>
-
-      <!-- CONTEÚDO ABA: REVISAR -->
-      <div id="abaRevisar" class="aba-conteudo" style="display: none;">
-        <div class="revisar-centro">
-          <p id="mensagemRevisar">Você tem <span id="countPendentes">0</span> cards para revisar!</p>
-          <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶ Iniciar Revisão</button>
-        </div>
-      </div>
-
-      <!-- MODO FOCO (REVISÃO) -->
-      <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
-        <div class="foco-card">
-          <div class="foco-header">
-            <div>
-              <span class="materia-badge" id="focoMateria">Matéria</span>
-              <span class="tema-badge" id="focoTema">Tema</span>
-            </div>
-            <button class="foco-fechar" onclick="fecharModoFoco()">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
-          <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
-          <div class="foco-botoes">
-            <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
-              <i class="bi bi-eye"></i> Mostrar Resposta
-            </button>
-            <div id="botoesResposta" class="botoes-resposta" style="display: none;">
-              <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
-              <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
-            </div>
-          </div>
-          <div class="foco-progresso">
-            <span id="focoContador">Card 0 de 0</span>
-            <div class="progresso-barra">
-              <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
-            </div>
+        <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
+        <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+        <div class="foco-botoes">
+          <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
+            <i class="bi bi-eye"></i> Mostrar Resposta
+          </button>
+          <div id="botoesResposta" class="botoes-resposta" style="display: none;">
+            <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
+            <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
           </div>
         </div>
-      </div>
-
-    </section>
-
-    <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
-    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-      data-bs-keyboard="false">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">⚙️ Configurações do Usuário</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="text-center mb-4">
-              <div class="foto-usuario-container">
-                <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                  alt="Foto do Usuário">
-                <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
-                  onchange="previewFotoSelecionada()">
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">👤 Nome</label>
-              <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">📧 Email</label>
-              <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+        <div class="foco-progresso">
+          <span id="focoContador">Card 0 de 0</span>
+          <div class="progresso-barra">
+            <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  </section>
+
+  <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
+  <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">⚙️ Configurações do Usuário</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-4">
+            <div class="foto-usuario-container">
+              <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto do Usuário">
+              <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
+                onchange="previewFotoSelecionada()">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">👤 Nome</label>
+            <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">📧 Email</label>
+            <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 <script src="PaginaUsuario.js"></script>

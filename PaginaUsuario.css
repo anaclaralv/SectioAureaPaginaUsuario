@@ -353,13 +353,14 @@ body {
 
 /* ===== CARDS: TIMER, CRONÔMETRO, POMODORO (ESTILO BRANCO) ===== */
 .relogio-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  margin: 30px 0;
+  margin: 20px 0;
   text-align: center;
+  width: 100%;
 }
 
 .relogio-card {
@@ -367,14 +368,14 @@ body {
   border-radius: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: 0.3s;
-  padding: 24px 20px;
-  width: 200px;
+  padding: 15px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #eef2ff;
+  justify-content: flex-start;
+  border: 1px solid var(--cor-primaria);
+  min-width: 0;
 }
 
 .relogio-card:hover {
@@ -383,17 +384,20 @@ body {
 }
 
 .relogio-card h3 {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
+  font-size: 1rem;
+  margin-bottom: 10px;
   color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .relogio-card p {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-top: 10px;
+  margin: 10px 0;
   color: var(--cor-primaria);
-  background: #fff5f5;
+  background: #f9fafb;
   padding: 8px 12px;
   border-radius: 16px;
   font-family: monospace;
@@ -411,28 +415,31 @@ body {
 }
 
 .relogio-botoes {
-  margin-top: 10px;
+  margin-top: auto;
   display: flex;
-  gap: 8px;
+  gap: 5px;
   justify-content: center;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .relogio-botoes button {
   margin: 0;
-  padding: 8px 16px;
+  padding: 6px 10px;
   border: none;
   border-radius: 40px;
   background: var(--cor-primaria);
   color: white;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   transition: 0.2s;
+  white-space: nowrap;
 }
 
 .relogio-botoes button:hover {
   background: var(--cor-primaria);
   transform: scale(1.02);
+  filter: brightness(0.9);
 }
 
 /* ===== TABELA ESTUDO POR MATÉRIA ===== */
@@ -444,10 +451,12 @@ body {
   padding: 15px;
   border-radius: 20px;
   border: 1px solid #eef2ff;
+  flex-wrap: wrap;
 }
 
 .add-materia-relogio input {
   flex: 1;
+  min-width: 200px;
   padding: 12px 16px;
   border-radius: 40px;
   border: 1px solid #e2e8f0;
@@ -470,6 +479,7 @@ body {
   cursor: pointer;
   font-weight: 500;
   transition: 0.2s;
+  white-space: nowrap;
 }
 
 .add-materia-relogio button:hover {
@@ -704,29 +714,32 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;
 }
 
 .meta-texto-resumo {
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--cor-primaria);
   margin-bottom: 15px;
   text-align: center;
   background: #fef2f2;
-  padding: 10px;
+  padding: 12px 16px;
   border-radius: 16px;
+  width: 100%;
 }
 
 .meta-progresso-escuro {
-  background: #e2e8f0;
+  background: #e5e7eb;
   border-radius: 20px;
-  height: 8px;
+  height: 12px;
   overflow: hidden;
   margin: 15px 0;
+  width: 100%;
 }
 
 .meta-barra-escuro {
-  background: linear-gradient(90deg, var(--cor-primaria), #9ca3af);
+  background: linear-gradient(90deg, #22c55e, #16a34a);
   width: 0%;
   height: 100%;
   border-radius: 20px;
@@ -734,10 +747,23 @@ body {
 }
 
 .meta-restante-escuro {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #64748b;
-  text-align: right;
+  text-align: center;
   margin-top: 8px;
+}
+
+/* Barra muda de cor conforme progresso */
+.meta-barra-escuro.baixa {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.meta-barra-escuro.media {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.meta-barra-escuro.alta {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
 }
 
 /* ===== CARD EXPLICATIVO ===== */
@@ -870,7 +896,6 @@ body {
 .tarefas-container {
   width: 100%;
   max-width: 800px;
-  /* limita largura máxima */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1365,6 +1390,22 @@ body {
 }
 
 /* CARDS */
+#btnVamosLa {
+  animation: pulseBtn 2s infinite;
+}
+
+@keyframes pulseBtn {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 117, 125, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(108, 117, 125, 0);
+  }
+}
+
 .card {
   background: #f4f4f9;
   padding: 20px;
@@ -1439,7 +1480,7 @@ body {
 #eventosResumo li,
 #listaHojeCronograma li {
   display: block !important;
-  padding: 6px 0 !important;
+  padding: 6px 5px !important;
   border-bottom: 1px dashed #e5e7eb !important;
   word-break: break-word !important;
 }
@@ -2809,6 +2850,34 @@ body {
 }
 
 /* ============================================
+   TELAS GRANDES (a partir de 1200px)
+   ============================================ */
+@media (min-width: 1025px) {
+  .calendario-container {
+    padding: 20px !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+  }
+
+  .form-evento {
+    display: grid !important;
+    grid-template-columns: 2fr 1fr 100px 1fr 1fr auto !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  .fc-event-title {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .relogio-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ============================================
    RESPONSIVIDADE - TELAS PEQUENAS (até 768px)
    ============================================ */
 @media (max-width: 768px) {
@@ -2932,12 +3001,11 @@ body {
   }
 
   .relogio-container {
-    padding: 10px;
+    grid-template-columns: 1fr !important;
   }
 
   .relogio-card {
-    width: 100%;
-    max-width: 180px;
+    min-height: auto;
   }
 
   .botoes-controle {
@@ -2959,6 +3027,20 @@ body {
 
   .tempo {
     font-size: 20px;
+  }
+
+  .add-materia-relogio {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .add-materia-relogio input {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .add-materia-relogio button {
+    width: 100%;
   }
 
   /* ---------- SEÇÃO CALENDÁRIO ---------- */
@@ -3385,34 +3467,6 @@ body {
 @media (min-width: 769px) {
   .sidebar {
     left: 0 !important;
-  }
-}
-
-/* ============================================
-   TELAS GRANDES (a partir de 1200px)
-   ============================================ */
-@media (min-width: 1025px) {
-  .calendario-container {
-    padding: 20px !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-  }
-
-  .form-evento {
-    display: grid !important;
-    grid-template-columns: 2fr 1fr 100px 1fr 1fr auto !important;
-    gap: 10px !important;
-    align-items: center !important;
-  }
-
-  .fc-event-title {
-    font-size: 12px !important;
-  }
-}
-
-@media (min-width: 1200px) {
-  .calendario-container {
-    max-width: 1200px;
   }
 }
 

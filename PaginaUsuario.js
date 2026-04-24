@@ -1319,7 +1319,7 @@ function atualizarResumoInicio() {
   if (listaHojeCronograma) {
     listaHojeCronograma.innerHTML = "";
     if (blocosHoje.length === 0) {
-      listaHojeCronograma.innerHTML = "<li>Sem matérias hoje 😊</li>";
+      listaHojeCronograma.innerHTML = "<li>Sem matérias hoje</li>";
     } else {
       blocosHoje.forEach(bloco => {
         const li = document.createElement("li");
@@ -1343,6 +1343,7 @@ function atualizarTudo() {
 
 // No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", () => {
+  initToggleNotificacoes();
   configurarFiltroPrioridade();
   migrarDadosAntigos();
   mostrarTela("inicio");
@@ -1379,12 +1380,12 @@ function renderizarResumoHoje() {
   lista.innerHTML = "";
   const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana);
   if (blocosHoje.length === 0) {
-    lista.innerHTML = "<li>Sem atividades hoje 😊</li>";
+    lista.innerHTML = "<li>Sem atividades hoje</li>";
     return;
   }
   blocosHoje.forEach(bloco => {
     const li = document.createElement("li");
-    li.textContent = `🕒 ${bloco.inicio} - ${bloco.fim} : ${bloco.materia.nome}`;
+    li.textContent = `${bloco.inicio} - ${bloco.fim} : ${bloco.materia.nome}`;
     lista.appendChild(li);
   });
 }
@@ -1791,7 +1792,6 @@ function adicionarMateria() {
     horaAtual < b.fim
   );
 
-  // Só entra no modo automático se não estiver em modo foco
   const modoFocoAtivo = document.getElementById("modoFocoContainer")?.style.display === "flex";
 
   if (!modoFocoAtivo && modoEstudo === "auto") {
@@ -1801,11 +1801,13 @@ function adicionarMateria() {
         if (estudoAtual) pausarEstudo();
         iniciarEstudo(idMateria);
       }
-      if (notificarMudanca && materiaAnterior !== idMateria) {
+
+      // SÓ MOSTRA NOTIFICAÇÃO SE ESTIVER ATIVADA
+      if (notificacoesAtivas && notificarMudanca && materiaAnterior !== idMateria) {
         Swal.fire({
           icon: "info",
           title: "Hora de estudar!",
-          text: `Agora é ${blocoAtual.materia.nome}`,
+          text: `Agora e ${blocoAtual.materia.nome}`,
           timer: 2000,
           showConfirmButton: false
         });
@@ -1821,6 +1823,76 @@ function adicionarMateria() {
 
 
 /* ===================== RELOGIO =====================*/
+// Variável global para controlar notificações
+let notificacoesAtivas = true;
+
+// Carregar preferência salva
+try {
+  const saved = localStorage.getItem("notificacoesAtivas");
+  if (saved !== null) {
+    notificacoesAtivas = saved === "true";
+  }
+} catch (e) {
+  notificacoesAtivas = true;
+}
+
+function toggleNotificacoes() {
+  const checkbox = document.getElementById("toggleNotificacoes");
+  const slider = document.getElementById("toggleNotificacoesSlider");
+
+  if (checkbox) {
+    notificacoesAtivas = checkbox.checked;
+    localStorage.setItem("notificacoesAtivas", notificacoesAtivas);
+
+    if (slider) {
+      if (notificacoesAtivas) {
+        slider.style.backgroundColor = "#22c55e";
+      } else {
+        slider.style.backgroundColor = "#d1d5db";
+      }
+    }
+
+    if (notificacoesAtivas) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Notificacoes ativadas',
+        text: 'Voce recebera alertas quando for hora de estudar.',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    } else {
+      Swal.fire({
+        icon: 'info',
+        title: 'Notificacoes desativadas',
+        text: 'Voce nao recebera mais alertas automaticos.',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+  }
+}
+
+// Inicializar o toggle ao carregar a página
+function initToggleNotificacoes() {
+  const checkbox = document.getElementById("toggleNotificacoes");
+  const slider = document.getElementById("toggleNotificacoesSlider");
+
+  if (checkbox) {
+    checkbox.checked = notificacoesAtivas;
+  }
+
+  if (slider) {
+    if (notificacoesAtivas) {
+      slider.style.backgroundColor = "#22c55e";
+    } else {
+      slider.style.backgroundColor = "#d1d5db";
+    }
+  }
+}
 let intervaloEstudo;
 
 function atualizarSistema() {
@@ -1831,45 +1903,243 @@ function atualizarSistema() {
     atualizarMeta();
   }
 }
+// Atualizar relógio inteligente a cada 10 segundos
+setInterval(() => {
+  if (typeof atualizarRelogioInfo === 'function') {
+    atualizarRelogioInfo();
+  }
+}, 10000);
 
-/* ================= CRONOMETRO ================= */
+// Atualizar imediatamente ao carregar
+if (typeof atualizarRelogioInfo === 'function') {
+  atualizarRelogioInfo();
+}
+/* ================= CRONÔMETRO COM HISTÓRICO ================= */
 let cronometro = 0;
 let cronometroInterval;
+let cronometroRodando = false;
+let historicoCronometro = [];
+
+// Carregar histórico do localStorage
+try {
+  historicoCronometro = JSON.parse(localStorage.getItem("historicoCronometro")) || [];
+} catch (e) {
+  historicoCronometro = [];
+}
+
+function salvarHistoricoCronometro() {
+  localStorage.setItem("historicoCronometro", JSON.stringify(historicoCronometro));
+}
+
 function iniciarCronometro() {
+  if (cronometroRodando) return;
+
   clearInterval(cronometroInterval);
+  cronometroRodando = true;
+
   cronometroInterval = setInterval(() => {
     cronometro++;
-    const h = String(Math.floor(cronometro / 3600)).padStart(2, "0");
-    const m = String(Math.floor((cronometro % 3600) / 60)).padStart(2, "0");
-    const s = String(cronometro % 60).padStart(2, "0");
-    document.getElementById("cronometroDisplay").textContent =
-      `${h}:${m}:${s}`;
-  }, 1000)
+    atualizarDisplayCronometro();
+  }, 1000);
 }
+
 function pausarCronometro() {
+  if (!cronometroRodando) return;
+
   clearInterval(cronometroInterval);
+  cronometroRodando = false;
+
+  // Salvar no histórico se tiver tempo
+  if (cronometro > 0) {
+    const agora = new Date();
+    const registro = {
+      id: Date.now(),
+      tempo: cronometro,
+      tempoFormatado: formatarTempoCronometro(cronometro),
+      data: agora.toLocaleDateString('pt-BR'),
+      hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    historicoCronometro.unshift(registro); // Adiciona no início
+
+    // Manter apenas os últimos 50 registros
+    if (historicoCronometro.length > 50) {
+      historicoCronometro = historicoCronometro.slice(0, 50);
+    }
+
+    salvarHistoricoCronometro();
+    renderizarHistoricoCronometro();
+  }
 }
+
 function resetarCronometro() {
   clearInterval(cronometroInterval);
+  cronometroRodando = false;
   cronometro = 0;
   document.getElementById("cronometroDisplay").textContent = "00:00:00";
 }
-/* ================= TIMER ================= */
+
+function atualizarDisplayCronometro() {
+  const display = document.getElementById("cronometroDisplay");
+  if (!display) return;
+
+  const horas = Math.floor(cronometro / 3600);
+  const minutos = Math.floor((cronometro % 3600) / 60);
+  const segundos = cronometro % 60;
+
+  display.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+}
+
+function formatarTempoCronometro(totalSegundos) {
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
+
+  if (horas > 0) {
+    return `${horas}h ${minutos}min ${segundos}s`;
+  } else if (minutos > 0) {
+    return `${minutos}min ${segundos}s`;
+  } else {
+    return `${segundos}s`;
+  }
+}
+
+function toggleAcordeonCronometro() {
+  const conteudo = document.getElementById("cronometroHistoricoConteudo");
+  const seta = document.getElementById("cronometroSeta");
+
+  if (conteudo.style.display === "none" || conteudo.style.display === "") {
+    conteudo.style.display = "block";
+    seta.textContent = "▼";
+    seta.style.transform = "rotate(0deg)";
+  } else {
+    conteudo.style.display = "none";
+    seta.textContent = "▶";
+    seta.style.transform = "rotate(0deg)";
+  }
+}
+
+function renderizarHistoricoCronometro() {
+  const lista = document.getElementById("cronometroHistoricoLista");
+  const count = document.getElementById("cronometroHistoricoCount");
+
+  if (!lista) return;
+
+  if (count) {
+    count.textContent = `(${historicoCronometro.length})`;
+  }
+
+  if (historicoCronometro.length === 0) {
+    lista.innerHTML = '<p style="color: #43474c; text-align: center; padding: 10px; font-size: 0.7rem !important;">Nenhum tempo registrado</p>';
+    return;
+  }
+
+  lista.innerHTML = historicoCronometro.map((registro, index) => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #f3f4f6; ${index % 2 === 0 ? 'background: #fafafa;' : ''}">
+      <div>
+        <div style="font-weight: 600; color: #1f2937;">${registro.tempoFormatado}</div>
+        <div style="font-size: 0.7rem; color: #6b7280;">${registro.data} às ${registro.hora}</div>
+      </div>
+      <button onclick="excluirRegistroCronometro(${registro.id})" 
+              style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem;"
+              title="Excluir registro">
+        ✕
+      </button>
+    </div>
+  `).join('');
+}
+
+function limparHistoricoCronometro() {
+  if (historicoCronometro.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Histórico vazio',
+      text: 'Não há registros para limpar!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  Swal.fire({
+    title: 'Limpar histórico?',
+    text: `Tem certeza que deseja excluir todos os ${historicoCronometro.length} registros?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, limpar tudo!',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      historicoCronometro = [];
+      salvarHistoricoCronometro();
+      renderizarHistoricoCronometro();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Histórico limpo!',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function excluirRegistroCronometro(id) {
+  historicoCronometro = historicoCronometro.filter(r => r.id !== id);
+  salvarHistoricoCronometro();
+  renderizarHistoricoCronometro();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Registro excluído!',
+    timer: 1000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+
+// Inicializar o histórico ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+  renderizarHistoricoCronometro();
+});
+/* ================= TIMER SIMPLES ================= */
 let timerInterval;
-let tempoRestante = 0;
+let tempoRestanteTimer = 0;
+
 function iniciarTimer() {
   clearInterval(timerInterval);
-  const minutos = document.getElementById("timerMinutos").value;
-  tempoRestante = minutos * 60;
+
+  const minutosInput = document.getElementById("timerMinutos");
+  const segundosInput = document.getElementById("timerSegundos");
+
+  const minutos = parseInt(minutosInput.value) || 0;
+  const segundos = parseInt(segundosInput.value) || 0;
+
+  // Converte tudo para segundos
+  tempoRestanteTimer = (minutos * 60) + segundos;
+
+  if (tempoRestanteTimer <= 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Valor inválido!',
+      text: 'Digite pelo menos 1 segundo!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  atualizarDisplayTimer();
+
   timerInterval = setInterval(() => {
-    tempoRestante--;
-    const min = String(Math.floor(tempoRestante / 60)).padStart(2, "0");
-    const seg = String(tempoRestante % 60).padStart(2, "0");
-    document.getElementById("timerDisplay").textContent = `${min}:${seg}`;
-    if (tempoRestante <= 0) {
+    tempoRestanteTimer--;
+    atualizarDisplayTimer();
+
+    if (tempoRestanteTimer <= 0) {
       clearInterval(timerInterval);
-      tempoRestante = 0;
-      document.getElementById("timerDisplay").textContent = "00:00";
+
       Swal.fire({
         icon: "info",
         title: "Tempo acabou!",
@@ -1877,43 +2147,91 @@ function iniciarTimer() {
         showConfirmButton: false
       });
     }
-  }, 1000)
+  }, 1000);
 }
+
 function pararTimer() {
   clearInterval(timerInterval);
+}
+
+function resetarTimer() {
+  clearInterval(timerInterval);
+  tempoRestanteTimer = 0;
+  document.getElementById("timerMinutos").value = "";
+  document.getElementById("timerSegundos").value = "";
+  document.getElementById("timerDisplay").textContent = "00:00";
+}
+
+function atualizarDisplayTimer() {
+  const display = document.getElementById("timerDisplay");
+  if (!display) return;
+
+  const minutos = Math.floor(tempoRestanteTimer / 60);
+  const segundos = tempoRestanteTimer % 60;
+
+  display.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
 }
 /* ================= TEMPO POR MATERIA ================= */
 function renderTabelaMaterias() {
   const tabela = document.getElementById("tabelaMateriasTempo");
-  if (!tabela) return;
+  if (!tabela) {
+    console.error('Tabela de matérias não encontrada!');
+    return;
+  }
+
   tabela.innerHTML = "";
+
+  if (!materias || materias.length === 0) {
+    tabela.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhuma matéria cadastrada</td></tr>';
+    return;
+  }
 
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
-    let tempo = 0;
+    let tempoSegundos = 0;
+
+    // Calcular tempo total da matéria
     if (dados) {
-      if (typeof dados === 'number') tempo = dados;
-      else tempo = dados.total || 0;
+      if (typeof dados === 'number') {
+        tempoSegundos = dados;
+      } else if (dados.total) {
+        tempoSegundos = dados.total;
+      }
     }
-    const h = String(Math.floor(tempo / 3600)).padStart(2, "0");
-    const min = String(Math.floor((tempo % 3600) / 60)).padStart(2, "0");
-    const seg = String(tempo % 60).padStart(2, "0");
+
+    // Formatar tempo
+    const h = String(Math.floor(tempoSegundos / 3600)).padStart(2, "0");
+    const min = String(Math.floor((tempoSegundos % 3600) / 60)).padStart(2, "0");
+    const seg = String(tempoSegundos % 60).padStart(2, "0");
+
+    // Verificar se é a matéria atual
+    const isEstudando = estudoAtual == m.id;
+
     const tr = document.createElement("tr");
+    tr.style.background = isEstudando ? '#fef2f2' : 'transparent';
     tr.innerHTML = `
-      <td>${m.nome}</td>
-      <td>${h}:${min}:${seg}</td>
       <td>
-        <button onclick="iniciarEstudo('${m.id}')">▶</button>
-        <button onclick="pausarEstudo()">⏸</button>
+        ${m.nome}
+        ${isEstudando ? ' <span style="color: #22c55e;">● Estudando</span>' : ''}
       </td>
+      <td class="tempo">${h}:${min}:${seg}</td>
+      <td>
+  ${isEstudando ?
+        `<button onclick="pausarEstudo()" style="background: #f59e0b; margin-right: 5px;">⏸</button>
+     <button onclick="finalizarEstudo()" style="background: #ef4444;">⏹ Finalizar</button>` :
+        `<button onclick="iniciarEstudo('${m.id}')" style="background: #22c55e;">▶ Iniciar</button>`
+      }
+</td>
     `;
     tabela.appendChild(tr);
   });
-}/* ================= POMODORO CORRIGIDO (APENAS ESTE BLOCO) ================= */
+}
+/* ================= POMODORO CORRIGIDO (APENAS ESTE BLOCO) ================= */
+/* ================= POMODORO SEM STATUS ================= */
 let pomodoroTempo = 1500;
 let pomodoroInterval = null;
 let pomodoroRodando = false;
-let modoPomodoro = "foco"; // "foco" ou "pausa"
+let modoPomodoro = "foco";
 let estudoIdPomodoro = null;
 
 function atualizarDisplayPomodoro() {
@@ -1925,15 +2243,19 @@ function atualizarDisplayPomodoro() {
 
 function iniciarPomodoroPadrao() {
   if (pomodoroRodando) {
-    Swal.fire({ icon: 'warning', title: 'Já rodando!', text: 'Pause ou resete primeiro.', timer: 1500, showConfirmButton: false });
+    Swal.fire({
+      icon: 'warning',
+      title: 'Já rodando!',
+      text: 'Pause ou resete primeiro.',
+      timer: 1500,
+      showConfirmButton: false
+    });
     return;
   }
 
   modoPomodoro = "foco";
   pomodoroTempo = 1500;
   pomodoroRodando = true;
-  const statusEl = document.getElementById("pomodoroStatus");
-  if (statusEl) statusEl.textContent = "🍅 Estudando...";
   atualizarDisplayPomodoro();
 
   pomodoroInterval = setInterval(() => {
@@ -1944,22 +2266,31 @@ function iniciarPomodoroPadrao() {
       pomodoroRodando = false;
 
       if (modoPomodoro === "foco") {
-        // Pausar estudo se tiver
         if (estudoIdPomodoro) {
           if (typeof pausarEstudo === 'function') pausarEstudo();
           estudoIdPomodoro = null;
         }
 
-        Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: 'Hora da pausa! ☕', timer: 2000, showConfirmButton: false });
+        Swal.fire({
+          icon: 'success',
+          title: 'Foco concluído!',
+          text: 'Hora da pausa!',
+          timer: 2000,
+          showConfirmButton: false
+        });
         modoPomodoro = "pausa";
         pomodoroTempo = 300;
-        if (statusEl) statusEl.textContent = "☕ Em pausa...";
         iniciarPomodoroPadrao();
       } else {
-        Swal.fire({ icon: 'info', title: '☕ Pausa concluída!', text: 'Hora de estudar!', timer: 2000, showConfirmButton: false });
+        Swal.fire({
+          icon: 'info',
+          title: 'Pausa concluída!',
+          text: 'Hora de estudar!',
+          timer: 2000,
+          showConfirmButton: false
+        });
         modoPomodoro = "foco";
         pomodoroTempo = 1500;
-        if (statusEl) statusEl.textContent = "⚪ Parado";
       }
       atualizarDisplayPomodoro();
       return;
@@ -1974,8 +2305,6 @@ function pausarPomodoro() {
   if (!pomodoroRodando) return;
   pomodoroRodando = false;
   clearInterval(pomodoroInterval);
-  const statusEl = document.getElementById("pomodoroStatus");
-  if (statusEl) statusEl.textContent = "⏸ Pausado";
   if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
 }
 
@@ -1985,8 +2314,6 @@ function resetarPomodoro() {
   modoPomodoro = "foco";
   pomodoroTempo = 1500;
   atualizarDisplayPomodoro();
-  const statusEl = document.getElementById("pomodoroStatus");
-  if (statusEl) statusEl.textContent = "⚪ Parado";
   if (estudoIdPomodoro) {
     if (typeof pausarEstudo === 'function') pausarEstudo();
     estudoIdPomodoro = null;
@@ -2017,14 +2344,18 @@ function iniciarPomodoroPersonalizado() {
   const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5);
 
   if (!materiaId) {
-    Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
+    Swal.fire({
+      icon: 'warning',
+      title: 'Selecione uma matéria!',
+      timer: 1500,
+      showConfirmButton: false
+    });
     return;
   }
 
   const materia = materias.find(m => m.id == materiaId);
   if (!materia) return;
 
-  // Configurar o Pomodoro personalizado
   if (pomodoroRodando) resetarPomodoro();
 
   modoPomodoro = "foco";
@@ -2032,17 +2363,12 @@ function iniciarPomodoroPersonalizado() {
   pomodoroRodando = true;
   estudoIdPomodoro = materiaId;
 
-  // Iniciar estudo
   if (typeof iniciarEstudo === 'function') iniciarEstudo(materiaId);
 
-  const statusEl = document.getElementById("pomodoroStatus");
-  if (statusEl) statusEl.textContent = "🍅 Estudando...";
   atualizarDisplayPomodoro();
 
-  // Fechar modal
   bootstrap.Modal.getInstance(document.getElementById('modalPomodoro'))?.hide();
 
-  // Iniciar timer
   if (pomodoroInterval) clearInterval(pomodoroInterval);
   pomodoroInterval = setInterval(() => {
     if (!pomodoroRodando) return;
@@ -2054,13 +2380,17 @@ function iniciarPomodoroPersonalizado() {
       if (modoPomodoro === "foco") {
         if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
 
-        Swal.fire({ icon: 'success', title: '🍅 Foco concluído!', text: `${tempoPausa} min de pausa ☕`, timer: 2000, showConfirmButton: false });
+        Swal.fire({
+          icon: 'success',
+          title: ' Foco concluído!',
+          text: `${tempoPausa} min de pausa `,
+          timer: 2000,
+          showConfirmButton: false
+        });
         modoPomodoro = "pausa";
         pomodoroTempo = tempoPausa * 60;
-        if (statusEl) statusEl.textContent = "☕ Em pausa...";
         atualizarDisplayPomodoro();
 
-        // Continuar para a pausa
         setTimeout(() => {
           if (!pomodoroRodando) {
             pomodoroRodando = true;
@@ -2069,8 +2399,13 @@ function iniciarPomodoroPersonalizado() {
               if (pomodoroTempo <= 0) {
                 clearInterval(pomodoroInterval);
                 pomodoroRodando = false;
-                Swal.fire({ icon: 'info', title: '☕ Pausa concluída!', text: 'Pronto para outro ciclo!', timer: 2000, showConfirmButton: false });
-                if (statusEl) statusEl.textContent = "⚪ Parado";
+                Swal.fire({
+                  icon: 'info',
+                  title: '☕ Pausa concluída!',
+                  text: 'Pronto para outro ciclo!',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
                 estudoIdPomodoro = null;
               } else {
                 pomodoroTempo--;
@@ -2087,52 +2422,55 @@ function iniciarPomodoroPersonalizado() {
     atualizarDisplayPomodoro();
   }, 1000);
 }
-
 /* ================= INICIAR ESTUDO ================= */
 function iniciarEstudo(id) {
-  atualizarStreak();
-  estudoAtual = id;
-
-  // Inicializar estrutura se não existir
-  if (!tempoEstudo[id]) {
+  const materia = materias.find(m => m.id == id);
+  if (!materia) {
+    console.error('Matéria não encontrada:', id);
+    return;
+  } if (estudoAtual && estudoAtual !== id) {
+    pausarEstudo();
+  } atualizarStreak(); estudoAtual = id;
+  modoEstudo = "manual"; if (!tempoEstudo[id]) {
     tempoEstudo[id] = {
       total: 0,
-      historico: {} // vai guardar { "2024-03-31": segundos }
+      historico: {}
     };
-  }
-
-  // Garantir que tem a estrutura correta
-  if (typeof tempoEstudo[id] === 'number') {
-    // Migrar formato antigo para novo
+  } if (typeof tempoEstudo[id] === 'number') {
     const tempoAntigo = tempoEstudo[id];
     tempoEstudo[id] = {
       total: tempoAntigo,
       historico: {}
     };
   }
-
   const hoje = new Date().toISOString().split('T')[0];
   if (!tempoEstudo[id].historico[hoje]) {
     tempoEstudo[id].historico[hoje] = 0;
-  }
-
-  clearInterval(intervaloEstudo);
+  } clearInterval(intervaloEstudo);
   intervaloEstudo = setInterval(() => {
-    // Incrementar total
     tempoEstudo[id].total++;
-    // Incrementar histórico do dia
     tempoEstudo[id].historico[hoje]++;
-
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     renderTabelaMaterias();
-    atualizarMeta(); // Atualizar a meta em tempo real
-    if (typeof carregarEstatisticas === 'function' && document.getElementById("estatisticaSection")?.style.display === "block") {
-      carregarEstatisticas();
-    }
+    atualizarMeta();
     if (typeof atualizarRelogioInfo === 'function') {
       atualizarRelogioInfo();
+    } const estatisticaSection = document.getElementById("estatisticaSection");
+    if (estatisticaSection && estatisticaSection.style.display === "block") {
+      if (typeof carregarEstatisticas === 'function') {
+        carregarEstatisticas();
+      }
     }
-  }, 1000);
+  }, 1000); Swal.fire({
+    icon: 'success',
+    title: `Estudando: ${materia.nome}`,
+    text: 'O tempo está sendo contado!',
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+  console.log(`✅ Iniciou estudo de: ${materia.nome} (ID: ${id})`);
 }/* ================= MODO FOCO PERSONALIZADO ================= */
 
 // Função para abrir o modal
@@ -2333,13 +2671,35 @@ function iniciarTimerFoco(materia, tempoMinutos) {
 }
 /* ================= META PERSONALIZÁVEL ================= */
 let metas = {
-  diaria: 2,
-  semanal: 14,
-  mensal: 60
+  diaria: 0.5,
+  semanal: 3.5,
+  mensal: 14
 };
 let metaAtiva = "semanal";
 
-// 1. PRIMEIRO: FUNÇÃO PARA CALCULAR HORAS
+function converterParaHoras(horas, minutos) {
+  return (parseInt(horas) || 0) + ((parseInt(minutos) || 0) / 60);
+}
+
+function formatarMeta(horasDecimais) {
+  const h = Math.floor(horasDecimais);
+  const m = Math.round((horasDecimais - h) * 60);
+
+  if (h === 0 && m === 0) return "0min";
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}min`;
+}
+
+function atualizarDisplayMetas() {
+  const metaDiariaTexto = document.getElementById("metaDiariaTexto");
+  const metaSemanalTexto = document.getElementById("metaSemanalTexto");
+  const metaMensalTexto = document.getElementById("metaMensalTexto");
+
+  if (metaDiariaTexto) metaDiariaTexto.textContent = formatarMeta(metas.diaria);
+  if (metaSemanalTexto) metaSemanalTexto.textContent = formatarMeta(metas.semanal);
+  if (metaMensalTexto) metaMensalTexto.textContent = formatarMeta(metas.mensal);
+}
 function calcularHorasEstudadas(periodo) {
   const hoje = new Date();
   let totalSegundos = 0;
@@ -2352,15 +2712,16 @@ function calcularHorasEstudadas(periodo) {
   }
 
   const hojeStr = formatarData(hoje);
-  let dataInicio = new Date();
   let dataInicioStr;
 
   if (periodo === "diaria") {
     dataInicioStr = hojeStr;
   } else if (periodo === "semanal") {
+    const dataInicio = new Date();
     dataInicio.setDate(hoje.getDate() - 7);
     dataInicioStr = formatarData(dataInicio);
   } else if (periodo === "mensal") {
+    const dataInicio = new Date();
     dataInicio.setDate(hoje.getDate() - 30);
     dataInicioStr = formatarData(dataInicio);
   }
@@ -2384,8 +2745,6 @@ function calcularHorasEstudadas(periodo) {
 
   return totalSegundos / 3600;
 }
-
-// 2. SEGUNDO: FUNÇÃO PARA ATUALIZAR A META (antes de ser chamada)
 function atualizarMeta() {
   let metaValor, totalHoras, unidade;
 
@@ -2397,7 +2756,7 @@ function atualizarMeta() {
     unidade = "semana";
   } else {
     metaValor = metas.mensal;
-    unidade = "mês";
+    unidade = "mes";
   }
 
   totalHoras = calcularHorasEstudadas(metaAtiva);
@@ -2406,25 +2765,44 @@ function atualizarMeta() {
 
   const metaTexto = document.getElementById("metaTextoResumo");
   if (metaTexto) {
-    metaTexto.textContent = `📊 ${totalHoras.toFixed(1)}h de ${metaValor}h (${unidade})`;
+    if (progresso >= 100) {
+      metaTexto.innerHTML = `<span style="color: #16a34a;">Meta batida!</span> ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`;
+    } else if (progresso >= 75) {
+      metaTexto.textContent = `Quase la! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`;
+    } else if (progresso >= 50) {
+      metaTexto.textContent = `Na metade! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`;
+    } else if (progresso > 0) {
+      metaTexto.textContent = `Comecando! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`;
+    } else {
+      metaTexto.textContent = `Nenhum estudo ainda. Meta: ${formatarMeta(metaValor)}`;
+    }
   }
 
   const metaBarra = document.getElementById("metaBarraResumo");
   if (metaBarra) {
     metaBarra.style.width = `${progresso}%`;
+    metaBarra.classList.remove("baixa", "media", "alta");
+    if (progresso >= 100) {
+      metaBarra.classList.add("alta");
+    } else if (progresso >= 50) {
+      metaBarra.classList.add("media");
+    } else {
+      metaBarra.classList.add("baixa");
+    }
   }
 
   const metaRestante = document.getElementById("metaRestanteResumo");
   if (metaRestante) {
-    if (faltam > 0) {
-      metaRestante.textContent = `⏳ Faltam ${faltam.toFixed(1)}h para bater a meta ${unidade}!`;
+    if (faltam <= 0) {
+      metaRestante.innerHTML = `<span style="color: #16a34a; font-weight: 600;">Concluido!</span>`;
     } else {
-      metaRestante.textContent = `🎉 Meta ${unidade} alcançada! Parabéns! 🎉`;
+      metaRestante.textContent = `Faltam ${formatarMeta(faltam)}`;
     }
   }
+
+  atualizarDisplayMetas();
 }
 
-// 3. TERCEIRO: FUNÇÕES QUE CHAMAM atualizarMeta
 function carregarMetas() {
   const metasSalvas = localStorage.getItem("metas");
   if (metasSalvas) {
@@ -2438,6 +2816,7 @@ function carregarMetas() {
     metaAtiva = metaAtivaSalva;
   }
 
+  atualizarDisplayMetas();
   atualizarMeta();
   atualizarBotoesMeta();
 }
@@ -2461,26 +2840,63 @@ function atualizarBotoesMeta() {
 }
 
 function abrirModalMeta() {
-  document.getElementById("metaDiaria").value = metas.diaria;
-  document.getElementById("metaSemanal").value = metas.semanal;
-  document.getElementById("metaMensal").value = metas.mensal;
+  // Converter horas decimais para horas e minutos
+  const diariaH = Math.floor(metas.diaria);
+  const diariaM = Math.round((metas.diaria - diariaH) * 60);
+  const semanalH = Math.floor(metas.semanal);
+  const semanalM = Math.round((metas.semanal - semanalH) * 60);
+  const mensalH = Math.floor(metas.mensal);
+  const mensalM = Math.round((metas.mensal - mensalH) * 60);
+
+  document.getElementById("metaDiariaHoras").value = diariaH;
+  document.getElementById("metaDiariaMinutos").value = diariaM;
+  document.getElementById("metaSemanalHoras").value = semanalH;
+  document.getElementById("metaSemanalMinutos").value = semanalM;
+  document.getElementById("metaMensalHoras").value = mensalH;
+  document.getElementById("metaMensalMinutos").value = mensalM;
+
   const modal = new bootstrap.Modal(document.getElementById('modalMeta'));
   modal.show();
 }
 
 function salvarMeta() {
-  metas.diaria = parseFloat(document.getElementById("metaDiaria").value) || 2;
-  metas.semanal = parseFloat(document.getElementById("metaSemanal").value) || 14;
-  metas.mensal = parseFloat(document.getElementById("metaMensal").value) || 60;
+  const diariaHoras = parseInt(document.getElementById("metaDiariaHoras").value) || 0;
+  const diariaMinutos = parseInt(document.getElementById("metaDiariaMinutos").value) || 0;
+  const semanalHoras = parseInt(document.getElementById("metaSemanalHoras").value) || 0;
+  const semanalMinutos = parseInt(document.getElementById("metaSemanalMinutos").value) || 0;
+  const mensalHoras = parseInt(document.getElementById("metaMensalHoras").value) || 0;
+  const mensalMinutos = parseInt(document.getElementById("metaMensalMinutos").value) || 0;
+
+  metas.diaria = converterParaHoras(diariaHoras, diariaMinutos);
+  metas.semanal = converterParaHoras(semanalHoras, semanalMinutos);
+  metas.mensal = converterParaHoras(mensalHoras, mensalMinutos);
+
+  // Validacao: pelo menos 1 minuto
+  if (metas.diaria <= 0 && metas.semanal <= 0 && metas.mensal <= 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Meta invalida!',
+      text: 'Defina pelo menos 1 minuto para uma das metas.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
 
   localStorage.setItem("metas", JSON.stringify(metas));
   atualizarMeta();
+  atualizarDisplayMetas();
 
   bootstrap.Modal.getInstance(document.getElementById('modalMeta')).hide();
+
   Swal.fire({
     icon: 'success',
     title: 'Metas atualizadas!',
-    text: `🎯 Diária: ${metas.diaria}h | Semanal: ${metas.semanal}h | Mensal: ${metas.mensal}h`,
+    html: `
+      Diaria: ${formatarMeta(metas.diaria)}<br>
+      Semanal: ${formatarMeta(metas.semanal)}<br>
+      Mensal: ${formatarMeta(metas.mensal)}
+    `,
     timer: 2500,
     showConfirmButton: false
   });
@@ -2489,7 +2905,6 @@ function salvarMeta() {
 function calcularMetas() {
   atualizarMeta();
 }
-
 /* ================= STREAK ================= */
 function atualizarStreak() {
   const hoje = new Date().toDateString();
@@ -2535,41 +2950,40 @@ function atualizarRelogioInfo() {
   );
 
   if (blocoAtual) {
-    materiaEl.textContent = "📚 " + blocoAtual.materia.nome;
+    materiaEl.textContent = blocoAtual.materia.nome;
     horarioEl.textContent = blocoAtual.inicio + " - " + blocoAtual.fim;
+
     const [fh, fm] = blocoAtual.fim.split(":");
     const fim = new Date();
     fim.setHours(fh);
     fim.setMinutes(fm);
     fim.setSeconds(0);
     const restante = Math.floor((fim - agora) / 1000);
+
     if (restante > 0) {
       const h = String(Math.floor(restante / 3600)).padStart(2, "0");
       const m = String(Math.floor((restante % 3600) / 60)).padStart(2, "0");
       const s = String(restante % 60).padStart(2, "0");
-      tempoRestanteEl.textContent = "⏳ faltam " + h + ":" + m + ":" + s;
+      tempoRestanteEl.textContent = "faltam " + h + ":" + m + ":" + s;
     } else {
-      tempoRestanteEl.textContent = "⏳ terminou";
+      tempoRestanteEl.textContent = "terminou";
     }
   } else {
-    materiaEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
-    horarioEl.textContent = "";
-    tempoRestanteEl.textContent = "";
+    materiaEl.innerHTML = "Descanso";
+    horarioEl.textContent = "--:-- - --:--";
+    tempoRestanteEl.textContent = "aguardando...";
   }
 
-  // ✅ CALCULAR APENAS AS HORAS ESTUDADAS HOJE
+  // Horas estudadas hoje
   const hoje = new Date().toISOString().split('T')[0];
   let totalSegundosHoje = 0;
 
   Object.values(tempoEstudo).forEach(materia => {
     if (typeof materia === 'number') {
-      // Formato antigo - considera tudo
       totalSegundosHoje += materia;
     } else if (materia.historico && materia.historico[hoje]) {
-      // Formato novo - pega só o dia de hoje
       totalSegundosHoje += materia.historico[hoje];
     } else if (materia.total) {
-      // Fallback
       totalSegundosHoje += materia.total;
     }
   });
@@ -2577,24 +2991,44 @@ function atualizarRelogioInfo() {
   const h = String(Math.floor(totalSegundosHoje / 3600)).padStart(2, "0");
   const m = String(Math.floor((totalSegundosHoje % 3600) / 60)).padStart(2, "0");
   const s = String(totalSegundosHoje % 60).padStart(2, "0");
-  tempoHojeEl.textContent = "⏱ " + h + ":" + m + ":" + s + " estudados hoje";
 
+  if (tempoHojeEl) {
+    tempoHojeEl.textContent = h + ":" + m + ":" + s;
+  }
+
+  // Streak
   const streak = localStorage.getItem("streak") || 0;
-  streakEl.textContent = "🔥 " + streak + " dias seguidos";
+  if (streakEl) {
+    streakEl.textContent = streak + " dias";
+  }
 }
-
 function pausarEstudo() {
-  clearInterval(intervaloEstudo);
+  if (intervaloEstudo) {
+    clearInterval(intervaloEstudo);
+    intervaloEstudo = null;
+  }
+  if (estudoAtual) {
+    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+    const materia = materias.find(m => m.id == estudoAtual);
+    const nomeMateria = materia ? materia.nome : 'Desconhecida';
+    console.log(`⏸️ Estudo pausado: ${nomeMateria}`);
+    Swal.fire({
+      icon: 'info',
+      title: 'Estudo pausado',
+      text: `${nomeMateria} - Tempo salvo!`,
+      timer: 2000,
+      showConfirmButton: false,
+      position: 'top-end',
+      toast: true
+    });
+  }
   estudoAtual = null;
   modoEstudo = "manual";
-  notificarMudanca = false;  // 👈 DESATIVA NOTIFICAÇÕES
-  Swal.fire({
-    icon: "info",
-    title: "Estudo pausado",
-    text: "As notificações de estudo automático foram desativadas.",
-    timer: 2000,
-    showConfirmButton: false
-  });
+  notificarMudanca = false;
+  renderTabelaMaterias();
+  if (typeof atualizarRelogioInfo === 'function') {
+    atualizarRelogioInfo();
+  }
 }
 function adicionarMateriaRelogio() {
   const nome = document.getElementById("novaMateriaRelogio").value.trim();
@@ -2614,34 +3048,59 @@ function adicionarMateriaRelogio() {
   Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
 }
 function finalizarEstudo() {
-  clearInterval(intervaloEstudo);
-  estudoAtual = null;
-  if (typeof carregarEstatisticas === 'function') {
-    carregarEstatisticas(); // 👈 ADICIONE
-  }
-  Swal.fire({ icon: "success", title: "Sessão finalizada!", timer: 1500, showConfirmButton: false });
-}
+  const materia = estudoAtual ? materias.find(m => m.id == estudoAtual) : null;
+  const nomeMateria = materia ? materia.nome : 'Desconhecida';
 
+  // Calcular tempo da sessão atual
+  const tempoSessao = tempoEstudo[estudoAtual]?.historico?.[hoje] || 0;
+  const horas = Math.floor(tempoSessao / 3600);
+  const minutos = Math.floor((tempoSessao % 3600) / 60);
 
-
-/* ================= INFO RELÓGIO ================= */
-function mostrarInfoRelogio() {
   Swal.fire({
-    title: '⏰ Como funciona o Relógio Inteligente?',
+    title: 'Finalizar estudo?',
     html: `
-      <div style="text-align: left;">
-        <p>📌 <strong>Modo Automático:</strong> O relógio acompanha seu cronograma e começa a contar automaticamente quando chega o horário de cada matéria.</p>
-        <p>⏸️ <strong>Pausar:</strong> Você pode pausar o estudo a qualquer momento clicando no botão ⏸ ao lado da matéria.</p>
-        <p>🔄 <strong>Voltar ao Automático:</strong> Depois de pausar, clique em "Voltar automático" para voltar a seguir o cronograma.</p>
-        <p>📚 <strong>Estudo por Matéria:</strong> Você também pode estudar "solto", sem seguir o cronograma, usando os botões ▶ ao lado de cada matéria.</p>
-        <p>🍅 <strong>Pomodoro:</strong> Clique no timer do Pomodoro para personalizar o tempo de estudo e pausa!</p>
-      </div>
+      <p>Matéria: <strong>${nomeMateria}</strong></p>
+      <p>Tempo nesta sessão: <strong>${horas}h ${minutos}min</strong></p>
+      <p>Tem certeza que deseja encerrar?</p>
     `,
-    icon: 'info',
-    confirmButtonText: 'Entendi!',
-    confirmButtonColor: '#9f042c'
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, finalizar!',
+    cancelButtonText: 'Continuar estudando',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // AQUI vai a lógica de finalização
+      if (intervaloEstudo) {
+        clearInterval(intervaloEstudo);
+        intervaloEstudo = null;
+      }
+
+      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+
+      estudoAtual = null;
+      modoEstudo = "manual";
+
+      renderTabelaMaterias();
+      if (typeof atualizarRelogioInfo === 'function') {
+        atualizarRelogioInfo();
+      }
+      if (typeof carregarEstatisticas === 'function') {
+        carregarEstatisticas();
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Estudo finalizado!',
+        text: `${nomeMateria} - ${horas}h ${minutos}min registrados!`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
   });
 }
+/* ================= INFO RELÓGIO ================= */
 
 function atualizarPainelEstudos() {
   console.log("🔄 Atualizando painel de estudos...");
@@ -2658,11 +3117,11 @@ function atualizarPainelEstudos() {
     cronogramaLocal = window.cronogramaNovo;
   }
 
-  console.log("📅 Cronograma carregado:", cronogramaLocal.length, "blocos");
+  console.log("Cronograma carregado:", cronogramaLocal.length, "blocos");
 
   // Verificar se cronogramaNovo existe e tem dados
   if (!cronogramaLocal || cronogramaLocal.length === 0) {
-    console.log("⚠️ Nenhum bloco no cronograma");
+    console.log("Nenhum bloco no cronograma");
     const materiaAgoraEl = document.getElementById("materiaAgoraInicio");
     const horarioAgoraEl = document.getElementById("horarioAgoraInicio");
     const tempoRestanteEl = document.getElementById("tempoRestanteInicio");
@@ -2749,7 +3208,14 @@ function atualizarPainelEstudos() {
     if (tempoRestanteEl) tempoRestanteEl.textContent = "";
     console.log("😴 Nenhuma matéria no momento");
   }
-
+  const btnVamosLa = document.getElementById("btnVamosLa");
+  if (btnVamosLa) {
+    if (blocoAtual) {
+      btnVamosLa.style.display = "block";
+    } else {
+      btnVamosLa.style.display = "none";
+    }
+  }
   // Atualizar UI - Próxima Matéria
   const materiaProximaEl = document.getElementById("materiaProximaInicio");
   const horarioProximaEl = document.getElementById("horarioProximaInicio");
@@ -2781,6 +3247,36 @@ function atualizarPainelEstudos() {
     if (tempoProximaEl) tempoProximaEl.textContent = "";
   }
 }
+function irParaEstudar() {
+  closeSidebar();
+
+  mostrarTela("relogio");
+
+  const links = document.querySelectorAll('#menuLateral .nav-link');
+  links.forEach(link => link.classList.remove('active'));
+
+  const linkRelogio = document.querySelector('#menuLateral .nav-link[onclick*="relogio"]');
+  if (linkRelogio) {
+    linkRelogio.classList.add('active');
+  }
+  setTimeout(() => {
+    if (typeof atualizarRelogioInfo === 'function') {
+      atualizarRelogioInfo();
+    }
+    if (typeof atualizarMateriaAgora === 'function') {
+      atualizarMateriaAgora();
+    }
+  }, 100);
+  if (modoEstudo !== "auto") {
+    voltarModoAuto();
+  }
+  setTimeout(() => {
+    const relogioInfo = document.getElementById("relogioInfo");
+    if (relogioInfo) {
+      relogioInfo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 300);
+}
 
 // Garantir que o painel seja atualizado na inicialização e quando o cronograma mudar
 function forcarAtualizacaoPainel() {
@@ -2797,31 +3293,59 @@ function atualizarCronogramaCompleto() {
   atualizarMateriaAgora();
   forcarAtualizacaoPainel();
 }
-
-// Substituir a chamada do setInterval por uma mais confiável
-/*setInterval(() => {
-  if (typeof atualizarPainelEstudos === 'function') {
-    atualizarPainelEstudos();
-  }
-}, 30000); // atualiza a cada 30 segundos
-*/
-// Forçar atualização inicial
 forcarAtualizacaoPainel();
 
+function pausarModoAuto() {
+  modoEstudo = "manual";
+  notificarMudanca = false;
 
-/*setInterval(atualizarSistema, 10000); */
+  if (intervaloEstudo) {
+    clearInterval(intervaloEstudo);
+    intervaloEstudo = null;
+  }
+  estudoAtual = null;
+
+  const statusEl = document.getElementById("statusModoAuto");
+  if (statusEl) {
+    statusEl.textContent = "Modo automatico pausado - Controle manual ativo";
+    statusEl.style.color = "#f59e0b";
+  }
+
+  renderTabelaMaterias();
+  if (typeof atualizarRelogioInfo === 'function') {
+    atualizarRelogioInfo();
+  }
+
+  Swal.fire({
+    icon: "info",
+    title: "Modo automatico pausado",
+    text: "O estudo nao iniciara automaticamente. Clique em uma materia para estudar manualmente.",
+    timer: 2500,
+    showConfirmButton: false
+  });
+}
 function voltarModoAuto() {
   modoEstudo = "auto";
   notificarMudanca = true;
+
+  const statusEl = document.getElementById("statusModoAuto");
+  if (statusEl) {
+    statusEl.textContent = "Modo automatico ativo - Seguindo o cronograma";
+    statusEl.style.color = "#22c55e";
+  }
+
+  atualizarMateriaAgora();
+  if (typeof atualizarRelogioInfo === 'function') {
+    atualizarRelogioInfo();
+  }
+
   Swal.fire({
     icon: "info",
-    title: "Modo automático ativado",
-    text: "Você receberá notificações quando for hora de estudar.",
-    timer: 2000,
+    title: "Modo automatico ativado",
+    text: "O estudo iniciara automaticamente conforme seu cronograma.",
+    timer: 2500,
     showConfirmButton: false
   });
-  atualizarMateriaAgora();
-  atualizarPainelEstudos();
 }
 
 
@@ -3083,26 +3607,26 @@ function atualizarMetas() {
   const totalSemana = calcularEstudoSemanal();
   const totalMes = calcularHorasEstudadas("mensal");
 
-  // Meta Diária
+  // Meta Diaria
   const metaDiaria = metas.diaria;
   const progressoDiario = Math.min((totalHoje / metaDiaria) * 100, 100);
   document.getElementById("barraMetaDiaria").style.width = `${progressoDiario}%`;
-  document.getElementById("metaDiariaTexto").textContent = `${metaDiaria}h`;
-  document.getElementById("metaDiariaRestante").textContent = `${totalHoje.toFixed(1)}h de ${metaDiaria}h`;
+  document.getElementById("metaDiariaTexto").textContent = formatarMeta(metaDiaria);
+  document.getElementById("metaDiariaRestante").textContent = `${totalHoje.toFixed(1)}h de ${formatarMeta(metaDiaria)}`;
 
   // Meta Semanal
   const metaSemanal = metas.semanal;
   const progressoSemanal = Math.min((totalSemana / metaSemanal) * 100, 100);
   document.getElementById("barraMetaSemanal").style.width = `${progressoSemanal}%`;
-  document.getElementById("metaSemanalTexto").textContent = `${metaSemanal}h`;
-  document.getElementById("metaSemanalRestante").textContent = `${totalSemana.toFixed(1)}h de ${metaSemanal}h`;
+  document.getElementById("metaSemanalTexto").textContent = formatarMeta(metaSemanal);
+  document.getElementById("metaSemanalRestante").textContent = `${totalSemana.toFixed(1)}h de ${formatarMeta(metaSemanal)}`;
 
   // Meta Mensal
   const metaMensal = metas.mensal;
   const progressoMensal = Math.min((totalMes / metaMensal) * 100, 100);
   document.getElementById("barraMetaMensal").style.width = `${progressoMensal}%`;
-  document.getElementById("metaMensalTexto").textContent = `${metaMensal}h`;
-  document.getElementById("metaMensalRestante").textContent = `${totalMes.toFixed(1)}h de ${metaMensal}h`;
+  document.getElementById("metaMensalTexto").textContent = formatarMeta(metaMensal);
+  document.getElementById("metaMensalRestante").textContent = `${totalMes.toFixed(1)}h de ${formatarMeta(metaMensal)}`;
 }
 
 // Atualizar conquistas separadas
