@@ -22,38 +22,48 @@ window.abrirLightbox = function (src) {
   `;
   document.body.appendChild(lightbox);
 };
-
 function mostrarTela(tela) {
   const telas = [
     "inicio", "tarefas", "notas", "calendario", "relogio",
     "estatistica", "cronogramaNovo", "metodos", "revisao"
   ];
-  // esconde tudo
+
   telas.forEach(t => {
     const el = document.getElementById(t + "Section");
     if (el) el.style.display = "none";
   });
+
   const ativa = document.getElementById(tela + "Section");
   if (ativa) {
     ativa.style.display = "block";
   }
+
   atualizarTudo();
+
   if (tela === "calendario" && calendar) {
-    calendar.updateSize();  // ← SEM setTimeout!
+    setTimeout(() => {
+      if (calendar && typeof calendar.updateSize === 'function') {
+        calendar.updateSize();
+      }
+    }, 100);
   }
+
   if (tela === "cronogramaNovo") {
     renderCronogramaNovo();
   }
+
   if (tela === "estatistica") {
-    carregarEstatisticas();  // ← SEM setTimeout!
+    setTimeout(() => {
+      if (typeof carregarEstatisticas === 'function') {
+        carregarEstatisticas();
+      }
+    }, 100);
   }
-  // funções específicas
+
   if (tela === "relogio") {
     renderTabelaMaterias();
   }
-}
-
-// CONEXÃO COM EFEITO
+}// CONEXÃO COM EFEITO
 document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   const tipoInteligencia = params.get('tipo');
@@ -279,15 +289,6 @@ function configurarFiltroPrioridade() {
     });
   });
 }
-function toggle(id) {
-  id = Number(id);
-  const tarefa = tarefas.find(t => t.id === id);
-  if (!tarefa) return;
-  tarefa.concluida = !tarefa.concluida;
-  salvarTarefas();
-  atualizarTudo();
-  atualizarEventosTarefas();
-}
 function corPrioridade(prioridade) {
   if (prioridade === "alta") return "#ef4444";   // vermelho
   if (prioridade === "media") return "#f5d60b";  // laranja
@@ -296,7 +297,6 @@ function corPrioridade(prioridade) {
 }
 // garante que os botões onclick encontrem as funções
 window.adicionarTarefa = adicionarTarefa;
-window.toggle = toggle;
 // ---------- CALENDÁRIO ----------
 let calendar;
 let isUpdating = false;
@@ -476,7 +476,7 @@ function atualizarEventosTarefas() {
       .filter(t => t.data && !t.concluida)
       .forEach(t => {
         calendar.addEvent({
-          title: `📋 ${t.titulo}`,
+          title: `${t.titulo}`,
           start: t.data,
           backgroundColor: corPrioridade(t.prioridade),
           borderColor: corPrioridade(t.prioridade),
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const cor = event.backgroundColor;
       const props = event.extendedProps;
 
-      console.log('🎯 Movendo evento:', titulo, 'para', novaData);
+      console.log('Movendo evento:', titulo, 'para', novaData);
 
       // Atualiza tarefa se necessário
       if (props?.isTarefa) {
@@ -529,11 +529,7 @@ document.addEventListener('DOMContentLoaded', function () {
           salvarTarefas();
         }
       }
-
-      // 🔥 SOLUÇÃO RADICAL: Remove o evento antigo
       event.remove();
-
-      // 🔥 Recria o evento na nova data
       calendar.addEvent({
         title: titulo,
         start: novaData,
@@ -817,7 +813,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         card.innerHTML = `
           <div class="card-nota" style="background-color:${nota.cor}; color:${nota.corTexto || '#000000'}; padding:10px; border-radius:5px;">
-            <i class="fa fa-star estrela ${nota.favorito ? 'favorito' : ''}" data-nota-id="${nota.id}" style="cursor:pointer;"></i>
+            <i class="bi bi-star-fill estrela ${nota.favorito ? 'favorito' : ''}" data-nota-id="${nota.id}" style="cursor:pointer; font-size:1.5rem;"></i>
             <h5>${nota.titulo}</h5>
             <small>${nota.dataCriacao || ""}</small>
             ${checklistStats}
@@ -1343,6 +1339,7 @@ function atualizarTudo() {
 
 // No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", () => {
+  configurarFiltroRevisao();
   initToggleNotificacoes();
   configurarFiltroPrioridade();
   migrarDadosAntigos();
@@ -1355,6 +1352,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initRevisao();
   renderizarFlashcards();
   carregarMetas();
+    closeSidebarOnLinkClick();
   if (typeof calendar !== "undefined" && calendar) {
     atualizarEventosTarefas();
     atualizarResumoInicio();
@@ -1550,12 +1548,12 @@ function salvarCronogramaNovo() {
 function adicionarMateria() {
   const inputNome = document.getElementById("novaMateriaNome");
   const inputCor = document.getElementById("novaMateriaCor");
-  
+
   if (!inputNome || !inputCor) return;
-  
+
   const nome = inputNome.value.trim();
   const cor = inputCor.value;
-  
+
   if (!nome) {
     Swal.fire({
       icon: 'warning',
@@ -1566,7 +1564,7 @@ function adicionarMateria() {
     });
     return;
   }
-  
+
   // Verificar se já existe
   const existe = materias.some(m => m.nome.toLowerCase() === nome.toLowerCase());
   if (existe) {
@@ -1579,23 +1577,23 @@ function adicionarMateria() {
     });
     return;
   }
-  
+
   const novaMateria = {
     id: Date.now().toString(),
     nome: nome,
     cor: cor
   };
-  
+
   materias.push(novaMateria);
   salvarMaterias();
-  
+
   inputNome.value = "";
   inputCor.value = "#9f042c";
-  
+
   renderMaterias();
   renderCronogramaNovo();
   renderTabelaMaterias();
-  
+
   Swal.fire({
     icon: 'success',
     title: 'Pronto!',
@@ -1611,14 +1609,14 @@ function adicionarMateria() {
 function renderMaterias() {
   const container = document.getElementById("materiasContainer");
   if (!container) return;
-  
+
   container.innerHTML = "";
-  
+
   if (materias.length === 0) {
-    container.innerHTML = '<p style="text-align: center; color: #9ca3af; width: 100%;">Nenhuma matéria cadastrada. Adicione acima! 👆</p>';
+    container.innerHTML = '<p style="text-align: center; color: #9ca3af; width: 100%;">Nenhuma matéria cadastrada. Adicione acima!</p>';
     return;
   }
-  
+
   materias.forEach(m => {
     const div = document.createElement("div");
     div.classList.add("materia-bloco");
@@ -1626,11 +1624,11 @@ function renderMaterias() {
     div.textContent = m.nome;
     div.id = m.id;
     div.draggable = true;
-    
+
     div.ondragstart = (e) => {
       e.dataTransfer.setData("text/plain", m.id);
     };
-    
+
     // Duplo clique para editar
     div.addEventListener("dblclick", () => {
       Swal.fire({
@@ -1654,31 +1652,52 @@ function renderMaterias() {
           }
         }
       });
-    });
-    
-    // Clique direito para excluir
-    div.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
+    });    // Duplo clique para editar OU excluir
+    div.addEventListener("dblclick", () => {
       Swal.fire({
-        title: `Excluir ${m.nome}?`,
-        text: "Também será removida do cronograma!",
-        icon: 'warning',
+        title: 'Editar Matéria',
+        html: `
+          <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
+          <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
+        `,
         showCancelButton: true,
-        confirmButtonText: 'Sim, excluir',
-        confirmButtonColor: '#dc3545'
+        showDenyButton: true,
+        confirmButtonText: 'Salvar',
+        denyButtonText: 'Excluir'
       }).then(result => {
         if (result.isConfirmed) {
-          materias = materias.filter(mat => mat.id !== m.id);
-          cronogramaNovo = cronogramaNovo.filter(b => b.materia.id !== m.id);
-          salvarMaterias();
-          salvarCronogramaNovo();
-          renderMaterias();
-          renderCronogramaNovo();
-          renderizarResumoHoje();
+          const novoNome = document.getElementById('editNome').value.trim();
+          const novaCor = document.getElementById('editCor').value;
+          if (novoNome) {
+            m.nome = novoNome;
+            m.cor = novaCor;
+            salvarMaterias();
+            renderMaterias();
+            renderCronogramaNovo();
+          }
+        } else if (result.isDenied) {
+          Swal.fire({
+            title: 'Excluir ' + m.nome + '?',
+            text: 'Também será removida do cronograma!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            confirmButtonColor: '#dc3545'
+          }).then(confirmResult => {
+            if (confirmResult.isConfirmed) {
+              materias = materias.filter(mat => mat.id !== m.id);
+              cronogramaNovo = cronogramaNovo.filter(b => b.materia.id !== m.id);
+              salvarMaterias();
+              salvarCronogramaNovo();
+              renderMaterias();
+              renderCronogramaNovo();
+              renderTabelaMaterias();
+              renderizarResumoHoje();
+            }
+          });
         }
       });
     });
-    
     container.appendChild(div);
   });
 }
@@ -1686,28 +1705,28 @@ function renderMaterias() {
 // ===== RENDERIZAR CRONOGRAMA (NOVA) =====
 function renderCronogramaNovo() {
   const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
-  
+
   dias.forEach(dia => {
     const coluna = document.getElementById(dia);
     if (!coluna) return;
-    
+
     coluna.innerHTML = `
       <h5>${dia.charAt(0).toUpperCase() + dia.slice(1)}</h5>
       <div class="dia-drop"></div>
     `;
-    
+
     const dropArea = coluna.querySelector(".dia-drop");
-    
+
     const blocos = cronogramaNovo
       .filter(b => b.dia === dia)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));
-    
+
     blocos.forEach(bloco => {
       const div = document.createElement("div");
       div.classList.add("bloco-materia");
       div.style.background = bloco.materia.cor || '#9f042c';
       div.textContent = `${bloco.materia.nome} (${bloco.inicio} - ${bloco.fim})`;
-      
+
       div.addEventListener("dblclick", () => {
         Swal.fire({
           title: 'Editar Horário',
@@ -1737,7 +1756,7 @@ function renderCronogramaNovo() {
           }
         });
       });
-      
+
       dropArea.appendChild(div);
     });
   });
@@ -1746,13 +1765,13 @@ function renderCronogramaNovo() {
 // ===== DROP (NOVO) =====
 function drop(ev) {
   ev.preventDefault();
-  
+
   const materiaId = ev.dataTransfer.getData("text/plain");
   const materia = materias.find(m => m.id === materiaId);
   const dia = ev.target.closest('.dia')?.id;
-  
+
   if (!materia || !dia) return;
-  
+
   Swal.fire({
     title: `Horário de ${materia.nome}`,
     html: `
@@ -1772,12 +1791,12 @@ function drop(ev) {
     preConfirm: () => {
       const inicio = document.getElementById("inicio").value;
       const fim = document.getElementById("fim").value;
-      
+
       if (!inicio || !fim || fim <= inicio) {
         Swal.showValidationMessage("Horário inválido!");
         return false;
       }
-      
+
       return { inicio, fim };
     }
   }).then(result => {
@@ -1789,7 +1808,7 @@ function drop(ev) {
         inicio: result.value.inicio,
         fim: result.value.fim
       });
-      
+
       salvarCronogramaNovo();
       renderCronogramaNovo();
       renderizarResumoHoje();
@@ -1819,7 +1838,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
- function atualizarMateriaAgora() {
+function atualizarMateriaAgora() {
+  if (typeof materias === 'undefined') {
+    try {
+      materias = JSON.parse(localStorage.getItem("materias")) || [];
+    } catch (e) {
+      materias = [];
+    }
+  }
   const el = document.getElementById("materiaAgoraInicio");
   if (!el) return;
 
@@ -1937,15 +1963,6 @@ function initToggleNotificacoes() {
   }
 }
 let intervaloEstudo;
-
-function atualizarSistema() {
-  atualizarMateriaAgora();
-  atualizarRelogioInfo();
-  // Verifica se a função existe antes de chamar
-  if (typeof atualizarMeta === 'function') {
-    atualizarMeta();
-  }
-}
 // Atualizar relógio inteligente a cada 10 segundos
 setInterval(() => {
   if (typeof atualizarRelogioInfo === 'function') {
@@ -2467,53 +2484,65 @@ function iniciarPomodoroPersonalizado() {
 }
 /* ================= INICIAR ESTUDO ================= */
 function iniciarEstudo(id) {
+  if (!id) {
+    console.error('ID da materia nao fornecido');
+    return;
+  }
+
   const materia = materias.find(m => m.id == id);
   if (!materia) {
-    console.error('Matéria não encontrada:', id);
+    console.error('Materia nao encontrada:', id);
     return;
-  } if (estudoAtual && estudoAtual !== id) {
-    pausarEstudo();
-  } atualizarStreak(); estudoAtual = id;
-  modoEstudo = "manual"; if (!tempoEstudo[id]) {
-    tempoEstudo[id] = {
-      total: 0,
-      historico: {}
-    };
-  } if (typeof tempoEstudo[id] === 'number') {
-    const tempoAntigo = tempoEstudo[id];
-    tempoEstudo[id] = {
-      total: tempoAntigo,
-      historico: {}
-    };
   }
+
+  if (estudoAtual && estudoAtual !== id) {
+    pausarEstudo();
+  }
+
+  atualizarStreak();
+  estudoAtual = id;
+  modoEstudo = "manual";
+
+  if (!tempoEstudo[id]) {
+    tempoEstudo[id] = { total: 0, historico: {} };
+  }
+
+  if (typeof tempoEstudo[id] === 'number') {
+    const tempoAntigo = tempoEstudo[id];
+    tempoEstudo[id] = { total: tempoAntigo, historico: {} };
+  }
+
   const hoje = new Date().toISOString().split('T')[0];
   if (!tempoEstudo[id].historico[hoje]) {
     tempoEstudo[id].historico[hoje] = 0;
-  } clearInterval(intervaloEstudo);
+  }
+
+  clearInterval(intervaloEstudo);
   intervaloEstudo = setInterval(() => {
-    tempoEstudo[id].total++;
-    tempoEstudo[id].historico[hoje]++;
-    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-    renderTabelaMaterias();
-    atualizarMeta();
-    if (typeof atualizarRelogioInfo === 'function') {
-      atualizarRelogioInfo();
-    } const estatisticaSection = document.getElementById("estatisticaSection");
-    if (estatisticaSection && estatisticaSection.style.display === "block") {
-      if (typeof carregarEstatisticas === 'function') {
-        carregarEstatisticas();
+    if (tempoEstudo[id] && tempoEstudo[id].historico) {
+      tempoEstudo[id].total++;
+      tempoEstudo[id].historico[hoje]++;
+      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+      renderTabelaMaterias();
+      if (typeof atualizarMeta === 'function') atualizarMeta();
+      if (typeof atualizarRelogioInfo === 'function') atualizarRelogioInfo();
+
+      const estatisticaSection = document.getElementById("estatisticaSection");
+      if (estatisticaSection && estatisticaSection.style.display === "block") {
+        if (typeof carregarEstatisticas === 'function') carregarEstatisticas();
       }
     }
-  }, 1000); Swal.fire({
+  }, 1000);
+
+  Swal.fire({
     icon: 'success',
-    title: `Estudando: ${materia.nome}`,
-    text: 'O tempo está sendo contado!',
+    title: 'Estudando: ' + materia.nome,
+    text: 'O tempo esta sendo contado!',
     timer: 1500,
     showConfirmButton: false,
     position: 'top-end',
     toast: true
   });
-  console.log(`✅ Iniciou estudo de: ${materia.nome} (ID: ${id})`);
 }/* ================= MODO FOCO PERSONALIZADO ================= */
 
 // Função para abrir o modal
@@ -2630,13 +2659,13 @@ function iniciarTimerFoco(materia, tempoMinutos) {
 
     if (fraseEl && focoAtivo) {
       if (tempoRestante > tempoSegundos * 0.8) {
-        fraseEl.textContent = `🎯 Começando com tudo! Mantenha o foco em ${materiaNome}!`;
+        fraseEl.textContent = `Começando com tudo! Mantenha o foco em ${materiaNome}!`;
       } else if (tempoRestante > tempoSegundos * 0.5) {
-        fraseEl.textContent = '💪 Continue assim! Você está indo bem!';
+        fraseEl.textContent = 'Continue assim! Você está indo bem!';
       } else if (tempoRestante > 60) {
-        fraseEl.textContent = '🔥 Quase lá! Mais um pouco!';
+        fraseEl.textContent = 'Quase lá! Mais um pouco!';
       } else if (tempoRestante > 0) {
-        fraseEl.textContent = '⏰ Último minuto! Dá pra finalizar com força!';
+        fraseEl.textContent = 'Último minuto! Dá pra finalizar com força!';
       }
     }
   }
@@ -2684,7 +2713,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
       pausarBtn.innerHTML = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
       pausarBtn.classList.toggle('modo-foco-btn-continuar', !focoAtivo);
       if (fraseEl) {
-        fraseEl.textContent = focoAtivo ? `🎯 Foco total em ${materiaNome}!` : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
+        fraseEl.textContent = focoAtivo ? `Foco total em ${materiaNome}!` : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
       }
     };
   }
@@ -2698,7 +2727,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
         pausarBtn.innerHTML = '⏸ Pausar';
         pausarBtn.classList.remove('modo-foco-btn-continuar');
       }
-      if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
+      if (fraseEl) fraseEl.textContent = 'Timer resetado! Vamos começar de novo!';
     };
   }
 
@@ -2845,7 +2874,6 @@ function atualizarMeta() {
 
   atualizarDisplayMetas();
 }
-
 function carregarMetas() {
   const metasSalvas = localStorage.getItem("metas");
   if (metasSalvas) {
@@ -2853,17 +2881,14 @@ function carregarMetas() {
   } else {
     localStorage.setItem("metas", JSON.stringify(metas));
   }
-
   const metaAtivaSalva = localStorage.getItem("metaAtiva");
   if (metaAtivaSalva) {
     metaAtiva = metaAtivaSalva;
   }
-
   atualizarDisplayMetas();
   atualizarMeta();
   atualizarBotoesMeta();
 }
-
 function atualizarBotoesMeta() {
   const botoes = document.querySelectorAll('.meta-tipo-btn');
   botoes.forEach(btn => {
@@ -2872,7 +2897,6 @@ function atualizarBotoesMeta() {
     } else {
       btn.classList.remove('active');
     }
-
     btn.onclick = () => {
       metaAtiva = btn.dataset.tipo;
       localStorage.setItem("metaAtiva", metaAtiva);
@@ -2881,27 +2905,22 @@ function atualizarBotoesMeta() {
     };
   });
 }
-
 function abrirModalMeta() {
-  // Converter horas decimais para horas e minutos
   const diariaH = Math.floor(metas.diaria);
   const diariaM = Math.round((metas.diaria - diariaH) * 60);
   const semanalH = Math.floor(metas.semanal);
   const semanalM = Math.round((metas.semanal - semanalH) * 60);
   const mensalH = Math.floor(metas.mensal);
   const mensalM = Math.round((metas.mensal - mensalH) * 60);
-
   document.getElementById("metaDiariaHoras").value = diariaH;
   document.getElementById("metaDiariaMinutos").value = diariaM;
   document.getElementById("metaSemanalHoras").value = semanalH;
   document.getElementById("metaSemanalMinutos").value = semanalM;
   document.getElementById("metaMensalHoras").value = mensalH;
   document.getElementById("metaMensalMinutos").value = mensalM;
-
   const modal = new bootstrap.Modal(document.getElementById('modalMeta'));
   modal.show();
 }
-
 function salvarMeta() {
   const diariaHoras = parseInt(document.getElementById("metaDiariaHoras").value) || 0;
   const diariaMinutos = parseInt(document.getElementById("metaDiariaMinutos").value) || 0;
@@ -2909,12 +2928,9 @@ function salvarMeta() {
   const semanalMinutos = parseInt(document.getElementById("metaSemanalMinutos").value) || 0;
   const mensalHoras = parseInt(document.getElementById("metaMensalHoras").value) || 0;
   const mensalMinutos = parseInt(document.getElementById("metaMensalMinutos").value) || 0;
-
   metas.diaria = converterParaHoras(diariaHoras, diariaMinutos);
   metas.semanal = converterParaHoras(semanalHoras, semanalMinutos);
   metas.mensal = converterParaHoras(mensalHoras, mensalMinutos);
-
-  // Validacao: pelo menos 1 minuto
   if (metas.diaria <= 0 && metas.semanal <= 0 && metas.mensal <= 0) {
     Swal.fire({
       icon: 'warning',
@@ -2922,16 +2938,12 @@ function salvarMeta() {
       text: 'Defina pelo menos 1 minuto para uma das metas.',
       timer: 2000,
       showConfirmButton: false
-    });
-    return;
+    }); return;
   }
-
   localStorage.setItem("metas", JSON.stringify(metas));
   atualizarMeta();
   atualizarDisplayMetas();
-
   bootstrap.Modal.getInstance(document.getElementById('modalMeta')).hide();
-
   Swal.fire({
     icon: 'success',
     title: 'Metas atualizadas!',
@@ -2944,10 +2956,6 @@ function salvarMeta() {
     showConfirmButton: false
   });
 }
-
-function calcularMetas() {
-  atualizarMeta();
-}
 /* ================= STREAK ================= */
 function atualizarStreak() {
   const hoje = new Date().toDateString();
@@ -2957,52 +2965,39 @@ function atualizarStreak() {
     localStorage.setItem("ultimoDiaEstudo", hoje);
     localStorage.setItem("streak", 1);
     return;
-  }
-  const ontem = new Date();
-  ontem.setDate(ontem.getDate() - 1);
+  } const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
   if (new Date(ultimoDia).toDateString() === ontem.toDateString()) {
-    streak++;
-    localStorage.setItem("streak", streak);
+    streak++; localStorage.setItem("streak", streak);
   } else if (ultimoDia !== hoje) {
-    streak = 1;
-    localStorage.setItem("streak", streak);
-  }
-  localStorage.setItem("ultimoDiaEstudo", hoje);
-}
-
-/* ================= RELOGIO INTELIGENTE ================= */
+    streak = 1; localStorage.setItem("streak", streak);
+  } localStorage.setItem("ultimoDiaEstudo", hoje);
+}/* ================= RELOGIO INTELIGENTE ================= */
 function atualizarRelogioInfo() {
   const materiaEl = document.getElementById("materiaRelogio");
   const horarioEl = document.getElementById("horarioRelogio");
   const tempoRestanteEl = document.getElementById("tempoRestante");
   const tempoHojeEl = document.getElementById("tempoHoje");
   const streakEl = document.getElementById("streakRelogio");
-
   if (!materiaEl) return;
-
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hojeSemana = dias[new Date().getDay()];
   const agora = new Date();
   const horaAtual = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
-
   const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
   const blocoAtual = cronogramaNovo.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
     horaAtual < b.fim
   );
-
   if (blocoAtual) {
     materiaEl.textContent = blocoAtual.materia.nome;
     horarioEl.textContent = blocoAtual.inicio + " - " + blocoAtual.fim;
-
     const [fh, fm] = blocoAtual.fim.split(":");
     const fim = new Date();
     fim.setHours(fh);
     fim.setMinutes(fm);
     fim.setSeconds(0);
     const restante = Math.floor((fim - agora) / 1000);
-
     if (restante > 0) {
       const h = String(Math.floor(restante / 3600)).padStart(2, "0");
       const m = String(Math.floor((restante % 3600) / 60)).padStart(2, "0");
@@ -3016,11 +3011,8 @@ function atualizarRelogioInfo() {
     horarioEl.textContent = "--:-- - --:--";
     tempoRestanteEl.textContent = "aguardando...";
   }
-
-  // Horas estudadas hoje
   const hoje = new Date().toISOString().split('T')[0];
   let totalSegundosHoje = 0;
-
   Object.values(tempoEstudo).forEach(materia => {
     if (typeof materia === 'number') {
       totalSegundosHoje += materia;
@@ -3030,22 +3022,17 @@ function atualizarRelogioInfo() {
       totalSegundosHoje += materia.total;
     }
   });
-
   const h = String(Math.floor(totalSegundosHoje / 3600)).padStart(2, "0");
   const m = String(Math.floor((totalSegundosHoje % 3600) / 60)).padStart(2, "0");
   const s = String(totalSegundosHoje % 60).padStart(2, "0");
-
   if (tempoHojeEl) {
     tempoHojeEl.textContent = h + ":" + m + ":" + s;
   }
-
-  // Streak
   const streak = localStorage.getItem("streak") || 0;
   if (streakEl) {
     streakEl.textContent = streak + " dias";
   }
-}
-function pausarEstudo() {
+} function pausarEstudo() {
   if (intervaloEstudo) {
     clearInterval(intervaloEstudo);
     intervaloEstudo = null;
@@ -3054,7 +3041,7 @@ function pausarEstudo() {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     const materia = materias.find(m => m.id == estudoAtual);
     const nomeMateria = materia ? materia.nome : 'Desconhecida';
-    console.log(`⏸️ Estudo pausado: ${nomeMateria}`);
+    console.log(`⏸ Estudo pausado: ${nomeMateria}`);
     Swal.fire({
       icon: 'info',
       title: 'Estudo pausado',
@@ -3076,13 +3063,11 @@ function pausarEstudo() {
 function adicionarMateriaRelogio() {
   const nome = document.getElementById("novaMateriaRelogio").value.trim();
   if (!nome) return;
-
   const novaMateria = {
     id: "m" + Date.now(),
     nome: nome,
     cor: "#9f042c"
   };
-
   materias.push(novaMateria);
   localStorage.setItem("materias", JSON.stringify(materias));
   document.getElementById("novaMateriaRelogio").value = "";
@@ -3093,12 +3078,9 @@ function adicionarMateriaRelogio() {
 function finalizarEstudo() {
   const materia = estudoAtual ? materias.find(m => m.id == estudoAtual) : null;
   const nomeMateria = materia ? materia.nome : 'Desconhecida';
-
-  // Calcular tempo da sessão atual
   const tempoSessao = tempoEstudo[estudoAtual]?.historico?.[hoje] || 0;
   const horas = Math.floor(tempoSessao / 3600);
   const minutos = Math.floor((tempoSessao % 3600) / 60);
-
   Swal.fire({
     title: 'Finalizar estudo?',
     html: `
@@ -3114,17 +3096,13 @@ function finalizarEstudo() {
     cancelButtonColor: '#6b7280'
   }).then((result) => {
     if (result.isConfirmed) {
-      // AQUI vai a lógica de finalização
       if (intervaloEstudo) {
         clearInterval(intervaloEstudo);
         intervaloEstudo = null;
       }
-
       localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-
       estudoAtual = null;
       modoEstudo = "manual";
-
       renderTabelaMaterias();
       if (typeof atualizarRelogioInfo === 'function') {
         atualizarRelogioInfo();
@@ -3132,7 +3110,6 @@ function finalizarEstudo() {
       if (typeof carregarEstatisticas === 'function') {
         carregarEstatisticas();
       }
-
       Swal.fire({
         icon: 'success',
         title: 'Estudo finalizado!',
@@ -3144,25 +3121,16 @@ function finalizarEstudo() {
   });
 }
 /* ================= INFO RELÓGIO ================= */
-
 function atualizarPainelEstudos() {
-  console.log("🔄 Atualizando painel de estudos...");
-
+  console.log("Atualizando painel de estudos...");
   const agora = new Date();
   let blocoAtual = null;
   let proximoBloco = null;
-
-  // Pega o cronograma do localStorage
   let cronogramaLocal = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-
-  // Usa a variável global se estiver vazia
   if (cronogramaLocal.length === 0 && window.cronogramaNovo && window.cronogramaNovo.length > 0) {
     cronogramaLocal = window.cronogramaNovo;
   }
-
   console.log("Cronograma carregado:", cronogramaLocal.length, "blocos");
-
-  // Verificar se cronogramaNovo existe e tem dados
   if (!cronogramaLocal || cronogramaLocal.length === 0) {
     console.log("Nenhum bloco no cronograma");
     const materiaAgoraEl = document.getElementById("materiaAgoraInicio");
@@ -3171,7 +3139,6 @@ function atualizarPainelEstudos() {
     const materiaProximaEl = document.getElementById("materiaProximaInicio");
     const horarioProximaEl = document.getElementById("horarioProximaInicio");
     const tempoProximaEl = document.getElementById("tempoProximaInicio");
-
     if (materiaAgoraEl) materiaAgoraEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
     if (horarioAgoraEl) horarioAgoraEl.textContent = "";
     if (tempoRestanteEl) tempoRestanteEl.textContent = "";
@@ -3180,58 +3147,38 @@ function atualizarPainelEstudos() {
     if (tempoProximaEl) tempoProximaEl.textContent = "";
     return;
   }
-
-  // Dias da semana
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hojeSemana = dias[agora.getDay()];
   const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
-
-  console.log(`📅 Hoje: ${hojeSemana}, Hora: ${horaAtual}`);
-
-  // Filtrar blocos do dia atual e ordenar
+  console.log(`Hoje: ${hojeSemana}, Hora: ${horaAtual}`);
   const blocosHoje = cronogramaLocal
     .filter(b => b.dia === hojeSemana)
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
-
-  console.log(`📖 Blocos de hoje: ${blocosHoje.length}`);
-
-  // Encontrar bloco atual e próximo
+  console.log(`Blocos de hoje: ${blocosHoje.length}`);
   for (let i = 0; i < blocosHoje.length; i++) {
     const bloco = blocosHoje[i];
     if (!bloco.inicio || !bloco.fim) continue;
-
-    // Verificar se é o bloco atual
     if (horaAtual >= bloco.inicio && horaAtual < bloco.fim) {
       blocoAtual = bloco;
-      console.log(`✅ MATÉRIA ATUAL: ${bloco.materia.nome} (${bloco.inicio} - ${bloco.fim})`);
+      console.log(`MATÉRIA ATUAL: ${bloco.materia.nome} (${bloco.inicio} - ${bloco.fim})`);
     }
-
-    // Verificar se é o próximo bloco (primeiro que começa depois da hora atual)
     if (!blocoAtual && bloco.inicio > horaAtual && !proximoBloco) {
       proximoBloco = bloco;
-      console.log(`⏰ PRÓXIMA: ${bloco.materia.nome} às ${bloco.inicio}`);
+      console.log(`PRÓXIMA: ${bloco.materia.nome} às ${bloco.inicio}`);
     }
   }
-
-  // Se não encontrou bloco atual mas tem blocos, pega o próximo
   if (!blocoAtual && blocosHoje.length > 0 && !proximoBloco) {
-    // Pega o primeiro bloco do dia (se for antes do primeiro horário)
     if (horaAtual < blocosHoje[0].inicio) {
       proximoBloco = blocosHoje[0];
-      console.log(`⏰ PRÓXIMA (primeira do dia): ${proximoBloco.materia.nome} às ${proximoBloco.inicio}`);
+      console.log(`PRÓXIMA (primeira do dia): ${proximoBloco.materia.nome} às ${proximoBloco.inicio}`);
     }
   }
-
-  // Atualizar UI - Matéria Atual
   const materiaAtualEl = document.getElementById("materiaAgoraInicio");
   const horarioAtualEl = document.getElementById("horarioAgoraInicio");
   const tempoRestanteEl = document.getElementById("tempoRestanteInicio");
-
   if (blocoAtual) {
     if (materiaAtualEl) materiaAtualEl.textContent = blocoAtual.materia.nome;
     if (horarioAtualEl) horarioAtualEl.textContent = `${blocoAtual.inicio} - ${blocoAtual.fim}`;
-
-    // Calcular tempo restante
     const [h, m] = blocoAtual.fim.split(":");
     const fim = new Date();
     fim.setHours(parseInt(h), parseInt(m), 0);
@@ -3239,9 +3186,9 @@ function atualizarPainelEstudos() {
     if (diff > 0) {
       const minutos = Math.floor(diff / 60000);
       const segundos = Math.floor((diff % 60000) / 1000);
-      if (tempoRestanteEl) tempoRestanteEl.textContent = `⏳ faltam ${minutos}min ${segundos}s`;
+      if (tempoRestanteEl) tempoRestanteEl.textContent = `faltam ${minutos}min ${segundos}s`;
     } else {
-      if (tempoRestanteEl) tempoRestanteEl.textContent = `⏳ terminou`;
+      if (tempoRestanteEl) tempoRestanteEl.textContent = `terminou`;
     }
 
     console.log(`✅ Painel atualizado: ${blocoAtual.materia.nome}`);
@@ -3249,7 +3196,7 @@ function atualizarPainelEstudos() {
     if (materiaAtualEl) materiaAtualEl.innerHTML = "<i class='bi bi-moon-stars-fill'></i> Descanso";
     if (horarioAtualEl) horarioAtualEl.textContent = "";
     if (tempoRestanteEl) tempoRestanteEl.textContent = "";
-    console.log("😴 Nenhuma matéria no momento");
+    console.log("Nenhuma matéria no momento");
   }
   const btnVamosLa = document.getElementById("btnVamosLa");
   if (btnVamosLa) {
@@ -3259,7 +3206,6 @@ function atualizarPainelEstudos() {
       btnVamosLa.style.display = "none";
     }
   }
-  // Atualizar UI - Próxima Matéria
   const materiaProximaEl = document.getElementById("materiaProximaInicio");
   const horarioProximaEl = document.getElementById("horarioProximaInicio");
   const tempoProximaEl = document.getElementById("tempoProximaInicio");
@@ -3320,16 +3266,12 @@ function irParaEstudar() {
     }
   }, 300);
 }
-
-// Garantir que o painel seja atualizado na inicialização e quando o cronograma mudar
 function forcarAtualizacaoPainel() {
-  console.log("🔄 Forçando atualização do painel...");
+  console.log("Forçando atualização do painel...");
   setTimeout(() => {
     atualizarPainelEstudos();
   }, 10);
 }
-
-// Adicionar listener para quando o cronograma for alterado
 function atualizarCronogramaCompleto() {
   renderCronogramaNovo();
   renderizarResumoHoje();
@@ -3390,20 +3332,12 @@ function voltarModoAuto() {
     showConfirmButton: false
   });
 }
-
-
-
 // ===== MENU HAMBÚRGUER PARA CELULAR =====
 function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('overlay');
-
   if (!sidebar) return;
-
-  // Alterna a classe show na sidebar
   sidebar.classList.toggle('show');
-
-  // Gerencia o overlay
   if (overlay) {
     if (sidebar.classList.contains('show')) {
       overlay.classList.add('show');
@@ -3423,16 +3357,12 @@ function closeSidebar() {
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
-
-// Fechar sidebar ao clicar no overlay
 document.addEventListener('DOMContentLoaded', function () {
   const overlay = document.getElementById('overlay');
   if (overlay) {
     overlay.onclick = closeSidebar;
   }
 });
-
-// Fechar menu ao clicar em um link (no celular)
 function closeSidebarOnLinkClick() {
   const links = document.querySelectorAll('#menuLateral .nav-link');
   links.forEach(link => {
@@ -3443,8 +3373,6 @@ function closeSidebarOnLinkClick() {
     });
   });
 }
-
-// Detectar redimensionamento da tela
 window.addEventListener('resize', function () {
   if (window.innerWidth > 768) {
     closeSidebar();
@@ -3457,12 +3385,11 @@ let graficoPrincipalAtual = null;
 let graficoMateriasAtual = null;
 let periodoAtual = "semana";
 let estatisticasAtualizando = false;
-
 // ==================== CALCULAR TOTAIS (UNIFICADO) ====================
 function calcularTotais() {
   let totalSegundos = 0;
   const diasEstudados = new Set();
-  
+
   Object.values(tempoEstudo).forEach(materia => {
     if (typeof materia === 'number') {
       totalSegundos += materia;
@@ -3485,18 +3412,16 @@ function calcularTotais() {
   const maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
   const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
 
-  return { 
-    totalHoras: totalHoras || 0, 
-    dias: dias || 0, 
-    maiorStreak: maiorStreak || 0, 
-    mediaDiaria: mediaDiaria || 0 
+  return {
+    totalHoras: totalHoras || 0,
+    dias: dias || 0,
+    maiorStreak: maiorStreak || 0,
+    mediaDiaria: mediaDiaria || 0
   };
-}
-
-// ==================== CALCULAR HORAS POR MATÉRIA ====================
+}// ==================== CALCULAR HORAS POR MATÉRIA ====================
 function calcularHorasPorMateria() {
   const materiasEstudo = [];
-  
+
   if (!materias || materias.length === 0) {
     return materiasEstudo;
   }
@@ -3504,7 +3429,7 @@ function calcularHorasPorMateria() {
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let totalSegundos = 0;
-    
+
     if (dados) {
       if (typeof dados === 'number') {
         totalSegundos = dados;
@@ -3512,20 +3437,16 @@ function calcularHorasPorMateria() {
         totalSegundos = dados.total;
       }
     }
-    
-    // Só inclui matérias com tempo > 0
     if (totalSegundos > 0) {
-      materiasEstudo.push({ 
-        nome: m.nome, 
+      materiasEstudo.push({
+        nome: m.nome,
         horas: totalSegundos / 3600,
         cor: m.cor || '#9f042c'
       });
     }
   });
-
   return materiasEstudo.sort((a, b) => b.horas - a.horas);
 }
-
 // ==================== CALCULAR ESTUDO POR PERÍODO ====================
 function calcularEstudoPeriodo(dias) {
   const hoje = new Date();
@@ -3545,12 +3466,10 @@ function calcularEstudoPeriodo(dias) {
 
   return totalSegundos / 3600;
 }
-
 // ==================== DADOS PARA GRÁFICOS ====================
 function getDadosPorDiaSemana() {
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const horasPorDia = [0, 0, 0, 0, 0, 0, 0];
-
   Object.values(tempoEstudo).forEach(materia => {
     if (materia && materia.historico) {
       Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
@@ -3563,49 +3482,37 @@ function getDadosPorDiaSemana() {
         }
       });
     }
-  });
-
-  return { labels: diasSemana, dados: horasPorDia };
+  }); return { labels: diasSemana, dados: horasPorDia };
 }
-
 function getDadosEstudoHoje() {
   const hoje = new Date().toISOString().split('T')[0];
   const dadosPorMateria = [];
-
   if (!materias || materias.length === 0) {
     return { labels: ['Sem dados'], dados: [0] };
   }
-
   materias.forEach(m => {
     const dados = tempoEstudo[m.id];
     let segundos = 0;
-    
     if (dados && dados.historico && dados.historico[hoje]) {
       segundos = dados.historico[hoje];
     }
-    
-    // Inclui todas as matérias, mesmo com 0 horas
     dadosPorMateria.push({ nome: m.nome, horas: segundos / 3600 });
   });
-
   return {
     labels: dadosPorMateria.map(d => d.nome),
     dados: dadosPorMateria.map(d => d.horas)
   };
 }
-
 function getDadosEstudoSemanal() {
   const hoje = new Date();
   const labels = [];
   const dados = [];
-
   for (let i = 6; i >= 0; i--) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
     const diaNome = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][data.getDay()];
     labels.push(`${diaNome} ${data.getDate()}/${data.getMonth() + 1}`);
-
     let total = 0;
     Object.values(tempoEstudo).forEach(materia => {
       if (materia && materia.historico && materia.historico[dataStr]) {
@@ -3614,31 +3521,23 @@ function getDadosEstudoSemanal() {
     });
     dados.push(total / 3600);
   }
-
   return { labels, dados };
 }
-
 function getDadosEstudoMensal() {
   const hoje = new Date();
   const labels = [];
   const dados = [];
-  
-  // Mostrar a cada 2 dias para não ficar muito poluído
   const step = 1; // Pode ajustar para 2 se quiser menos barras
-
   for (let i = 29; i >= 0; i -= step) {
     const data = new Date();
     data.setDate(hoje.getDate() - i);
     const dataStr = data.toISOString().split('T')[0];
     labels.push(`${data.getDate()}/${data.getMonth() + 1}`);
-
     let total = 0;
-    // Para steps > 1, calcula a média do período
     for (let j = 0; j < step; j++) {
       const dataInterna = new Date(data);
       dataInterna.setDate(data.getDate() - j);
       const dataInternaStr = dataInterna.toISOString().split('T')[0];
-      
       Object.values(tempoEstudo).forEach(materia => {
         if (materia && materia.historico && materia.historico[dataInternaStr]) {
           total += materia.historico[dataInternaStr];
@@ -3647,20 +3546,14 @@ function getDadosEstudoMensal() {
     }
     dados.push((total / 3600) / step); // Média do período
   }
-
   return { labels, dados };
 }
-
 // ==================== ATUALIZAR GRÁFICO PRINCIPAL ====================
 function atualizarGraficoPrincipal() {
   const ctx = document.getElementById('graficoPrincipal');
-  if (!ctx) {
-    console.warn('Canvas do gráfico principal não encontrado');
-    return;
-  }
+  if (!ctx) return;
 
   let dados, titulo;
-
   try {
     switch (periodoAtual) {
       case "semana":
@@ -3669,15 +3562,15 @@ function atualizarGraficoPrincipal() {
         break;
       case "hoje":
         dados = getDadosEstudoHoje();
-        titulo = "Estudo de Hoje (por matéria)";
+        titulo = "Estudo de Hoje (por materia)";
         break;
       case "semanal":
         dados = getDadosEstudoSemanal();
-        titulo = "Estudo Semanal (últimos 7 dias)";
+        titulo = "Estudo Semanal (ultimos 7 dias)";
         break;
       case "mensal":
         dados = getDadosEstudoMensal();
-        titulo = "Estudo Mensal (últimos 30 dias)";
+        titulo = "Estudo Mensal (ultimos 30 dias)";
         break;
       default:
         dados = getDadosPorDiaSemana();
@@ -3687,14 +3580,10 @@ function atualizarGraficoPrincipal() {
     const tituloEl = document.getElementById("graficoTitulo");
     if (tituloEl) tituloEl.textContent = titulo;
 
-    // Destruir gráfico anterior se existir
     if (graficoPrincipalAtual) {
       graficoPrincipalAtual.destroy();
       graficoPrincipalAtual = null;
     }
-
-    // Verificar se há dados
-    const temDados = dados.dados.some(v => v > 0);
 
     graficoPrincipalAtual = new Chart(ctx, {
       type: 'bar',
@@ -3712,17 +3601,15 @@ function atualizarGraficoPrincipal() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { 
+          legend: {
             display: true,
             position: 'top',
-            labels: {
-              font: { size: 12 }
-            }
+            labels: { font: { size: 12 } }
           },
           tooltip: {
             callbacks: {
-              label: function(context) {
-                return `${context.raw.toFixed(2)} horas`;
+              label: function (context) {
+                return context.raw.toFixed(2) + ' horas';
               }
             }
           }
@@ -3730,12 +3617,9 @@ function atualizarGraficoPrincipal() {
         scales: {
           y: {
             beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Horas'
-            },
+            title: { display: true, text: 'Horas' },
             ticks: {
-              callback: function(value) {
+              callback: function (value) {
                 return value.toFixed(1) + 'h';
               }
             }
@@ -3743,16 +3627,10 @@ function atualizarGraficoPrincipal() {
         }
       }
     });
-
-    if (!temDados) {
-      console.log('Sem dados para o período:', periodoAtual);
-    }
-
   } catch (error) {
-    console.error('Erro ao atualizar gráfico principal:', error);
+    console.error('Erro ao atualizar grafico principal:', error);
   }
 }
-
 // ==================== ATUALIZAR GRÁFICO DE MATÉRIAS (PIZZA) ====================
 function atualizarGraficoMaterias() {
   const ctx = document.getElementById('graficoMaterias');
@@ -3760,17 +3638,12 @@ function atualizarGraficoMaterias() {
     console.warn('Canvas do gráfico de matérias não encontrado');
     return;
   }
-
   try {
     const materiasTop = calcularHorasPorMateria();
-
-    // Destruir gráfico anterior se existir
     if (graficoMateriasAtual) {
       graficoMateriasAtual.destroy();
       graficoMateriasAtual = null;
     }
-
-    // Se não houver matérias com tempo, mostrar gráfico vazio com mensagem
     if (materiasTop.length === 0) {
       graficoMateriasAtual = new Chart(ctx, {
         type: 'doughnut',
@@ -3792,7 +3665,7 @@ function atualizarGraficoMaterias() {
             },
             tooltip: {
               callbacks: {
-                label: function(context) {
+                label: function (context) {
                   return 'Nenhum estudo registrado';
                 }
               }
@@ -3802,8 +3675,6 @@ function atualizarGraficoMaterias() {
       });
       return;
     }
-
-    // Cores vibrantes para o gráfico
     const cores = [
       '#9f042c', // Vermelho principal
       '#ff6b6b', // Vermelho claro
@@ -3821,15 +3692,10 @@ function atualizarGraficoMaterias() {
       '#74b9ff', // Azul claro
       '#55efc4'  // Verde menta
     ];
-
-    // Preparar dados
     const labels = materiasTop.map(m => m.nome);
     const dados = materiasTop.map(m => m.horas);
     const coresUsar = materiasTop.map((_, i) => cores[i % cores.length]);
-
-    // Calcular total para porcentagens
     const totalHoras = dados.reduce((a, b) => a + b, 0);
-
     graficoMateriasAtual = new Chart(ctx, {
       type: 'doughnut', // ou 'pie' se preferir pizza tradicional
       data: {
@@ -3846,7 +3712,7 @@ function atualizarGraficoMaterias() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '60%', // Tamanho do buraco no meio (60% = doughnut, 0% = pizza)
+        cutout: '60%',
         plugins: {
           legend: {
             position: 'bottom',
@@ -3858,7 +3724,7 @@ function atualizarGraficoMaterias() {
                 size: 11,
                 family: "'Poppins', sans-serif"
               },
-              generateLabels: function(chart) {
+              generateLabels: function (chart) {
                 const data = chart.data;
                 return data.labels.map((label, i) => ({
                   text: `${label} (${((data.datasets[0].data[i] / totalHoras) * 100).toFixed(1)}%)`,
@@ -3879,81 +3745,64 @@ function atualizarGraficoMaterias() {
             titleFont: {
               size: 13,
               family: "'Poppins', sans-serif"
-            },
-            bodyFont: {
+            }, bodyFont: {
               size: 12,
               family: "'Poppins', sans-serif"
-            },
-            callbacks: {
-              title: function(context) {
+            }, callbacks: {
+              title: function (context) {
                 return context[0].label;
               },
-              label: function(context) {
+              label: function (context) {
                 const horas = context.raw;
                 const porcentagem = ((horas / totalHoras) * 100).toFixed(1);
                 const h = Math.floor(horas);
                 const m = Math.round((horas - h) * 60);
-                
                 let tempoFormatado;
                 if (h === 0 && m === 0) tempoFormatado = '0min';
                 else if (h === 0) tempoFormatado = `${m}min`;
                 else if (m === 0) tempoFormatado = `${h}h`;
                 else tempoFormatado = `${h}h ${m}min`;
-                
                 return [
-                  `⏱️ ${tempoFormatado}`,
-                  `📊 ${porcentagem}% do total`
+                  `${tempoFormatado}`,
+                  `${porcentagem}% do total`
                 ];
               }
             }
           }
-        },
-        // Animação
-        animation: {
+        }, animation: {
           animateScale: true,
           animateRotate: true,
           duration: 1000
         }
-      },
-      // Plugin para texto no centro
+      },      // Plugin para texto no centro
       plugins: [{
         id: 'centerText',
-        afterDraw: function(chart) {
+        afterDraw: function (chart) {
           const { ctx, chartArea: { top, bottom, left, right } } = chart;
           const centerX = (left + right) / 2;
           const centerY = (top + bottom) / 2;
-
           ctx.save();
           ctx.font = "bold 14px 'Poppins', sans-serif";
           ctx.fillStyle = '#6b7280';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          
-          // Texto principal
           ctx.fillText('Total', centerX, centerY - 10);
-          
-          // Total de horas
           ctx.font = "bold 18px 'Poppins', sans-serif";
           ctx.fillStyle = '#1f2937';
           const totalFormatado = totalHoras.toFixed(1) + 'h';
           ctx.fillText(totalFormatado, centerX, centerY + 15);
-          
           ctx.restore();
         }
       }]
     });
-
   } catch (error) {
     console.error('Erro ao atualizar gráfico de matérias:', error);
   }
 }
-
 // ==================== ATUALIZAR METAS ====================
 function atualizarMetas() {
   try {
     const hoje = new Date().toISOString().split('T')[0];
-    
-    // Calcular horas estudadas hoje
     let totalHoje = 0;
     Object.values(tempoEstudo).forEach(materia => {
       if (materia && materia.historico && materia.historico[hoje]) {
@@ -3961,14 +3810,12 @@ function atualizarMetas() {
       }
     });
     totalHoje = totalHoje / 3600;
-
-    // Calcular horas na semana (últimos 7 dias)
     let totalSemana = 0;
     for (let i = 0; i < 7; i++) {
       const data = new Date();
       data.setDate(data.getDate() - i);
       const dataStr = data.toISOString().split('T')[0];
-      
+
       Object.values(tempoEstudo).forEach(materia => {
         if (materia && materia.historico && materia.historico[dataStr]) {
           totalSemana += materia.historico[dataStr];
@@ -3976,14 +3823,12 @@ function atualizarMetas() {
       });
     }
     totalSemana = totalSemana / 3600;
-
-    // Calcular horas no mês (últimos 30 dias)
     let totalMes = 0;
     for (let i = 0; i < 30; i++) {
       const data = new Date();
       data.setDate(data.getDate() - i);
       const dataStr = data.toISOString().split('T')[0];
-      
+
       Object.values(tempoEstudo).forEach(materia => {
         if (materia && materia.historico && materia.historico[dataStr]) {
           totalMes += materia.historico[dataStr];
@@ -3991,37 +3836,22 @@ function atualizarMetas() {
       });
     }
     totalMes = totalMes / 3600;
-
-    // Atualizar barras de progresso
     const metaDiaria = metas.diaria || 0.5;
     const metaSemanal = metas.semanal || 3.5;
     const metaMensal = metas.mensal || 14;
-
-    // Meta Diária
     atualizarBarraMeta('barraMetaDiaria', 'metaDiariaRestante', totalHoje, metaDiaria);
-    
-    // Meta Semanal
     atualizarBarraMeta('barraMetaSemanal', 'metaSemanalRestante', totalSemana, metaSemanal);
-    
-    // Meta Mensal
     atualizarBarraMeta('barraMetaMensal', 'metaMensalRestante', totalMes, metaMensal);
-
   } catch (error) {
     console.error('Erro ao atualizar metas:', error);
   }
 }
-
 function atualizarBarraMeta(barraId, textoId, atual, meta) {
   const barra = document.getElementById(barraId);
   const texto = document.getElementById(textoId);
-  
   if (!barra || !texto) return;
-  
   const progresso = meta > 0 ? Math.min((atual / meta) * 100, 100) : 0;
-  
   barra.style.width = `${progresso}%`;
-  
-  // Mudar cor baseado no progresso
   barra.classList.remove('baixa', 'media', 'alta');
   if (progresso >= 100) {
     barra.classList.add('alta');
@@ -4030,15 +3860,12 @@ function atualizarBarraMeta(barraId, textoId, atual, meta) {
   } else {
     barra.classList.add('baixa');
   }
-  
   const faltam = Math.max(meta - atual, 0);
   texto.textContent = `${atual.toFixed(1)}h de ${formatarMeta(meta)}`;
-  
   if (faltam <= 0) {
     texto.innerHTML += ' <span style="color: #16a34a;">✅ Concluído!</span>';
   }
 }
-
 // ==================== ATUALIZAR CONQUISTAS ====================
 function atualizarConquistas() {
   try {
@@ -4046,70 +3873,67 @@ function atualizarConquistas() {
     const streak = parseInt(localStorage.getItem("streak")) || 0;
     const qtdMaterias = materias ? materias.length : 0;
     const conquistas = [
-  { 
-    id: "primeiro-estudo", 
-    nome: "Primeiro Estudo", 
-    icone: "bi-star-fill", 
-    condicao: totalHoras > 0,
-    cor: "#f59e0b" // Amarelo
-  },
-  { 
-    id: "7-dias", 
-    nome: "7 Dias Seguidos", 
-    icone: "bi-fire", 
-    condicao: streak >= 7,
-    cor: "#ef4444" // Vermelho
-  },
-  { 
-    id: "30-dias", 
-    nome: "30 Dias Seguidos", 
-    icone: "bi-trophy-fill", 
-    condicao: streak >= 30,
-    cor: "#f59e0b" // Dourado
-  },
-  { 
-    id: "10-horas", 
-    nome: "10 Horas Totais", 
-    icone: "bi-hourglass-split", 
-    condicao: totalHoras >= 10,
-    cor: "#3b82f6" // Azul
-  },
-  { 
-    id: "50-horas", 
-    nome: "50 Horas Totais", 
-    icone: "bi-lightning-charge-fill", 
-    condicao: totalHoras >= 50,
-    cor: "#8b5cf6" // Roxo
-  },
-  { 
-    id: "100-horas", 
-    nome: "100 Horas Totais", 
-    icone: "bi-rocket-takeoff-fill", 
-    condicao: totalHoras >= 100,
-    cor: "#ec4899" // Rosa
-  },
-  { 
-    id: "5-materias", 
-    nome: "5 Matérias", 
-    icone: "bi-book-fill", 
-    condicao: qtdMaterias >= 5,
-    cor: "#10b981" // Verde
-  },
-  { 
-    id: "10-materias", 
-    nome: "10 Matérias", 
-    icone: "bi-journal-bookmark-fill", 
-    condicao: qtdMaterias >= 10,
-    cor: "#06b6d4" // Ciano
-  }
+      {
+        id: "primeiro-estudo",
+        nome: "Primeiro Estudo",
+        icone: "bi-star-fill",
+        condicao: totalHoras > 0,
+        cor: "#f59e0b" // Amarelo
+      },
+      {
+        id: "7-dias",
+        nome: "7 Dias Seguidos",
+        icone: "bi-fire",
+        condicao: streak >= 7,
+        cor: "#ef4444" // Vermelho
+      },
+      {
+        id: "30-dias",
+        nome: "30 Dias Seguidos",
+        icone: "bi-trophy-fill",
+        condicao: streak >= 30,
+        cor: "#f59e0b" // Dourado
+      },
+      {
+        id: "10-horas",
+        nome: "10 Horas Totais",
+        icone: "bi-hourglass-split",
+        condicao: totalHoras >= 10,
+        cor: "#3b82f6" // Azul
+      },
+      {
+        id: "50-horas",
+        nome: "50 Horas Totais",
+        icone: "bi-lightning-charge-fill",
+        condicao: totalHoras >= 50,
+        cor: "#8b5cf6" // Roxo
+      },
+      {
+        id: "100-horas",
+        nome: "100 Horas Totais",
+        icone: "bi-rocket-takeoff-fill",
+        condicao: totalHoras >= 100,
+        cor: "#ec4899" // Rosa
+      },
+      {
+        id: "5-materias",
+        nome: "5 Matérias",
+        icone: "bi-book-fill",
+        condicao: qtdMaterias >= 5,
+        cor: "#10b981" // Verde
+      },
+      {
+        id: "10-materias",
+        nome: "10 Matérias",
+        icone: "bi-journal-bookmark-fill",
+        condicao: qtdMaterias >= 10,
+        cor: "#06b6d4" // Ciano
+      }
     ];
-
     const desbloqueadas = conquistas.filter(c => c.condicao);
     const bloqueadas = conquistas.filter(c => !c.condicao);
-
     const containerDesbloq = document.getElementById("conquistasDesbloqueadas");
     const containerBloq = document.getElementById("conquistasBloqueadas");
-
     if (containerDesbloq) {
       if (desbloqueadas.length > 0) {
         containerDesbloq.innerHTML = desbloqueadas.map(c => `
@@ -4130,7 +3954,7 @@ function atualizarConquistas() {
           </div>
         `).join('');
       } else {
-        containerBloq.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Todas as conquistas desbloqueadas! 🎉</p>';
+        containerBloq.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">Todas as conquistas desbloqueadas!</p>';
       }
     }
   } catch (error) {
@@ -4142,15 +3966,11 @@ function atualizarConquistas() {
 function gerarSugestoes() {
   const sugestoesLista = document.getElementById("sugestoes");
   if (!sugestoesLista) return;
-
   try {
     const { totalHoras, dias, maiorStreak } = calcularTotais();
     const streak = parseInt(localStorage.getItem("streak")) || 0;
     const materiasTop = calcularHorasPorMateria();
-
     const sugestoes = [];
-
-    // Sugestões baseadas no progresso
     if (totalHoras === 0) {
       sugestoes.push("Comece seus estudos! Vá para o Relógio e clique em ▶ ao lado de uma matéria.");
       sugestoes.push("Monte seu cronograma semanal para organizar os estudos.");
@@ -4158,7 +3978,7 @@ function gerarSugestoes() {
       if (streak === 0 && totalHoras > 0) {
         sugestoes.push("Estude hoje para começar um streak de dias consecutivos!");
       }
-      
+
       if (streak > 0 && streak < 7) {
         const faltam = 7 - streak;
         sugestoes.push(`Você está com ${streak} dia(s) de streak! Faltam ${faltam} para a conquista "7 Dias"!`);
@@ -4170,14 +3990,11 @@ function gerarSugestoes() {
       if (materiasTop.length > 0) {
         const maisEstudada = materiasTop[0];
         sugestoes.push(`Sua matéria mais estudada é "${maisEstudada.nome}" com ${maisEstudada.horas.toFixed(1)}h.`);
-        
-        // Matéria menos estudada (se houver mais de uma)
         if (materiasTop.length > 1) {
           const menosEstudada = materiasTop[materiasTop.length - 1];
           sugestoes.push(`Que tal dar mais atenção para "${menosEstudada.nome}"?`);
         }
       }
-
       if (dias > 0) {
         const media = totalHoras / dias;
         if (media < 0.5) {
@@ -4187,14 +4004,11 @@ function gerarSugestoes() {
         }
       }
     }
-
-    // Garantir pelo menos uma sugestão
     if (sugestoes.length === 0) {
       sugestoes.push("Continue com o ótimo trabalho! Consistência é a chave!");
       sugestoes.push("Use a seção de Revisão para fixar o conteúdo com flashcards.");
     }
-
-    sugestoesLista.innerHTML = sugestoes.map(s => 
+    sugestoesLista.innerHTML = sugestoes.map(s =>
       `<li><i class="bi bi-lightbulb"></i> ${s}</li>`
     ).join('');
 
@@ -4203,7 +4017,6 @@ function gerarSugestoes() {
     sugestoesLista.innerHTML = '<li>Carregando sugestões...</li>';
   }
 }
-
 // ==================== EXPORTAR DADOS (CORRIGIDO) ====================
 function exportarDados() {
   try {
@@ -4225,7 +4038,6 @@ function exportarDados() {
       streak: parseInt(localStorage.getItem("streak")) || 0,
       ultimoDiaEstudo: localStorage.getItem("ultimoDiaEstudo") || ""
     };
-
     const dataStr = JSON.stringify(dados, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -4236,7 +4048,6 @@ function exportarDados() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
     Swal.fire({
       icon: 'success',
       title: 'Exportado!',
@@ -4255,44 +4066,28 @@ function exportarDados() {
     });
   }
 }
-
 // ==================== FUNÇÃO PRINCIPAL ====================
 function carregarEstatisticas() {
   if (estatisticasAtualizando) {
     console.log('Estatísticas já estão sendo atualizadas...');
     return;
   }
-
   estatisticasAtualizando = true;
-
   try {
-    // 1. Atualizar totais
     const { totalHoras, dias, maiorStreak, mediaDiaria } = calcularTotais();
-    
     const totalGeralEl = document.getElementById("totalGeralEstat");
     const diasEstudadosEl = document.getElementById("diasEstudadosEstat");
     const maiorStreakEl = document.getElementById("maiorStreakEstat");
     const mediaDiariaEl = document.getElementById("mediaDiariaEstat");
-
     if (totalGeralEl) totalGeralEl.textContent = `${totalHoras.toFixed(1)}h`;
     if (diasEstudadosEl) diasEstudadosEl.textContent = dias;
     if (maiorStreakEl) maiorStreakEl.textContent = maiorStreak;
     if (mediaDiariaEl) mediaDiariaEl.textContent = `${mediaDiaria.toFixed(1)}h`;
-
-    // 2. Atualizar gráficos
     atualizarGraficoPrincipal();
     atualizarGraficoMaterias();
-
-    // 3. Atualizar metas
     atualizarMetas();
-
-    // 4. Atualizar conquistas
     atualizarConquistas();
-
-    // 5. Gerar sugestões
     gerarSugestoes();
-
-    // 6. Resumo
     const resumoEl = document.getElementById("resumoEstatisticas");
     if (resumoEl) {
       if (totalHoras > 0) {
@@ -4305,33 +4100,26 @@ function carregarEstatisticas() {
         resumoEl.innerHTML = 'Nenhum estudo registrado ainda. Comece agora!';
       }
     }
-
-    // 7. Configurar eventos dos botões de período
     configurarBotoesPeriodo();
-
   } catch (error) {
     console.error('Erro ao carregar estatísticas:', error);
   } finally {
     estatisticasAtualizando = false;
   }
 }
-
 // ==================== CONFIGURAR BOTÕES DE PERÍODO ====================
 function configurarBotoesPeriodo() {
   document.querySelectorAll('.periodo-btn').forEach(btn => {
     // Remove listeners antigos para não duplicar
     const novoBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(novoBtn, btn);
-    
-    novoBtn.addEventListener('click', function() {
+    novoBtn.addEventListener('click', function () {
       document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       periodoAtual = this.dataset.periodo;
       atualizarGraficoPrincipal();
     });
   });
-
-  // Ativar o botão correto
   document.querySelectorAll('.periodo-btn').forEach(btn => {
     if (btn.dataset.periodo === periodoAtual) {
       btn.classList.add('active');
@@ -4340,42 +4128,34 @@ function configurarBotoesPeriodo() {
     }
   });
 }
-
 // ==================== INICIALIZAR ====================
 document.addEventListener('DOMContentLoaded', () => {
   // Só carrega estatísticas quando a seção estiver visível
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.target.id === 'estatisticaSection' && 
-          mutation.target.style.display === 'block') {
+      if (mutation.target.id === 'estatisticaSection' &&
+        mutation.target.style.display === 'block') {
         setTimeout(carregarEstatisticas, 100);
       }
     });
   });
-
   const estatisticaSection = document.getElementById('estatisticaSection');
   if (estatisticaSection) {
     observer.observe(estatisticaSection, {
       attributes: true,
       attributeFilter: ['style']
     });
-  }
-
-  // Configurar botão de exportar
-  const btnExportar = document.querySelector('.btn-exportar');
+  } const btnExportar = document.querySelector('.btn-exportar');
   if (btnExportar) {
     btnExportar.addEventListener('click', exportarDados);
   }
-
   console.log('✅ Seção de Estatísticas inicializada');
 });
 /** ==================== REVISÃO INTELIGENTE ==================== */
-
 let flashcards = [];
 let revisoesEmAndamento = [];
 let indiceAtualFoco = 0;
 let filtroAtivo = "hoje";
-
 // ==================== CARREGAR DADOS ====================
 function carregarFlashcards() {
   try {
@@ -4391,22 +4171,17 @@ function carregarFlashcards() {
   atualizarEstatisticas();
   verificarProvasProximas();
 }
-
 function salvarFlashcards() {
   localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
 }
-
 // ==================== VERIFICAR PROVAS NO CALENDÁRIO ====================
 function verificarProvasProximas() {
   if (!calendar) return;
   const hoje = new Date();
   const eventos = calendar.getEvents();
   const provasProximas = [];
-
   eventos.forEach(evento => {
-    // Só considera se for do tipo "prova"
     if (evento.extendedProps?.tipo !== "prova") return;
-
     const dataEvento = new Date(evento.start);
     const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
     if (diasRestantes <= 7 && diasRestantes > 0) {
@@ -4417,11 +4192,9 @@ function verificarProvasProximas() {
       });
     }
   });
-
   if (provasProximas.length > 0) {
     const avisoDiv = document.getElementById("avisoProva");
     const textoAviso = document.getElementById("textoAvisoProva");
-
     if (avisoDiv && textoAviso && provasProximas[0]) {
       const prova = provasProximas[0];
       textoAviso.innerHTML = `${prova.titulo} - Faltam ${prova.dias} dias!`;
@@ -4430,61 +4203,68 @@ function verificarProvasProximas() {
     }
   }
 }
-
 function criarRevisaoPorProva() {
   if (window.provaAtual) {
     abrirModalFlashcardComProva(window.provaAtual.titulo);
   }
-}
-
-//REVISAO
+}//REVISAO
 function configurarAbasRevisao() {
   document.querySelectorAll('.aba-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
       const aba = btn.dataset.aba;
       document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
       document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
-
       if (aba === 'revisar') {
         atualizarMensagemRevisar();
       }
-
-      // Recarrega os cards com o filtro atual
       renderizarFlashcardsAgrupados();
     });
   });
 }
-
 // NOVO: Atualizar mensagem da aba revisar
 function atualizarMensagemRevisar() {
-  const hojeData = hoje();
-  const pendentes = flashcards.filter(f => f.dataProxima <= hojeData).length;
-  document.getElementById('countPendentes').textContent = pendentes;
+  const hojeData = new Date().toISOString().split('T')[0];
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+  let pendentes = flashcards.filter(f => f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    pendentes = pendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+  const countEl = document.getElementById('countPendentes');
+  if (countEl) {
+    countEl.textContent = pendentes.length;
+    if (pendentes.length === 0) {
+      countEl.style.color = '#22c55e'; // Verde - tudo revisado
+    } else if (pendentes.length > 10) {
+      countEl.style.color = '#ef4444'; // Vermelho - muitos atrasados
+    } else {
+      countEl.style.color = '#f59e0b'; // Laranja - quantidade normal
+    }
+  }
 }
-
-// NOVO: Renderizar flashcards agrupados com acordeão
+function configurarFiltroRevisao() {
+  const filtro = document.getElementById('filtroMateriaRevisao');
+  if (filtro) {
+    filtro.addEventListener('change', () => {
+      renderizarFlashcardsAgrupados();
+      atualizarMensagemRevisar();
+    });
+  }
+}
 function renderizarFlashcardsAgrupados() {
   const container = document.getElementById('listaFlashcardsAgrupada');
   if (!container) return;
-
-  // Pega o filtro de matéria
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-
-  // Filtra por matéria se necessário
   let cardsFiltrados = [...flashcards];
   if (filtroMateria !== 'todas') {
     cardsFiltrados = cardsFiltrados.filter(f => f.materiaId === filtroMateria);
   }
 
   if (cardsFiltrados.length === 0) {
-    container.innerHTML = '<p class="vazio">✨ Nenhum flashcard encontrado!</p>';
+    container.innerHTML = '<p class="vazio">Nenhum flashcard encontrado!</p>';
     return;
   }
-
-  // Agrupar por matéria
   const porMateria = {};
   cardsFiltrados.forEach(f => {
     if (!porMateria[f.materiaNome]) {
@@ -4496,8 +4276,6 @@ function renderizarFlashcardsAgrupados() {
     porMateria[f.materiaNome].temas[f.tema].push(f);
     porMateria[f.materiaNome].count++;
   });
-
-  // Ordenar cards dentro de cada tema
   const ordenarCards = (cards) => {
     const hojeData = hoje();
     return cards.sort((a, b) => {
@@ -4508,15 +4286,11 @@ function renderizarFlashcardsAgrupados() {
       return a.dataProxima.localeCompare(b.dataProxima);
     });
   };
-
-  // Renderizar com acordeão
   let html = '';
   let index = 0;
-
   for (const materia in porMateria) {
     const materiaData = porMateria[materia];
     const materiaId = `materia-${index}`;
-
     html += `
       <div class="materia-acordeon">
         <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
@@ -4552,32 +4326,30 @@ function renderizarFlashcardsAgrupados() {
           <div class="card-flashcard ${classeDestaque}">
             <div class="card-pergunta">${f.pergunta}</div>
             <div class="card-data">📅 ${formatarData(f.dataProxima)}</div>
-            <div class="card-acoes">
-              <button onclick="editarFlashcard(${f.id})" title="Editar">✏️</button>
-              <button onclick="excluirFlashcard(${f.id})" title="Excluir">🗑️</button>
-            </div>
+           <div class="card-acoes">
+  <button onclick="editarFlashcard(${f.id})" title="Editar">
+    <i class="bi bi-pencil"></i>
+  </button>
+  <button onclick="excluirFlashcard(${f.id})" title="Excluir">
+    <i class="bi bi-trash"></i>
+  </button>
+</div>
           </div>
         `;
       });
-
       html += `</div>`;
     }
-
     html += `
         </div>
       </div>
     `;
     index++;
   }
-
   container.innerHTML = html;
 }
-
-// NOVO: Função para toggle do acordeão
 function toggleAcordeon(materiaId) {
   const conteudo = document.getElementById(`${materiaId}-conteudo`);
   const seta = document.getElementById(`${materiaId}-seta`);
-
   if (conteudo.style.display === 'block') {
     conteudo.style.display = 'none';
     seta.classList.remove('aberto');
@@ -4588,33 +4360,26 @@ function toggleAcordeon(materiaId) {
     seta.textContent = '▼';
   }
 }
-
-// NOVO: Formatar data
 function formatarData(dataStr) {
   const data = new Date(dataStr);
   return data.toLocaleDateString('pt-BR');
 }
-
 // ==================== MODAL E CRIAÇÃO ====================
 function abrirModalFlashcard() {
   const select = document.getElementById("revisaoMateria");
   if (select && materias) {
-    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+    select.innerHTML = '<option value="">Selecione uma materia</option>';
     materias.forEach(m => {
       select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
     });
   }
-
   document.getElementById("revisaoTema").value = "";
   document.getElementById("revisaoPergunta").value = "";
   document.getElementById("revisaoResposta").value = "";
-
   const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
   modal.show();
 }
-
 function abrirModalFlashcardComProva(tituloProva) {
-  // Popular o select de matérias também!
   const select = document.getElementById("revisaoMateria");
   if (select && materias) {
     select.innerHTML = '<option value="">Selecione uma matéria</option>';
@@ -4622,82 +4387,80 @@ function abrirModalFlashcardComProva(tituloProva) {
       select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
     });
   }
-
   document.getElementById("revisaoTema").value = "Prova";
   document.getElementById("revisaoPergunta").value = `Revisar conteúdo da prova: ${tituloProva}`;
   document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
-
   const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
   modal.show();
 }
-
 function salvarFlashcard() {
   const materiaId = document.getElementById("revisaoMateria").value;
   const tema = document.getElementById("revisaoTema").value.trim();
   const pergunta = document.getElementById("revisaoPergunta").value.trim();
   const resposta = document.getElementById("revisaoResposta").value.trim();
-
   if (!materiaId) {
-    Swal.fire("Erro", "Selecione uma matéria!", "error");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atencao',
+      text: 'Selecione uma materia!',
+      confirmButtonColor: '#9f042c'
+    });
     return;
   }
   if (!pergunta || !resposta) {
-    Swal.fire("Erro", "Preencha pergunta e resposta!", "error");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atencao',
+      text: 'Preencha a pergunta e a resposta!',
+      confirmButtonColor: '#9f042c'
+    });
     return;
   }
-
   const materia = materias.find(m => m.id == materiaId);
-
   flashcards.push({
     id: Date.now(),
     materiaId: materiaId,
-    materiaNome: materia ? materia.nome : "Matéria",
+    materiaNome: materia ? materia.nome : "Sem materia",
     tema: tema || "Geral",
     pergunta: pergunta,
     resposta: resposta,
     nivel: 0,
-    dataProxima: hoje(),
+    dataProxima: new Date().toISOString().split("T")[0],
     acertos: 0,
-    erros: 0,
-    tipo: "flashcard"
+    erros: 0
   });
-
   salvarFlashcards();
+  popularFiltroMaterias();
   renderizarFlashcardsAgrupados();
   atualizarEstatisticas();
-
-  bootstrap.Modal.getInstance(document.getElementById("modalRevisao")).hide();
+  const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
+  if (modal) modal.hide();
   Swal.fire({
     icon: 'success',
     title: 'Flashcard criado!',
-    timer: 1500,
-    showConfirmButton: false
+    text: 'Comece a revisar para fixar o conteudo.',
+    timer: 2000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
   });
 }
-
 // ==================== RENDERIZAR LISTA ====================
 function hoje() {
   return new Date().toISOString().split("T")[0];
 }
-
 function proximaRevisao(nivel, dificuldade) {
   let dias = [1, 3, 7, 14, 30];
   if (dificuldade === "facil") dias = [3, 7, 14, 30, 60];
   if (dificuldade === "dificil") dias = [0.5, 1, 3, 7, 14];
-
   const data = new Date();
   data.setDate(data.getDate() + dias[nivel]);
   return data.toISOString().split("T")[0];
 }
-
 function renderizarFlashcards() {
   const container = document.getElementById("listaFlashcards");
   if (!container) return;
-
   let flashcardsFiltrados = [...flashcards];
-
-  // Aplicar filtros
-  // Filtro por tipo
   const tipoFiltro = document.getElementById("filtroTipo")?.value;
   if (tipoFiltro) {
     flashcardsFiltrados = flashcardsFiltrados.filter(f => f.tipo === tipoFiltro);
@@ -4711,7 +4474,6 @@ function renderizarFlashcards() {
     semanaQueVem.setDate(semanaQueVem.getDate() + 7);
     flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
   }
-
   const materiaFiltro = document.getElementById("filtroMateria")?.value;
   if (materiaFiltro && materiaFiltro !== "") {
     flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
@@ -4724,53 +4486,44 @@ function renderizarFlashcards() {
       f.tema.toLowerCase().includes(busca)
     );
   }
-
-  // Ordenar: atrasadas primeiro
   flashcardsFiltrados.sort((a, b) => {
     if (a.dataProxima < hoje() && b.dataProxima >= hoje()) return -1;
     if (a.dataProxima >= hoje() && b.dataProxima < hoje()) return 1;
     return a.dataProxima.localeCompare(b.dataProxima);
   });
-
   if (flashcardsFiltrados.length === 0) {
     container.innerHTML = '<div class="empty-message">🎉 Nenhum flashcard encontrado!</div>';
   } else {
     container.innerHTML = flashcardsFiltrados.map(f => criarCardHTML(f)).join('');
   }
-
   atualizarEstatisticas();
   adicionarEventosCards();
 }
-
 function criarCardHTML(flashcard) {
   const isAtrasada = flashcard.dataProxima < hoje();
   const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
-
-  // Calcular dias até a próxima revisão
   const hojeDate = new Date();
   const proximaDate = new Date(flashcard.dataProxima);
   const diffTime = proximaDate - hojeDate;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
   let mensagemRevisao = "";
   if (isAtrasada) {
-    mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;">⚠️ Atrasada! Revise hoje!</span>`;
+    mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;"> Atrasada! Revise hoje!</span>`;
   } else if (diffDays === 0) {
-    mensagemRevisao = `<span style="color: #22c55e; font-size: 0.7rem;">📅 Hoje! Revise agora!</span>`;
+    mensagemRevisao = `<span style="color: #22c55e; font-size: 0.7rem;"> Hoje! Revise agora!</span>`;
   } else if (diffDays === 1) {
-    mensagemRevisao = `<span style="color: #f59e0b; font-size: 0.7rem;">⏰ Amanhã</span>`;
+    mensagemRevisao = `<span style="color: #f59e0b; font-size: 0.7rem;"> Amanhã</span>`;
   } else {
-    mensagemRevisao = `<span style="color: #6b7280; font-size: 0.7rem;">🔄 Próxima revisão em ${diffDays} dias</span>`;
+    mensagemRevisao = `<span style="color: #6b7280; font-size: 0.7rem;"> Próxima revisão em ${diffDays} dias</span>`;
   }
-
   return `
     <div class="flashcard-item" data-id="${flashcard.id}">
       <div class="flashcard-header">
         <div class="flashcard-badges">
           <span class="materia-badge">${flashcard.materiaNome}</span>
-          <span class="tema-badge">📂 ${flashcard.tema}</span>
+          <span class="tema-badge"> ${flashcard.tema}</span>
           <span class="data-badge ${isAtrasada ? 'atrasada' : ''}">
-            ${isAtrasada ? '⚠️ Atrasada' : '📅 ' + dataFormatada}
+            ${isAtrasada ? ' Atrasada' : ' ' + dataFormatada}
           </span>
         </div>
       </div>
@@ -4782,7 +4535,6 @@ function criarCardHTML(flashcard) {
       <div class="flashcard-acoes">
         <button class="btn-editar-flashcard" onclick="editarFlashcard(${flashcard.id})">✏️ Editar</button>
         <button class="btn-excluir-flashcard" onclick="excluirFlashcard(${flashcard.id})">🗑️ Excluir</button>
-        <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶️ Revisar</button>
       </div>
     </div>
   `;
@@ -4791,7 +4543,6 @@ function adicionarEventosCards() {
   document.querySelectorAll('.flashcard-item').forEach(card => {
     const pergunta = card.querySelector('.flashcard-pergunta');
     const resposta = card.querySelector('.flashcard-resposta');
-
     card.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return;
       if (resposta.style.display === 'none' || !resposta.style.display) {
@@ -4802,122 +4553,108 @@ function adicionarEventosCards() {
     });
   });
 }
-
 // ==================== ESTATÍSTICAS ====================
 function atualizarEstatisticas() {
   const hojeData = hoje();
   const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
   const revisoesAtrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
   const revisoesConcluidas = flashcards.filter(f => f.nivel > 0).length;
-
   const totalAcertos = flashcards.reduce((sum, f) => sum + f.acertos, 0);
   const totalRespostas = flashcards.reduce((sum, f) => sum + f.acertos + f.erros, 0);
   const taxaAcerto = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
-
   document.getElementById("totalHoje").textContent = revisoesHoje;
   document.getElementById("totalAtrasadas").textContent = revisoesAtrasadas;
   document.getElementById("totalConcluidas").textContent = revisoesConcluidas;
   document.getElementById("taxaAcertoGeral").textContent = `${taxaAcerto}%`;
 }
-
 // ==================== MODO FOCO ====================
 function iniciarRevisao() {
-  const hojeData = hoje();
+  const hojeData = new Date().toISOString().split('T')[0];
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-
-  // Filtra cards pendentes
   let cardsPendentes = flashcards.filter(f => f.dataProxima <= hojeData);
-
-  // Aplica filtro de matéria
   if (filtroMateria !== 'todas') {
-    cardsPendentes = cardsPendentes.filter(f => f.materiaId === filtroMateria);
+    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
   }
-
   if (cardsPendentes.length === 0) {
     Swal.fire({
       icon: 'info',
-      title: 'Nenhuma revisão pendente!',
+      title: 'Nada para revisar!',
       text: filtroMateria !== 'todas' ?
-        'Não há cards para revisar nesta matéria.' :
-        'Você já revisou tudo por hoje. Volte amanhã!',
-      timer: 2000,
-      showConfirmButton: false
+        'Nao ha cards pendentes para esta materia.' :
+        'Todos os cards foram revisados! Volte quando houver novos.',
+      confirmButtonColor: '#9f042c',
+      confirmButtonText: 'Entendi'
     });
     return;
   }
-
-  revisoesEmAndamento = cardsPendentes;
+  revisoesEmAndamento = cardsPendentes.sort(() => Math.random() - 0.5);
   indiceAtualFoco = 0;
   mostrarCardFoco();
+  Swal.fire({
+    icon: 'success',
+    title: 'Boa revisao!',
+    text: `${cardsPendentes.length} cards para revisar.`,
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
-
-// NOVO: Mostrar card no modo foco
 function mostrarCardFoco() {
   if (indiceAtualFoco >= revisoesEmAndamento.length) {
     finalizarRevisao();
     return;
   }
-
   const card = revisoesEmAndamento[indiceAtualFoco];
-
   document.getElementById('focoMateria').textContent = card.materiaNome;
-  document.getElementById('focoTema').textContent = `📂 ${card.tema}`;
+  document.getElementById('focoMateria').className = 'badge';
+  document.getElementById('focoMateria').style.background = '#9f042c';
+  document.getElementById('focoMateria').style.color = 'white';
+  document.getElementById('focoMateria').style.padding = '5px 12px';
+  document.getElementById('focoMateria').style.borderRadius = '20px';
+  document.getElementById('focoTema').textContent = card.tema;
+  document.getElementById('focoTema').className = 'badge';
+  document.getElementById('focoTema').style.background = '#e5e7eb';
+  document.getElementById('focoTema').style.color = '#374151';
+  document.getElementById('focoTema').style.padding = '5px 12px';
+  document.getElementById('focoTema').style.borderRadius = '20px';
   document.getElementById('focoPergunta').textContent = card.pergunta;
   document.getElementById('focoResposta').innerHTML = card.resposta;
   document.getElementById('focoResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'none';
-  document.getElementById('btnMostrarResposta').style.display = 'block';
-
+  document.getElementById('btnMostrarResposta').style.display = 'inline-block';
   const total = revisoesEmAndamento.length;
   const atual = indiceAtualFoco + 1;
   document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
-
   const progresso = (atual / total) * 100;
   document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
-
   document.getElementById('modoFocoContainer').style.display = 'flex';
 }
-
-// NOVO: Popular select de matérias no filtro
 function popularFiltroMaterias() {
   const select = document.getElementById('filtroMateriaRevisao');
   if (!select) return;
-
-  select.innerHTML = '<option value="todas">📚 Todas as matérias</option>';
-
-  // Pega matérias únicas dos flashcards
+  select.innerHTML = '<option value="todas">Todas as matérias</option>';
   const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))];
-
   materiasUnicas.sort().forEach(materia => {
     select.innerHTML += `<option value="${materia}">${materia}</option>`;
   });
 }
-
-// Mostrar resposta e botões
 function mostrarRespostaFoco() {
   document.getElementById('focoResposta').style.display = 'block';
   document.getElementById('btnMostrarResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'flex';
 }
-
-// NOVO: Responder com Acertou/Errou
 function responderFlashcard(resultado) {
   const card = revisoesEmAndamento[indiceAtualFoco];
   const flashcardOriginal = flashcards.find(f => f.id === card.id);
-
   if (!flashcardOriginal) return;
-
   if (resultado === 'acertei') {
-    // Aumenta o nível (espaça mais)
     flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
     flashcardOriginal.acertos++;
   } else {
-    // Diminui o nível (revisar mais vezes)
     flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
     flashcardOriginal.erros++;
   }
-
-  // Define próxima data baseado no nível
   const intervalos = [1, 3, 7, 14, 30]; // dias
   const dias = intervalos[flashcardOriginal.nivel] || 1;
   const novaData = new Date();
@@ -4928,12 +4665,9 @@ function responderFlashcard(resultado) {
   indiceAtualFoco++;
   mostrarCardFoco();
 }
-
-
 function finalizarRevisao() {
   document.getElementById("modoFocoContainer").style.display = "none";
   renderizarFlashcards();
-
   Swal.fire({
     icon: 'success',
     title: '🎉 Revisão concluída!',
@@ -4942,11 +4676,9 @@ function finalizarRevisao() {
     showConfirmButton: false
   });
 }
-
 function fecharModoFoco() {
   document.getElementById("modoFocoContainer").style.display = "none";
 }
-
 // ==================== EDITAR E EXCLUIR ====================
 function editarFlashcard(id) {
   const flashcard = flashcards.find(f => f.id === id);
@@ -4970,7 +4702,6 @@ function editarFlashcard(id) {
         Swal.showValidationMessage('Preencha todos os campos!');
         return false;
       }
-
       flashcard.pergunta = pergunta;
       flashcard.resposta = resposta;
       flashcard.tema = tema || "Geral";
@@ -4982,7 +4713,6 @@ function editarFlashcard(id) {
     }
   });
 }
-
 function excluirFlashcard(id) {
   Swal.fire({
     title: 'Excluir flashcard?',
@@ -5001,7 +4731,6 @@ function excluirFlashcard(id) {
     }
   });
 }
-
 // ==================== FILTROS ====================
 function configurarFiltros() {
   document.querySelectorAll('.filtro-btn').forEach(btn => {
@@ -5012,57 +4741,8 @@ function configurarFiltros() {
       renderizarFlashcards();
     });
   });
-
   document.getElementById("filtroMateria")?.addEventListener('change', () => renderizarFlashcards());
   document.getElementById("buscaRevisao")?.addEventListener('input', () => renderizarFlashcards());
-}
-
-// ==================== MODAL FLASHCARD HTML ====================
-// Adicione este modal no final do body
-function adicionarModalFlashcardHTML() {
-  if (document.getElementById("modalRevisao")) {
-    // console.log("Modal já existe no HTML");
-    return;
-  }
-
-  const modalHTML = `
-    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">🧠 Novo Flashcard</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">📚 Matéria</label>
-              <select id="revisaoMateria" class="form-select">
-                <option value="">Selecione uma matéria</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">📂 Tema</label>
-              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">❓ Pergunta</label>
-              <textarea id="revisaoPergunta" class="form-control" rows="2" placeholder="Digite a pergunta..."></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">✅ Resposta</label>
-              <textarea id="revisaoResposta" class="form-control" rows="3" placeholder="Digite a resposta..."></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 // ==================== INICIALIZAR ====================
 function initRevisao() {
@@ -5070,42 +4750,11 @@ function initRevisao() {
   carregarFlashcards();
   configurarAbasRevisao();
 }
-
-// Chamar no DOMContentLoaded
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     initRevisao();
   });
 }
-
-
-function exportarDados() {
-  const dados = {
-    tarefas: tarefas,
-    notas: JSON.parse(localStorage.getItem("notas")) || [],
-    eventos: calendar ? calendar.getEvents().map(e => ({
-      title: e.title,
-      start: e.startStr
-    })) : [],
-    tempoEstudo: tempoEstudo,
-    metas: metas,
-    flashcards: JSON.parse(localStorage.getItem("flashcards_sistema")) || []
-  };
-  const dataStr = JSON.stringify(dados, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `sectio_aurea_backup_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  Swal.fire({ icon: 'success', title: 'Exportado!', text: 'Backup salvo com sucesso!', timer: 2000, showConfirmButton: false });
-}
-
-
-// Adicione esta linha dentro do DOMContentLoaded principal
-// loadDarkModePreference();
-
 // ===== NOTIFICAÇÕES DE TAREFAS =====
 function verificarNotificacoesTarefas() {
   // Verifica se o navegador suporta notificações
@@ -5113,23 +4762,15 @@ function verificarNotificacoesTarefas() {
     console.log("Este navegador não suporta notificações");
     return;
   }
-
-  // Pede permissão se ainda não tiver
   if (Notification.permission !== "granted" && Notification.permission !== "denied") {
     Notification.requestPermission();
   }
-
   if (Notification.permission !== "granted") return;
-
   const hoje = new Date();
   const amanha = new Date(hoje);
   amanha.setDate(hoje.getDate() + 1);
   const amanhaStr = amanha.toISOString().split('T')[0];
-
-  // Busca tarefas para amanhã
   const tarefasAmanha = tarefas.filter(t => t.data === amanhaStr && !t.concluida);
-
-  // Verifica se já notificou hoje
   const ultimaNotificacao = localStorage.getItem('ultimaNotificacaoTarefas');
   const hojeStr = hoje.toISOString().split('T')[0];
 
@@ -5140,14 +4781,10 @@ function verificarNotificacoesTarefas() {
     new Notification(titulo, { body: corpo, icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' });
     localStorage.setItem('ultimaNotificacaoTarefas', hojeStr);
   }
-}
-
-// Chamar a função uma vez por dia
-setInterval(() => {
+} setInterval(() => {
   verificarNotificacoesTarefas();
-}, 3600000); // a cada hora
+}, 3600000);
 
-// Chamar também ao carregar a página
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(verificarNotificacoesTarefas, 5000);
 });
@@ -5161,9 +4798,50 @@ function forcarAtualizacaoImediata() {
   if (typeof atualizarResumoInicio === 'function') atualizarResumoInicio();
   if (typeof atualizarPainelEstudos === 'function') atualizarPainelEstudos();
 
-  // Força o calendário a redimensionar
   if (calendar) setTimeout(() => calendar.updateSize(), 10);
 }
 
-// Executa AGORA (sem esperar eventos)
 setTimeout(forcarAtualizacaoImediata, 10);
+
+function adicionarModalFlashcardHTML() {
+  if (document.getElementById("modalRevisao")) {
+    return;
+  }
+  const modalHTML = `
+    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Novo Flashcard</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Materia</label>
+              <select id="revisaoMateria" class="form-select">
+                <option value="">Selecione uma materia</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Tema</label>
+              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Pergunta</label>
+              <textarea id="revisaoPergunta" class="form-control" rows="2" placeholder="Digite a pergunta..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Resposta</label>
+              <textarea id="revisaoResposta" class="form-control" rows="3" placeholder="Digite a resposta..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}

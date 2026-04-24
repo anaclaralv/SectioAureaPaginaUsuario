@@ -621,368 +621,425 @@
           </div>
         </div>
       </div>
-  </section>
+    </section>
+    <!--=================ESTATISTICA===================-->
+    <section id="estatisticaSection" style="display:none;">
+      <h1>Estatísticas</h1>
 
-  <div class="overlay" id="overlay" onclick="closeSidebar()">
-  </div>
-
-
-
-  <!--=================ESTATISTICA===================-->
-  <section id="estatisticaSection" style="display:none;">
-    <h1>Estatísticas</h1>
-
-    <!-- CARDS DE RESUMO RÁPIDO -->
-    <div class="stats-cards">
-      <div class="stat-card">
-        <i class="bi bi-clock-history"></i>
-        <span>Total Geral</span>
-        <strong id="totalGeralEstat">0h</strong>
-      </div>
-      <div class="stat-card">
-        <i class="bi bi-calendar-check"></i>
-        <span>Dias Estudados</span>
-        <strong id="diasEstudadosEstat">0</strong>
-      </div>
-      <div class="stat-card">
-        <i class="bi bi-fire"></i>
-        <span>Maior Streak</span>
-        <strong id="maiorStreakEstat">0</strong>
-      </div>
-      <div class="stat-card">
-        <i class="bi bi-graph-up"></i>
-        <span>Média Diária</span>
-        <strong id="mediaDiariaEstat">0h</strong>
-      </div>
-    </div>
-
-    <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
-    <div class="periodo-selector">
-      <button class="periodo-btn active" data-periodo="semana">Por Dia da Semana</button>
-      <button class="periodo-btn" data-periodo="hoje">Estudo de Hoje</button>
-      <button class="periodo-btn" data-periodo="semanal">Estudo Semanal</button>
-      <button class="periodo-btn" data-periodo="mensal">Estudo Mensal</button>
-    </div>
-
-    <!-- GRÁFICOS LADO A LADO -->
-    <div class="graficos-lado-a-lado">
-
-      <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
-      <div class="grafico-card">
-        <h4 id="graficoTitulo">Estudos por Dia da Semana</h4>
-        <canvas id="graficoPrincipal"></canvas>
-      </div>
-
-      <!-- TOP MATÉRIAS (fixo) -->
-      <div class="grafico-card">
-        <h4>Top Matérias</h4>
-        <canvas id="graficoMaterias"></canvas>
-      </div>
-
-    </div>
-
-    <!-- METAS (Diária, Semanal, Mensal) -->
-    <div class="metas-container">
-      <h4>Minhas Metas</h4>
-      <div class="meta-item">
-        <div class="meta-header">
-          <span>Meta Diária</span>
-          <span id="metaDiariaTexto">2h</span>
+      <!-- CARDS DE RESUMO RÁPIDO -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <i class="bi bi-clock-history"></i>
+          <span>Total Geral</span>
+          <strong id="totalGeralEstat">0h</strong>
         </div>
-        <div class="meta-progresso-container">
-          <div id="barraMetaDiaria" class="meta-barra" style="width: 0%"></div>
+        <div class="stat-card">
+          <i class="bi bi-calendar-check"></i>
+          <span>Dias Estudados</span>
+          <strong id="diasEstudadosEstat">0</strong>
         </div>
-        <p id="metaDiariaRestante" class="meta-restante">0h de 2h</p>
-      </div>
-      <div class="meta-item">
-        <div class="meta-header">
-          <span>Meta Semanal</span>
-          <span id="metaSemanalTexto">14h</span>
+        <div class="stat-card">
+          <i class="bi bi-fire"></i>
+          <span>Maior Streak</span>
+          <strong id="maiorStreakEstat">0</strong>
         </div>
-        <div class="meta-progresso-container">
-          <div id="barraMetaSemanal" class="meta-barra" style="width: 0%"></div>
-        </div>
-        <p id="metaSemanalRestante" class="meta-restante">0h de 14h</p>
-      </div>
-      <div class="meta-item">
-        <div class="meta-header">
-          <span>Meta Mensal</span>
-          <span id="metaMensalTexto">60h</span>
-        </div>
-        <div class="meta-progresso-container">
-          <div id="barraMetaMensal" class="meta-barra" style="width: 0%"></div>
-        </div>
-        <p id="metaMensalRestante" class="meta-restante">0h de 60h</p>
-      </div>
-    </div>
-
-    <!-- CONQUISTAS (separadas) -->
-    <div class="conquistas-container">
-      <h4>🏆 Conquistas</h4>
-
-      <div class="conquistas-grupo">
-        <h5>✅ Desbloqueadas</h5>
-        <div id="conquistasDesbloqueadas" class="badges-container">
-          <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
+        <div class="stat-card">
+          <i class="bi bi-graph-up"></i>
+          <span>Média Diária</span>
+          <strong id="mediaDiariaEstat">0h</strong>
         </div>
       </div>
 
-      <div class="conquistas-grupo">
-        <h5>🔒 A Desbloquear</h5>
-        <div id="conquistasBloqueadas" class="badges-container">
-          <div class="badge"> Primeiro Estudo</div>
-          <div class="badge"> 7 Dias Seguidos</div>
-          <div class="badge"> 30 Dias Seguidos</div>
-          <div class="badge"> 10 Horas Totais</div>
-          <div class="badge"> 50 Horas Totais</div>
-          <div class="badge"> 100 Horas Totais</div>
-          <div class="badge"> 5 Matérias</div>
-          <div class="badge"> Estudo Noturno</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUGESTÕES -->
-    <div class="sugestoes-container">
-      <h4>Sugestões Personalizadas</h4>
-      <ul id="sugestoes"></ul>
-    </div>
-
-    <!-- RESUMO ESTATÍSTICAS -->
-    <div class="resumo-container">
-      <h4 id="resumoEstatisticas"></h4>
-    </div>
-
-    <!-- BOTÃO EXPORTAR -->
-    <div class="exportar-container">
-      <button class="btn-exportar" onclick="exportarDados()">
-        <i class="bi bi-download"></i> Exportar Relatório (JSON)
-      </button>
-    </div>
-  </section>
-
-
-  <section id="cronogramaNovoSection" style="display:none;">
-    <div class="layout-container">
-
-      <h1>Cronograma Inteligente</h1>
-
-
-      <!-- CRIAR MATÉRIA -->
-      <div class="mb-3 form-cronogramaNovo">
-        <input type="text" id="novaMateriaNome" placeholder="Nome da matéria">
-        <input type="color" id="novaMateriaCor" value="#9f042c">
-        <button onclick="adicionarMateria()">Adicionar Matéria</button>
+      <!-- SELETOR DE PERÍODO PARA GRÁFICO -->
+      <div class="periodo-selector">
+        <button class="periodo-btn active" data-periodo="semana">Por Dia da Semana</button>
+        <button class="periodo-btn" data-periodo="hoje">Estudo de Hoje</button>
+        <button class="periodo-btn" data-periodo="semanal">Estudo Semanal</button>
+        <button class="periodo-btn" data-periodo="mensal">Estudo Mensal</button>
       </div>
 
-      <!-- BLOQUINHOS -->
-      <h4>Matérias</h4>
-      <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
-      <br>
-      <p class="drag-text"> Arraste a matéria para um dia da semana</p>
-      <p class="drag-text mb-5">
-        Dica: <span>duplo clique no nome da matéria</span> para editar ou
-        <span>duplo clique no horário</span> para alterar.
-      </p>
+      <!-- GRÁFICOS LADO A LADO -->
+      <div class="graficos-lado-a-lado">
 
-      <!-- GRID DOS DIAS -->
-      <div class="cronogramaNovo-grid"
-        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:15px;">
-
-        <div class="dia" id="segunda" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Segunda</h5>
-          <div class="dia-drop"></div>
+        <!-- GRÁFICO PRINCIPAL (muda conforme o período) -->
+        <div class="grafico-card">
+          <h4 id="graficoTitulo">Estudos por Dia da Semana</h4>
+          <canvas id="graficoPrincipal"></canvas>
         </div>
 
-        <div class="dia" id="terca" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Terça</h5>
-          <div class="dia-drop"></div>
-        </div>
-
-        <div class="dia" id="quarta" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Quarta</h5>
-          <div class="dia-drop"></div>
-        </div>
-
-        <div class="dia" id="quinta" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Quinta</h5>
-          <div class="dia-drop"></div>
-        </div>
-
-        <div class="dia" id="sexta" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Sexta</h5>
-          <div class="dia-drop"></div>
-        </div>
-
-        <div class="dia" id="sabado" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Sábado</h5>
-          <div class="dia-drop"></div>
-        </div>
-
-        <div class="dia" id="domingo" ondrop="drop(event)" ondragover="allowDrop(event)">
-          <h5>Domingo</h5>
-          <div class="dia-drop"></div>
+        <!-- TOP MATÉRIAS (fixo) -->
+        <div class="grafico-card">
+          <h4>Top Matérias</h4>
+          <canvas id="graficoMaterias"></canvas>
         </div>
 
       </div>
 
-    </div>
-
-  </section>
-  <!-- ==================== METODOS ==================== -->
-  <section id="metodosSection" style="display:none;">
-    <h1>Métodos de Estudo</h1>
-    <div style="text-align: center; padding: 60px 20px;">
-      <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
-      <h3>Em breve!</h3>
-      <p>Estamos preparando conteúdos incríveis para você.</p>
-    </div>
-  </section>
-
-  <!-- ==================== REVISÃO INTELIGENTE ==================== -->
-  <section id="revisaoSection" style="display:none;">
-    <!-- CABEÇALHO -->
-    <div class="revisao-header">
-      <h1>Revisão Inteligente</h1>
-      <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-        <i class="bi bi-plus-lg"></i> Novo Flashcard
-      </button>
-    </div>
-
-    <!-- AVISO DE PROVA -->
-    <div id="avisoProva" class="aviso-prova" style="display: none;">
-      <div class="aviso-conteudo">
-        <i class="bi bi-calendar-exclamation"></i>
-        <div>
-          <strong>Prova se aproximando!</strong>
-          <p id="textoAvisoProva"></p>
+      <!-- METAS (Diária, Semanal, Mensal) -->
+      <div class="metas-container">
+        <h4>Minhas Metas</h4>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>Meta Diária</span>
+            <span id="metaDiariaTexto">2h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaDiaria" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaDiariaRestante" class="meta-restante">0h de 2h</p>
         </div>
-        <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>Meta Semanal</span>
+            <span id="metaSemanalTexto">14h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaSemanal" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaSemanalRestante" class="meta-restante">0h de 14h</p>
+        </div>
+        <div class="meta-item">
+          <div class="meta-header">
+            <span>Meta Mensal</span>
+            <span id="metaMensalTexto">60h</span>
+          </div>
+          <div class="meta-progresso-container">
+            <div id="barraMetaMensal" class="meta-barra" style="width: 0%"></div>
+          </div>
+          <p id="metaMensalRestante" class="meta-restante">0h de 60h</p>
+        </div>
       </div>
-    </div>
 
-    <!-- ESTATÍSTICAS FIXAS -->
-    <div class="revisao-stats-fixas">
-      <div class="stat-box">
-        <span>Hoje</span>
-        <strong id="totalHoje">0</strong>
+      <!-- CONQUISTAS (separadas) -->
+      <div class="conquistas-container">
+        <h4>🏆 Conquistas</h4>
+
+        <div class="conquistas-grupo">
+          <h5>✅ Desbloqueadas</h5>
+          <div id="conquistasDesbloqueadas" class="badges-container">
+            <p class="text-muted">Nenhuma conquista ainda. Continue estudando!</p>
+          </div>
+        </div>
+
+        <div class="conquistas-grupo">
+          <h5>🔒 A Desbloquear</h5>
+          <div id="conquistasBloqueadas" class="badges-container">
+            <div class="badge"> Primeiro Estudo</div>
+            <div class="badge"> 7 Dias Seguidos</div>
+            <div class="badge"> 30 Dias Seguidos</div>
+            <div class="badge"> 10 Horas Totais</div>
+            <div class="badge"> 50 Horas Totais</div>
+            <div class="badge"> 100 Horas Totais</div>
+            <div class="badge"> 5 Matérias</div>
+            <div class="badge"> Estudo Noturno</div>
+          </div>
+        </div>
       </div>
-      <div class="stat-box">
-        <span>Atrasadas</span>
-        <strong id="totalAtrasadas">0</strong>
+
+      <!-- SUGESTÕES -->
+      <div class="sugestoes-container">
+        <h4>Sugestões Personalizadas</h4>
+        <ul id="sugestoes"></ul>
       </div>
-      <div class="stat-box">
-        <span>Concluídas</span>
-        <strong id="totalConcluidas">0</strong>
+
+      <!-- RESUMO ESTATÍSTICAS -->
+      <div class="resumo-container">
+        <h4 id="resumoEstatisticas"></h4>
       </div>
-      <div class="stat-box">
-        <span>Taxa Acerto</span>
-        <strong id="taxaAcertoGeral">0%</strong>
+
+      <!-- BOTÃO EXPORTAR -->
+      <div class="exportar-container">
+        <button class="btn-exportar" onclick="exportarDados()">
+          <i class="bi bi-download"></i> Exportar Relatório (JSON)
+        </button>
       </div>
-    </div>
+    </section>
 
-    <!-- REGRAS -->
-    <div class="revisao-regras">
-      💡 Acertei = próximo nível | Errei = revisar amanhã
-    </div>
 
-    <!-- ABAS -->
-    <div class="revisao-abas">
-      <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
-      <button class="aba-btn" data-aba="revisar"> Revisar</button>
-    </div>
+    <section id="cronogramaNovoSection" style="display:none;">
+      <div class="layout-container">
 
-    <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
-    <div class="revisao-filtro">
-      <select id="filtroMateriaRevisao" class="filtro-materia-select">
-        <option value="todas">Todas as matérias</option>
-      </select>
-    </div>
+        <h1>Cronograma Inteligente</h1>
 
-    <!-- CONTEÚDO ABA: MEUS CARDS -->
-    <div id="abaMeusCards" class="aba-conteudo">
-      <div id="listaFlashcardsAgrupada"></div>
-    </div>
 
-    <!-- CONTEÚDO ABA: REVISAR -->
-    <div id="abaRevisar" class="aba-conteudo" style="display: none;">
-      <div class="revisar-centro">
-        <p id="mensagemRevisar">Você tem <span id="countPendentes">0</span> cards para revisar!</p>
-        <button class="btn-iniciar-revisao" onclick="iniciarRevisao()">▶ Iniciar Revisão</button>
+        <!-- CRIAR MATÉRIA -->
+        <div class="mb-3 form-cronogramaNovo">
+          <input type="text" id="novaMateriaNome" placeholder="Nome da matéria">
+          <input type="color" id="novaMateriaCor" value="#9f042c">
+          <button onclick="adicionarMateria()">Adicionar Matéria</button>
+        </div>
+
+        <!-- BLOQUINHOS -->
+        <h4>Matérias</h4>
+        <div id="materiasContainer" class="materias-area" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+        <br>
+        <p class="drag-text"> Arraste a matéria para um dia da semana</p>
+        <p class="drag-text mb-5">
+          Dica: <span>duplo clique no nome da matéria</span> para editar ou
+          <span>duplo clique no horário</span> para alterar.
+        </p>
+
+        <!-- GRID DOS DIAS -->
+        <div class="cronogramaNovo-grid"
+          style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:15px;">
+
+          <div class="dia" id="segunda" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Segunda</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="terca" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Terça</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="quarta" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Quarta</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="quinta" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Quinta</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="sexta" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Sexta</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="sabado" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Sábado</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+          <div class="dia" id="domingo" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h5>Domingo</h5>
+            <div class="dia-drop"></div>
+          </div>
+
+        </div>
+
       </div>
-    </div>
 
-    <!-- MODO FOCO (REVISÃO) -->
-    <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
-      <div class="foco-card">
-        <div class="foco-header">
+    </section>
+    <!-- ==================== METODOS ==================== -->
+    <section id="metodosSection" style="display:none;">
+      <h1>Métodos de Estudo</h1>
+      <div style="text-align: center; padding: 60px 20px;">
+        <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
+        <h3>Em breve!</h3>
+        <p>Estamos preparando conteúdos incríveis para você.</p>
+      </div>
+    </section>
+
+    <!-- ==================== REVISÃO INTELIGENTE ==================== -->
+    <section id="revisaoSection" style="display:none;">
+      <!-- CABEÇALHO -->
+      <div class="revisao-header">
+        <h1>Revisão Inteligente</h1>
+        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+          <i class="bi bi-plus-lg"></i> Novo Flashcard
+        </button>
+      </div>
+
+      <!-- AVISO DE PROVA -->
+      <div id="avisoProva" class="aviso-prova" style="display: none;">
+        <div class="aviso-conteudo">
+          <i class="bi bi-calendar-exclamation"></i>
           <div>
-            <span class="materia-badge" id="focoMateria">Matéria</span>
-            <span class="tema-badge" id="focoTema">Tema</span>
+            <strong>Prova se aproximando!</strong>
+            <p id="textoAvisoProva"></p>
           </div>
-          <button class="foco-fechar" onclick="fecharModoFoco()">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
-        <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
-        <div class="foco-botoes">
-          <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
-            <i class="bi bi-eye"></i> Mostrar Resposta
-          </button>
-          <div id="botoesResposta" class="botoes-resposta" style="display: none;">
-            <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
-            <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
-          </div>
-        </div>
-        <div class="foco-progresso">
-          <span id="focoContador">Card 0 de 0</span>
-          <div class="progresso-barra">
-            <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
-          </div>
+          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
         </div>
       </div>
-    </div>
 
-  </section>
-
-  <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
-  <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-    data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">⚙️ Configurações do Usuário</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      <!-- ESTATÍSTICAS FIXAS -->
+      <div class="revisao-stats-fixas">
+        <div class="stat-box">
+          <span>Hoje</span>
+          <strong id="totalHoje">0</strong>
         </div>
-        <div class="modal-body">
-          <div class="text-center mb-4">
-            <div class="foto-usuario-container">
-              <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto do Usuário">
-              <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
-                onchange="previewFotoSelecionada()">
+        <div class="stat-box">
+          <span>Atrasadas</span>
+          <strong id="totalAtrasadas">0</strong>
+        </div>
+        <div class="stat-box">
+          <span>Concluídas</span>
+          <strong id="totalConcluidas">0</strong>
+        </div>
+        <div class="stat-box">
+          <span>Taxa Acerto</span>
+          <strong id="taxaAcertoGeral">0%</strong>
+        </div>
+      </div>
+
+      <!-- REGRAS -->
+      <div class="revisao-regras">
+        💡 Acertei = próximo nível | Errei = revisar amanhã
+      </div>
+
+      <!-- ABAS -->
+      <div class="revisao-abas">
+        <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
+        <button class="aba-btn" data-aba="revisar"> Revisar</button>
+      </div>
+
+      <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
+      <div class="revisao-filtro">
+        <select id="filtroMateriaRevisao" class="filtro-materia-select">
+          <option value="todas">Todas as matérias</option>
+        </select>
+      </div>
+
+      <!-- CONTEÚDO ABA: MEUS CARDS -->
+      <div id="abaMeusCards" class="aba-conteudo">
+        <div id="listaFlashcardsAgrupada"></div>
+      </div>
+
+      <!-- CONTEÚDO ABA: REVISAR -->
+      <div id="abaRevisar" class="aba-conteudo" style="display: none;">
+        <div class="revisar-centro" style="text-align: center; padding: 60px 20px;">
+          <i class="bi bi-arrow-repeat"
+            style="font-size: 4rem; color: var(--cor-primaria); display: block; margin-bottom: 20px;"></i>
+          <p style="font-size: 1.2rem; color: #4b5563; margin-bottom: 10px;">
+            Voce tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.5rem;">0</strong> cards
+            para revisar!
+          </p>
+          <p style="color: #6b7280; margin-bottom: 30px; font-size: 0.9rem;">
+            A revisao espacada ajuda a fixar o conteudo na memoria de longo prazo.
+          </p>
+          <button class="btn-iniciar-revisao" onclick="iniciarRevisao()"
+            style="background: var(--cor-primaria); color: white; border: none; padding: 15px 40px; border-radius: 40px; font-size: 1.1rem; cursor: pointer; font-weight: 600; transition: 0.2s;"
+            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <i class="bi bi-play-fill"></i> Iniciar Revisao
+          </button>
+        </div>
+      </div>
+
+      <!-- MODO FOCO (REVISÃO) -->
+      <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
+        <div class="foco-card">
+          <div class="foco-header">
+            <div>
+              <span class="materia-badge" id="focoMateria">Matéria</span>
+              <span class="tema-badge" id="focoTema">Tema</span>
+            </div>
+            <button class="foco-fechar" onclick="fecharModoFoco()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
+          <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+          <div class="foco-botoes">
+            <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
+              <i class="bi bi-eye"></i> Mostrar Resposta
+            </button>
+            <div id="botoesResposta" class="botoes-resposta" style="display: none;">
+              <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
+              <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">👤 Nome</label>
-            <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">📧 Email</label>
-            <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+          <div class="foco-progresso">
+            <span id="focoContador">Card 0 de 0</span>
+            <div class="progresso-barra">
+              <div id="focoProgressoBarra" class="progresso-fill" style="width: 0%"></div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+      </div>
+
+      <!-- MODAL FLASHCARD -->
+      <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header" style="background: var(--cor-primaria); color: white;">
+              <h5 class="modal-title"><i class="bi bi-brain"></i> Novo Flashcard</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-book"></i> Materia</label>
+                <select id="revisaoMateria" class="form-select">
+                  <option value="">Selecione uma materia</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-folder"></i> Tema</label>
+                <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-question-circle"></i> Pergunta</label>
+                <textarea id="revisaoPergunta" class="form-control" rows="2"
+                  placeholder="Digite a pergunta..."></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-check-circle"></i> Resposta</label>
+                <textarea id="revisaoResposta" class="form-control" rows="3"
+                  placeholder="Digite a resposta..."></textarea>
+              </div>
+              <div class="alert alert-info" style="font-size: 0.85rem;">
+                <i class="bi bi-lightbulb"></i> Dica: Use perguntas objetivas para revisoes mais eficientes!
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">
+                <i class="bi bi-save"></i> Salvar Flashcard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+      data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Configurações do Usuário</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-4">
+              <div class="foto-usuario-container">
+                <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                  alt="Foto do Usuário">
+                <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
+                  onchange="previewFotoSelecionada()">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Nome</label>
+              <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Email</label>
+              <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- Container para loaders e modais dinâmicos -->
+    <div id="loaderGlobal"
+      style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:99999; background:rgba(0,0,0,0.8); color:white; padding:20px; border-radius:10px;">
+      Carregando...
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 <script src="PaginaUsuario.js"></script>
