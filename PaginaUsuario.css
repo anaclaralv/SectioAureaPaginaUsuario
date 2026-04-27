@@ -1729,7 +1729,8 @@ body {
 #estatisticaSection,
 #cronogramaNovoSection,
 #revisaoSection,
-#metodosSection {
+#metodosSection,
+#planosSection {
   padding: 20px;
   text-align: left;
   width: 100%;
@@ -1746,7 +1747,8 @@ body {
 #estatisticaSection h1,
 #cronogramaNovoSection h1,
 #revisaoSection h1,
-#metodosSection h1 {
+#metodosSection h1,
+#planosSection h1 {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 25px;
@@ -3026,6 +3028,242 @@ canvas {
 
 .btn-nota-to-flashcard:hover {
   background: var(--cor-primaria);
+}
+
+/* ===== PLANOS ===== */
+#planosSection {
+  padding: 20px;
+}
+
+#planosSection h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #1f2937;
+  border-bottom: 2px solid var(--cor-primaria);
+  padding-bottom: 10px;
+  display: inline-block;
+}
+
+.plano-subtitulo {
+  color: #6b7280;
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+#badgePlano {
+  padding: 8px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: #22c55e;
+  color: white;
+}
+
+.card-planos {
+  border-radius: 16px;
+  padding: 30px 20px;
+  transition: all 0.3s ease;
+  height: 100%;
+  border: 1px solid #eef2ff;
+  position: relative;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-planos:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.card-planos h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.preco {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 10px 0 20px 0;
+  color: #1f2937;
+}
+
+.preco .periodo {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.lista-planos {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  text-align: left;
+  flex: 1;
+}
+
+.lista-planos li {
+  padding: 9px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.85rem;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+}
+
+.lista-planos li::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2322c55e'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E");
+  background-size: contain;
+  flex-shrink: 0;
+}
+
+.lista-planos li:last-child {
+  border-bottom: none;
+}
+
+/* Destaque (Básico) */
+.destaque {
+  transform: scale(1.04);
+  background: var(--cor-primaria) !important;
+  border: 2px solid var(--cor-primaria) !important;
+  color: white !important;
+  z-index: 2;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.destaque:hover {
+  transform: scale(1.04) translateY(-6px);
+}
+
+.destaque h3 {
+  color: white !important;
+  margin-top: 10px;
+}
+
+.destaque .preco {
+  color: white !important;
+}
+
+.destaque .preco .periodo {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.destaque .lista-planos li {
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.destaque .lista-planos li::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234ade80'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E");
+}
+
+.badge-destaque {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 6px 20px;
+  border-radius: 25px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+}
+
+/* Botoes */
+.card-planos .btn {
+  border-radius: 40px;
+  padding: 13px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+  margin-top: auto;
+}
+
+.card-planos .btn-dark {
+  background: var(--cor-primaria);
+  color: white;
+  border: 2px solid var(--cor-primaria);
+}
+
+.card-planos .btn-dark:hover {
+  background: transparent;
+  color: var(--cor-primaria);
+}
+
+.card-planos .btn-dark:disabled {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.destaque .btn-destaque {
+  background: white;
+  color: var(--cor-primaria);
+  border: 2px solid white;
+}
+
+.destaque .btn-destaque:hover {
+  background: transparent;
+  color: white;
+}
+
+.destaque .btn-destaque:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: not-allowed;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .destaque {
+    transform: scale(1);
+  }
+  
+  .destaque:hover {
+    transform: translateY(-6px);
+  }
+  
+  .card-planos {
+    padding: 25px 20px;
+  }
+  
+  .preco {
+    font-size: 2rem;
+  }
+}
+
+/* ===== ITENS BLOQUEADOS NO MENU ===== */
+#menuLateral .nav-link.bloqueado {
+  color: #cbd5e1 !important;
+}
+
+#menuLateral .nav-link.bloqueado i {
+  color: #cbd5e1 !important;
+}
+
+#menuLateral .nav-link.bloqueado::after {
+  font-size: 0.7rem;
+  margin-left: auto;
+  opacity: 0.6;
 }
 
 /* ===== MENU HAMBÚRGUER - SÓ APARECE NO CELULAR ===== */

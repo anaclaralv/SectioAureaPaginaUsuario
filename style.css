@@ -49,10 +49,10 @@ section {
   font-size: 1.1rem;
   position: relative;
   transition: 0.3s;
-  
+
   background: #ffffff !important;
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
   justify-items: center;
   font-weight: bold;
@@ -259,41 +259,145 @@ section {
 }
 
 
-
+/* ===== PLANOS ===== */
 .card-planos {
   border-radius: 20px;
-  padding: 25px;
-  transition: 0.3s;
+  padding: 30px 25px;
+  transition: all 0.3s ease;
+  height: 100%;
+  border: 2px solid #e5e7eb;
+  position: relative;
 }
 
 .card-planos:hover {
   transform: translateY(-8px);
-  box-shadow: 5px 5px 1px #1e1e1e;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.card-planos h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #1f2937;
 }
 
 .preco {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 800;
-  margin: 20px 0;
+  margin: 15px 0 20px 0;
+  color: #1f2937;
+}
+
+.periodo {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #6b7280;
 }
 
 .lista-planos {
   list-style: none;
   padding: 0;
-  margin-bottom: 25px;
+  margin: 0 0 25px 0;
+  text-align: left;
 }
 
 .lista-planos li {
-  margin: 10px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+  color: #4b5563;
 }
 
+.lista-planos li:last-child {
+  border-bottom: none;
+}
+
+.lista-planos li::before {
+  content: "✓";
+  margin-right: 8px;
+  color: #22c55e;
+  font-weight: bold;
+}
+
+/* Cartao destaque (Basico) */
 .destaque {
   transform: scale(1.05);
   background: #1e1e1e !important;
-  border: 2px solid rgb(255, 255, 255) !important;
+  border: 2px solid #333 !important;
   color: white !important;
 }
 
+.destaque h3,
+.destaque .preco {
+  color: white !important;
+}
+
+.destaque .periodo {
+  color: #9ca3af !important;
+}
+
+.destaque .lista-planos li {
+  color: #d1d5db;
+  border-bottom-color: #374151;
+}
+
+.destaque .lista-planos li::before {
+  color: #4ade80;
+}
+
+.badge-destaque {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 5px 20px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Botoes */
+.card-planos .btn {
+  border-radius: 40px;
+  padding: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.card-planos .btn-dark {
+  background: #1e1e1e;
+  color: white;
+  border: 2px solid #1e1e1e;
+}
+
+.card-planos .btn-dark:hover {
+  background: white;
+  color: #1e1e1e;
+}
+
+.destaque .btn-destaque {
+  background: white;
+  color: #1e1e1e;
+  border: 2px solid white;
+}
+
+.destaque .btn-destaque:hover {
+  background: transparent;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .destaque {
+    transform: scale(1);
+  }
+
+  .card-planos {
+    margin-bottom: 10px;
+  }
+}
 
 @keyframes modalAparecer {
 
@@ -429,34 +533,6 @@ section {
 
 
 
-
-
-/* Botão do PRO (invertido) */
-.card-planos.destaque .btn {
-  background-color: #1e1e1e;
-  color: rgb(255, 255, 255);
-  border: 2px solid rgb(255, 255, 255);
-}
-
-.card-planos.destaque .btn:hover {
-  background-color: rgb(255, 255, 255);
-  color: #1e1e1e !important;
-}
-
-
-/* BOTÕES PLANOS */
-.card-planos .btn {
-  background-color: rgb(255, 255, 255);
-  color: #1e1e1e;
-}
-
-.card-planos .btn:hover {
-  background-color: #1e1e1e;
-  color: rgb(255, 255, 255);
-}
-
-
-
 /* ================= DARK MODE ================= */
 
 body.dark {
@@ -501,46 +577,70 @@ body.dark .texto-teste body.dark .card-inteligencia {
 
 /* outros cards */
 body.dark .card,
-body.dark .card-planos,
 body.dark .card-img-teste {
   background-color: #1e1e1e !important;
   color: white;
   border: 2px solid white;
 }
 
-/*botão outros cards*/
+body.dark .card-planos {
+  background-color: #1e1e1e !important;
+  color: white;
+  border: 2px solid white;
+}
+
+body.dark .card-planos h3,
+body.dark .card-planos .preco {
+  color: white;
+}
+
 body.dark .card-planos .btn {
   background-color: #1e1e1e;
   border: 2px solid white;
-  color: rgb(255, 255, 255);
+  color: white;
 }
 
 body.dark .card-planos .btn:hover {
-  background-color: rgb(255, 255, 255);
-  color: rgb(0, 0, 0);
+  background-color: white;
+  color: black;
 }
 
+body.dark .card-planos .lista-planos li {
+  color: #d1d5db;
+  border-bottom-color: #374151;
+}
 
-/* card PRO */
 body.dark .destaque {
   background: white !important;
   color: #1e1e1e !important;
   border: 2px solid #1e1e1e !important;
 }
 
-/*botão card PRO*/
+body.dark .destaque h3,
+body.dark .destaque .preco {
+  color: #1e1e1e !important;
+}
+
 body.dark .card-planos.destaque .btn {
-  background-color: rgb(255, 255, 255);
+  background-color: white;
   color: #1e1e1e;
   border: 2px solid #1e1e1e;
 }
 
 body.dark .card-planos.destaque .btn:hover {
   background-color: #1e1e1e;
-  color: rgb(255, 255, 255) !important;
+  color: white !important;
 }
 
+body.dark .destaque .lista-planos li {
+  color: #4b5563;
+  border-bottom-color: #e5e7eb;
+}
 
+body.dark .badge-destaque {
+  background: #22c55e;
+  color: white;
+}
 
 /* botões */
 body.dark .btn-success-custom,
@@ -629,7 +729,7 @@ body.dark .theme-toggle {
 body.dark .google-btn {
   background: #1e1e1e;
   border: 1px solid #fff;
-   box-shadow: 0 4px 10px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.3);
 }
 
 body.dark .google-btn:hover {
@@ -647,4 +747,3 @@ body.dark .modal input {
   border: 1px solid #555;
   color: white;
 }
-

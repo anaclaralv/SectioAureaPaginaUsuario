@@ -143,10 +143,6 @@ google.accounts.id.renderButton(
   });
 };
 
-
-
-
-
 function renderGoogleButton() {
   const isDark = document.body.classList.contains("dark");
 

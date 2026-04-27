@@ -110,6 +110,13 @@
         </a>
       </li>
 
+      <li class="nav-item">
+        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('planos'); mudarPagina(this)">
+          <i class="bi bi-star-fill me-2"></i> Planos
+        </a>
+      </li>
+
+    </ul>
     </ul>
   </div>
 
@@ -155,6 +162,14 @@
               <p id="horarioProximaInicio"></p>
               <p id="tempoProximaInicio"></p>
             </div>
+
+                      <div class="col-12 mt-3">
+            <div class="card p-3 text-center" style="cursor: pointer; transition: 0.2s; border: 2px dashed var(--cor-primaria); background: #fefefe;" onclick="abrirModalAmbiente()" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.15)'; this.style.background='#fef2f2'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.style.background='#fefefe'">
+              <i class="bi bi-lightbulb-fill" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px; display: block;"></i>
+              <h5 style="margin-bottom: 4px !important;">Como preparar o ambiente?</h5>
+              <p style="font-size: 0.8rem; color: #9ca3af; margin: 0;">Clique aqui para ver as dicas</p>
+            </div>
+          </div>
           </div>
         </div>
       </div>
@@ -994,6 +1009,81 @@
       </div>
     </section>
 
+    <!-- ==================== PLANOS ==================== -->
+    <section id="planosSection" style="display:none;">
+      <h1>Planos</h1>
+
+      <div id="planoAtualBadge" style="text-align: center; margin-bottom: 30px;">
+        <span id="badgePlano" style="padding: 8px 20px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
+          Seu plano: Gratuito
+        </span>
+      </div>
+
+      <div class="row g-4 justify-content-center" style="max-width: 1100px; margin: 0 auto;">
+
+        <!-- GRATUITO -->
+        <div class="col-md-4">
+          <div class="card card-planos text-center">
+            <h3>Gratuito</h3>
+            <h2 class="preco">R$0</h2>
+            <ul class="lista-planos">
+              <li>Funcionalidades de cada inteligencia</li>
+              <li>Chat com IA (5 por semana)</li>
+              <li>Revisao de conteudos</li>
+            </ul>
+            <button class="btn btn-dark w-100" onclick="escolherPlano('gratuito')" id="btnGratuito">
+              Plano atual
+            </button>
+          </div>
+        </div>
+
+        <!-- BASICO -->
+        <div class="col-md-4">
+          <div class="card card-planos destaque text-center">
+            <span class="badge-destaque">MAIS POPULAR</span>
+            <h3>Basico</h3>
+            <h2 class="preco">R$19<span class="periodo">/mes</span></h2>
+            <ul class="lista-planos">
+              <li>Funcionalidades de cada inteligencia</li>
+              <li>Chat com IA (20 por semana)</li>
+              <li>Revisao de conteudos</li>
+              <li>Personalizacao no guia de estudos</li>
+              <li>Edicao do tempo pomodoro</li>
+              <li>Cronograma inteligente</li>
+              <li>Estatisticas mensais e semanais</li>
+            </ul>
+            <button class="btn btn-destaque w-100" onclick="escolherPlano('basico')" id="btnBasico">
+              Assinar Basico
+            </button>
+          </div>
+        </div>
+
+        <!-- PRO -->
+        <div class="col-md-4">
+          <div class="card card-planos text-center">
+            <h3>Pro</h3>
+            <h2 class="preco">R$39<span class="periodo">/mes</span></h2>
+            <ul class="lista-planos">
+              <li>Funcionalidades de cada inteligencia</li>
+              <li>Chat com IA ilimitado</li>
+              <li>Revisao de conteudos</li>
+              <li>Personalizacao no guia de estudos</li>
+              <li>Edicao do tempo pomodoro</li>
+              <li>Cronograma inteligente</li>
+              <li>Estatisticas mensais e semanais</li>
+              <li>IA para criacao de flashcard</li>
+              <li>Desenvolvimento de inteligencias secundarias</li>
+            </ul>
+            <button class="btn btn-dark w-100" onclick="escolherPlano('pro')" id="btnPro">
+              Assinar Pro
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
     <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
     <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
       data-bs-keyboard="false">
@@ -1028,7 +1118,6 @@
         </div>
       </div>
     </div>
-
 
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 

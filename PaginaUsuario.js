@@ -23,9 +23,11 @@ window.abrirLightbox = function (src) {
   document.body.appendChild(lightbox);
 };
 function mostrarTela(tela) {
+  if (tela === "estatistica" && !verificarAcesso('estatisticas')) return;
+  if (tela === "cronogramaNovo" && !verificarAcesso('cronograma')) return;
   const telas = [
     "inicio", "tarefas", "notas", "calendario", "relogio",
-    "estatistica", "cronogramaNovo", "metodos", "revisao"
+    "estatistica", "cronogramaNovo", "metodos", "revisao", "planos"
   ];
 
   telas.forEach(t => {
@@ -62,6 +64,9 @@ function mostrarTela(tela) {
 
   if (tela === "relogio") {
     renderTabelaMaterias();
+  }
+  if (tela === "planos") {
+    atualizarBotoesPlanos();
   }
 }// CONEXÃO COM EFEITO
 document.addEventListener('DOMContentLoaded', function () {
@@ -1352,13 +1357,16 @@ document.addEventListener("DOMContentLoaded", () => {
   initRevisao();
   renderizarFlashcards();
   carregarMetas();
-    closeSidebarOnLinkClick();
+  closeSidebarOnLinkClick();
+  aplicarBloqueiosPlano();
+  atualizarBadgePlano();
+  renderizarHistoricoCronometro();
+  mostrarTourBoasVindas();
   if (typeof calendar !== "undefined" && calendar) {
     atualizarEventosTarefas();
     atualizarResumoInicio();
   }
   atualizarTudo();
-  closeSidebarOnLinkClick();
 
   const fotoSalva = localStorage.getItem("userFoto");
   if (fotoSalva) {
@@ -1646,7 +1654,14 @@ function renderMaterias() {
           if (novoNome) {
             m.nome = novoNome;
             m.cor = novaCor;
+            cronogramaNovo.forEach(bloco => {
+              if (bloco.materia.id === m.id) {
+                bloco.materia.nome = novoNome;
+                bloco.materia.cor = novaCor;
+              }
+            });
             salvarMaterias();
+            salvarCronogramaNovo();
             renderMaterias();
             renderCronogramaNovo();
           }
@@ -2159,11 +2174,6 @@ function excluirRegistroCronometro(id) {
     toast: true
   });
 }
-
-// Inicializar o histórico ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-  renderizarHistoricoCronometro();
-});
 /* ================= TIMER SIMPLES ================= */
 let timerInterval;
 let tempoRestanteTimer = 0;
@@ -2381,6 +2391,7 @@ function resetarPomodoro() {
 }
 
 function abrirModalPomodoro() {
+  if (!verificarAcesso('pomodoroPersonalizado')) return;
   const select = document.getElementById('pomodoroMateria');
   if (select && materias) {
     select.innerHTML = '<option value="">Selecione uma matéria</option>';
@@ -2547,6 +2558,7 @@ function iniciarEstudo(id) {
 
 // Função para abrir o modal
 function abrirModalModoFoco() {
+  if (!verificarAcesso('focoPersonalizado')) return;
   // Atualizar lista de matérias no select
   const select = document.getElementById('focoMateriaSelect');
   if (select && typeof materias !== 'undefined' && materias) {
@@ -2906,6 +2918,7 @@ function atualizarBotoesMeta() {
   });
 }
 function abrirModalMeta() {
+  if (!verificarAcesso('metaEstudo')) return;
   const diariaH = Math.floor(metas.diaria);
   const diariaM = Math.round((metas.diaria - diariaH) * 60);
   const semanalH = Math.floor(metas.semanal);
@@ -4844,4 +4857,346 @@ function adicionarModalFlashcardHTML() {
     </div>
   `;
   document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+// ===== PLANOS =====
+function verificarPlano() {
+  const plano = localStorage.getItem("planoUsuario") || "gratuito";
+
+  const permissoes = {
+    gratuito: {
+      pomodoroPersonalizado: false,
+      focoPersonalizado: false,
+      metaEstudo: false,
+      estatisticas: false,
+      cronograma: false
+    },
+    basico: {
+      pomodoroPersonalizado: true,
+      focoPersonalizado: true,
+      metaEstudo: true,
+      estatisticas: true,
+      cronograma: true
+    },
+    pro: {
+      pomodoroPersonalizado: true,
+      focoPersonalizado: true,
+      metaEstudo: true,
+      estatisticas: true,
+      cronograma: true
+    }
+  };
+
+  return {
+    plano,
+    permissoes: permissoes[plano] || permissoes.gratuito
+  };
+}
+
+function verificarAcesso(funcionalidade) {
+  const { plano, permissoes } = verificarPlano();
+
+  if (!permissoes[funcionalidade]) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: `
+        <p>Esta funcionalidade esta disponivel nos planos <strong>Basico</strong> e <strong>Pro</strong>.</p>
+        <p style="font-size: 0.8rem; color: #6b7280;">Seu plano atual: <strong>${plano.charAt(0).toUpperCase() + plano.slice(1)}</strong></p>
+      `,
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        mostrarTela('planos');
+        const links = document.querySelectorAll('#menuLateral .nav-link');
+        links.forEach(link => link.classList.remove('active'));
+        const linkPlanos = document.querySelector('#menuLateral .nav-link[onclick*="planos"]');
+        if (linkPlanos) linkPlanos.classList.add('active');
+      }
+    });
+    return false;
+  }
+  return true;
+}
+
+function escolherPlano(tipo) {
+  const planoAtual = localStorage.getItem("planoUsuario") || "gratuito";
+
+  if (tipo === planoAtual) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Voce ja esta neste plano!',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  Swal.fire({
+    title: 'Confirmar mudanca',
+    html: `Deseja mudar para o plano <strong>${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</strong>?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, mudar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c'
+  }).then(result => {
+    if (result.isConfirmed) {
+      localStorage.setItem("planoUsuario", tipo);
+      atualizarBotoesPlanos();
+      atualizarBadgePlano();
+      aplicarBloqueiosPlano();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Plano atualizado!',
+        text: `Agora voce esta no plano ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function atualizarBotoesPlanos() {
+  const { plano } = verificarPlano();
+
+  const btnGratuito = document.getElementById("btnGratuito");
+  const btnBasico = document.getElementById("btnBasico");
+  const btnPro = document.getElementById("btnPro");
+
+  if (btnGratuito) {
+    btnGratuito.textContent = plano === "gratuito" ? "Plano atual" : "Mudar para Gratuito";
+    btnGratuito.disabled = plano === "gratuito";
+    btnGratuito.style.opacity = plano === "gratuito" ? "0.6" : "1";
+  }
+
+  if (btnBasico) {
+    btnBasico.textContent = plano === "basico" ? "Plano atual" : "Assinar Basico";
+    btnBasico.disabled = plano === "basico";
+    btnBasico.style.opacity = plano === "basico" ? "0.6" : "1";
+  }
+
+  if (btnPro) {
+    btnPro.textContent = plano === "pro" ? "Plano atual" : "Assinar Pro";
+    btnPro.disabled = plano === "pro";
+    btnPro.style.opacity = plano === "pro" ? "0.6" : "1";
+  }
+
+  atualizarBadgePlano();
+}
+
+function atualizarBadgePlano() {
+  const { plano } = verificarPlano();
+  const badge = document.getElementById("badgePlano");
+
+  if (badge) {
+    badge.textContent = "Seu plano: " + plano.charAt(0).toUpperCase() + plano.slice(1);
+    badge.style.background = plano === "pro" ? "#981515" : plano === "basico" ? "#f59e0b" : "#22c55e";
+    badge.style.color = "white";
+  }
+}
+// ===== APLICAR BLOQUEIOS DO PLANO =====
+function aplicarBloqueiosPlano() {
+  const { permissoes } = verificarPlano();
+
+  const mapaBloqueios = {
+    'estatistica': 'estatisticas',
+    'cronogramaNovo': 'cronograma'
+  };
+
+  document.querySelectorAll('#menuLateral .nav-link').forEach(link => {
+    const onclick = link.getAttribute('onclick') || '';
+
+    link.classList.remove('bloqueado');
+
+    for (const [tela, permissao] of Object.entries(mapaBloqueios)) {
+      if (onclick.includes(tela) && !permissoes[permissao]) {
+        link.classList.add('bloqueado');
+      }
+    }
+  });
+}
+
+function mostrarTourBoasVindas() {
+  const jaViu = localStorage.getItem("tourBoasVindas");
+  if (jaViu) return;
+  
+  const { plano } = verificarPlano();
+  
+  const passos = [
+    {
+      titulo: "Bem-vindo ao Sectio Aurea!",
+      texto: "Sua plataforma de estudos personalizada esta pronta. Vou te mostrar como tudo funciona.",
+      icone: "bi bi-rocket-takeoff-fill"
+    },
+    {
+      titulo: "Inicio",
+      texto: "Aqui voce ve um resumo das suas tarefas, proximos eventos e materias do dia. Tudo centralizado para facilitar sua rotina.",
+      icone: "bi bi-house-fill"
+    },
+    {
+      titulo: "Tarefas",
+      texto: "Organize suas tarefas com prioridades e datas. Marque como concluidas e mantenha tudo em ordem.",
+      icone: "bi bi-check2-square"
+    },
+    {
+      titulo: "Notas",
+      texto: "Crie notas com checklist, anexos e personalize as cores. Perfeito para resumos e lembretes.",
+      icone: "bi bi-journal-bookmark"
+    },
+    {
+      titulo: "Calendario",
+      texto: "Agende seus eventos, provas e compromissos. Tudo integrado com suas tarefas para nao perder nenhum prazo.",
+      icone: "bi bi-calendar-event"
+    },
+    {
+      titulo: "Relogio de Estudos",
+      texto: "Use o timer, cronometro ou pomodoro para gerenciar seu tempo. O Modo Automatico segue o seu cronograma e inicia os estudos na hora certa.",
+      icone: "bi bi-clock"
+    },
+    {
+      titulo: "Estatisticas",
+      texto: plano === "gratuito"
+        ? "Disponivel nos planos Basico e Pro. Acompanhe seu progresso com graficos detalhados."
+        : "Acompanhe seu progresso com graficos, metas e conquistas. Veja quanto tempo estudou cada materia.",
+      icone: "bi bi-graph-up"
+    },
+    {
+      titulo: "Cronograma Inteligente",
+      texto: plano === "gratuito" 
+        ? "Disponivel nos planos Basico e Pro. Monte sua grade semanal arrastando as materias para os dias."
+        : "Arraste as materias para os dias da semana e monte sua grade de estudos. O relogio inteligente segue esse cronograma.",
+      icone: "bi bi-diagram-3"
+    },
+    {
+      titulo: "Revisao Inteligente",
+      texto: "Crie flashcards e use a revisao espacada para fixar o conteudo. O sistema agenda automaticamente as proximas revisoes.",
+      icone: "bi bi-arrow-repeat"
+    },
+    {
+      titulo: "Pronto para começar!",
+      texto: plano === "gratuito"
+        ? "Voce esta no plano Gratuito. Explore as funcionalidades e faca upgrade quando quiser nos Planos."
+        : `Voce esta no plano ${plano.charAt(0).toUpperCase() + plano.slice(1)}. Aproveite todas as funcionalidades!`,
+      icone: "bi bi-check-circle-fill"
+    }
+  ];  
+  let passoAtual = 0;
+  
+  function mostrarPasso() {
+    const passo = passos[passoAtual];
+    const isUltimo = passoAtual === passos.length - 1;
+    const isPrimeiro = passoAtual === 0;
+    
+    Swal.fire({
+      title: passo.titulo,
+      html: `
+        <div style="text-align: center;">
+          <i class="${passo.icone}" style="font-size: 3rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
+          <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.6;">${passo.texto}</p>
+          <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 15px;">${passoAtual + 1} de ${passos.length}</p>
+        </div>
+      `,
+      showCancelButton: !isPrimeiro,
+      showConfirmButton: true,
+      confirmButtonText: isUltimo ? 'Comecar!' : 'Proximo',
+      cancelButtonText: 'Voltar',
+      confirmButtonColor: '#9f042c',
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    }).then((result) => {
+      if (result.isConfirmed && !isUltimo) {
+        passoAtual++;
+        mostrarPasso();
+      } else if (result.isConfirmed && isUltimo) {
+        localStorage.setItem("tourBoasVindas", "true");
+        Swal.fire({
+          icon: 'success',
+          title: 'Tudo pronto!',
+          text: 'Bons estudos e aproveite a plataforma!',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else if (result.isDismissed && !isPrimeiro) {
+        passoAtual--;
+        mostrarPasso();
+      }
+    });
+  }
+  
+  mostrarPasso();
+}
+function abrirModalAmbiente() {
+  const passos = [
+    {
+      titulo: "Escolha o local",
+      texto: "Busque um lugar silencioso, bem iluminado e livre de distracoes. Um ambiente calmo faz toda a diferenca na concentracao.",
+      icone: "bi bi-house-check-fill"
+    },
+    {
+      titulo: "Celular longe",
+      texto: "Deixe o celular no modo silencioso e fora do seu alcance. Notificacoes sao os maiores viloes do foco nos estudos.",
+      icone: "bi bi-phone-vibrate"
+    },
+    {
+      titulo: "Mantenha-se hidratado",
+      texto: "Tenha sempre uma garrafa de agua por perto. A hidratacao ajuda o cerebro a funcionar melhor.",
+      icone: "bi bi-cup-straw"
+    },
+    {
+      titulo: "Organize o material",
+      texto: "Separe todo o material antes de comecar: livros, cadernos, canetas. Assim voce nao perde tempo procurando depois.",
+      icone: "bi bi-folder-check"
+    },
+    {
+      titulo: "Metas e pausas",
+      texto: "Defina quanto tempo vai estudar e quando vai fazer pausas. Use o timer ou pomodoro do seu Relogio de Estudos.",
+      icone: "bi bi-stopwatch"
+    },
+    {
+      titulo: "Objetivos claros",
+      texto: "Tenha em mente o que quer aprender nessa sessao. Fica mais facil manter o foco quando voce sabe exatamente o que fazer.",
+      icone: "bi bi-bullseye"
+    }
+  ];
+  
+  let passoAtual = 0;
+  
+  function mostrarPasso() {
+    const passo = passos[passoAtual];
+    const isUltimo = passoAtual === passos.length - 1;
+    const isPrimeiro = passoAtual === 0;
+    
+    Swal.fire({
+      title: passo.titulo,
+      html: `
+        <div style="text-align: center;">
+          <i class="${passo.icone}" style="font-size: 3rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
+          <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.6;">${passo.texto}</p>
+          <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 15px;">${passoAtual + 1} de ${passos.length}</p>
+        </div>
+      `,
+      showCancelButton: !isPrimeiro,
+      showConfirmButton: true,
+      confirmButtonText: isUltimo ? 'Pronto!' : 'Proximo',
+      cancelButtonText: 'Voltar',
+      confirmButtonColor: '#9f042c',
+      customClass: {
+        popup: 'rounded-4'
+      }
+    }).then((result) => {
+      if (result.isConfirmed && !isUltimo) {
+        passoAtual++;
+        mostrarPasso();
+      } else if (result.isDismissed && !isPrimeiro) {
+        passoAtual--;
+        mostrarPasso();
+      }
+    });
+  }
+  
+  mostrarPasso();
 }
