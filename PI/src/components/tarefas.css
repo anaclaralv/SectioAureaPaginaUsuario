@@ -1,0 +1,255 @@
+/* ---------- TAREFAS GERAL ---------- */
+#tarefasSection {
+  position: relative;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8f8f8;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Filtros */
+.filtro-prioridade {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-filtro-prioridade {
+  background: #f1f5f9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-filtro-prioridade.active {
+  background: var(--cor-primaria);
+  color: white;
+}
+
+.btn-filtro-prioridade:hover:not(.active) {
+  background: #e2e8f0;
+}
+
+/* Formulário */
+.tarefa-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.tarefa-form input,
+.tarefa-form select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.tarefa-form button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: var(--cor-primaria);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.tarefa-form button:hover {
+  opacity: 0.9;
+}
+
+/* Container de tarefas */
+.tarefas-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 25px;
+}
+
+/* Card de tarefa */
+.tarefa-card {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  gap: 12px;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+
+.tarefa-card:hover {
+  transform: translateX(5px);
+}
+
+/* Info da tarefa */
+.tarefa-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.tarefa-info span {
+  font-weight: 500;
+}
+
+.tarefa-titulo {
+  word-break: break-word;
+}
+
+/* Badges de prioridade */
+.tarefa-prioridade {
+  padding: 3px 6px;
+  border-radius: 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.tarefa-alta {
+  background-color: #ef4444;
+}
+
+.tarefa-media {
+  background-color: #f59e0b;
+}
+
+.tarefa-baixa {
+  background-color: #22c55e;
+}
+
+/* Botões */
+.tarefa-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.tarefa-card button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.btn-concluir {
+  background-color: #00b300;
+  color: white;
+}
+
+.btn-concluir:hover {
+  background-color: #009900;
+  transform: scale(1.05);
+}
+
+.btn-editar {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-editar:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.btn-excluir {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-excluir:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Tarefa concluída - risca APENAS o título */
+.tarefa-card.concluida .tarefa-titulo {
+  text-decoration: line-through !important;
+  opacity: 0.6 !important;
+}
+
+/* Garante que botões NUNCA sejam riscados */
+.tarefa-card.concluida button,
+.tarefa-card.concluida .btn-concluir,
+.tarefa-card.concluida .btn-editar,
+.tarefa-card.concluida .btn-excluir,
+.tarefa-card.concluida .tarefa-prioridade {
+  text-decoration: none !important;
+  opacity: 1 !important;
+}
+
+/* Remove qualquer risco residual */
+.tarefa-card.concluida {
+  text-decoration: none !important;
+}
+
+/* Títulos das listas */
+#tarefasSection h3 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  width: 100%;
+  max-width: 800px;
+  text-align: left;
+}
+
+#tarefasSection h1 {
+  width: 100%;
+  max-width: 800px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .tarefa-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .tarefa-acoes {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .tarefa-info {
+    width: 100%;
+  }
+  
+  .tarefa-form {
+    flex-direction: column;
+  }
+  
+  .tarefa-form input,
+  .tarefa-form select,
+  .tarefa-form button {
+    width: 100%;
+  }
+}

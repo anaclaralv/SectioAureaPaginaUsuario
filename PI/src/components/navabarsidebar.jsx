@@ -1,0 +1,207 @@
+import { useState } from "react";
+import "./navabarsidebar.css";
+import Tarefas from './tarefas';
+import Notas from './notas';
+
+// ===================== DADOS =====================
+const menuItems = [
+  { id: "inicio",          icon: "bi-house-fill",       label: "Início" },
+  { id: "tarefas",         icon: "bi-check2-square",    label: "Tarefas" },
+  { id: "notas",           icon: "bi-journal-bookmark", label: "Notas" },
+  { id: "calendario",      icon: "bi-calendar-event",   label: "Calendário" },
+  { id: "relogio",         icon: "bi-clock",            label: "Relógio" },
+  { id: "estatistica",     icon: "bi-graph-up",         label: "Estatística" },
+  { id: "cronogramaNovo",  icon: "bi-diagram-3",        label: "Cronograma" },
+  { id: "metodos",         icon: "bi-lightbulb",        label: "Métodos" },
+  { id: "revisao",         icon: "bi-arrow-repeat",     label: "Revisão" },
+  { id: "planos",          icon: "bi-star-fill",        label: "Planos" },
+];
+
+// ===================== NAVBAR =====================
+function Navbar({ onToggleSidebar, usuario }) {
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <div className="navbar-left">
+          <button className="menu-toggle" onClick={onToggleSidebar}>
+            <i className="bi bi-list"></i>
+          </button>
+          <a href="#" className="navbar-brand">
+            <img
+              src="Icones/logoBranca.png"
+              alt="logo"
+              onError={e => { e.target.style.display = "none"; }}
+            />
+            <span className="brand-text">Sectio Aurea</span>
+          </a>
+        </div>
+
+        <div className="navbar-right">
+          <img
+            src={usuario.foto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+            alt="avatar"
+            className="user-avatar"
+          />
+          <div className="user-text">
+            <span className="user-name">{usuario.nome || "Usuário"}</span>
+            <span className="user-email">{usuario.email || "usuario@email.com"}</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ===================== SIDEBAR =====================
+function Sidebar({ aberta, telaAtiva, onNavegar, onFechar }) {
+  return (
+    <>
+      {aberta && (
+        <div className="sidebar-overlay" onClick={onFechar} />
+      )}
+
+      <aside className={`sidebar ${aberta ? 'sidebar-aberta' : 'sidebar-fechada'}`}>
+        <div id="menuLateral">
+          <ul className="nav-list">
+            {menuItems.map(item => (
+              <li key={item.id}>
+                <a
+                  href="#"
+                  className={`nav-link ${telaAtiva === item.id ? 'active' : ''}`}
+                  onClick={e => {
+                    e.preventDefault();
+                    onNavegar(item.id);
+                    onFechar();
+                  }}
+                >
+                  <i className={`bi ${item.icon} nav-icon`}></i>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// ===================== SEÇÃO ATIVA =====================
+function SecaoAtiva({ id }) {
+  switch (id) {
+    case 'inicio':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-house-fill placeholder-icon"></i>
+          <h2>Início</h2>
+          <p>Bem-vindo ao Sectio Aurea!</p>
+        </div>
+      );
+    case 'tarefas':
+      return <Tarefas />;
+    case 'notas':
+      return <Notas />;
+    case 'calendario':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-calendar-event placeholder-icon"></i>
+          <h2>Calendário</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'relogio':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-clock placeholder-icon"></i>
+          <h2>Relógio</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'estatistica':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-graph-up placeholder-icon"></i>
+          <h2>Estatística</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'cronogramaNovo':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-diagram-3 placeholder-icon"></i>
+          <h2>Cronograma</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'metodos':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-lightbulb placeholder-icon"></i>
+          <h2>Métodos</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'revisao':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-arrow-repeat placeholder-icon"></i>
+          <h2>Revisão</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    case 'planos':
+      return (
+        <div className="placeholder">
+          <i className="bi bi-star-fill placeholder-icon"></i>
+          <h2>Planos</h2>
+          <p>Em breve...</p>
+        </div>
+      );
+    default:
+      return (
+        <div className="placeholder">
+          <i className="bi bi-question-circle placeholder-icon"></i>
+          <h2>Em breve</h2>
+          <p>Esta seção está em desenvolvimento...</p>
+        </div>
+      );
+  }
+}
+
+// ===================== COMPONENTE PRINCIPAL =====================
+export default function NavbarSidebar() {
+  const [sidebarAberta, setSidebarAberta] = useState(false);
+  const [telaAtiva, setTelaAtiva] = useState("inicio");
+  const [usuario] = useState({
+    nome: "Usuário",
+    email: "usuario@email.com",
+    foto: null,
+  });
+
+  const toggleSidebar = () => setSidebarAberta(prev => !prev);
+  const fecharSidebar = () => setSidebarAberta(false);
+  const navegarPara = (tela) => setTelaAtiva(tela);
+
+  return (
+    <>
+      <Navbar onToggleSidebar={toggleSidebar} usuario={usuario} />
+
+      <Sidebar
+        aberta={sidebarAberta}
+        telaAtiva={telaAtiva}
+        onNavegar={navegarPara}
+        onFechar={fecharSidebar}
+      />
+
+      <main className={`app-main ${!sidebarAberta ? 'sidebar-fechada' : ''}`}>
+        <div className="layout-container">
+          <div className="linha-inferior">
+            <div className="card-pequeno">
+              <SecaoAtiva id={telaAtiva} />
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}

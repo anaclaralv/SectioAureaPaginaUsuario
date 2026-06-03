@@ -1,0 +1,292 @@
+/* NOTAS SECTION */
+#notasSection {
+  position: relative;
+  padding: 20px;
+  background: #f8f8f8;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Estilos das Notas */
+.anexo-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.anexo-thumb:hover {
+  transform: scale(1.05);
+}
+
+.anexo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.anexo-thumb .btn-remover-anexo {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.anexo-thumb:hover .btn-remover-anexo {
+  opacity: 1;
+}
+
+.anexos-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.anexo-mini {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+.anexo-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+
+.lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.lightbox .btn-fechar-lightbox {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.lightbox .btn-fechar-lightbox:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Indicadores */
+.anexo-indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+.anexo-indicador i {
+  font-size: 0.8rem;
+}
+
+/* Checklist stats */
+.checklist-stats {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  margin-top: 5px;
+}
+
+.checklist-stats i {
+  margin-right: 3px;
+}
+
+.checklist-stats.concluido {
+  background: #22c55e20;
+  color: #16a34a;
+}
+
+.checklist-stats.pendente {
+  background: #ef444420;
+  color: #dc2626;
+}
+
+/* Contador de caracteres */
+.contador-caracteres {
+  transition: color 0.2s ease;
+}
+
+.contador-caracteres.alerta {
+  color: #ef4444 !important;
+  font-weight: bold;
+}
+
+/* Card da nota */
+.card-nota {
+  position: relative;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-nota:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-nota .estrela {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  color: #ccc !important;
+  opacity: 0.5;
+  z-index: 5;
+}
+
+.card-nota .estrela.favorito {
+  color: gold !important;
+  opacity: 1;
+  text-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+}
+
+.card-nota .estrela:hover {
+  opacity: 0.8 !important;
+  transform: scale(1.1);
+}
+
+.card-nota .btn-editar {
+  background-color: #ffc107;
+  color: #000 !important;
+  margin-right: 5px;
+}
+
+.card-nota .btn-excluir {
+  background-color: #dc3545;
+  color: #fff !important;
+}
+
+.card-nota .card-conteudo {
+  margin-top: 10px;
+  word-wrap: break-word;
+  flex: 1;
+}
+
+/* Checklist dentro do card */
+.checklist-card {
+  margin-top: 5px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+.check-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.check-item.completed span {
+  text-decoration: line-through;
+  color: gray;
+  opacity: 0.6;
+}
+
+.btn-excluir-check {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #d9534f;
+  padding: 0 4px;
+}
+
+.btn-excluir-check:hover {
+  color: #a94442;
+}
+
+#btnNova {
+  background-color: var(--cor-primaria) !important;
+  border: 1px solid #000;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  #notasSection {
+    padding: 10px;
+  }
+  
+  .d-flex.mb-3 {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .d-flex.mb-3 input {
+    width: 100%;
+    margin-right: 0 !important;
+  }
+  
+  .d-flex.mb-3 button {
+    width: 100%;
+  }
+}

@@ -486,6 +486,7 @@ function atualizarEventosTarefas() {
           backgroundColor: corPrioridade(t.prioridade),
           borderColor: corPrioridade(t.prioridade),
           textColor: '#ffffff',
+          
           extendedProps: {
             isTarefa: true,
             tarefaId: t.id
