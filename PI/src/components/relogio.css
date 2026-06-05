@@ -1,0 +1,728 @@
+/* ==================== RELÓGIO DE ESTUDOS ==================== */
+#relogioSection {
+  position: relative;
+  padding: 20px;
+  background: #f8f8f8;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+#relogioSection h1 {
+  color: #1f2937;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.titulo-materia {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--cor-primaria);
+  display: inline-block;
+}
+
+/* ===== CARDS: TIMER, CRONÔMETRO, POMODORO ===== */
+.relogio-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: stretch;
+  justify-content: center;
+  margin: 20px 0;
+  text-align: center;
+  width: 100%;
+}
+
+.relogio-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: 0.3s;
+  padding: 15px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid var(--cor-primaria);
+  min-width: 0;
+}
+
+.relogio-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.relogio-card h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.relogio-card p {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 10px 0;
+  color: var(--cor-primaria);
+  background: #f9fafb;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-family: monospace;
+  width: 100%;
+}
+
+.relogio-card input {
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  border-radius: 40px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 1rem;
+}
+
+.relogio-botoes {
+  margin-top: auto;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.relogio-botoes button {
+  margin: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 40px;
+  background: var(--cor-primaria);
+  color: white;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.relogio-botoes button:hover {
+  background: var(--cor-primaria);
+  transform: scale(1.02);
+  filter: brightness(0.9);
+}
+
+/* ===== TABELA ESTUDO POR MATÉRIA ===== */
+.add-materia-relogio {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 20px;
+  border: 1px solid #eef2ff;
+  flex-wrap: wrap;
+}
+
+.add-materia-relogio input {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 16px;
+  border-radius: 40px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.9rem;
+}
+
+.add-materia-relogio input:focus {
+  outline: none;
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 2px rgba(159, 4, 44, 0.1);
+}
+
+.add-materia-relogio button {
+  background: var(--cor-primaria);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.add-materia-relogio button:hover {
+  background: var(--cor-primaria);
+  transform: scale(1.02);
+}
+
+.tabela-estudo {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2ff;
+}
+
+.tabela-estudo th,
+.tabela-estudo td {
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.tabela-estudo th {
+  background: var(--cor-primaria);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tabela-estudo td {
+  background: white;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1f2937;
+}
+
+.tabela-estudo tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela-estudo tr:hover td {
+  background: #fef2f2;
+}
+
+.tabela-estudo button {
+  background: #22c55e;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 30px;
+  color: white;
+  cursor: pointer;
+  margin: 0 4px;
+  font-size: 0.8rem;
+  transition: 0.2s;
+}
+
+.tabela-estudo button:last-child {
+  background: #ef4444;
+}
+
+.tabela-estudo button:hover {
+  transform: scale(1.02);
+  filter: brightness(0.95);
+}
+
+/* ===== LAYOUT DOIS LADOS ===== */
+.relogio-duas-colunas {
+  display: flex;
+  gap: 30px;
+  margin: 40px 0;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.relogio-duas-colunas > div {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* RELÓGIO INTELIGENTE */
+.relogio-info-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  color: #1f2937;
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eef2ff;
+}
+
+.relogio-info-card h2 {
+  font-size: 1.3rem;
+  margin-bottom: 5px;
+  color: var(--cor-primaria);
+}
+
+.relogio-topo p {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.relogio-meio {
+  text-align: center;
+  margin: 20px 0;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.relogio-meio p {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  margin: 0;
+}
+
+.relogio-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 15px;
+}
+
+.stat {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 16px;
+  width: 45%;
+  text-align: center;
+}
+
+.stat span {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.stat strong {
+  font-size: 1.2rem;
+  color: #1f2937;
+}
+
+/* META DE ESTUDO */
+.meta-card-escuro {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  color: #1f2937;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #eef2ff;
+}
+
+.meta-card-escuro:hover {
+  transform: translateY(-5px);
+}
+
+.meta-header-escuro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.meta-header-escuro h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1f2937;
+}
+
+.btn-editar-meta-escuro {
+  background: #f1f5f9;
+  color: var(--cor-primaria);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-editar-meta-escuro:hover {
+  background: #e2e8f0;
+  transform: scale(1.02);
+}
+
+.meta-tipo-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: #f1f5f9;
+  border-radius: 40px;
+  padding: 4px;
+}
+
+.meta-tipo-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 30px;
+  color: #64748b;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.meta-tipo-btn.active {
+  background: var(--cor-primaria);
+  color: white;
+}
+
+.meta-tipo-btn:hover:not(.active) {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+.meta-conteudo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta-texto-resumo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  margin-bottom: 15px;
+  text-align: center;
+  background: #fef2f2;
+  padding: 12px 16px;
+  border-radius: 16px;
+  width: 100%;
+}
+
+.meta-progresso-escuro {
+  background: #e5e7eb;
+  border-radius: 20px;
+  height: 12px;
+  overflow: hidden;
+  margin: 15px 0;
+  width: 100%;
+}
+
+.meta-barra-escuro {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  width: 0%;
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+
+.meta-restante-escuro {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.meta-barra-escuro.baixa {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.meta-barra-escuro.media {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.meta-barra-escuro.alta {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+/* ===== MODO FOCO OVERLAY ===== */
+.modo-foco-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modo-foco-card {
+  background: white;
+  border-radius: 40px;
+  padding: 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modo-foco-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--cor-primaria);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 0 30px rgba(108, 117, 125, 0.5);
+}
+
+.modo-foco-icon i {
+  font-size: 2.5rem;
+  color: white;
+}
+
+.modo-foco-titulo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.modo-foco-timer {
+  font-size: 4rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--cor-primaria);
+  margin: 20px 0;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+.modo-foco-progresso-bg {
+  background: #e5e7eb;
+  border-radius: 10px;
+  height: 8px;
+  margin: 15px 0;
+  overflow: hidden;
+}
+
+.modo-foco-progresso-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s linear;
+}
+
+.modo-foco-botoes {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.modo-foco-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.modo-foco-btn-pausar {
+  background: #f59e0b;
+  color: white;
+}
+
+.modo-foco-btn-reset {
+  background: #3b82f6;
+  color: white;
+}
+
+.modo-foco-btn-sair {
+  background: #ef4444;
+  color: white;
+}
+
+.modo-foco-btn:hover {
+  transform: scale(1.05);
+  filter: brightness(0.95);
+}
+
+.modo-foco-frase {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 15px;
+  font-style: italic;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .modo-foco-card {
+    padding: 25px;
+  }
+  
+  .modo-foco-timer {
+    font-size: 2.5rem;
+  }
+  
+  .modo-foco-titulo {
+    font-size: 1.3rem;
+  }
+  
+  .modo-foco-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+}
+/* Responsividade do Modo Foco */
+@media (max-width: 768px) {
+  .modo-foco-card {
+    padding: 25px;
+    max-width: 400px;
+  }
+
+  .modo-foco-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .modo-foco-icon i {
+    font-size: 2rem;
+  }
+
+  .modo-foco-titulo {
+    font-size: 1.3rem;
+  }
+
+  .modo-foco-timer {
+    font-size: 2.8rem;
+    letter-spacing: 2px;
+  }
+
+  .modo-foco-stats {
+    gap: 10px;
+  }
+
+  .modo-foco-stat {
+    padding: 8px 12px;
+  }
+
+  .modo-foco-stat strong {
+    font-size: 1rem;
+  }
+
+  .modo-foco-btn {
+    padding: 8px 20px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modo-foco-card {
+    padding: 20px;
+  }
+
+  .modo-foco-timer {
+    font-size: 2rem;
+  }
+
+  .modo-foco-botoes {
+    gap: 8px;
+  }
+
+  .modo-foco-btn {
+    padding: 6px 16px;
+    font-size: 0.75rem;
+  }
+}
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 1024px) {
+  .relogio-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  #relogioSection {
+    padding: 10px;
+  }
+
+  .relogio-container {
+    grid-template-columns: 1fr;
+  }
+
+  .relogio-duas-colunas {
+    flex-direction: column;
+  }
+
+  .relogio-card {
+    min-height: auto;
+  }
+
+  .tabela-estudo th,
+  .tabela-estudo td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+
+  .add-materia-relogio {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .add-materia-relogio input {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .add-materia-relogio button {
+    width: 100%;
+  }
+
+  .modo-foco-card {
+    padding: 20px;
+  }
+
+  .modo-foco-timer {
+    font-size: 2.5rem;
+  }
+
+  .modo-foco-titulo {
+    font-size: 1.2rem;
+  }
+
+  .modo-foco-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .relogio-stats {
+    flex-direction: column;
+  }
+  
+  .stat {
+    width: 100%;
+  }
+  
+  .meta-tipo-selector {
+    flex-wrap: wrap;
+  }
+  
+  .meta-header-escuro {
+    flex-direction: column;
+    text-align: center;
+  }
+}

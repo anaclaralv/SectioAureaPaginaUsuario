@@ -1,0 +1,312 @@
+/* ===== CRONOGRAMA MODERNO ===== */
+#cronogramaNovoSection {
+  position: relative;
+  padding: 20px;
+  background: #f8f8f8;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+}
+
+#cronogramaNovoSection .layout-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+#cronogramaNovoSection h1 {
+  color: #1f2937;
+  margin-bottom: 25px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+/* Formulário */
+.form-cronogramaNovo {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-cronogramaNovo input[type="text"] {
+  padding: 12px 18px;
+  border-radius: 40px;
+  border: 2px solid #e5e7eb;
+  flex: 1;
+  min-width: 200px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: white;
+}
+
+.form-cronogramaNovo input[type="text"]:focus {
+  outline: none;
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+}
+
+.form-cronogramaNovo input[type="color"] {
+  width: 56px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  padding: 4px;
+  background: white;
+}
+
+.form-cronogramaNovo button {
+  background: var(--cor-primaria);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.form-cronogramaNovo button:hover {
+  transform: scale(1.02);
+  filter: brightness(0.9);
+}
+
+/* Título Matérias */
+#cronogramaNovoSection h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 15px;
+  margin-top: 10px;
+}
+
+/* Área das matérias */
+.materias-area {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 20px;
+  border: 2px dashed #d1d5db;
+  min-height: 100px;
+  margin-bottom: 20px;
+}
+
+/* Bloco de matéria (arrastável) */
+.materia-bloco {
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  cursor: grab;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s;
+  user-select: none;
+  font-size: 14px;
+  min-width: 110px;
+}
+
+.materia-bloco:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.materia-bloco:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* Texto de arraste */
+.drag-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.drag-text span {
+  background: #fef2f2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  margin: 0 4px;
+}
+
+/* Grid do cronograma */
+.cronogramaNovo-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* Card do dia */
+.dia {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 15px 12px;
+  min-height: 280px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.dia:hover {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+}
+
+.dia h5 {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: var(--cor-primaria);
+  text-transform: capitalize;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+  font-size: 1rem;
+}
+
+/* Área onde os blocos ficam */
+.dia-drop {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Bloco de horário dentro do dia */
+.bloco-materia {
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  word-break: break-word;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bloco-materia:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Estado quando está arrastando sobre o dia */
+.dia.drag-over {
+  background: #fef2f2;
+  border: 2px dashed var(--cor-primaria);
+  transform: scale(1.02);
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+  .cronogramaNovo-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cronogramaNovo-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  #cronogramaNovoSection {
+    padding: 15px;
+  }
+
+  .cronogramaNovo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .dia {
+    min-height: 220px;
+    padding: 12px 10px;
+  }
+
+  .dia h5 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .bloco-materia {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+
+  .materia-bloco {
+    font-size: 12px;
+    padding: 8px 14px;
+    min-width: 90px;
+  }
+
+  .form-cronogramaNovo {
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .form-cronogramaNovo input[type="text"] {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .form-cronogramaNovo input[type="color"] {
+    width: 100%;
+  }
+
+  .form-cronogramaNovo button {
+    width: 100%;
+  }
+
+  .drag-text {
+    font-size: 0.7rem;
+  }
+  
+  .materias-area {
+    justify-content: center;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cronogramaNovo-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .dia {
+    min-height: auto;
+  }
+  
+  .dia-drop {
+    min-height: auto;
+  }
+}
+
+.dia.drag-over {
+  background: #fef2f2;
+  border: 2px dashed var(--cor-primaria);
+  transform: scale(1.02);
+}

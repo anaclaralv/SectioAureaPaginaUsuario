@@ -2,6 +2,12 @@ import { useState } from "react";
 import "./navabarsidebar.css";
 import Tarefas from './tarefas';
 import Notas from './notas';
+import Calendario from "./calendario";
+import Relogio from "./relogio";
+import Estatisticas from "./estatisticas";
+import Cronograma from "./cronograma";
+import Revisao from "./Revisao";
+import Planos from "./Planos";
 
 // ===================== DADOS =====================
 const menuItems = [
@@ -102,37 +108,17 @@ function SecaoAtiva({ id }) {
     case 'notas':
       return <Notas />;
     case 'calendario':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-calendar-event placeholder-icon"></i>
-          <h2>Calendário</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Calendario/>;
+      
     case 'relogio':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-clock placeholder-icon"></i>
-          <h2>Relógio</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Relogio/>;
+
     case 'estatistica':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-graph-up placeholder-icon"></i>
-          <h2>Estatística</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Estatisticas/>;
+
     case 'cronogramaNovo':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-diagram-3 placeholder-icon"></i>
-          <h2>Cronograma</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Cronograma/>;
+
     case 'metodos':
       return (
         <div className="placeholder">
@@ -142,21 +128,10 @@ function SecaoAtiva({ id }) {
         </div>
       );
     case 'revisao':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-arrow-repeat placeholder-icon"></i>
-          <h2>Revisão</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Revisao/>;
     case 'planos':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-star-fill placeholder-icon"></i>
-          <h2>Planos</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Planos/>;
+      
     default:
       return (
         <div className="placeholder">
