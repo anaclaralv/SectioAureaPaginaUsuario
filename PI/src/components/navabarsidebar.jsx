@@ -8,6 +8,7 @@ import Estatisticas from "./estatisticas";
 import Cronograma from "./cronograma";
 import Revisao from "./Revisao";
 import Planos from "./Planos";
+import Inicio from "./inicio";
 
 // ===================== DADOS =====================
 const menuItems = [
@@ -96,13 +97,7 @@ function Sidebar({ aberta, telaAtiva, onNavegar, onFechar }) {
 function SecaoAtiva({ id }) {
   switch (id) {
     case 'inicio':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-house-fill placeholder-icon"></i>
-          <h2>Início</h2>
-          <p>Bem-vindo ao Sectio Aurea!</p>
-        </div>
-      );
+      return <Inicio/>;
     case 'tarefas':
       return <Tarefas />;
     case 'notas':
