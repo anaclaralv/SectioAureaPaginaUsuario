@@ -328,3 +328,60 @@
     width: 95%;
   }
 }
+/* Botão de explicação */
+.btn-explicacao {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.btn-explicacao:hover {
+  transform: scale(1.02);
+}
+
+/* Caixa de explicação */
+.explicacao-box {
+  background: #f8f9fa;
+  border-left: 4px solid;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.explicacao-content p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.beneficios-box {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.beneficios-box strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.beneficios-box ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.beneficios-box li {
+  margin: 4px 0;
+  color: #4b5563;
+}
