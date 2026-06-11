@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import './Inicio.css';
 
 const Inicio = () => {
@@ -8,31 +9,21 @@ const Inicio = () => {
   const [materiaAtual, setMateriaAtual] = useState(null);
   const [proximaMateria, setProximaMateria] = useState(null);
 
-  // Carregar dados do localStorage
   useEffect(() => {
     carregarDados();
   }, []);
 
   const carregarDados = () => {
-    // TAREFAS - lê e corrige o formato automaticamente
     const tarefasSalvas = localStorage.getItem('tarefas');
-    console.log("Tarefas salvas no localStorage:", tarefasSalvas);
     
     if (tarefasSalvas) {
       try {
         let tarefasParseadas = JSON.parse(tarefasSalvas);
-        console.log("Tarefas parseadas:", tarefasParseadas);
         
-        // Converter para o formato correto, garantindo que tenha ID
         const tarefasComId = tarefasParseadas.map((tarefa, index) => {
-          // Se já tem ID, usa; se não, cria um
           const id = tarefa.id || tarefa._id || Date.now() + index + Math.random();
-          
-          // Pega o texto (pode estar em diferentes campos)
           let texto = tarefa.texto || tarefa.titulo || tarefa.nome || "Sem título";
           
-          // Se o texto veio no formato "ppp - 2026-06-09 - prioridade alta"
-          // extrai só a primeira parte como nome
           if (texto.includes(" - ")) {
             texto = texto.split(" - ")[0];
           }
@@ -43,41 +34,40 @@ const Inicio = () => {
             concluida: tarefa.concluida || false,
             prioridade: tarefa.prioridade || "normal",
             data: tarefa.data || null,
-            textoOriginal: tarefa.texto || tarefa.titulo // guarda original se precisar
           };
         });
         
         setTarefas(tarefasComId);
-        console.log("Tarefas processadas:", tarefasComId);
       } catch(e) {
-        console.error("Erro ao ler tarefas:", e);
         setTarefas([]);
       }
     } else {
-      // Dados de exemplo se não tiver nada
       setTarefas([
         { id: 1, texto: "Revisar matemática", concluida: false },
         { id: 2, texto: "Fazer exercícios", concluida: false },
       ]);
     }
 
-    // EVENTOS
-    const eventosSalvos = localStorage.getItem('eventos');
+    const eventosSalvos = localStorage.getItem('eventosCalendario');
     if (eventosSalvos) {
-      setEventos(JSON.parse(eventosSalvos));
+      try {
+        setEventos(JSON.parse(eventosSalvos));
+      } catch(e) {
+        setEventos([]);
+      }
     }
 
-    // CRONOGRAMA
-    const cronogramaSalvo = localStorage.getItem('cronograma');
+    const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
     if (cronogramaSalvo) {
-      setCronograma(JSON.parse(cronogramaSalvo));
+      try {
+        setCronograma(JSON.parse(cronogramaSalvo));
+      } catch(e) {
+        setCronograma([]);
+      }
     }
   };
 
-  // Alternar tarefa - NUNCA faz sumir
   const alternarTarefa = (id) => {
-    console.log("Alternando tarefa ID:", id);
-    
     const novasTarefas = tarefas.map(tarefa => {
       if (tarefa.id === id) {
         return { ...tarefa, concluida: !tarefa.concluida };
@@ -87,11 +77,12 @@ const Inicio = () => {
     
     setTarefas(novasTarefas);
     localStorage.setItem('tarefas', JSON.stringify(novasTarefas));
-    console.log("Novas tarefas:", novasTarefas);
   };
 
   // Calcular matéria atual
   useEffect(() => {
+    if (cronograma.length === 0) return;
+
     const hoje = new Date().toISOString().split('T')[0];
     const agora = new Date();
     const horaAtual = agora.getHours();
@@ -99,16 +90,16 @@ const Inicio = () => {
     const tempoAtual = horaAtual + minutoAtual / 60;
 
     const materiasHoje = cronograma
-      .filter(item => item.data === hoje)
-      .sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
+      .filter(item => item.dia === ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()])
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
     let atual = null;
     let proxima = null;
 
     for (let i = 0; i < materiasHoje.length; i++) {
-      if (materiasHoje[i].horarioInicio && materiasHoje[i].horarioFim) {
-        const [hInicio, mInicio] = materiasHoje[i].horarioInicio.split(':').map(Number);
-        const [hFim, mFim] = materiasHoje[i].horarioFim.split(':').map(Number);
+      if (materiasHoje[i].inicio && materiasHoje[i].fim) {
+        const [hInicio, mInicio] = materiasHoje[i].inicio.split(':').map(Number);
+        const [hFim, mFim] = materiasHoje[i].fim.split(':').map(Number);
         const inicio = hInicio + mInicio / 60;
         const fim = hFim + mFim / 60;
 
@@ -130,23 +121,24 @@ const Inicio = () => {
   // Atualizar a cada minuto
   useEffect(() => {
     const interval = setInterval(() => {
-      const hoje = new Date().toISOString().split('T')[0];
+      if (cronograma.length === 0) return;
+      
       const agora = new Date();
       const horaAtual = agora.getHours();
       const minutoAtual = agora.getMinutes();
       const tempoAtual = horaAtual + minutoAtual / 60;
 
       const materiasHoje = cronograma
-        .filter(item => item.data === hoje)
-        .sort((a, b) => a.horarioInicio.localeCompare(b.horarioInicio));
+        .filter(item => item.dia === ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()])
+        .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
       let atual = null;
       let proxima = null;
 
       for (let i = 0; i < materiasHoje.length; i++) {
-        if (materiasHoje[i].horarioInicio && materiasHoje[i].horarioFim) {
-          const [hInicio, mInicio] = materiasHoje[i].horarioInicio.split(':').map(Number);
-          const [hFim, mFim] = materiasHoje[i].horarioFim.split(':').map(Number);
+        if (materiasHoje[i].inicio && materiasHoje[i].fim) {
+          const [hInicio, mInicio] = materiasHoje[i].inicio.split(':').map(Number);
+          const [hFim, mFim] = materiasHoje[i].fim.split(':').map(Number);
           const inicio = hInicio + mInicio / 60;
           const fim = hFim + mFim / 60;
 
@@ -168,25 +160,103 @@ const Inicio = () => {
     return () => clearInterval(interval);
   }, [cronograma]);
 
-  // Mostrar TODAS as tarefas (as concluídas ficam riscadas, mas não somem)
-  const eventosFuturos = eventos.filter(e => new Date(e.data) >= new Date()).slice(0, 3);
-  const hoje = new Date().toISOString().split('T')[0];
-  const materiasHoje = cronograma.filter(item => item.data === hoje);
+  // ===================== MODAL DE DICAS =====================
+  const abrirModalAmbiente = () => {
+    const passos = [
+      {
+        titulo: "Escolha o local",
+        texto: "Busque um lugar silencioso, bem iluminado e livre de distracoes. Um ambiente calmo faz toda a diferenca na concentracao.",
+        icone: "bi bi-house-check-fill"
+      },
+      {
+        titulo: "Celular longe",
+        texto: "Deixe o celular no modo silencioso e fora do seu alcance. Notificacoes sao os maiores viloes do foco nos estudos.",
+        icone: "bi bi-phone-vibrate"
+      },
+      {
+        titulo: "Mantenha-se hidratado",
+        texto: "Tenha sempre uma garrafa de agua por perto. A hidratacao ajuda o cerebro a funcionar melhor.",
+        icone: "bi bi-cup-straw"
+      },
+      {
+        titulo: "Organize o material",
+        texto: "Separe todo o material antes de comecar: livros, cadernos, canetas. Assim voce nao perde tempo procurando depois.",
+        icone: "bi bi-folder-check"
+      },
+      {
+        titulo: "Metas e pausas",
+        texto: "Defina quanto tempo vai estudar e quando vai fazer pausas. Use o timer ou pomodoro do seu Relogio de Estudos.",
+        icone: "bi bi-stopwatch"
+      },
+      {
+        titulo: "Objetivos claros",
+        texto: "Tenha em mente o que quer aprender nessa sessao. Fica mais facil manter o foco quando voce sabe exatamente o que fazer.",
+        icone: "bi bi-bullseye"
+      }
+    ];
+    
+    let passoAtual = 0;
+    
+    const mostrarPasso = () => {
+      const passo = passos[passoAtual];
+      const isUltimo = passoAtual === passos.length - 1;
+      const isPrimeiro = passoAtual === 0;
+      
+      Swal.fire({
+        title: passo.titulo,
+        html: `
+          <div style="text-align: center;">
+            <i class="${passo.icone}" style="font-size: 3rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
+            <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.6;">${passo.texto}</p>
+            <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 15px;">${passoAtual + 1} de ${passos.length}</p>
+          </div>
+        `,
+        showCancelButton: !isPrimeiro,
+        showConfirmButton: true,
+        confirmButtonText: isUltimo ? 'Pronto!' : 'Proximo',
+        cancelButtonText: 'Voltar',
+        confirmButtonColor: '#9f042c',
+        customClass: {
+          popup: 'rounded-4'
+        }
+      }).then((result) => {
+        if (result.isConfirmed && !isUltimo) {
+          passoAtual++;
+          mostrarPasso();
+        } else if (result.isDismissed && !isPrimeiro) {
+          passoAtual--;
+          mostrarPasso();
+        }
+      });
+    };
+    
+    mostrarPasso();
+  };
+
+  const eventosFuturos = eventos.filter(e => {
+    if (!e.start) return false;
+    return new Date(e.start) >= new Date();
+  }).slice(0, 3);
+
+  const hoje = new Date().getDay();
+  const materiasHoje = cronograma.filter(item => {
+    const diaSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][hoje];
+    return item.dia === diaSemana;
+  });
 
   return (
     <section id="inicioSection">
       <h1 style={{ marginBottom: '20px' }}>Início</h1>
       
-      
       <div className="dashboard-grid">
         <div className="row">
-          {/* TAREFAS - TODAS aparecem, as concluídas ficam riscadas */}
+          {/* TAREFAS */}
           <div className="col-12 col-md-4 mb-3">
             <div className="card p-3">
               <h5><i className="bi bi-card-checklist mx-2"></i> Tarefas</h5>
               <ul>
                 {tarefas.length === 0 ? (
-                  <li style={{ color: '#6c757d' }}> Nenhuma tarefa encontrada</li>
+                  <li style={{ color: '#6c757d' }}>Nenhuma tarefa encontrada</li>
                 ) : (
                   tarefas.map(tarefa => (
                     <li key={tarefa.id}>
@@ -205,7 +275,7 @@ const Inicio = () => {
                         {tarefa.prioridade === 'alta' && ' 🔴'}
                         {tarefa.prioridade === 'media' && ' 🟡'}
                         {tarefa.prioridade === 'baixa' && ' 🟢'}
-                        {tarefa.data && `  ${tarefa.data}`}
+                        {tarefa.data && ` ${tarefa.data}`}
                       </span>
                     </li>
                   ))
@@ -220,11 +290,11 @@ const Inicio = () => {
               <h5><i className="bi bi-calendar-week mx-2"></i> Próximos Eventos</h5>
               <ul>
                 {eventosFuturos.length === 0 ? (
-                  <li> Nenhum evento próximo</li>
+                  <li>Nenhum evento próximo</li>
                 ) : (
                   eventosFuturos.map((evento, idx) => (
                     <li key={idx}>
-                      📌 {evento.titulo} - {evento.data}
+                      {evento.title} - {evento.start}
                     </li>
                   ))
                 )}
@@ -238,11 +308,11 @@ const Inicio = () => {
               <h5><i className="bi bi-journal-bookmark mx-2"></i> Hoje você tem:</h5>
               <ul>
                 {materiasHoje.length === 0 ? (
-                  <li>g Nenhuma matéria agendada para hoje</li>
+                  <li>Nenhuma matéria agendada para hoje</li>
                 ) : (
                   materiasHoje.map((m, idx) => (
                     <li key={idx}>
-                      {m.materia} - {m.horarioInicio} às {m.horarioFim}
+                      {m.materia?.nome || m.materia} - {m.inicio} às {m.fim}
                     </li>
                   ))
                 )}
@@ -255,26 +325,45 @@ const Inicio = () => {
             <div className="card p-3 mt-3">
               <h3><i className="bi bi-exclamation-circle mx-2"></i> Agora</h3>
               <p id="materiaAgoraInicio">
-                {materiaAtual ? materiaAtual.materia : 'Descanso'}
+                {materiaAtual ? materiaAtual.materia?.nome || materiaAtual.materia : 'Descanso'}
               </p>
               <p id="horarioAgoraInicio">
-                {materiaAtual && `${materiaAtual.horarioInicio} - ${materiaAtual.horarioFim}`}
+                {materiaAtual && `${materiaAtual.inicio} - ${materiaAtual.fim}`}
               </p>
               
               <hr />
               
-              <h3>➡ Próxima</h3>
+              <h3>Proxima</h3>
               <p id="materiaProximaInicio">
-                {proximaMateria ? proximaMateria.materia : 'Nenhuma matéria agendada'}
+                {proximaMateria ? proximaMateria.materia?.nome || proximaMateria.materia : 'Nenhuma matéria agendada'}
               </p>
               <p id="horarioProximaInicio">
-                {proximaMateria && `${proximaMateria.horarioInicio} - ${proximaMateria.horarioFim}`}
+                {proximaMateria && `${proximaMateria.inicio} - ${proximaMateria.fim}`}
               </p>
             </div>
 
-            {/* DICAS */}
+            {/* DICAS DE AMBIENTE */}
             <div className="col-12 mt-3">
-              <div className="card p-3 text-center" onClick={() => alert("Dicas de ambiente")}>
+              <div 
+                className="card card-dicas p-3 text-center"
+                onClick={abrirModalAmbiente}
+                style={{ 
+                  cursor: 'pointer', 
+                  transition: '0.2s', 
+                  border: '2px dashed var(--cor-primaria)', 
+                  background: '#fefefe' 
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 6px 15px rgba(0,0,0,0.15)';
+                  e.currentTarget.style.background = '#fef2f2';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,0,0,0.1)';
+                  e.currentTarget.style.background = '#fefefe';
+                }}
+              >
                 <i className="bi bi-lightbulb-fill" style={{ fontSize: '1.5rem', color: '#f59e0b', marginBottom: '8px', display: 'block' }}></i>
                 <h5 style={{ marginBottom: '4px' }}>Como preparar o ambiente?</h5>
                 <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Clique aqui para ver as dicas</p>

@@ -10,23 +10,39 @@ import Revisao from "./Revisao";
 import Planos from "./Planos";
 import Inicio from "./inicio";
 import Metodos from "./Metodos";
+import Swal from 'sweetalert2';
+
+// ===================== ÍCONES DAS INTELIGÊNCIAS =====================
+const iconesInteligencia = {
+  linguistica: "Icones/linguistica.png",
+  logico: "Icones/logico.png",
+  musical: "Icones/musical.png",
+  corporal: "Icones/corporal.png",
+  espacial: "Icones/espacial.png",
+  interpessoal: "Icones/interpessoal.png",
+  intrapessoal: "Icones/intrapessoal.png"
+};
 
 // ===================== DADOS =====================
 const menuItems = [
-  { id: "inicio",          icon: "bi-house-fill",       label: "Início" },
-  { id: "tarefas",         icon: "bi-check2-square",    label: "Tarefas" },
-  { id: "notas",           icon: "bi-journal-bookmark", label: "Notas" },
-  { id: "calendario",      icon: "bi-calendar-event",   label: "Calendário" },
-  { id: "relogio",         icon: "bi-clock",            label: "Relógio" },
-  { id: "estatistica",     icon: "bi-graph-up",         label: "Estatística" },
-  { id: "cronogramaNovo",  icon: "bi-diagram-3",        label: "Cronograma" },
-  { id: "metodos",         icon: "bi-lightbulb",        label: "Métodos" },
-  { id: "revisao",         icon: "bi-arrow-repeat",     label: "Revisão" },
-  { id: "planos",          icon: "bi-star-fill",        label: "Planos" },
+  { id: "inicio", icon: "bi-house-fill", label: "Início" },
+  { id: "tarefas", icon: "bi-check2-square", label: "Tarefas" },
+  { id: "notas", icon: "bi-journal-bookmark", label: "Notas" },
+  { id: "calendario", icon: "bi-calendar-event", label: "Calendário" },
+  { id: "relogio", icon: "bi-clock", label: "Relógio" },
+  { id: "estatistica", icon: "bi-graph-up", label: "Estatística" },
+  { id: "cronogramaNovo", icon: "bi-diagram-3", label: "Cronograma" },
+  { id: "metodos", icon: "bi-lightbulb", label: "Métodos" },
+  { id: "revisao", icon: "bi-arrow-repeat", label: "Revisão" },
+  { id: "planos", icon: "bi-star-fill", label: "Planos" },
 ];
 
 // ===================== NAVBAR =====================
-function Navbar({ onToggleSidebar, usuario, corPrimaria }) {
+function Navbar({ onToggleSidebar, usuario, corPrimaria, tipoInteligencia, onAbrirConfig }) {
+  const logoSrc = tipoInteligencia
+    ? iconesInteligencia[tipoInteligencia]
+    : "Icones/logoBranca.png";
+
   return (
     <nav className="navbar" style={{ backgroundColor: corPrimaria }}>
       <div className="navbar-container">
@@ -36,21 +52,25 @@ function Navbar({ onToggleSidebar, usuario, corPrimaria }) {
           </button>
           <a href="#" className="navbar-brand">
             <img
-              src="Icones/logoBranca.png"
+              src={logoSrc}
               alt="logo"
-              onError={e => { e.target.style.display = "none"; }}
+              style={{ width: 45, height: 45, objectFit: 'contain' }}
             />
             <span className="brand-text">Sectio Aurea</span>
           </a>
         </div>
 
-       <div className="navbar-right">
+        <div className="navbar-right" onClick={onAbrirConfig}>
           <img
             src={usuario.foto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
             alt="avatar"
             className="user-avatar"
-            style={{ borderColor: corPrimaria }}  // ← Borda do avatar
+            style={{ borderColor: 'white' }}
           />
+          <div className="user-text">
+            <span className="user-name">{usuario.nome || "Usuário"}</span>
+            <span className="user-email">{usuario.email || "usuario@email.com"}</span>
+          </div>
         </div>
       </div>
     </nav>
@@ -91,34 +111,116 @@ function Sidebar({ aberta, telaAtiva, onNavegar, onFechar }) {
   );
 }
 
+// ===================== MODAL DE CONFIGURAÇÃO =====================
+function ModalConfiguracao({ usuario, onSalvar, onFechar }) {
+  const [nome, setNome] = useState(usuario.nome);
+  const [email, setEmail] = useState(usuario.email);
+  const [fotoPreview, setFotoPreview] = useState(usuario.foto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png");
+  const [novaFoto, setNovaFoto] = useState(null);
+
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNovaFoto(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setFotoPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSalvar = () => {
+    if (novaFoto) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        localStorage.setItem("userFoto", e.target.result);
+        onSalvar({ nome, email, foto: e.target.result });
+      };
+      reader.readAsDataURL(novaFoto);
+    } else {
+      onSalvar({ nome, email, foto: usuario.foto });
+    }
+  };
+
+  return (
+    <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title fw-bold">Configurações do Usuário</h5>
+            <button type="button" className="btn-close" onClick={onFechar}></button>
+          </div>
+          <div className="modal-body">
+            <div className="text-center mb-4">
+              <div className="foto-usuario-container">
+                <img
+                  src={fotoPreview}
+                  alt="Foto do Usuário"
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '4px solid black'
+                  }}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="form-control mt-2"
+                  onChange={handleFotoChange}
+                />
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Nome</label>
+              <input
+                type="text"
+                className="form-control"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Digite seu nome"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Email</label>
+              <input
+                type="email"
+                className="form-control"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Digite seu email"
+              />
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onFechar}>Cancelar</button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleSalvar}
+            >
+              Salvar Alterações
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ===================== SEÇÃO ATIVA =====================
 function SecaoAtiva({ id }) {
   switch (id) {
-    case 'inicio':
-      return <Inicio/>;
-    case 'tarefas':
-      return <Tarefas />;
-    case 'notas':
-      return <Notas />;
-    case 'calendario':
-      return <Calendario/>;
-      
-    case 'relogio':
-      return <Relogio/>;
-
-    case 'estatistica':
-      return <Estatisticas/>;
-
-    case 'cronogramaNovo':
-      return <Cronograma/>;
-
-    case 'metodos':
-      return <Metodos/>;
-    case 'revisao':
-      return <Revisao/>;
-    case 'planos':
-      return <Planos/>;
-      
+    case 'inicio': return <Inicio />;
+    case 'tarefas': return <Tarefas />;
+    case 'notas': return <Notas />;
+    case 'calendario': return <Calendario />;
+    case 'relogio': return <Relogio />;
+    case 'estatistica': return <Estatisticas />;
+    case 'cronogramaNovo': return <Cronograma />;
+    case 'metodos': return <Metodos />;
+    case 'revisao': return <Revisao />;
+    case 'planos': return <Planos />;
     default:
       return (
         <div className="placeholder">
@@ -131,25 +233,45 @@ function SecaoAtiva({ id }) {
 }
 
 // ===================== COMPONENTE PRINCIPAL =====================
-export default function NavbarSidebar({ corPrimaria }) {
+export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [telaAtiva, setTelaAtiva] = useState("inicio");
-  const [usuario] = useState({
-    nome: "Usuário",
-    email: "usuario@email.com",
-    foto: null,
+  const [modalConfigAberto, setModalConfigAberto] = useState(false);
+  const [usuario, setUsuario] = useState({
+    nome: localStorage.getItem("userName") || "Usuário",
+    email: localStorage.getItem("userEmail") || "usuario@email.com",
+    foto: localStorage.getItem("userFoto") || null,
   });
 
   const toggleSidebar = () => setSidebarAberta(prev => !prev);
   const fecharSidebar = () => setSidebarAberta(false);
   const navegarPara = (tela) => setTelaAtiva(tela);
+  const abrirConfig = () => setModalConfigAberto(true);
+  const fecharConfig = () => setModalConfigAberto(false);
 
- return (
+  const salvarConfiguracao = ({ nome, email, foto }) => {
+    setUsuario({ nome, email, foto });
+    localStorage.setItem("userName", nome);
+    localStorage.setItem("userEmail", email);
+    setModalConfigAberto(false);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Sucesso!',
+      text: 'Configurações salvas com sucesso.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  };
+
+  return (
     <>
-      <Navbar 
-        onToggleSidebar={toggleSidebar} 
-        usuario={usuario} 
-        corPrimaria={corPrimaria}  // ← Passe para Navbar
+      <Navbar
+        onToggleSidebar={toggleSidebar}
+        usuario={usuario}
+        corPrimaria={corPrimaria}
+        tipoInteligencia={tipoInteligencia}
+        onAbrirConfig={abrirConfig}
       />
 
       <Sidebar
@@ -168,6 +290,14 @@ export default function NavbarSidebar({ corPrimaria }) {
           </div>
         </div>
       </main>
+
+      {modalConfigAberto && (
+        <ModalConfiguracao
+          usuario={usuario}
+          onSalvar={salvarConfiguracao}
+          onFechar={fecharConfig}
+        />
+      )}
     </>
   );
 }
