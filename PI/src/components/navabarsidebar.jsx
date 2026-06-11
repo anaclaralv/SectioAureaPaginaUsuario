@@ -9,6 +9,7 @@ import Cronograma from "./cronograma";
 import Revisao from "./Revisao";
 import Planos from "./Planos";
 import Inicio from "./inicio";
+import Metodos from "./Metodos";
 
 // ===================== DADOS =====================
 const menuItems = [
@@ -115,13 +116,7 @@ function SecaoAtiva({ id }) {
       return <Cronograma/>;
 
     case 'metodos':
-      return (
-        <div className="placeholder">
-          <i className="bi bi-lightbulb placeholder-icon"></i>
-          <h2>Métodos</h2>
-          <p>Em breve...</p>
-        </div>
-      );
+      return <Metodos/>;
     case 'revisao':
       return <Revisao/>;
     case 'planos':
