@@ -26,9 +26,9 @@ const menuItems = [
 ];
 
 // ===================== NAVBAR =====================
-function Navbar({ onToggleSidebar, usuario }) {
+function Navbar({ onToggleSidebar, usuario, corPrimaria }) {
   return (
-    <nav className="navbar">
+    <nav className="navbar" style={{ backgroundColor: corPrimaria }}>
       <div className="navbar-container">
         <div className="navbar-left">
           <button className="menu-toggle" onClick={onToggleSidebar}>
@@ -44,16 +44,13 @@ function Navbar({ onToggleSidebar, usuario }) {
           </a>
         </div>
 
-        <div className="navbar-right">
+       <div className="navbar-right">
           <img
             src={usuario.foto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
             alt="avatar"
             className="user-avatar"
+            style={{ borderColor: corPrimaria }}  // ← Borda do avatar
           />
-          <div className="user-text">
-            <span className="user-name">{usuario.nome || "Usuário"}</span>
-            <span className="user-email">{usuario.email || "usuario@email.com"}</span>
-          </div>
         </div>
       </div>
     </nav>
@@ -134,7 +131,7 @@ function SecaoAtiva({ id }) {
 }
 
 // ===================== COMPONENTE PRINCIPAL =====================
-export default function NavbarSidebar() {
+export default function NavbarSidebar({ corPrimaria }) {
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [telaAtiva, setTelaAtiva] = useState("inicio");
   const [usuario] = useState({
@@ -147,9 +144,13 @@ export default function NavbarSidebar() {
   const fecharSidebar = () => setSidebarAberta(false);
   const navegarPara = (tela) => setTelaAtiva(tela);
 
-  return (
+ return (
     <>
-      <Navbar onToggleSidebar={toggleSidebar} usuario={usuario} />
+      <Navbar 
+        onToggleSidebar={toggleSidebar} 
+        usuario={usuario} 
+        corPrimaria={corPrimaria}  // ← Passe para Navbar
+      />
 
       <Sidebar
         aberta={sidebarAberta}
