@@ -78,6 +78,10 @@ export default function Relogio() {
 
   // ==================== CARREGAR DADOS DO LOCALSTORAGE ====================
   useEffect(() => {
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  if (plano === 'gratuito') {
+    // Bloquear funcionalidades premium
+  }
     // Carregar matérias
     const materiasSalvas = localStorage.getItem('materias');
     if (materiasSalvas) {
@@ -302,8 +306,27 @@ export default function Relogio() {
   };
 
   const abrirModalPomodoro = () => {
-    modalInstancePomodoro.current?.show();
-  };
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  
+  if (plano === 'gratuito') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'O <strong>Pomodoro Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+      }
+    });
+    return;
+  }
+  
+  modalInstancePomodoro.current?.show();
+};
 
   const iniciarPomodoroPersonalizado = () => {
     const materiaId = document.getElementById('pomodoroMateria')?.value;
@@ -565,6 +588,25 @@ export default function Relogio() {
     if (mensalHorasInput) mensalHorasInput.value = mensalH;
     if (mensalMinutosInput) mensalMinutosInput.value = mensalM;
 
+     const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  
+  if (plano === 'gratuito') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'A <strong>Meta de Estudo</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+      }
+    });
+    return;
+  }
+
     modalInstanceMeta.current?.show();
   };
 
@@ -620,8 +662,27 @@ export default function Relogio() {
 
   // ==================== MODO FOCO PERSONALIZADO ====================
   const abrirModalModoFoco = () => {
-    modalInstanceFoco.current?.show();
-  };
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  
+  if (plano === 'gratuito') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'O <strong>Modo Foco Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+      }
+    });
+    return;
+  }
+  
+  modalInstanceFoco.current?.show();
+};
 
   const iniciarModoFocoPersonalizado = () => {
     const materiaId = document.getElementById('focoMateriaSelect')?.value;

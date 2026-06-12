@@ -45,7 +45,25 @@ export default function Estatisticas() {
   const graficoMateriasRef = useRef();
 
   // Carregar dados do localStorage
-  useEffect(() => {
+ useEffect(() => {
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  
+  if (plano === 'gratuito') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'As Estatísticas estão disponíveis nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+      }
+    });
+    return; // Não carrega os dados
+  }
     const materiasSalvas = localStorage.getItem('materias');
     if (materiasSalvas) {
       setMaterias(JSON.parse(materiasSalvas));
@@ -500,15 +518,15 @@ export default function Estatisticas() {
         <div className="grafico-card">
           <h4>Top Matérias</h4>
           <div style={{ height: '300px' }}>
-            {dadosMaterias.dados.length > 0 ? (
+            {dadosMaterias.dados.length > 0 && dadosMaterias.dados.some(v => v > 0) ? (
               <Doughnut
                 ref={graficoMateriasRef}
                 data={{ labels: dadosMaterias.labels, datasets: [{ data: dadosMaterias.dados, backgroundColor: dadosMaterias.cores, borderColor: '#ffffff', borderWidth: 3 }] }}
                 options={doughnutOptions}
               />
             ) : (
-              <p style={{ textAlign: 'center', padding: '50px', color: '#9ca3af' }}>Nenhum dado de estudo registrado</p>
-            )}
+               <p style={{ textAlign: 'center', padding: '50px', color: '#9ca3af' }}>Nenhum dado de estudo registrado</p>
+)}
           </div>
         </div>
       </div>

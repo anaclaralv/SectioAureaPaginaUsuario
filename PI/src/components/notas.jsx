@@ -96,53 +96,47 @@ export default function Notas() {
   };
 
   // Renderizar checklist no modal
-  const renderizarChecklistModal = useCallback((items) => {
-    const container = document.getElementById('checklistContainer');
-    if (!container) return;
+ const renderizarChecklistModal = useCallback((items) => {
+  const container = document.getElementById('checklistContainer');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  if (!Array.isArray(items)) items = [];
+  
+  items.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = `check-item ${item.checked ? 'completed' : ''}`;
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.marginBottom = '5px';
+    div.innerHTML = `
+      <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
+      <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
+      <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
+    `;
     
-    container.innerHTML = '';
-    if (!Array.isArray(items)) items = [];
+    const checkbox = div.querySelector('input[type="checkbox"]');
+    const textoInput = div.querySelector('input[type="text"]');
+    const btnExcluir = div.querySelector('.btn-excluir-check');
     
-    items.forEach((item, i) => {
-      const div = document.createElement('div');
-      div.className = `check-item ${item.checked ? 'completed' : ''}`;
-      div.style.display = 'flex';
-      div.style.alignItems = 'center';
-      div.style.marginBottom = '5px';
-      div.innerHTML = `
-        <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
-        <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
-        <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
-      `;
-      
-      const checkbox = div.querySelector('input[type="checkbox"]');
-      const textoInput = div.querySelector('input[type="text"]');
-      const btnExcluir = div.querySelector('.btn-excluir-check');
-      
-      checkbox.addEventListener('change', () => {
-        item.checked = checkbox.checked;
-        div.classList.toggle('completed', item.checked);
-        const newItems = [...checklistItems];
-        newItems[i] = item;
-        setChecklistItems(newItems);
-      });
-      
-      textoInput.addEventListener('input', () => {
-        item.texto = textoInput.value;
-        const newItems = [...checklistItems];
-        newItems[i] = item;
-        setChecklistItems(newItems);
-      });
-      
-      btnExcluir.addEventListener('click', () => {
-        const newItems = checklistItems.filter((_, idx) => idx !== i);
-        setChecklistItems(newItems);
-        renderizarChecklistModal(newItems);
-      });
-      
-      container.appendChild(div);
+    checkbox.addEventListener('change', () => {
+      item.checked = checkbox.checked;
+      div.classList.toggle('completed', item.checked);
     });
-  }, [checklistItems]);
+    
+    textoInput.addEventListener('input', () => {
+      item.texto = textoInput.value;
+    });
+    
+    btnExcluir.addEventListener('click', () => {
+      const updatedItems = items.filter((_, idx) => idx !== i);
+      renderizarChecklistModal(updatedItems);
+      setChecklistItems(updatedItems);
+    });
+    
+    container.appendChild(div);
+  });
+}, []); // ← Sem dependência, usa os items passados como argumento
 
   // Adicionar item ao checklist
   const adicionarChecklistItem = () => {
@@ -271,6 +265,9 @@ export default function Notas() {
 
   // Salvar nota
   const salvarNota = useCallback(() => {
+    if (anexoInputRef.current) {
+  anexoInputRef.current.value = '';
+}
     const titulo = tituloInputRef.current?.value || '';
     const texto = textoDivRef.current?.innerHTML || '';
     const cor = corInputRef.current?.value || '#ffffff';

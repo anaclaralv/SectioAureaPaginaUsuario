@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./navabarsidebar.css";
 import Tarefas from './tarefas';
 import Notas from './notas';
@@ -78,32 +78,41 @@ function Navbar({ onToggleSidebar, usuario, corPrimaria, tipoInteligencia, onAbr
 }
 
 // ===================== SIDEBAR =====================
-function Sidebar({ aberta, telaAtiva, onNavegar, onFechar }) {
+function Sidebar({ aberta, telaAtiva, onNavegar, onFechar, planoAtual }) {
+  const bloqueios = {
+    gratuito: ['estatistica', 'cronogramaNovo'],
+    basico: [],
+    pro: []
+  };
+  const bloqueadas = bloqueios[planoAtual] || [];
+
   return (
     <>
-      {aberta && (
-        <div className="sidebar-overlay" onClick={onFechar} />
-      )}
-
+      {aberta && <div className="sidebar-overlay" onClick={onFechar} />}
       <aside className={`sidebar ${aberta ? 'sidebar-aberta' : 'sidebar-fechada'}`}>
         <div id="menuLateral">
           <ul className="nav-list">
-            {menuItems.map(item => (
-              <li key={item.id}>
-                <a
-                  href="#"
-                  className={`nav-link ${telaAtiva === item.id ? 'active' : ''}`}
-                  onClick={e => {
-                    e.preventDefault();
-                    onNavegar(item.id);
-                    onFechar();
-                  }}
-                >
-                  <i className={`bi ${item.icon} nav-icon`}></i>
-                  {item.label}
-                </a>
-              </li>
-            ))}
+            {menuItems.map(item => {
+              const isAtivo = telaAtiva === item.id;
+              const isBloqueado = bloqueadas.includes(item.id);
+              
+              return (
+                <li key={item.id}>
+                  <a
+                    href="#"
+                    className={`nav-link ${isAtivo ? 'active' : ''} ${isBloqueado ? 'bloqueado' : ''}`}
+                    onClick={e => {
+                      e.preventDefault();
+                      onNavegar(item.id);
+                      onFechar();
+                    }}
+                  >
+                    <i className={`bi ${item.icon} nav-icon`}></i>
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </aside>
@@ -194,13 +203,7 @@ function ModalConfiguracao({ usuario, onSalvar, onFechar }) {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onFechar}>Cancelar</button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={handleSalvar}
-            >
-              Salvar Alterações
-            </button>
+            <button type="button" className="btn btn-danger" onClick={handleSalvar}>Salvar Alterações</button>
           </div>
         </div>
       </div>
@@ -234,6 +237,20 @@ function SecaoAtiva({ id }) {
 
 // ===================== COMPONENTE PRINCIPAL =====================
 export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
+  const [planoAtual, setPlanoAtual] = useState('gratuito');
+  
+  // Carregar plano
+  useEffect(() => {
+    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    setPlanoAtual(plano);
+    
+    // Escutar mudanças de plano
+    const handlePlanoAtualizado = (event) => {
+      setPlanoAtual(event.detail.plano);
+    };
+    window.addEventListener('planoAtualizado', handlePlanoAtualizado);
+    return () => window.removeEventListener('planoAtualizado', handlePlanoAtualizado);
+  }, []);
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [telaAtiva, setTelaAtiva] = useState("inicio");
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
@@ -245,9 +262,46 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
 
   const toggleSidebar = () => setSidebarAberta(prev => !prev);
   const fecharSidebar = () => setSidebarAberta(false);
-  const navegarPara = (tela) => setTelaAtiva(tela);
+ const navegarPara = (tela) => {
+  const bloqueios = {
+    gratuito: ['estatistica', 'cronogramaNovo'],
+    basico: [],
+    pro: []
+  };
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  const bloqueadas = bloqueios[plano] || [];
+
+  if (bloqueadas.includes(tela)) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        setTelaAtiva('planos');
+      }
+    });
+    return; // NÃO deixa entrar na seção
+  }
+
+  setTelaAtiva(tela);
+};
   const abrirConfig = () => setModalConfigAberto(true);
   const fecharConfig = () => setModalConfigAberto(false);
+
+  // Escutar evento de navegação dos métodos
+  useEffect(() => {
+    const handleNavegar = (event) => {
+      navegarPara(event.detail);
+    };
+    
+    window.addEventListener('navegarPara', handleNavegar);
+    return () => window.removeEventListener('navegarPara', handleNavegar);
+  }, []);
 
   const salvarConfiguracao = ({ nome, email, foto }) => {
     setUsuario({ nome, email, foto });
@@ -275,11 +329,12 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
       />
 
       <Sidebar
-        aberta={sidebarAberta}
-        telaAtiva={telaAtiva}
-        onNavegar={navegarPara}
-        onFechar={fecharSidebar}
-      />
+  aberta={sidebarAberta}
+  telaAtiva={telaAtiva}
+  onNavegar={navegarPara}
+  onFechar={fecharSidebar}
+  planoAtual={planoAtual}
+/>
 
       <main className={`app-main ${!sidebarAberta ? 'sidebar-fechada' : ''}`}>
         <div className="layout-container">

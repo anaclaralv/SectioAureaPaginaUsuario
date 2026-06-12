@@ -19,25 +19,45 @@ export default function Cronograma() {
   ];
 
   // Carregar dados do localStorage
-  useEffect(() => {
-    const materiasSalvas = localStorage.getItem('materias');
-    if (materiasSalvas) {
-      setMaterias(JSON.parse(materiasSalvas));
-    } else {
-      const materiasPadrao = [
-        { id: 'm1', nome: 'Matemática', cor: '#ef4444' },
-        { id: 'm2', nome: 'Português', cor: '#3b82f6' },
-        { id: 'm3', nome: 'História', cor: '#22c55e' }
-      ];
-      setMaterias(materiasPadrao);
-      localStorage.setItem('materias', JSON.stringify(materiasPadrao));
-    }
+useEffect(() => {
+  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  
+  if (plano === 'gratuito') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Recurso Premium',
+      html: 'O Cronograma Inteligente está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+      confirmButtonText: 'Ver Planos',
+      confirmButtonColor: '#9f042c',
+      showCancelButton: true,
+      cancelButtonText: 'Fechar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+      }
+    });
+    return; // Sai da função, não carrega os dados
+  }
 
-    const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
-    if (cronogramaSalvo) {
-      setCronograma(JSON.parse(cronogramaSalvo));
-    }
-  }, []);
+  // Só carrega os dados se NÃO for gratuito
+  const materiasSalvas = localStorage.getItem('materias');
+  if (materiasSalvas) {
+    setMaterias(JSON.parse(materiasSalvas));
+  } else {
+    const materiasPadrao = [
+      { id: 'm1', nome: 'Matemática', cor: '#ef4444' },
+      { id: 'm2', nome: 'Português', cor: '#3b82f6' },
+      { id: 'm3', nome: 'História', cor: '#22c55e' }
+    ];
+    setMaterias(materiasPadrao);
+    localStorage.setItem('materias', JSON.stringify(materiasPadrao));
+  }
+
+  const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
+  if (cronogramaSalvo) {
+    setCronograma(JSON.parse(cronogramaSalvo));
+  }
+}, []);
 
   // Salvar dados
   useEffect(() => {
@@ -120,73 +140,123 @@ export default function Cronograma() {
   };
 
   // Adicionar bloco ao cronograma
-  const adicionarBloco = (materia, dia) => {
-    Swal.fire({
-      title: `Horário de ${materia.nome}`,
-      html: `
-        <div style="display: flex; gap: 10px; justify-content: center;">
-          <div>
-            <label>Início</label>
-            <input type="time" id="inicio" class="swal2-input" value="08:00">
-          </div>
-          <div>
-            <label>Fim</label>
-            <input type="time" id="fim" class="swal2-input" value="09:00">
-          </div>
+const adicionarBloco = (materia, dia) => {
+  Swal.fire({
+    title: `Horário de ${materia.nome}`,
+    html: `
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <div>
+          <label>Início</label>
+          <input type="time" id="inicio" class="swal2-input" value="08:00">
         </div>
-      `,
-      confirmButtonText: 'Salvar',
-      showCancelButton: true,
-      preConfirm: () => {
-        const inicio = document.getElementById('inicio').value;
-        const fim = document.getElementById('fim').value;
-        if (!inicio || !fim || fim <= inicio) {
-          Swal.showValidationMessage('Horário inválido!');
-          return false;
-        }
-        return { inicio, fim };
+        <div>
+          <label>Fim</label>
+          <input type="time" id="fim" class="swal2-input" value="09:00">
+        </div>
+      </div>
+    `,
+    confirmButtonText: 'Salvar',
+    showCancelButton: true,
+    preConfirm: () => {
+      const inicio = document.getElementById('inicio').value;
+      const fim = document.getElementById('fim').value;
+      
+      if (!inicio || !fim) {
+        Swal.showValidationMessage('Preencha os dois horários!');
+        return false;
       }
-    }).then(result => {
-      if (result.isConfirmed) {
-        const novoBloco = {
-          id: Date.now(),
-          materia: { ...materia },
-          dia: dia,
-          inicio: result.value.inicio,
-          fim: result.value.fim
-        };
-        setCronograma([...cronograma, novoBloco]);
+      
+      if (fim <= inicio) {
+        Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
+        return false;
       }
-    });
-  };
+
+      // Verificar conflito de horários no mesmo dia
+      const blocosDoDia = cronograma.filter(b => b.dia === dia);
+      const temConflito = blocosDoDia.some(b => {
+        // Verifica se o novo horário sobrepõe algum existente
+        return (inicio >= b.inicio && inicio < b.fim) || // Início dentro de outro bloco
+               (fim > b.inicio && fim <= b.fim) ||       // Fim dentro de outro bloco
+               (inicio <= b.inicio && fim >= b.fim);     // Novo bloco cobre outro bloco
+      });
+
+      if (temConflito) {
+        Swal.showValidationMessage('Já existe uma matéria nesse horário! Escolha outro horário.');
+        return false;
+      }
+
+      return { inicio, fim };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const novoBloco = {
+        id: Date.now(),
+        materia: { ...materia },
+        dia: dia,
+        inicio: result.value.inicio,
+        fim: result.value.fim
+      };
+      setCronograma([...cronograma, novoBloco]);
+    }
+  });
+};
 
   // Editar bloco
-  const editarBloco = (bloco) => {
-    Swal.fire({
-      title: 'Editar Horário',
-      html: `
-        <input type="time" id="editInicio" class="swal2-input" value="${bloco.inicio}">
-        <input type="time" id="editFim" class="swal2-input" value="${bloco.fim}">
-      `,
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: 'Salvar',
-      denyButtonText: 'Excluir'
-    }).then(result => {
-      if (result.isConfirmed) {
-        const inicio = document.getElementById('editInicio').value;
-        const fim = document.getElementById('editFim').value;
-        if (inicio && fim && fim > inicio) {
-          const novoCronograma = cronograma.map(b =>
-            b.id === bloco.id ? { ...b, inicio, fim } : b
-          );
-          setCronograma(novoCronograma);
-        }
-      } else if (result.isDenied) {
-        setCronograma(cronograma.filter(b => b.id !== bloco.id));
+const editarBloco = (bloco) => {
+  Swal.fire({
+    title: 'Editar Horário',
+    html: `
+      <input type="time" id="editInicio" class="swal2-input" value="${bloco.inicio}">
+      <input type="time" id="editFim" class="swal2-input" value="${bloco.fim}">
+    `,
+    showCancelButton: true,
+    showDenyButton: true,
+    confirmButtonText: 'Salvar',
+    denyButtonText: 'Excluir',
+    preConfirm: () => {
+      const inicio = document.getElementById('editInicio').value;
+      const fim = document.getElementById('editFim').value;
+      
+      if (!inicio || !fim) {
+        Swal.showValidationMessage('Preencha os dois horários!');
+        return false;
       }
-    });
-  };
+      
+      if (fim <= inicio) {
+        Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
+        return false;
+      }
+
+      // Verificar conflito (excluindo o próprio bloco)
+      const blocosDoDia = cronograma.filter(b => b.dia === bloco.dia && b.id !== bloco.id);
+      const temConflito = blocosDoDia.some(b => {
+        return (inicio >= b.inicio && inicio < b.fim) ||
+               (fim > b.inicio && fim <= b.fim) ||
+               (inicio <= b.inicio && fim >= b.fim);
+      });
+
+      if (temConflito) {
+        Swal.showValidationMessage('Já existe uma matéria nesse horário!');
+        return false;
+      }
+
+      return { inicio, fim };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const inicio = document.getElementById('editInicio').value;
+      const fim = document.getElementById('editFim').value;
+      if (inicio && fim && fim > inicio) {
+        const novoCronograma = cronograma.map(b =>
+          b.id === bloco.id ? { ...b, inicio, fim } : b
+        );
+        setCronograma(novoCronograma);
+      }
+    } else if (result.isDenied) {
+      setCronograma(cronograma.filter(b => b.id !== bloco.id));
+    }
+  });
+};
 
   // Drag & Drop handlers
   const onDragStart = (e, materia) => {

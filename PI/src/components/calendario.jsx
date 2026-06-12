@@ -11,8 +11,7 @@ export default function Calendario() {
   const [eventos, setEventos] = useState([]);
   const [tarefas, setTarefas] = useState([]);
   const calendarRef = useRef(null);
-  
-  // Formulário de novo evento
+
   const [novoEvento, setNovoEvento] = useState({
     titulo: '',
     data: '',
@@ -28,7 +27,6 @@ export default function Calendario() {
       try {
         setEventos(JSON.parse(eventosSalvos));
       } catch (e) {
-        console.error('Erro ao carregar eventos:', e);
         setEventos([]);
       }
     }
@@ -36,28 +34,26 @@ export default function Calendario() {
     const tarefasSalvas = localStorage.getItem('tarefas');
     if (tarefasSalvas) {
       try {
-        const tarefasCarregadas = JSON.parse(tarefasSalvas);
-        setTarefas(tarefasCarregadas);
+        setTarefas(JSON.parse(tarefasSalvas));
       } catch (e) {
-        console.error('Erro ao carregar tarefas:', e);
         setTarefas([]);
       }
     }
   }, []);
 
-  // Salvar eventos no localStorage
+  // Salvar eventos com debounce
   useEffect(() => {
-    if (eventos.length > 0 || localStorage.getItem('eventosCalendario')) {
+    const timer = setTimeout(() => {
       localStorage.setItem('eventosCalendario', JSON.stringify(eventos));
-    }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [eventos]);
 
-  // Atualizar tarefas no localStorage
+  // Salvar tarefas
   useEffect(() => {
     localStorage.setItem('tarefas', JSON.stringify(tarefas));
   }, [tarefas]);
 
-  // Função para obter cor da prioridade
   const corPrioridade = (prioridade) => {
     switch (prioridade) {
       case 'alta': return '#ef4444';
@@ -67,7 +63,6 @@ export default function Calendario() {
     }
   };
 
-  // Carregar eventos para o calendário (eventos salvos + tarefas)
   const carregarEventos = useCallback(() => {
     const eventosFormatados = eventos.map(ev => ({
       id: ev.id,
@@ -83,7 +78,6 @@ export default function Calendario() {
       }
     }));
 
-    // Adicionar tarefas não concluídas
     const tarefasEventos = tarefas
       .filter(t => t.data && !t.concluida)
       .map(t => ({
@@ -99,7 +93,6 @@ export default function Calendario() {
         }
       }));
 
-    // Remover duplicatas
     const todosEventos = [...eventosFormatados, ...tarefasEventos];
     const eventosUnicos = [];
     const ids = new Set();
@@ -114,22 +107,82 @@ export default function Calendario() {
     return eventosUnicos;
   }, [eventos, tarefas]);
 
-  // Adicionar evento
+  // ===================== ADICIONAR EVENTO =====================
   const adicionarEvento = useCallback(() => {
+    // Verificar campos vazios
     if (!novoEvento.titulo.trim() || !novoEvento.data) {
       Swal.fire({
         icon: 'warning',
         title: 'Campos incompletos',
-        text: 'Por favor, preencha o título e a data do evento!',
-        confirmButtonText: 'Entendi'
+        text: 'Por favor, preencha o título e a data do evento!'
       });
       return;
     }
 
+    // Verificar título muito longo
+    if (novoEvento.titulo.trim().length > 50) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Título muito longo',
+        text: 'O título deve ter no máximo 50 caracteres!'
+      });
+      return;
+    }
+
+    // Verificar data no passado
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataEvento = new Date(novoEvento.data + 'T00:00:00');
+
+    if (dataEvento < hoje) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Data inválida',
+        text: 'Não é possível adicionar eventos no passado!'
+      });
+      return;
+    }
+
+    // Verificar evento duplicado
+    const eventoDuplicado = eventos.some(ev =>
+      ev.title.toLowerCase() === novoEvento.titulo.trim().toLowerCase() &&
+      ev.start === novoEvento.data
+    );
+
+    if (eventoDuplicado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Evento duplicado',
+        text: 'Já existe um evento com esse nome nesta data!',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      return;
+    }
+
+    // Verificar recorrência sem data futura
+    if (novoEvento.recorrencia !== 'nenhuma') {
+      let textoRecorrencia = '';
+      if (novoEvento.recorrencia === 'diaria') textoRecorrencia = '30 dias';
+      else if (novoEvento.recorrencia === 'semanal') textoRecorrencia = '12 semanas';
+      else if (novoEvento.recorrencia === 'mensal') textoRecorrencia = '6 meses';
+
+      Swal.fire({
+        icon: 'info',
+        title: 'Evento recorrente',
+        text: `Este evento será repetido por ${textoRecorrencia}.`,
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+
+    // Criar evento
     const novoId = Date.now().toString();
     const eventoPrincipal = {
       id: novoId,
-      title: novoEvento.titulo,
+      title: novoEvento.titulo.trim(),
       start: novoEvento.data,
       backgroundColor: novoEvento.cor,
       borderColor: novoEvento.cor,
@@ -142,7 +195,7 @@ export default function Calendario() {
 
     const novosEventos = [eventoPrincipal, ...eventos];
 
-    // Adicionar eventos recorrentes
+    // Eventos recorrentes
     if (novoEvento.recorrencia !== 'nenhuma') {
       const dataInicio = new Date(novoEvento.data + 'T12:00:00');
       let maxIteracoes = 0;
@@ -153,7 +206,7 @@ export default function Calendario() {
 
       for (let i = 1; i <= maxIteracoes; i++) {
         const novaData = new Date(dataInicio);
-        
+
         if (novoEvento.recorrencia === 'diaria') {
           novaData.setDate(dataInicio.getDate() + i);
         } else if (novoEvento.recorrencia === 'semanal') {
@@ -164,7 +217,7 @@ export default function Calendario() {
 
         novosEventos.push({
           id: `${novoId}_rec_${i}`,
-          title: novoEvento.titulo,
+          title: novoEvento.titulo.trim(),
           start: novaData.toISOString().split('T')[0],
           backgroundColor: novoEvento.cor,
           borderColor: novoEvento.cor,
@@ -200,53 +253,39 @@ export default function Calendario() {
     });
   }, [novoEvento, eventos]);
 
-  // Atualizar tarefas (quando movidas no calendário)
   const atualizarTarefa = useCallback((tarefaId, novaData) => {
-    setTarefas(prevTarefas =>
-      prevTarefas.map(t =>
-        t.id === tarefaId ? { ...t, data: novaData } : t
-      )
-    );
+    setTarefas(prev => prev.map(t => t.id === tarefaId ? { ...t, data: novaData } : t));
   }, []);
 
-  // Excluir tarefa
   const excluirTarefa = useCallback((tarefaId) => {
-    setTarefas(prevTarefas => prevTarefas.filter(t => t.id !== tarefaId));
+    setTarefas(prev => prev.filter(t => t.id !== tarefaId));
   }, []);
 
-  // Excluir evento
   const excluirEvento = useCallback((eventoId) => {
-    setEventos(prevEventos => prevEventos.filter(e => e.id !== eventoId));
+    setEventos(prev => prev.filter(e => e.id !== eventoId));
   }, []);
 
-  // Atualizar evento
   const atualizarEvento = useCallback((eventoId, novosDados) => {
-    setEventos(prevEventos =>
-      prevEventos.map(e =>
-        e.id === eventoId ? { ...e, ...novosDados } : e
-      )
-    );
+    setEventos(prev => prev.map(e => e.id === eventoId ? { ...e, ...novosDados } : e));
   }, []);
 
-  // Handlers do FullCalendar
+  // ===================== HANDLERS DO FULLCALENDAR =====================
   const handleEventDrop = useCallback((info) => {
     const event = info.event;
     const novaData = event.startStr;
-    const eventId = event.id;
     const isTarefa = event.extendedProps.isTarefa;
     const tarefaId = event.extendedProps.tarefaId;
 
     if (isTarefa && tarefaId) {
       atualizarTarefa(tarefaId, novaData);
     } else {
-      atualizarEvento(eventId, { start: novaData });
+      atualizarEvento(event.id, { start: novaData });
     }
 
-    const dataFormatada = novaData.split('-').reverse().join('/');
     Swal.fire({
       icon: 'success',
       title: 'Movido!',
-      text: `Nova data: ${dataFormatada}`,
+      text: `Nova data: ${novaData.split('-').reverse().join('/')}`,
       timer: 800,
       showConfirmButton: false,
       position: 'top-end',
@@ -283,26 +322,14 @@ export default function Calendario() {
           const novoTitulo = document.getElementById('editTitulo').value.trim();
           const novaData = document.getElementById('editData').value;
           if (novoTitulo && novaData) {
-            setTarefas(prevTarefas =>
-              prevTarefas.map(t =>
-                t.id === tarefaId ? { ...t, titulo: novoTitulo, data: novaData } : t
-              )
+            setTarefas(prev =>
+              prev.map(t => t.id === tarefaId ? { ...t, titulo: novoTitulo, data: novaData } : t)
             );
-            Swal.fire({
-              icon: 'success',
-              title: 'Tarefa atualizada!',
-              timer: 1000,
-              showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: 'Tarefa atualizada!', timer: 1000, showConfirmButton: false });
           }
         } else if (result.isDenied) {
           excluirTarefa(tarefaId);
-          Swal.fire({
-            icon: 'success',
-            title: 'Tarefa excluída!',
-            timer: 1000,
-            showConfirmButton: false
-          });
+          Swal.fire({ icon: 'success', title: 'Tarefa excluída!', timer: 1000, showConfirmButton: false });
         }
       });
     } else if (isRecorrente) {
@@ -327,7 +354,6 @@ export default function Calendario() {
         }
       });
     } else {
-      // Evento normal
       Swal.fire({
         title: 'Editar evento',
         html: `
@@ -346,11 +372,7 @@ export default function Calendario() {
           const novaCor = document.getElementById('editCor').value;
 
           if (!novoTitulo || !novaData) {
-            Swal.fire({
-              icon: 'warning',
-              title: 'Campos incompletos',
-              text: 'Por favor, preencha o título e a data!'
-            });
+            Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Por favor, preencha o título e a data!' });
             return;
           }
 
@@ -361,14 +383,7 @@ export default function Calendario() {
             borderColor: novaCor
           });
 
-          Swal.fire({
-            icon: 'success',
-            title: 'Evento atualizado!',
-            timer: 1200,
-            showConfirmButton: false,
-            position: 'top-end',
-            toast: true
-          });
+          Swal.fire({ icon: 'success', title: 'Evento atualizado!', timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
         } else if (result.isDenied) {
           Swal.fire({
             title: 'Confirmar exclusão',
@@ -381,14 +396,7 @@ export default function Calendario() {
           }).then(confirmResult => {
             if (confirmResult.isConfirmed) {
               excluirEvento(event.id);
-              Swal.fire({
-                icon: 'success',
-                title: 'Evento excluído!',
-                timer: 1200,
-                showConfirmButton: false,
-                position: 'top-end',
-                toast: true
-              });
+              Swal.fire({ icon: 'success', title: 'Evento excluído!', timer: 1200, showConfirmButton: false, position: 'top-end', toast: true });
             }
           });
         }
@@ -401,12 +409,12 @@ export default function Calendario() {
       <div className="calendario-container">
         <h1 className="mb-3">Calendário</h1>
 
-        {/* FORMULÁRIO */}
         <div className="form-evento">
           <input
             type="text"
             placeholder="Nome do evento"
             value={novoEvento.titulo}
+            maxLength={50}
             onChange={(e) => setNovoEvento({ ...novoEvento, titulo: e.target.value })}
           />
           <input
@@ -419,17 +427,11 @@ export default function Calendario() {
             value={novoEvento.cor}
             onChange={(e) => setNovoEvento({ ...novoEvento, cor: e.target.value })}
           />
-          <select
-            value={novoEvento.tipo}
-            onChange={(e) => setNovoEvento({ ...novoEvento, tipo: e.target.value })}
-          >
+          <select value={novoEvento.tipo} onChange={(e) => setNovoEvento({ ...novoEvento, tipo: e.target.value })}>
             <option value="compromisso">Compromisso</option>
             <option value="prova">Prova</option>
           </select>
-          <select
-            value={novoEvento.recorrencia}
-            onChange={(e) => setNovoEvento({ ...novoEvento, recorrencia: e.target.value })}
-          >
+          <select value={novoEvento.recorrencia} onChange={(e) => setNovoEvento({ ...novoEvento, recorrencia: e.target.value })}>
             <option value="nenhuma">Não repetir</option>
             <option value="diaria">Repetir diariamente</option>
             <option value="semanal">Repetir semanalmente</option>
@@ -438,7 +440,6 @@ export default function Calendario() {
           <button onClick={adicionarEvento}>Adicionar</button>
         </div>
 
-        {/* CALENDÁRIO */}
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -456,6 +457,10 @@ export default function Calendario() {
           eventClick={handleEventClick}
           height="auto"
           contentHeight="auto"
+          dayMaxEvents={3}
+          eventDisplay="block"
+          displayEventTime={false}
+          fixedWeekCount={false}
         />
       </div>
     </section>

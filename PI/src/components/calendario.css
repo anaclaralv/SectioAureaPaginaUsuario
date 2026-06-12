@@ -223,3 +223,36 @@
     font-size: 9px !important;
   }
 }
+
+/* Link "+X mais" do calendário */
+.fc-daygrid-more-link {
+  display: block !important;
+  text-align: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--cor-primaria) !important;
+  background: #f9fafb;
+  border-radius: 12px !important;
+  padding: 3px 8px !important;
+  margin-top: 3px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.fc-daygrid-more-link:hover {
+  background: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+/* Corrigir altura das colunas */
+.fc-daygrid-day-frame {
+  min-height: 80px !important;
+}
+
+.fc-scrollgrid-sync-table {
+  table-layout: fixed !important;
+}
+
+.fc-day-today {
+  background: linear-gradient(135deg, #fef2f2, #fff5f5) !important;
+}

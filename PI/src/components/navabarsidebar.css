@@ -323,3 +323,27 @@ body {
     max-width: 280px;
   }
 }
+
+/* ===== ITENS BLOQUEADOS NO MENU ===== */
+#menuLateral .nav-link.bloqueado {
+  color: #cbd5e1 !important;
+  opacity: 0.6;
+}
+
+#menuLateral .nav-link.bloqueado i {
+  color: #cbd5e1 !important;
+}
+
+#menuLateral .nav-link.bloqueado::after {
+  content: "\F4D9";
+  font-family: "bootstrap-icons";
+  font-size: 0.65rem;
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+#menuLateral .nav-link.bloqueado:hover {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
+  cursor: not-allowed;
+}
