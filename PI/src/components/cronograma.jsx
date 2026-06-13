@@ -18,67 +18,136 @@ export default function Cronograma() {
     { id: 'domingo', nome: 'Domingo' }
   ];
 
-  // Carregar dados do localStorage
-useEffect(() => {
-  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+  // ==================== FUNÇÕES PARA SALVAR ====================
+  const salvarMaterias = (novasMaterias) => {
+  localStorage.setItem('materias', JSON.stringify(novasMaterias));
+  console.log("💾 Matérias salvas:", novasMaterias);
   
-  if (plano === 'gratuito') {
-    Swal.fire({
-      icon: 'info',
-      title: 'Recurso Premium',
-      html: 'O Cronograma Inteligente está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-      confirmButtonText: 'Ver Planos',
-      confirmButtonColor: '#9f042c',
-      showCancelButton: true,
-      cancelButtonText: 'Fechar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
-      }
-    });
-    return; // Sai da função, não carrega os dados
-  }
+  // FORÇAR sincronização com todas as abas
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new CustomEvent('materiasAtualizadas', { detail: novasMaterias }));
+  
+  // Verificar se salvou
+  const verificacao = localStorage.getItem('materias');
+  console.log("✅ Verificação - localStorage agora tem:", verificacao);
+};
 
-  // Só carrega os dados se NÃO for gratuito
+  const salvarCronograma = (novoCronograma) => {
+    localStorage.setItem('cronogramaNovo', JSON.stringify(novoCronograma));
+    console.log("💾 Cronograma salvo:", novoCronograma);
+    window.dispatchEvent(new Event('cronogramaAtualizado'));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // ==================== CARREGAR DADOS ====================
+useEffect(() => {
+  console.log("🔄 Cronograma - Carregando dados...");
+  
+  // Carregar matérias - IMPORTANTE: verificar também dentro do cronograma
+  let materiasCarregadas = [];
+  
   const materiasSalvas = localStorage.getItem('materias');
+  console.log("📥 Matérias salvas no localStorage:", materiasSalvas);
+  
   if (materiasSalvas) {
-    setMaterias(JSON.parse(materiasSalvas));
-  } else {
-    const materiasPadrao = [
-      { id: 'm1', nome: 'Matemática', cor: '#ef4444' },
-      { id: 'm2', nome: 'Português', cor: '#3b82f6' },
-      { id: 'm3', nome: 'História', cor: '#22c55e' }
-    ];
-    setMaterias(materiasPadrao);
-    localStorage.setItem('materias', JSON.stringify(materiasPadrao));
+    try {
+      materiasCarregadas = JSON.parse(materiasSalvas);
+      setMaterias(materiasCarregadas);
+      console.log("📥 Matérias carregadas:", materiasCarregadas);
+    } catch(e) {
+      console.error("Erro ao carregar matérias:", e);
+      materiasCarregadas = [];
+    }
   }
 
+  // Carregar cronograma
   const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
   if (cronogramaSalvo) {
-    setCronograma(JSON.parse(cronogramaSalvo));
+    try {
+      const cronogramaCarregado = JSON.parse(cronogramaSalvo);
+      setCronograma(cronogramaCarregado);
+      console.log("📥 Cronograma carregado:", cronogramaCarregado);
+      
+      // 🔥 IMPORTANTE: Extrair matérias do cronograma se a lista de matérias estiver vazia
+      if (materiasCarregadas.length === 0 && cronogramaCarregado.length > 0) {
+        const materiasDoCronograma = [];
+        cronogramaCarregado.forEach(bloco => {
+          if (bloco.materia && !materiasDoCronograma.some(m => m.id === bloco.materia.id)) {
+            materiasDoCronograma.push(bloco.materia);
+          }
+        });
+        
+        if (materiasDoCronograma.length > 0) {
+          console.log("📥 Extraindo matérias do cronograma:", materiasDoCronograma);
+          setMaterias(materiasDoCronograma);
+          localStorage.setItem('materias', JSON.stringify(materiasDoCronograma));
+        }
+      }
+    } catch(e) {
+      console.error("Erro ao carregar cronograma:", e);
+    }
   }
 }, []);
 
-  // Salvar dados
-  useEffect(() => {
-    localStorage.setItem('materias', JSON.stringify(materias));
-  }, [materias]);
+// Sincronizar matérias com o cronograma (garantir consistência)
+const sincronizarMateriasComCronograma = () => {
+  // Extrair todas as matérias únicas do cronograma
+  const materiasDoCronograma = [];
+  cronograma.forEach(bloco => {
+    if (bloco.materia && !materiasDoCronograma.some(m => m.id === bloco.materia.id)) {
+      materiasDoCronograma.push(bloco.materia);
+    }
+  });
+  
+  // Verificar se há matérias no cronograma que não estão na lista
+  if (materiasDoCronograma.length > materias.length) {
+    console.log("🔄 Sincronizando matérias com o cronograma...");
+    setMaterias(materiasDoCronograma);
+    localStorage.setItem('materias', JSON.stringify(materiasDoCronograma));
+  }
+};
 
-  useEffect(() => {
-    localStorage.setItem('cronogramaNovo', JSON.stringify(cronograma));
-    window.dispatchEvent(new Event('cronogramaAtualizado'));
-  }, [cronograma]);
+// Chamar essa função sempre que o cronograma mudar
+useEffect(() => {
+  sincronizarMateriasComCronograma();
+}, [cronograma]);
 
-  // Adicionar matéria
+  // Sincronizar com outras abas/páginas
+  useEffect(() => {
+    const handleExternalUpdate = () => {
+      const materiasSalvas = localStorage.getItem('materias');
+      if (materiasSalvas) {
+        try {
+          setMaterias(JSON.parse(materiasSalvas));
+        } catch(e) {}
+      }
+      const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
+      if (cronogramaSalvo) {
+        try {
+          setCronograma(JSON.parse(cronogramaSalvo));
+        } catch(e) {}
+      }
+    };
+    
+    window.addEventListener('storage', handleExternalUpdate);
+    window.addEventListener('materiasAtualizadas', handleExternalUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleExternalUpdate);
+      window.removeEventListener('materiasAtualizadas', handleExternalUpdate);
+    };
+  }, []);
+
+  // ==================== ADICIONAR MATÉRIA ====================
   const adicionarMateria = () => {
     if (!novaMateria.nome.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Ops!', text: 'Digite o nome da matéria!', timer: 2000, showConfirmButton: false });
+      Swal.fire({ icon: 'warning', title: 'Ops!', text: 'Digite o nome da matéria!', timer: 2000 });
       return;
     }
 
     const existe = materias.some(m => m.nome.toLowerCase() === novaMateria.nome.toLowerCase());
     if (existe) {
-      Swal.fire({ icon: 'error', title: 'Já existe!', text: `A matéria "${novaMateria.nome}" já foi cadastrada.`, timer: 2000, showConfirmButton: false });
+      Swal.fire({ icon: 'error', title: 'Já existe!', text: `A matéria "${novaMateria.nome}" já foi cadastrada.`, timer: 2000 });
       return;
     }
 
@@ -88,177 +157,239 @@ useEffect(() => {
       cor: novaMateria.cor
     };
 
-    setMaterias([...materias, nova]);
+    const novasMaterias = [...materias, nova];
+    
+    setMaterias(novasMaterias);
+    salvarMaterias(novasMaterias);
     setNovaMateria({ nome: '', cor: '#9f042c' });
 
-    Swal.fire({ icon: 'success', title: 'Pronto!', text: `Matéria "${nova.nome}" adicionada!`, timer: 1500, showConfirmButton: false, position: 'top-end', toast: true });
+    Swal.fire({ 
+      icon: 'success', 
+      title: 'Pronto!', 
+      text: `Matéria "${nova.nome}" adicionada!`, 
+      timer: 1500, 
+      showConfirmButton: false
+    });
   };
 
-  // Editar matéria
+  // ==================== EDITAR MATÉRIA ====================
   const editarMateria = (materia) => {
     Swal.fire({
-      title: 'Editar Matéria',
+      title: `Opções para "${materia.nome}"`,
       html: `
-        <input type="text" id="editNome" class="swal2-input" value="${materia.nome}">
-        <input type="color" id="editCor" class="swal2-input" value="${materia.cor}">
+        <div style="text-align: left;">
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">✏️ Nome da matéria:</label>
+            <input type="text" id="editNome" class="swal2-input" value="${materia.nome}" style="width: 100%;">
+          </div>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">🎨 Cor da matéria:</label>
+            <input type="color" id="editCor" class="swal2-input" value="${materia.cor}" style="width: 100%;">
+          </div>
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #ef4444; font-size: 0.8rem; margin-bottom: 10px;">⚠️ Cuidado: Excluir a matéria também remove todos os horários dela no cronograma!</p>
+          </div>
+        </div>
       `,
       showCancelButton: true,
       showDenyButton: true,
-      confirmButtonText: 'Salvar',
-      denyButtonText: 'Excluir'
+      confirmButtonText: '💾 Salvar Alterações',
+      denyButtonText: '🗑️ Excluir Matéria',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#22c55e',
+      denyButtonColor: '#ef4444',
+      preConfirm: () => {
+        const novoNome = document.getElementById('editNome').value.trim();
+        if (!novoNome) {
+          Swal.showValidationMessage('O nome da matéria não pode ficar vazio!');
+          return false;
+        }
+        return { novoNome, novaCor: document.getElementById('editCor').value };
+      }
     }).then(result => {
       if (result.isConfirmed) {
-        const novoNome = document.getElementById('editNome').value.trim();
-        const novaCor = document.getElementById('editCor').value;
-        if (novoNome) {
-          const novasMaterias = materias.map(m =>
-            m.id === materia.id ? { ...m, nome: novoNome, cor: novaCor } : m
-          );
-          setMaterias(novasMaterias);
+        const { novoNome, novaCor } = result.value;
+        
+        const novasMaterias = materias.map(m =>
+          m.id === materia.id ? { ...m, nome: novoNome, cor: novaCor } : m
+        );
+        setMaterias(novasMaterias);
+        salvarMaterias(novasMaterias);
 
-          const novoCronograma = cronograma.map(bloco =>
-            bloco.materia.id === materia.id ? { ...bloco, materia: { ...bloco.materia, nome: novoNome, cor: novaCor } } : bloco
-          );
-          setCronograma(novoCronograma);
-        }
+        const novoCronograma = cronograma.map(bloco =>
+          bloco.materia.id === materia.id ? { ...bloco, materia: { ...bloco.materia, nome: novoNome, cor: novaCor } } : bloco
+        );
+        setCronograma(novoCronograma);
+        salvarCronograma(novoCronograma);
+        
+        Swal.fire({ 
+          icon: 'success', 
+          title: 'Matéria atualizada!', 
+          text: `"${materia.nome}" agora é "${novoNome}"`,
+          timer: 1500, 
+          showConfirmButton: false 
+        });
+        
       } else if (result.isDenied) {
         Swal.fire({
-          title: `Excluir ${materia.nome}?`,
-          text: 'Também será removida do cronograma!',
+          title: `Excluir "${materia.nome}"?`,
+          html: `
+            <p>Esta ação:</p>
+            <ul style="text-align: left; color: #ef4444;">
+              <li>❌ Remove a matéria permanentemente</li>
+              <li>❌ Remove todos os horários desta matéria no cronograma</li>
+              <li>❌ Não pode ser desfeita</li>
+            </ul>
+          `,
           icon: 'warning',
           showCancelButton: true,
-          confirmButtonText: 'Sim, excluir',
-          confirmButtonColor: '#dc3545'
+          confirmButtonText: 'Sim, excluir tudo!',
+          confirmButtonColor: '#dc3545',
+          cancelButtonText: 'Cancelar'
         }).then(confirmResult => {
           if (confirmResult.isConfirmed) {
-            setMaterias(materias.filter(m => m.id !== materia.id));
-            setCronograma(cronograma.filter(b => b.materia.id !== materia.id));
+            const novasMaterias = materias.filter(m => m.id !== materia.id);
+            setMaterias(novasMaterias);
+            salvarMaterias(novasMaterias);
+            
+            const novoCronograma = cronograma.filter(b => b.materia.id !== materia.id);
+            setCronograma(novoCronograma);
+            salvarCronograma(novoCronograma);
+            
+            Swal.fire({ 
+              icon: 'success', 
+              title: 'Matéria excluída!', 
+              text: `"${materia.nome}" foi removida do sistema.`,
+              timer: 1500, 
+              showConfirmButton: false 
+            });
           }
         });
       }
     });
   };
 
-  // Adicionar bloco ao cronograma
-const adicionarBloco = (materia, dia) => {
-  Swal.fire({
-    title: `Horário de ${materia.nome}`,
-    html: `
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <div>
-          <label>Início</label>
-          <input type="time" id="inicio" class="swal2-input" value="08:00">
+  // ==================== ADICIONAR BLOCO ====================
+  const adicionarBloco = (materia, dia) => {
+    Swal.fire({
+      title: `Horário de ${materia.nome}`,
+      html: `
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <div>
+            <label>Início</label>
+            <input type="time" id="inicio" class="swal2-input" value="08:00">
+          </div>
+          <div>
+            <label>Fim</label>
+            <input type="time" id="fim" class="swal2-input" value="09:00">
+          </div>
         </div>
-        <div>
-          <label>Fim</label>
-          <input type="time" id="fim" class="swal2-input" value="09:00">
-        </div>
-      </div>
-    `,
-    confirmButtonText: 'Salvar',
-    showCancelButton: true,
-    preConfirm: () => {
-      const inicio = document.getElementById('inicio').value;
-      const fim = document.getElementById('fim').value;
-      
-      if (!inicio || !fim) {
-        Swal.showValidationMessage('Preencha os dois horários!');
-        return false;
+      `,
+      confirmButtonText: 'Salvar',
+      showCancelButton: true,
+      preConfirm: () => {
+        const inicio = document.getElementById('inicio').value;
+        const fim = document.getElementById('fim').value;
+        
+        if (!inicio || !fim) {
+          Swal.showValidationMessage('Preencha os dois horários!');
+          return false;
+        }
+        
+        if (fim <= inicio) {
+          Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
+          return false;
+        }
+
+        const blocosDoDia = cronograma.filter(b => b.dia === dia);
+        const temConflito = blocosDoDia.some(b => {
+          return (inicio >= b.inicio && inicio < b.fim) ||
+                 (fim > b.inicio && fim <= b.fim) ||
+                 (inicio <= b.inicio && fim >= b.fim);
+        });
+
+        if (temConflito) {
+          Swal.showValidationMessage('Já existe uma matéria nesse horário!');
+          return false;
+        }
+
+        return { inicio, fim };
       }
-      
-      if (fim <= inicio) {
-        Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
-        return false;
+    }).then(result => {
+      if (result.isConfirmed) {
+        const novoBloco = {
+          id: Date.now(),
+          materia: { ...materia },
+          dia: dia,
+          inicio: result.value.inicio,
+          fim: result.value.fim
+        };
+        const novoCronograma = [...cronograma, novoBloco];
+        setCronograma(novoCronograma);
+        salvarCronograma(novoCronograma);
+        Swal.fire({ icon: 'success', title: 'Horário adicionado!', timer: 1500, showConfirmButton: false });
       }
+    });
+  };
 
-      // Verificar conflito de horários no mesmo dia
-      const blocosDoDia = cronograma.filter(b => b.dia === dia);
-      const temConflito = blocosDoDia.some(b => {
-        // Verifica se o novo horário sobrepõe algum existente
-        return (inicio >= b.inicio && inicio < b.fim) || // Início dentro de outro bloco
-               (fim > b.inicio && fim <= b.fim) ||       // Fim dentro de outro bloco
-               (inicio <= b.inicio && fim >= b.fim);     // Novo bloco cobre outro bloco
-      });
+  // ==================== EDITAR BLOCO ====================
+  const editarBloco = (bloco) => {
+    Swal.fire({
+      title: 'Editar Horário',
+      html: `
+        <input type="time" id="editInicio" class="swal2-input" value="${bloco.inicio}">
+        <input type="time" id="editFim" class="swal2-input" value="${bloco.fim}">
+      `,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Salvar',
+      denyButtonText: 'Excluir',
+      preConfirm: () => {
+        const inicio = document.getElementById('editInicio').value;
+        const fim = document.getElementById('editFim').value;
+        
+        if (!inicio || !fim) {
+          Swal.showValidationMessage('Preencha os dois horários!');
+          return false;
+        }
+        
+        if (fim <= inicio) {
+          Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
+          return false;
+        }
 
-      if (temConflito) {
-        Swal.showValidationMessage('Já existe uma matéria nesse horário! Escolha outro horário.');
-        return false;
+        const blocosDoDia = cronograma.filter(b => b.dia === bloco.dia && b.id !== bloco.id);
+        const temConflito = blocosDoDia.some(b => {
+          return (inicio >= b.inicio && inicio < b.fim) ||
+                 (fim > b.inicio && fim <= b.fim) ||
+                 (inicio <= b.inicio && fim >= b.fim);
+        });
+
+        if (temConflito) {
+          Swal.showValidationMessage('Já existe uma matéria nesse horário!');
+          return false;
+        }
+
+        return { inicio, fim };
       }
-
-      return { inicio, fim };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const novoBloco = {
-        id: Date.now(),
-        materia: { ...materia },
-        dia: dia,
-        inicio: result.value.inicio,
-        fim: result.value.fim
-      };
-      setCronograma([...cronograma, novoBloco]);
-    }
-  });
-};
-
-  // Editar bloco
-const editarBloco = (bloco) => {
-  Swal.fire({
-    title: 'Editar Horário',
-    html: `
-      <input type="time" id="editInicio" class="swal2-input" value="${bloco.inicio}">
-      <input type="time" id="editFim" class="swal2-input" value="${bloco.fim}">
-    `,
-    showCancelButton: true,
-    showDenyButton: true,
-    confirmButtonText: 'Salvar',
-    denyButtonText: 'Excluir',
-    preConfirm: () => {
-      const inicio = document.getElementById('editInicio').value;
-      const fim = document.getElementById('editFim').value;
-      
-      if (!inicio || !fim) {
-        Swal.showValidationMessage('Preencha os dois horários!');
-        return false;
-      }
-      
-      if (fim <= inicio) {
-        Swal.showValidationMessage('Horário final deve ser maior que o inicial!');
-        return false;
-      }
-
-      // Verificar conflito (excluindo o próprio bloco)
-      const blocosDoDia = cronograma.filter(b => b.dia === bloco.dia && b.id !== bloco.id);
-      const temConflito = blocosDoDia.some(b => {
-        return (inicio >= b.inicio && inicio < b.fim) ||
-               (fim > b.inicio && fim <= b.fim) ||
-               (inicio <= b.inicio && fim >= b.fim);
-      });
-
-      if (temConflito) {
-        Swal.showValidationMessage('Já existe uma matéria nesse horário!');
-        return false;
-      }
-
-      return { inicio, fim };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const inicio = document.getElementById('editInicio').value;
-      const fim = document.getElementById('editFim').value;
-      if (inicio && fim && fim > inicio) {
+    }).then(result => {
+      if (result.isConfirmed) {
         const novoCronograma = cronograma.map(b =>
-          b.id === bloco.id ? { ...b, inicio, fim } : b
+          b.id === bloco.id ? { ...b, inicio: result.value.inicio, fim: result.value.fim } : b
         );
         setCronograma(novoCronograma);
+        salvarCronograma(novoCronograma);
+        Swal.fire({ icon: 'success', title: 'Horário atualizado!', timer: 1500, showConfirmButton: false });
+      } else if (result.isDenied) {
+        const novoCronograma = cronograma.filter(b => b.id !== bloco.id);
+        setCronograma(novoCronograma);
+        salvarCronograma(novoCronograma);
+        Swal.fire({ icon: 'success', title: 'Horário removido!', timer: 1500, showConfirmButton: false });
       }
-    } else if (result.isDenied) {
-      setCronograma(cronograma.filter(b => b.id !== bloco.id));
-    }
-  });
-};
+    });
+  };
 
-  // Drag & Drop handlers
+  // ==================== DRAG & DROP ====================
   const onDragStart = (e, materia) => {
     setDraggedMateria(materia);
     e.dataTransfer.setData('text/plain', materia.id);
@@ -286,19 +417,18 @@ const editarBloco = (bloco) => {
     setDraggedMateria(null);
   };
 
-  // Obter blocos de um dia específico
   const getBlocosPorDia = (dia) => {
     return cronograma
       .filter(b => b.dia === dia)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));
   };
 
+  // ==================== RENDER ====================
   return (
     <section id="cronogramaNovoSection">
       <div className="layout-container">
         <h1>Cronograma Inteligente</h1>
 
-        {/* Formulário */}
         <div className="form-cronogramaNovo">
           <input
             type="text"
@@ -314,7 +444,6 @@ const editarBloco = (bloco) => {
           <button onClick={adicionarMateria}>Adicionar Matéria</button>
         </div>
 
-        {/* Matérias */}
         <h4>Matérias</h4>
         <div className="materias-area">
           {materias.length === 0 ? (
@@ -341,7 +470,6 @@ const editarBloco = (bloco) => {
           <span> duplo clique no horário</span> para alterar.
         </p>
 
-        {/* Grid dos dias */}
         <div className="cronogramaNovo-grid">
           {diasSemana.map(dia => (
             <div
@@ -371,3 +499,14 @@ const editarBloco = (bloco) => {
     </section>
   );
 }
+
+// Botão de debug para ver o que está no localStorage (adicione no return)
+<button onClick={() => {
+  console.log("=== DEBUG ===");
+  console.log("materias:", materias);
+  console.log("cronograma:", cronograma);
+  console.log("localStorage materias:", localStorage.getItem('materias'));
+  console.log("localStorage cronograma:", localStorage.getItem('cronogramaNovo'));
+}} style={{ position: 'fixed', bottom: 10, right: 10, zIndex: 9999 }}>
+  🔍 Debug
+</button>

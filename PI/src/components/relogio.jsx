@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import './Relogio.css';
 
@@ -76,24 +76,24 @@ export default function Relogio() {
     return (parseInt(horas) || 0) + ((parseInt(minutos) || 0) / 60);
   };
 
-  // ==================== CARREGAR DADOS DO LOCALSTORAGE ====================
+   // ==================== CARREGAR DADOS DO LOCALSTORAGE ====================
   useEffect(() => {
-  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-  if (plano === 'gratuito') {
-    // Bloquear funcionalidades premium
-  }
+    console.log("🔄 Relogio - Iniciando carregamento...");
+    
     // Carregar matérias
     const materiasSalvas = localStorage.getItem('materias');
-    if (materiasSalvas) {
-      setMaterias(JSON.parse(materiasSalvas));
-    } else {
-      const materiasPadrao = [
-        { id: 'm1', nome: 'Matemática', cor: '#ef4444' },
-        { id: 'm2', nome: 'Português', cor: '#3b82f6' },
-        { id: 'm3', nome: 'História', cor: '#22c55e' }
-      ];
-      setMaterias(materiasPadrao);
-      localStorage.setItem('materias', JSON.stringify(materiasPadrao));
+    console.log("📥 Relogio - Raw materias do localStorage:", materiasSalvas);
+    
+    if (materiasSalvas && materiasSalvas !== '[]') {
+      try {
+        const materiasParseadas = JSON.parse(materiasSalvas);
+        if (materiasParseadas.length > 0) {
+          setMaterias(materiasParseadas);
+          console.log("📥 Relogio - Matérias carregadas:", materiasParseadas);
+        }
+      } catch(e) {
+        console.error("Erro ao parsear matérias:", e);
+      }
     }
 
     // Carregar tempo de estudo
@@ -128,30 +128,120 @@ export default function Relogio() {
     const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
     if (cronogramaSalvo) {
       setCronograma(JSON.parse(cronogramaSalvo));
+      console.log("📥 Relogio - Cronograma carregado");
     }
   }, []);
 
-  // Salvar dados no localStorage
+  // Forçar recarregamento periódico (corrigido - useEffect separado)
   useEffect(() => {
-    localStorage.setItem('materias', JSON.stringify(materias));
+    const interval = setInterval(() => {
+      const materiasSalvas = localStorage.getItem('materias');
+      if (materiasSalvas) {
+        try {
+          const materiasParseadas = JSON.parse(materiasSalvas);
+          if (materiasParseadas.length !== materias.length) {
+            setMaterias(materiasParseadas);
+            console.log("🔄 Forced sync - Matérias atualizadas:", materiasParseadas);
+          }
+        } catch(e) {}
+      }
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [materias.length]);
+
+  // Sincronizar matérias quando mudarem no cronograma
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const materiasSalvas = localStorage.getItem('materias');
+      if (materiasSalvas) {
+        try {
+          setMaterias(JSON.parse(materiasSalvas));
+          console.log("🔄 Relogio - Matérias sincronizadas");
+        } catch(e) {}
+      }
+      
+      const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
+      if (cronogramaSalvo) {
+        try {
+          setCronograma(JSON.parse(cronogramaSalvo));
+          console.log("🔄 Relogio - Cronograma sincronizado");
+        } catch(e) {}
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('materiasAtualizadas', handleStorageChange);
+    window.addEventListener('cronogramaAtualizado', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('materiasAtualizadas', handleStorageChange);
+      window.removeEventListener('cronogramaAtualizado', handleStorageChange);
+    };
+  }, []);
+
+  // Salvar matérias
+  useEffect(() => {
+    if (materias.length > 0) {
+      localStorage.setItem('materias', JSON.stringify(materias));
+    }
   }, [materias]);
 
+  // Salvar tempo de estudo
   useEffect(() => {
     localStorage.setItem('tempoEstudo', JSON.stringify(tempoEstudo));
   }, [tempoEstudo]);
 
+  // Salvar histórico
   useEffect(() => {
     localStorage.setItem('historicoCronometro', JSON.stringify(historicoCronometro));
   }, [historicoCronometro]);
 
+  // Salvar notificações
   useEffect(() => {
     localStorage.setItem('notificacoesAtivas', notificacoesAtivas);
   }, [notificacoesAtivas]);
 
+  // Salvar metas
   useEffect(() => {
     localStorage.setItem('metas', JSON.stringify(metas));
   }, [metas]);
 
+  // Sincronizar matérias quando mudar (outro listener)
+  useEffect(() => {
+    const handleMateriasUpdate = () => {
+      const materiasSalvas = localStorage.getItem('materias');
+      if (materiasSalvas) {
+        try {
+          setMaterias(JSON.parse(materiasSalvas));
+        } catch(e) {}
+      }
+    };
+    
+    window.addEventListener('materiasAtualizadas', handleMateriasUpdate);
+    window.addEventListener('storage', handleMateriasUpdate);
+    
+    return () => {
+      window.removeEventListener('materiasAtualizadas', handleMateriasUpdate);
+      window.removeEventListener('storage', handleMateriasUpdate);
+    };
+  }, []);
+
+  // Forçar atualização do relógio a cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCronograma(prev => [...prev]);
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Debug: Mostrar cronograma no console quando mudar
+  useEffect(() => {
+    console.log("Cronograma mudou no Relogio:", cronograma);
+  }, [cronograma]);
+  
   // ==================== TIMER ====================
   const iniciarTimer = () => {
     const minutosInput = document.getElementById('timerMinutos')?.value;
@@ -306,31 +396,31 @@ export default function Relogio() {
   };
 
   const abrirModalPomodoro = () => {
-  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-  
-  if (plano === 'gratuito') {
-    Swal.fire({
-      icon: 'info',
-      title: 'Recurso Premium',
-      html: 'O <strong>Pomodoro Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-      confirmButtonText: 'Ver Planos',
-      confirmButtonColor: '#9f042c',
-      showCancelButton: true,
-      cancelButtonText: 'Fechar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
-      }
-    });
-    return;
-  }
-  
-  modalInstancePomodoro.current?.show();
-};
+    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    
+    if (plano === 'gratuito') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'O <strong>Pomodoro Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+        }
+      });
+      return;
+    }
+    
+    modalInstancePomodoro.current?.show();
+  };
 
   const iniciarPomodoroPersonalizado = () => {
     const materiaId = document.getElementById('pomodoroMateria')?.value;
-    const tempoEstudo = parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25);
+    const tempoEstudoVal = parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25);
     const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5);
 
     if (!materiaId) {
@@ -340,7 +430,7 @@ export default function Relogio() {
 
     resetarPomodoro();
     setModoPomodoro('foco');
-    setPomodoroTempo(tempoEstudo * 60);
+    setPomodoroTempo(tempoEstudoVal * 60);
     setPomodoroRodando(true);
     setEstudoIdPomodoro(materiaId);
     iniciarEstudo(materiaId);
@@ -348,7 +438,7 @@ export default function Relogio() {
     modalInstancePomodoro.current?.hide();
 
     if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-    let tempoAtual = tempoEstudo * 60;
+    let tempoAtual = tempoEstudoVal * 60;
     let ciclo = 'foco';
 
     pomodoroIntervalRef.current = setInterval(() => {
@@ -588,24 +678,24 @@ export default function Relogio() {
     if (mensalHorasInput) mensalHorasInput.value = mensalH;
     if (mensalMinutosInput) mensalMinutosInput.value = mensalM;
 
-     const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-  
-  if (plano === 'gratuito') {
-    Swal.fire({
-      icon: 'info',
-      title: 'Recurso Premium',
-      html: 'A <strong>Meta de Estudo</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-      confirmButtonText: 'Ver Planos',
-      confirmButtonColor: '#9f042c',
-      showCancelButton: true,
-      cancelButtonText: 'Fechar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
-      }
-    });
-    return;
-  }
+    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    
+    if (plano === 'gratuito') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'A <strong>Meta de Estudo</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+        }
+      });
+      return;
+    }
 
     modalInstanceMeta.current?.show();
   };
@@ -646,43 +736,74 @@ export default function Relogio() {
 
   // ==================== RELÓGIO INTELIGENTE ====================
   const obterMateriaAtual = () => {
-    const dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-    const hojeSemana = dias[new Date().getDay()];
-    const agora = new Date();
-    const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
-
-    const blocoAtual = cronograma.find(b =>
-      b.dia === hojeSemana &&
-      horaAtual >= b.inicio &&
-      horaAtual < b.fim
-    );
-
-    return blocoAtual || null;
+    console.log("Buscando matéria atual...");
+    console.log("Cronograma atual:", cronograma);
+    
+    if (!cronograma || cronograma.length === 0) {
+      console.log("Cronograma vazio");
+      return null;
+    }
+    
+    const diasSemana = {
+      1: 'segunda',
+      2: 'terca',
+      3: 'quarta',
+      4: 'quinta',
+      5: 'sexta',
+      6: 'sabado',
+      0: 'domingo'
+    };
+    
+    const hoje = new Date();
+    const diaSemana = diasSemana[hoje.getDay()];
+    const horaAtual = String(hoje.getHours()).padStart(2, '0') + ':' + String(hoje.getMinutes()).padStart(2, '0');
+    
+    console.log("Dia da semana:", diaSemana);
+    console.log("Hora atual:", horaAtual);
+    
+    const blocosHoje = cronograma.filter(b => b.dia === diaSemana);
+    console.log("Blocos de hoje:", blocosHoje);
+    
+    const blocoAtual = blocosHoje.find(b => {
+      return horaAtual >= b.inicio && horaAtual < b.fim;
+    });
+    
+    if (blocoAtual) {
+      console.log("Matéria atual encontrada:", blocoAtual.materia.nome);
+      return {
+        materia: blocoAtual.materia,
+        inicio: blocoAtual.inicio,
+        fim: blocoAtual.fim
+      };
+    }
+    
+    console.log("Nenhuma matéria encontrada para esse horário");
+    return null;
   };
 
   // ==================== MODO FOCO PERSONALIZADO ====================
   const abrirModalModoFoco = () => {
-  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-  
-  if (plano === 'gratuito') {
-    Swal.fire({
-      icon: 'info',
-      title: 'Recurso Premium',
-      html: 'O <strong>Modo Foco Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-      confirmButtonText: 'Ver Planos',
-      confirmButtonColor: '#9f042c',
-      showCancelButton: true,
-      cancelButtonText: 'Fechar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
-      }
-    });
-    return;
-  }
-  
-  modalInstanceFoco.current?.show();
-};
+    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    
+    if (plano === 'gratuito') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'O <strong>Modo Foco Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+        }
+      });
+      return;
+    }
+    
+    modalInstanceFoco.current?.show();
+  };
 
   const iniciarModoFocoPersonalizado = () => {
     const materiaId = document.getElementById('focoMateriaSelect')?.value;
@@ -701,117 +822,118 @@ export default function Relogio() {
   };
 
   const iniciarTimerFoco = (materia, tempoMinutos) => {
-  let tempoRestante = tempoMinutos * 60;
-  let focoAtivo = true;
-  let intervalId = null;
-  let containerExistente = document.getElementById('modoFocoContainer');
-  if (containerExistente) containerExistente.remove();
+    let tempoRestante = tempoMinutos * 60;
+    let focoAtivo = true;
+    let intervalId = null;
+    let containerExistente = document.getElementById('modoFocoContainer');
+    if (containerExistente) containerExistente.remove();
 
-  const container = document.createElement('div');
-  container.id = 'modoFocoContainer';
-  container.className = 'modo-foco-overlay';
-  container.innerHTML = `
-    <div class="modo-foco-card">
-      <div class="modo-foco-icon" style="background: ${materia.cor};">
-        <i class="bi bi-brain"></i>
+    const container = document.createElement('div');
+    container.id = 'modoFocoContainer';
+    container.className = 'modo-foco-overlay';
+    container.innerHTML = `
+      <div class="modo-foco-card">
+        <div class="modo-foco-icon" style="background: ${materia.cor};">
+          <i class="bi bi-brain"></i>
+        </div>
+        <h1 class="modo-foco-titulo">${materia.nome}</h1>
+        <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
+        <div class="modo-foco-progresso-bg">
+          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materia.cor}; width: 100%;"></div>
+        </div>
+        <div class="modo-foco-botoes">
+          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
+          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
+          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
+        </div>
+        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materia.nome}! Você consegue!</p>
       </div>
-      <h1 class="modo-foco-titulo">${materia.nome}</h1>
-      <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
-      <div class="modo-foco-progresso-bg">
-        <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materia.cor}; width: 100%;"></div>
-      </div>
-      <div class="modo-foco-botoes">
-        <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
-        <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
-        <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
-      </div>
-      <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materia.nome}! Você consegue!</p>
-    </div>
-  `;
+    `;
 
-  document.body.appendChild(container);
+    document.body.appendChild(container);
 
-  const timerEl = document.getElementById('focoTimer');
-  const progressoEl = document.getElementById('focoProgresso');
-  const fraseEl = document.getElementById('focoFrase');
-  const pausarBtn = document.getElementById('focoPausarBtn');
-  const resetBtn = document.getElementById('focoResetBtn');
-  const sairBtn = document.getElementById('focoSairBtn');
+    const timerEl = document.getElementById('focoTimer');
+    const progressoEl = document.getElementById('focoProgresso');
+    const fraseEl = document.getElementById('focoFrase');
+    const pausarBtn = document.getElementById('focoPausarBtn');
+    const resetBtn = document.getElementById('focoResetBtn');
+    const sairBtn = document.getElementById('focoSairBtn');
 
-  const atualizarDisplay = () => {
-    if (timerEl) {
-      const minutos = Math.floor(tempoRestante / 60);
-      const segundos = tempoRestante % 60;
-      timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    }
-    if (progressoEl) {
-      const progressoPercent = (tempoRestante / (tempoMinutos * 60)) * 100;
-      progressoEl.style.width = `${progressoPercent}%`;
-    }
-    if (fraseEl && focoAtivo) {
-      if (tempoRestante > (tempoMinutos * 60) * 0.8) {
-        fraseEl.textContent = `🚀 Começando com tudo! Mantenha o foco em ${materia.nome}!`;
-      } else if (tempoRestante > (tempoMinutos * 60) * 0.5) {
-        fraseEl.textContent = `💪 Continue assim! Você está indo bem!`;
-      } else if (tempoRestante > 60) {
-        fraseEl.textContent = `🎯 Quase lá! Mais um pouco!`;
-      } else if (tempoRestante > 0) {
-        fraseEl.textContent = `⚡ Último minuto! Dá pra finalizar com força!`;
+    const atualizarDisplay = () => {
+      if (timerEl) {
+        const minutos = Math.floor(tempoRestante / 60);
+        const segundos = tempoRestante % 60;
+        timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
       }
+      if (progressoEl) {
+        const progressoPercent = (tempoRestante / (tempoMinutos * 60)) * 100;
+        progressoEl.style.width = `${progressoPercent}%`;
+      }
+      if (fraseEl && focoAtivo) {
+        if (tempoRestante > (tempoMinutos * 60) * 0.8) {
+          fraseEl.textContent = `🚀 Começando com tudo! Mantenha o foco em ${materia.nome}!`;
+        } else if (tempoRestante > (tempoMinutos * 60) * 0.5) {
+          fraseEl.textContent = `💪 Continue assim! Você está indo bem!`;
+        } else if (tempoRestante > 60) {
+          fraseEl.textContent = `🎯 Quase lá! Mais um pouco!`;
+        } else if (tempoRestante > 0) {
+          fraseEl.textContent = `⚡ Último minuto! Dá pra finalizar com força!`;
+        }
+      }
+    };
+
+    intervalId = setInterval(() => {
+      if (!focoAtivo) return;
+      if (tempoRestante > 0) {
+        tempoRestante--;
+        atualizarDisplay();
+      } else {
+        clearInterval(intervalId);
+        iniciarEstudo(materia.id);
+        Swal.fire({
+          icon: 'success',
+          title: '🎉 Tempo concluído!',
+          text: `Parabéns! Você focou ${tempoMinutos} minutos em ${materia.nome}!`,
+          timer: 3000,
+          showConfirmButton: false
+        });
+        setTimeout(() => container.remove(), 3000);
+      }
+    }, 1000);
+
+    if (pausarBtn) {
+      pausarBtn.onclick = () => {
+        focoAtivo = !focoAtivo;
+        pausarBtn.textContent = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
+        if (fraseEl) {
+          fraseEl.textContent = focoAtivo 
+            ? `🎯 Foco total em ${materia.nome}!` 
+            : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
+        }
+      };
     }
+
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        tempoRestante = tempoMinutos * 60;
+        focoAtivo = true;
+        atualizarDisplay();
+        if (pausarBtn) pausarBtn.textContent = '⏸ Pausar';
+        if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
+      };
+    }
+
+    if (sairBtn) {
+      sairBtn.onclick = () => {
+        if (intervalId) clearInterval(intervalId);
+        container.remove();
+      };
+    }
+
+    atualizarDisplay();
+    iniciarEstudo(materia.id);
   };
 
-  intervalId = setInterval(() => {
-    if (!focoAtivo) return;
-    if (tempoRestante > 0) {
-      tempoRestante--;
-      atualizarDisplay();
-    } else {
-      clearInterval(intervalId);
-      iniciarEstudo(materia.id);
-      Swal.fire({
-        icon: 'success',
-        title: '🎉 Tempo concluído!',
-        text: `Parabéns! Você focou ${tempoMinutos} minutos em ${materia.nome}!`,
-        timer: 3000,
-        showConfirmButton: false
-      });
-      setTimeout(() => container.remove(), 3000);
-    }
-  }, 1000);
-
-  if (pausarBtn) {
-    pausarBtn.onclick = () => {
-      focoAtivo = !focoAtivo;
-      pausarBtn.textContent = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
-      if (fraseEl) {
-        fraseEl.textContent = focoAtivo 
-          ? `🎯 Foco total em ${materia.nome}!` 
-          : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
-      }
-    };
-  }
-
-  if (resetBtn) {
-    resetBtn.onclick = () => {
-      tempoRestante = tempoMinutos * 60;
-      focoAtivo = true;
-      atualizarDisplay();
-      if (pausarBtn) pausarBtn.textContent = '⏸ Pausar';
-      if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
-    };
-  }
-
-  if (sairBtn) {
-    sairBtn.onclick = () => {
-      if (intervalId) clearInterval(intervalId);
-      container.remove();
-    };
-  }
-
-  atualizarDisplay();
-  iniciarEstudo(materia.id);
-};
   // Inicializar modais Bootstrap
   useEffect(() => {
     if (window.bootstrap) {
@@ -865,6 +987,7 @@ export default function Relogio() {
     );
   };
 
+  const materiaAtualObj = obterMateriaAtual();
   const { totalHoras, progresso, faltam, metaValor } = atualizarMeta();
 
   return (
@@ -915,7 +1038,6 @@ export default function Relogio() {
             <button onClick={resetarCronometro}>Reset</button>
           </div>
 
-          {/* Acordeão do Histórico */}
           <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
             <div onClick={() => setAcordeonAberto(!acordeonAberto)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
               <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
@@ -975,8 +1097,8 @@ export default function Relogio() {
         {/* Relógio Inteligente */}
         <div id="relogioInfo" className="relogio-info-card">
           <div className="relogio-topo">
-            <h2 id="materiaRelogio">{obterMateriaAtual()?.materia?.nome || 'Nenhuma matéria'}</h2>
-            <p id="horarioRelogio">{obterMateriaAtual() ? `${obterMateriaAtual().inicio} - ${obterMateriaAtual().fim}` : '--:-- - --:--'}</p>
+            <h2 id="materiaRelogio">{materiaAtualObj?.materia?.nome || 'Nenhuma matéria'}</h2>
+            <p id="horarioRelogio">{materiaAtualObj ? `${materiaAtualObj.inicio} - ${materiaAtualObj.fim}` : '--:-- - --:--'}</p>
           </div>
           <div className="relogio-meio">
             <p id="tempoRestante">aguardando...</p>
