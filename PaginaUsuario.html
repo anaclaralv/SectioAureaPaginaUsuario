@@ -839,12 +839,62 @@
 
     </section>
     <!-- ==================== METODOS ==================== -->
-    <section id="metodosSection" style="display:none;">
-      <h1>Métodos de Estudo</h1>
-      <div style="text-align: center; padding: 60px 20px;">
-        <i class="bi bi-lightbulb" style="font-size: 4rem; color: var(--cor-primaria);"></i>
-        <h3>Em breve!</h3>
-        <p>Estamos preparando conteúdos incríveis para você.</p>
+    <section id="metodosSection" style="display:none;" class="metodos-container">
+      <div id="metodosHeader" class="metodos-header">
+        <div class="inteligencia-badge" id="inteligenciaBadge" style="background: var(--cor-primaria);">
+          <img id="inteligenciaBadgeIcon" src="Icones/logico.png" alt="Inteligência" style="width: 28px; height: 28px; object-fit: contain;">
+          <span id="inteligenciaBadgeNome">Inteligência Lógico-Matemática</span>
+        </div>
+        <h1>Métodos de Estudo para você</h1>
+        <p class="metodos-descricao" id="inteligenciaBadgeDescricao">Carregando...</p>
+      </div>
+
+      <div class="metodos-grid" id="listaMetodosRecomendados">
+        <!-- populated dynamically -->
+      </div>
+
+      <!-- Modal Overlay Customizado -->
+      <div id="metodoModalOverlay" class="modal-overlay" style="display:none;" onclick="window.fecharMetodoModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <button class="modal-close" onclick="window.fecharMetodoModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          
+          <div class="modal-header">
+            <h2 id="modalMetodoTitulo">Título do Método</h2>
+            <div class="modal-tags">
+              <span class="tag-tempo" id="modalMetodoTempo">
+                <i class="bi bi-clock"></i> 25 min
+              </span>
+              <span class="tag-dificuldade" id="modalMetodoDificuldade">
+                Fácil
+              </span>
+            </div>
+          </div>
+
+          <div class="modal-body">
+            <h4>Passo a Passo:</h4>
+            <ol class="modal-passos" id="modalMetodoPassos">
+              <!-- steps -->
+            </ol>
+
+            <div class="modal-beneficios" id="modalMetodoBeneficiosContainer">
+              <strong>Benefícios:</strong>
+              <ul id="modalMetodoBeneficios">
+                <!-- benefits -->
+              </ul>
+            </div>
+
+            <div class="modal-dica">
+              <i class="bi bi-lightbulb-fill"></i>
+              <span id="modalMetodoDica">Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.</span>
+            </div>
+          </div>
+
+          <div class="modal-footer" id="modalMetodoFooter">
+            <!-- button -->
+          </div>
+        </div>
       </div>
     </section>
 

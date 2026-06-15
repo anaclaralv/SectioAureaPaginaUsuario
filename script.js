@@ -1,6 +1,63 @@
 
 
 
+// Fallback local caso api.js não seja carregado
+if (typeof apiFetch === 'undefined') {
+  const API_BASE_URL = 'http://localhost:8080/pi_api/api';
+  window.API_BASE_URL = API_BASE_URL;
+  window.apiFetch = async function (endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const config = {
+      ...options,
+      headers,
+    };
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'ProjetoIntegrador.html';
+    }
+    return response;
+  };
+}
+
+if (typeof normalizarInteligencia === 'undefined') {
+  window.normalizarInteligencia = function(nomeDb) {
+    if (!nomeDb || typeof nomeDb !== 'string') return "";
+    const mapa = {
+      "Linguística": "linguistica",
+      "linguistica": "linguistica",
+      "Lógico-matemática": "logico",
+      "Lógico-Matemática": "logico",
+      "lógico-matemática": "logico",
+      "lógico-matematica": "logico",
+      "logico-matematica": "logico",
+      "Musical": "musical",
+      "musical": "musical",
+      "Cinestésica": "corporal",
+      "cinestésica": "corporal",
+      "cinestesica": "corporal",
+      "Corporal-Cinestésica": "corporal",
+      "corporal-cinestésica": "corporal",
+      "corporal-cinestesica": "corporal",
+      "Espacial": "espacial",
+      "espacial": "espacial",
+      "Interpessoal": "interpessoal",
+      "interpessoal": "interpessoal",
+      "Intrapessoal": "intrapessoal",
+      "intrapessoal": "intrapessoal"
+    };
+    return mapa[nomeDb] || mapa[nomeDb.trim()] || nomeDb.toLowerCase().trim();
+  };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
   function aplicarTemaSalvo() {
@@ -209,48 +266,127 @@ function abrirModalTeste() {
 /* ================= CADASTRO ================= */
 
 if (cadastroForm) {
-
-  cadastroForm.addEventListener("submit", function (e) {
-
+  cadastroForm.addEventListener("submit", async function (e) {
     e.preventDefault();
+    const nome = document.getElementById("cadNome").value.trim();
+    const email = document.getElementById("cadEmail").value.trim();
+    const senha = document.getElementById("cadSenha").value;
 
-    mostrarSucesso("Conta criada com sucesso!");
+    try {
+      const response = await apiFetch("cadastro", {
+        method: "POST",
+        body: JSON.stringify({ nome, email, senha })
+      });
+      const data = await response.json();
 
-    const modalCadastroEl = document.getElementById("cadastro");
-    const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
+      if (response.ok) {
+        mostrarSucesso("Conta criada com sucesso!");
+        // Faz login automático para melhorar a experiência
+        const loginResp = await apiFetch("login", {
+          method: "POST",
+          body: JSON.stringify({ email, senha })
+        });
+        if (loginResp.ok) {
+          const loginData = await loginResp.json();
+          localStorage.setItem("token", loginData.token);
+          localStorage.setItem("user", JSON.stringify(loginData.user));
+          
+          const modalCadastroEl = document.getElementById("cadastro");
+          const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
+          modalCadastro.hide();
 
-    modalCadastro.hide();
-
-    modalCadastroEl.addEventListener("hidden.bs.modal", function () {
-      abrirModalTeste();
-    }, { once: true });
-
+          modalCadastroEl.addEventListener("hidden.bs.modal", function () {
+            abrirModalTeste();
+          }, { once: true });
+        } else {
+          const modalCadastroEl = document.getElementById("cadastro");
+          const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
+          modalCadastro.hide();
+          
+          setTimeout(() => {
+            const modalLoginEl = document.getElementById("loginModal");
+            const modalLogin = new bootstrap.Modal(modalLoginEl);
+            modalLogin.show();
+          }, 500);
+        }
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Erro no cadastro",
+          text: data.message || "Erro desconhecido",
+          confirmButtonColor: "#000"
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Erro de conexão",
+        text: "Não foi possível conectar ao servidor backend.",
+        confirmButtonColor: "#000"
+      });
+    }
   });
-
 }
 
 
 /* ================= LOGIN ================= */
 
 if (loginForm) {
-
-  loginForm.addEventListener("submit", function (e) {
-
+  loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const senha = document.getElementById("loginSenha").value;
 
-    mostrarSucesso("Login realizado com sucesso!");
+    try {
+      const response = await apiFetch("login", {
+        method: "POST",
+        body: JSON.stringify({ email, senha })
+      });
+      const data = await response.json();
 
-    const modalLoginEl = document.getElementById("loginModal");
-    const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
+      if (response.ok) {
+        mostrarSucesso("Login realizado com sucesso!");
+        localStorage.removeItem("userFoto");
+        localStorage.removeItem("inteligenciaUsuario");
+        localStorage.removeItem("corPrimaria");
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-    modalLogin.hide();
+        const modalLoginEl = document.getElementById("loginModal");
+        const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
+        modalLogin.hide();
 
-    modalLoginEl.addEventListener("hidden.bs.modal", function () {
-      abrirModalTeste();
-    }, { once: true });
-
+        modalLoginEl.addEventListener("hidden.bs.modal", function () {
+          if (data.user.tipo_dom) {
+            const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
+            localStorage.setItem("inteligenciaUsuario", tipoSlug);
+            if (data.user.cor_dominante) {
+              localStorage.setItem("corPrimaria", data.user.cor_dominante);
+            }
+            window.location.href = "PaginaUsuario.html";
+          } else {
+            abrirModalTeste();
+          }
+        }, { once: true });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Erro no login",
+          text: data.message || "E-mail ou senha incorretos.",
+          confirmButtonColor: "#000"
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Erro de conexão",
+        text: "Não foi possível conectar ao servidor backend.",
+        confirmButtonColor: "#000"
+      });
+    }
   });
-
 }
 
 

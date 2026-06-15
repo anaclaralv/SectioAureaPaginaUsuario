@@ -1,3 +1,927 @@
+// Fallback local caso api.js não seja carregado
+if (typeof apiFetch === 'undefined') {
+  const API_BASE_URL = 'http://localhost:8080/pi_api/api';
+  window.API_BASE_URL = API_BASE_URL;
+  window.apiFetch = async function (endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const config = {
+      ...options,
+      headers,
+    };
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'ProjetoIntegrador.html';
+    }
+    return response;
+  };
+}
+
+if (typeof normalizarInteligencia === 'undefined') {
+  window.normalizarInteligencia = function(nomeDb) {
+    if (!nomeDb || typeof nomeDb !== 'string') return "";
+    const mapa = {
+      "Linguística": "linguistica",
+      "linguistica": "linguistica",
+      "Lógico-matemática": "logico",
+      "Lógico-Matemática": "logico",
+      "lógico-matemática": "logico",
+      "lógico-matematica": "logico",
+      "logico-matematica": "logico",
+      "Musical": "musical",
+      "musical": "musical",
+      "Cinestésica": "corporal",
+      "cinestésica": "corporal",
+      "cinestesica": "corporal",
+      "Corporal-Cinestésica": "corporal",
+      "corporal-cinestésica": "corporal",
+      "corporal-cinestesica": "corporal",
+      "Espacial": "espacial",
+      "espacial": "espacial",
+      "Interpessoal": "interpessoal",
+      "interpessoal": "interpessoal",
+      "Intrapessoal": "intrapessoal",
+      "intrapessoal": "intrapessoal"
+    };
+    return mapa[nomeDb] || mapa[nomeDb.trim()] || nomeDb.toLowerCase().trim();
+  };
+}
+
+if (!localStorage.getItem("token")) {
+  window.location.href = "ProjetoIntegrador.html";
+}
+
+async function carregarPerfilUsuario() {
+  try {
+    const response = await apiFetch("perfil");
+    if (response.ok) {
+      const data = await response.json();
+      const sidebarNome = document.getElementById('sidebarNome');
+      const sidebarEmail = document.getElementById('sidebarEmail');
+      const sidebarFoto = document.getElementById('sidebarFoto');
+      if (sidebarNome) sidebarNome.textContent = data.nome;
+      if (sidebarEmail) sidebarEmail.textContent = data.email;
+      const previewFoto = document.getElementById('previewFoto');
+      if (data.foto) {
+        if (sidebarFoto) sidebarFoto.src = data.foto;
+        if (previewFoto) previewFoto.src = data.foto;
+        localStorage.setItem("userFoto", data.foto);
+      } else {
+        const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+        if (sidebarFoto) sidebarFoto.src = defaultAvatar;
+        if (previewFoto) previewFoto.src = defaultAvatar;
+        localStorage.removeItem("userFoto");
+      }
+      if (data.plano) {
+        localStorage.setItem("planoUsuario", data.plano.toLowerCase());
+      }
+      localStorage.setItem("user", JSON.stringify(data));
+      
+      if (data.tipo_dom) {
+        aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
+      }
+      
+      // Atualizar badge, botões e bloqueios de planos
+      if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
+      if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
+      if (typeof aplicarBloqueiosPlano === 'function') aplicarBloqueiosPlano();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function carregarTarefasDoBackend() {
+  try {
+    const response = await apiFetch("tarefas");
+    if (response.ok) {
+      const data = await response.json();
+      tarefas = data.map(t => {
+        const concluida = t.dificuldade.endsWith("-concluida");
+        const prioridade = concluida ? t.dificuldade.replace("-concluida", "") : t.dificuldade;
+        return {
+          id: t.id_tarefa,
+          titulo: t.nome_tarefa,
+          prioridade: prioridade,
+          data: t.prazo,
+          concluida: concluida
+        };
+      });
+    }
+  } catch (err) {
+    console.error("Erro ao carregar tarefas:", err);
+  }
+}
+
+async function carregarNotasDoBackend() {
+  try {
+    const response = await apiFetch("blocos");
+    if (response.ok) {
+      const data = await response.json();
+      notas = data.map(n => {
+        let parsed = {};
+        try {
+          parsed = JSON.parse(n.conteudo);
+        } catch (e) {
+          parsed = { texto: n.conteudo };
+        }
+        return {
+          id: n.id_anotacao,
+          titulo: parsed.titulo || "",
+          texto: parsed.texto || "",
+          cor: n.cor_nota || "#ffffff",
+          corTexto: parsed.corTexto || "#000000",
+          checklist: parsed.checklist || [],
+          anexos: parsed.anexos || [],
+          favorito: parsed.favorito || false,
+          dataCriacao: parsed.dataCriacao || ""
+        };
+      });
+    }
+  } catch (err) {
+    console.error("Erro ao carregar notas:", err);
+  }
+}
+
+async function carregarEventosDoBackend() {
+  try {
+    const response = await apiFetch("eventos");
+    if (response.ok) {
+      const data = await response.json();
+      const events = data.map(e => {
+        let parsed = {};
+        try {
+          parsed = JSON.parse(e.tipo);
+        } catch (err) {
+          parsed = { title: e.tipo, extendedProps: {} };
+        }
+        return {
+          id: e.id_evento,
+          title: parsed.title || e.tipo,
+          start: e.data,
+          backgroundColor: e.cor,
+          borderColor: e.cor,
+          extendedProps: parsed.extendedProps || {}
+        };
+      });
+      return events;
+    }
+  } catch (err) {
+    console.error("Erro ao carregar eventos:", err);
+  }
+  return [];
+}
+
+async function salvarEventoNoBackend(titulo, data, cor, extendedProps) {
+  try {
+    const response = await apiFetch("eventos", {
+      method: "POST",
+      body: JSON.stringify({
+        tipo: JSON.stringify({ title: titulo, extendedProps: extendedProps }),
+        data: data,
+        cor: cor
+      })
+    });
+    return response.ok;
+  } catch (err) {
+    console.error("Erro ao salvar evento:", err);
+    return false;
+  }
+}
+
+async function carregarMateriasDoBackend() {
+  try {
+    const response = await apiFetch("materias");
+    if (response.ok) {
+      const data = await response.json();
+      materias = data.map(m => ({
+        id: m.id_materia.toString(),
+        nome: m.nome,
+        cor: m.cor
+      }));
+      localStorage.setItem("materias", JSON.stringify(materias));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar matérias:", err);
+  }
+}
+
+async function carregarCronogramaDoBackend() {
+  try {
+    const response = await apiFetch("cronogramas");
+    if (response.ok) {
+      const data = await response.json();
+      cronogramaNovo = data.map(c => {
+        const materiaObj = materias.find(m => m.id == c.id_materia);
+        return {
+          id: c.id_cronograma,
+          materia: {
+            id: c.id_materia,
+            nome: c.nome_materia,
+            cor: materiaObj ? materiaObj.cor : '#9f042c'
+          },
+          dia: c.dia_semana,
+          inicio: c.hora_inicio.substring(0, 5),
+          fim: c.hora_final.substring(0, 5)
+        };
+      });
+      localStorage.setItem("cronogramaNovo", JSON.stringify(cronogramaNovo));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar cronograma:", err);
+  }
+}
+
+async function carregarSessoesDoBackend() {
+  try {
+    const response = await apiFetch("cronometros");
+    if (response.ok) {
+      const sessoes = await response.json();
+      tempoEstudo = {};
+      
+      materias.forEach(m => {
+        tempoEstudo[m.id] = { total: 0, historico: {} };
+      });
+      
+      sessoes.forEach(sessao => {
+        const matId = sessao.id_materia;
+        if (!matId) return;
+        if (!tempoEstudo[matId]) {
+          tempoEstudo[matId] = { total: 0, historico: {} };
+        }
+        
+        const segundos = timeToSeconds(sessao.tempo_cronometro);
+        tempoEstudo[matId].total += segundos;
+        
+        const dataStr = sessao.created_at.split(' ')[0];
+        if (!tempoEstudo[matId].historico[dataStr]) {
+          tempoEstudo[matId].historico[dataStr] = 0;
+        }
+        tempoEstudo[matId].historico[dataStr] += segundos;
+      });
+      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar sessões de estudo:", err);
+  }
+}
+
+function timeToSeconds(timeStr) {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':');
+  const hrs = parseInt(parts[0]) || 0;
+  const mins = parseInt(parts[1]) || 0;
+  const secs = parseInt(parts[2]) || 0;
+  return (hrs * 3600) + (mins * 60) + secs;
+}
+
+function secondsToTime(totalSecs) {
+  const hrs = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return [
+    String(hrs).padStart(2, '0'),
+    String(mins).padStart(2, '0'),
+    String(secs).padStart(2, '0')
+  ].join(':');
+}
+
+async function salvarSessaoEstudoNoBackend(materiaId, segundos, descricao = "Sessão de Estudo") {
+  if (!materiaId || segundos <= 0) return;
+  try {
+    const formattedTime = secondsToTime(segundos);
+    const response = await apiFetch("cronometros", {
+      method: "POST",
+      body: JSON.stringify({
+        id_materia: materiaId,
+        tempo_cronometro: formattedTime,
+        descricao: descricao,
+        created_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      })
+    });
+    if (response.ok) {
+      console.log("Sessão de estudo registrada no backend com sucesso!");
+      await carregarSessoesDoBackend();
+    }
+  } catch (err) {
+    console.error("Erro ao salvar sessão de estudo:", err);
+  }
+}
+
+async function carregarFlashcardsDoBackend() {
+  try {
+    const response = await apiFetch("flashcards");
+    if (response.ok) {
+      const data = await response.json();
+      flashcards = data.map(f => {
+        let parsedTema = {
+          tema: f.tema || "Geral",
+          nivel: 0,
+          dataProxima: new Date().toISOString().split("T")[0],
+          acertos: 0,
+          erros: 0
+        };
+        try {
+          if (f.tema && f.tema.startsWith('{')) {
+            parsedTema = JSON.parse(f.tema);
+          }
+        } catch (e) {
+          console.error("Erro ao fazer parse do tema JSON:", e);
+        }
+        return {
+          id: f.id_flash,
+          materiaId: f.id_materia,
+          materiaNome: f.nome_materia || "Sem materia",
+          tema: parsedTema.tema || "Geral",
+          pergunta: f.pergunta,
+          resposta: f.resposta,
+          nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
+          dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
+          acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
+          erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
+        };
+      });
+      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar flashcards:", err);
+  }
+}
+
+let todasInteligencias = [];
+
+async function carregarInteligenciasDoBackend() {
+  try {
+    const response = await apiFetch("inteligencias");
+    if (response.ok) {
+      todasInteligencias = await response.json();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar inteligências:", err);
+  }
+}
+
+const iconesInteligencia = {
+  linguistica: "Icones/linguistica.png",
+  logico: "Icones/logico.png",
+  musical: "Icones/musical.png",
+  corporal: "Icones/corporal.png",
+  espacial: "Icones/espacial.png",
+  interpessoal: "Icones/interpessoal.png",
+  intrapessoal: "Icones/intrapessoal.png"
+};
+
+const metodosPorInteligencia = {
+  // ==================== LINGUÍSTICA ====================
+  linguistica: {
+    nome: "Linguística",
+    cor: "#9f042c",
+    descricao: "Você aprende melhor com palavras, leitura, escrita e comunicação. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. A cada ciclo, mude o conteúdo.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo", "A cada 4 ciclos, faça uma pausa longa de 15-30 minutos"],
+        beneficios: ["Mantém o foco", "Evita cansaço mental", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Técnica Feynman", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Aprenda explicando o conceito em voz alta com suas próprias palavras, como se estivesse ensinando alguém.",
+        passos: ["Escolha um conceito", "Explique em voz alta com palavras simples", "Identifique as lacunas na sua explicação", "Volte ao material original e estude novamente", "Reveja e simplifique"],
+        beneficios: ["Desenvolve a comunicação", "Identifica pontos fracos", "Fixa o conteúdo"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 3, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Fácil",
+        descricao: "Leia devagar, intercalando com pausas para reflexão e resumos pessoais.",
+        passos: ["Escolha um texto relevante", "Leia um trecho por vez", "Pause e reflita sobre o que leu", "Anote suas reflexões", "Faça um resumo com suas palavras"],
+        beneficios: ["Aumenta a compreensão", "Melhora o vocabulário", "Desenvolve pensamento crítico"],
+        irParaRevisao: false
+      },
+      {
+        id: 4, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Médio",
+        descricao: "Estude em grupo para trocar conhecimento, esclarecer dúvidas e reforçar conceitos ao ensinar colegas.",
+        passos: ["Forme um grupo de 3-5 pessoas", "Divida os temas entre os membros", "Cada um prepara sua parte", "Revezem as explicações", "Tirem dúvidas coletivamente"],
+        beneficios: ["Troca de conhecimento", "Desenvolve habilidades sociais", "Aprendizado colaborativo"],
+        irParaRevisao: false
+      },
+      {
+        id: 5, titulo: "Flashcards", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Crie cartões com perguntas de um lado e respostas do outro para revisar conceitos.",
+        passos: ["Escreva uma pergunta na frente do cartão", "Escreva a resposta no verso", "Teste-se diariamente", "Separe o que acertou do que errou", "Revise mais os que errou"],
+        beneficios: ["Memorização ativa", "Revisão eficiente", "Portabilidade"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 6, titulo: "Mnemônica com Palavras, Poemas ou Músicas", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie associações usando rimas, siglas, poemas ou músicas para memorizar conteúdo.",
+        passos: ["Liste as informações a memorizar", "Crie uma sigla ou frase conectando os conceitos", "Ou transforme em uma música/paródia", "Repita várias vezes até fixar"],
+        beneficios: ["Memorização divertida", "Criação de associações únicas", "Retenção de longo prazo"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 7, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema de revisão que aumenta os intervalos conforme você acerta as respostas.",
+        passos: ["Dia 1: Estude o conteúdo", "Dia 2: Revise rapidamente", "Dia 4: Revise os pontos difíceis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisão final"],
+        beneficios: ["Revisão eficiente", "Memorização duradoura", "Otimização do tempo"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      }
+    ]
+  },
+
+  // ==================== INTRAPESSOAL ====================
+  intrapessoal: {
+    nome: "Intrapessoal",
+    cor: "#5170ff",
+    descricao: "Você aprende melhor sozinho, com reflexão, autoanálise e estudos individuais. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. A cada ciclo, mude o conteúdo.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo", "A cada 4 ciclos, faça uma pausa longa"],
+        beneficios: ["Mantém o foco", "Evita cansaço mental", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Técnica Feynman", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Aprenda explicando o conceito em voz alta com suas próprias palavras.",
+        passos: ["Escolha um conceito", "Explique em voz alta", "Identifique lacunas", "Volte ao material", "Simplifique a explicação"],
+        beneficios: ["Desenvolve autoconhecimento", "Identifica pontos fracos", "Fixa o conteúdo"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 3, titulo: "Método Cornell", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Divida a página em duas colunas: esquerda para perguntas, direita para respostas e informações.",
+        passos: ["Divida a página em duas colunas", "Lado esquerdo: escreva perguntas", "Lado direito: anote respostas e informações", "Revise cobrindo o lado direito e respondendo as perguntas"],
+        beneficios: ["Organização visual", "Facilita autoavaliação", "Material de revisão eficiente"],
+        irParaRevisao: false
+      },
+      {
+        id: 4, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Fácil",
+        descricao: "Leia devagar, intercalando com pausas para reflexão e resumos pessoais.",
+        passos: ["Escolha um local tranquilo", "Leia um trecho por vez", "Pause e reflita", "Anote suas reflexões", "Faça um resumo pessoal"],
+        beneficios: ["Conexão pessoal com o conteúdo", "Desenvolvimento de empatia", "Aprendizado significativo"],
+        irParaRevisao: false
+      },
+      {
+        id: 5, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema personalizado de revisão que você gerencia conforme seu ritmo.",
+        passos: ["Dia 1: Estude o conteúdo", "Dia 2: Revise rapidamente", "Dia 4: Reveja pontos difíceis", "Dia 7: Autoavaliação", "Dia 15: Revisão final"],
+        beneficios: ["Autonomia no aprendizado", "Revisão personalizada", "Memorização duradoura"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      },
+      {
+        id: 6, titulo: "Flashcards", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie seus próprios cartões para testar seus conhecimentos sozinho.",
+        passos: ["Crie perguntas para si mesmo", "Escreva pergunta de um lado e resposta do outro", "Teste-se sem olhar a resposta", "Separe por nível de dificuldade"],
+        beneficios: ["Material personalizado", "Autoavaliação honesta", "Estudo independente"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      }
+    ]
+  },
+
+  // ==================== INTERPESSOAL ====================
+  interpessoal: {
+    nome: "Interpessoal",
+    cor: "#ff5f00",
+    descricao: "Você aprende melhor com outras pessoas, em grupo, discutindo e colaborando. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. Pode ser feito em grupo.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
+        beneficios: ["Mantém o foco", "Pode ser feito em grupo", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Técnica Feynman", tempo: "40 min", dificuldade: "Médio",
+        descricao: "Aprenda explicando conceitos para seus colegas como se estivessem aprendendo pela primeira vez.",
+        passos: ["Cada membro escolhe um conceito", "Explique para o grupo", "Use analogias e exemplos simples", "Peça perguntas e feedback", "Troque de papéis"],
+        beneficios: ["Desenvolve liderança", "Aprendizado colaborativo", "Feedback em tempo real"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 3, titulo: "Teste Prático", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Resolva provas anteriores e exercícios. Pode ser feito em dupla para correção conjunta.",
+        passos: ["Escolha provas ou exercícios", "Responda individualmente", "Corrija com um colega", "Discutam os erros", "Criem um banco de questões"],
+        beneficios: ["Avaliação colaborativa", "Discussão enriquecedora", "Identificação de pontos fracos"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 4, titulo: "Mnemônica com Poemas ou Músicas", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Criem juntos músicas, paródias ou poemas para memorizar conteúdo de forma divertida.",
+        passos: ["Reúnam o grupo", "Escolham um conteúdo", "Selecionem uma melodia conhecida", "Criem a letra juntos", "Ensaie e apresentem"],
+        beneficios: ["Aprendizado lúdico", "Criação coletiva", "Fixação por música"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 5, titulo: "Estudo com Vídeos Educativos", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Assistam vídeos educativos juntos e depois discutam os pontos principais.",
+        passos: ["Escolham um vídeo educativo", "Assistam juntos", "Pausem para discutir", "Cada um anota um ponto principal", "Criem um resumo coletivo"],
+        beneficios: ["Aprendizado colaborativo", "Discussão enriquecedora", "Diferentes pontos de vista"],
+        irParaRevisao: false
+      },
+      {
+        id: 6, titulo: "Repetição Espaçada", tempo: "20 min/sessão", dificuldade: "Médio",
+        descricao: "Sistema de revisão em grupo onde cada um testa o outro em intervalos programados.",
+        passos: ["Formem um grupo de compromisso", "Dia 1: Estudo inicial", "Dia 2: Revisão rápida em duplas", "Dia 4: Testem uns aos outros", "Dia 7: Sessão de dúvidas", "Dia 15: Revisão final"],
+        beneficios: ["Compromisso coletivo", "Aprendizado colaborativo", "Responsabilidade compartilhada"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      },
+      {
+        id: 7, titulo: "Grupos de Estudo", tempo: "60 min", dificuldade: "Médio",
+        descricao: "Estratégia para trocar conhecimento, esclarecer dúvidas e reforçar conceitos ao ensinar colegas.",
+        passos: ["Definam um grupo de 3-5 pessoas", "Dividam o conteúdo em partes", "Cada um prepara sua parte", "Revezem explicações", "Tirem dúvidas coletivamente"],
+        beneficios: ["Desenvolvimento social", "Aprendizado diversificado", "Rede de apoio mútuo"],
+        irParaRevisao: false
+      }
+    ]
+  },
+
+  // ==================== MUSICAL ====================
+  musical: {
+    nome: "Musical",
+    cor: "#8a03d2",
+    descricao: "Você aprende melhor com ritmo, melodia, sons e músicas. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com músicas instrumentais para manter o foco e ritmo.",
+        passos: ["Escolha uma playlist instrumental", "Configure um timer de 25 minutos", "Estude até o timer tocar", "Descanse 5 minutos", "Repita o ciclo"],
+        beneficios: ["Ritmo constante", "Associação música-produtividade", "Experiência prazerosa"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Mnemônica com Poemas ou Músicas", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Crie músicas, paródias ou rimas para memorizar conteúdo de forma divertida e melódica.",
+        passos: ["Escolha uma melodia conhecida", "Adapte o conteúdo para a letra", "Mantenha o ritmo e a rima", "Ensaiote cantando", "Grave sua paródia"],
+        beneficios: ["Memorização natural", "Desenvolvimento criativo", "Aprendizado leve"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 3, titulo: "Gravação de Podcast", tempo: "40 min", dificuldade: "Médio",
+        descricao: "Grave áudio da sua própria explicação para enfatizar a memorização da matéria.",
+        passos: ["Escolha um tema", "Escreva um roteiro simples", "Configure o gravador", "Grave explicando o conteúdo", "Ouça e identifique pontos a melhorar"],
+        beneficios: ["Material de revisão auditiva", "Desenvolvimento de comunicação", "Criação de portfólio"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      },
+      {
+        id: 4, titulo: "Estudo com Vídeos Educativos", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Assista vídeos educativos e crie trilhas sonoras ou resumos em formato de música.",
+        passos: ["Selecione um vídeo educativo", "Assista prestando atenção aos sons", "Pause e crie um jingle para cada tópico", "Anote o conteúdo", "Produza uma paródia"],
+        beneficios: ["Aprendizado multimodal", "Associações musicais", "Engajamento auditivo"],
+        irParaRevisao: false
+      },
+      {
+        id: 5, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema de revisão onde você usa batidas e ritmos para marcar os intervalos.",
+        passos: ["Crie uma playlist com músicas para cada dia", "Dia 1: Estudo inicial", "Dia 2: Revisão rápida", "Dia 4: Teste cantando", "Dia 7: Crie um beatbox do conteúdo", "Dia 15: Revisão final"],
+        beneficios: ["Revisão no seu ritmo", "Associações rítmicas", "Consistência musical"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      }
+    ]
+  },
+
+  // ==================== LÓGICO-MATEMÁTICA ====================
+  logico: {
+    nome: "Lógico-Matemática",
+    cor: "#ffbd59",
+    descricao: "Você tem facilidade com números, padrões e raciocínio abstrato. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. Ideal para manter o foco em cálculos e problemas.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
+        beneficios: ["Mantém o foco", "Evita cansaço mental", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Método Cornell", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Divida a página em duas colunas: esquerda para perguntas, direita para respostas e fórmulas.",
+        passos: ["Divida a página em duas colunas", "Lado esquerdo: escreva perguntas e fórmulas", "Lado direito: anote respostas e explicações", "Revise cobrindo o lado direito"],
+        beneficios: ["Organização lógica", "Facilita autoavaliação", "Material de revisão"],
+        irParaRevisao: false
+      },
+      {
+        id: 3, titulo: "Mapa Mental", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Organize o conteúdo de forma gráfica com foco no tema central e tópicos relacionados.",
+        passos: ["Escreva o tema central no meio", "Puxe ramos para cada subtópico", "Adicione palavras-chave em cada ramo", "Use cores para diferenciar categorias", "Conecte ideias relacionadas"],
+        beneficios: ["Visualização geral", "Conexão entre conceitos", "Organização hierárquica"],
+        irParaRevisao: false
+      },
+      {
+        id: 4, titulo: "Teste Prático", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Resolver provas anteriores e exercícios é uma forma eficiente para fixar o conteúdo.",
+        passos: ["Escolha provas ou exercícios", "Resolva sem consulta", "Corrija seus erros", "Refaça os exercícios que errou", "Anote o que precisa revisar"],
+        beneficios: ["Fixação por prática", "Identificação de dificuldades", "Preparação para provas"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 5, titulo: "Mnemônica com Números ou Listas Ordenadas", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie associações usando números, sequências ou listas ordenadas para memorizar.",
+        passos: ["Liste as informações em ordem", "Crie uma sequência lógica ou numérica", "Associe cada item a um número", "Repita a sequência várias vezes"],
+        beneficios: ["Memorização estruturada", "Associações lógicas", "Retenção de sequências"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 6, titulo: "Diagrama de Fluxos", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Representação gráfica dos passos de um processo, ideal para visualizar etapas lógicas.",
+        passos: ["Identifique o processo a mapear", "Liste as etapas em ordem", "Desenhe caixas para cada etapa", "Conecte com setas indicando o fluxo", "Revise a lógica do diagrama"],
+        beneficios: ["Visualização de processos", "Clareza nas etapas", "Identificação de falhas"],
+        irParaRevisao: false
+      },
+      {
+        id: 7, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema de revisão que aumenta os intervalos conforme você acerta.",
+        passos: ["Dia 1: Estude o conteúdo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos difíceis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisão final"],
+        beneficios: ["Revisão eficiente", "Memorização duradoura", "Otimização do tempo"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      }
+    ]
+  },
+
+  // ==================== ESPACIAL ====================
+  espacial: {
+    nome: "Espacial",
+    cor: "#d203a4",
+    descricao: "Você pensa em imagens e visualiza o mundo tridimensionalmente. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
+        beneficios: ["Mantém o foco", "Evita cansaço mental", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Método Cornell", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Divida a página em duas colunas para organizar perguntas e respostas visualmente.",
+        passos: ["Divida a página em duas colunas", "Lado esquerdo: perguntas", "Lado direito: respostas", "Use cores e desenhos para destacar"],
+        beneficios: ["Organização visual", "Facilita revisão", "Material personalizado"],
+        irParaRevisao: false
+      },
+      {
+        id: 3, titulo: "Mapa Mental", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Organize o conteúdo de forma gráfica e visual com foco no tema central.",
+        passos: ["Escreva o tema central no meio", "Puxe ramos para cada subtópico", "Use imagens e cores", "Conecte ideias relacionadas", "Crie uma hierarquia visual"],
+        beneficios: ["Visualização geral", "Conexão entre conceitos", "Estímulo visual"],
+        irParaRevisao: false
+      },
+      {
+        id: 4, titulo: "Flashcards", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Crie cartões visuais com perguntas de um lado e respostas do outro.",
+        passos: ["Crie cartões com elementos visuais", "Frente: pergunta ou imagem", "Verso: resposta ou explicação", "Teste-se diariamente"],
+        beneficios: ["Memorização visual", "Revisão eficiente", "Portabilidade"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 5, titulo: "Mnemônica com Imagens e Objetos", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie associações visuais usando imagens, desenhos ou objetos para memorizar.",
+        passos: ["Liste as informações a memorizar", "Crie uma imagem mental para cada item", "Associe as imagens entre si", "Desenhe se preferir", "Revise visualizando as imagens"],
+        beneficios: ["Memorização visual", "Criação de associações", "Retenção duradoura"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 6, titulo: "Diagrama de Fluxos", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Representação gráfica dos passos de um processo para visualizar etapas.",
+        passos: ["Identifique o processo", "Liste as etapas em ordem", "Desenhe o fluxo com setas", "Use cores para cada etapa", "Revise a lógica visual"],
+        beneficios: ["Visualização de processos", "Clareza nas etapas", "Organização gráfica"],
+        irParaRevisao: false
+      },
+      {
+        id: 7, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema de revisão que aumenta os intervalos conforme você acerta.",
+        passos: ["Dia 1: Estude o conteúdo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos difíceis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisão final"],
+        beneficios: ["Revisão eficiente", "Memorização duradoura", "Otimização do tempo"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      }
+    ]
+  },
+
+  // ==================== CORPORAL-CINESTÉSICA ====================
+  corporal: {
+    nome: "Corporal-Cinestésica",
+    cor: "#00bf63",
+    descricao: "Você aprende melhor com movimento, prática e experiências hands-on. Os métodos abaixo foram selecionados para seu perfil.",
+    metodos: [
+      {
+        id: 1, titulo: "Pomodoro com Descanso Ativo", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos. Nos intervalos, faça caminhadas curtas ou alongamentos.",
+        passos: ["Escolha o conteúdo", "Estude por 25 minutos", "Descanse 5 minutos com caminhada ou alongamento", "Repita o ciclo"],
+        beneficios: ["Mantém o foco", "Movimento no descanso", "Aumenta a produtividade"],
+        irParaRevisao: false
+      },
+      {
+        id: 2, titulo: "Teste Prático", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Resolver provas anteriores e exercícios práticos é uma forma eficiente para fixar o conteúdo.",
+        passos: ["Escolha provas ou exercícios", "Resolva sem consulta", "Corrija seus erros", "Refaça os exercícios que errou"],
+        beneficios: ["Fixação por prática", "Identificação de dificuldades", "Preparação para provas"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 3, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Médio",
+        descricao: "Estude em grupo para trocar conhecimento e reforçar conceitos ao ensinar colegas.",
+        passos: ["Forme um grupo de 3-5 pessoas", "Divida os temas", "Cada um prepara sua parte", "Revezem as explicações", "Tirem dúvidas coletivamente"],
+        beneficios: ["Troca de conhecimento", "Desenvolvimento social", "Aprendizado colaborativo"],
+        irParaRevisao: false
+      },
+      {
+        id: 4, titulo: "Mnemônica com Movimentos", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie associações usando gestos, movimentos ou danças para memorizar conteúdo.",
+        passos: ["Liste as informações a memorizar", "Crie um gesto ou movimento para cada item", "Repita os movimentos em sequência", "Associe o movimento ao conteúdo"],
+        beneficios: ["Memorização cinestésica", "Associação movimento-conteúdo", "Aprendizado ativo"],
+        irParaRevisao: true, tipoRevisao: "revisao_normal"
+      },
+      {
+        id: 5, titulo: "Estudo com Vídeos Educativos", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Assista vídeos educativos para visualizar e compreender conceitos difíceis no papel.",
+        passos: ["Escolha um vídeo educativo", "Assista fazendo anotações", "Pause para praticar o que aprendeu", "Reveja os trechos difíceis"],
+        beneficios: ["Visualização de conceitos", "Aprendizado dinâmico", "Complemento ao estudo"],
+        irParaRevisao: false
+      },
+      {
+        id: 6, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema de revisão que aumenta os intervalos conforme você acerta.",
+        passos: ["Dia 1: Estude o conteúdo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos difíceis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisão final"],
+        beneficios: ["Revisão eficiente", "Memorização duradoura", "Otimização do tempo"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+      },
+      {
+        id: 7, titulo: "Flashcards", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie cartões com perguntas de um lado e respostas do outro para revisar.",
+        passos: ["Crie cartões de estudo", "Frente: pergunta", "Verso: resposta", "Teste-se caminhando enquanto revisa"],
+        beneficios: ["Memorização ativa", "Revisão em movimento", "Portabilidade"],
+        irParaRevisao: true, tipoRevisao: "flashcards"
+      }
+    ]
+  }
+};
+
+function fecharMetodoModal() {
+  const modal = document.getElementById("metodoModalOverlay");
+  if (modal) modal.style.display = "none";
+}
+window.fecharMetodoModal = fecharMetodoModal;
+
+function irParaRevisao(tipoRevisao, metodoTitulo) {
+  localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
+  localStorage.setItem('metodoSelecionado', metodoTitulo);
+  
+  fecharMetodoModal();
+  
+  if (typeof mostrarTela === 'function') {
+    mostrarTela('revisao');
+  }
+  
+  const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
+  sidebarLinks.forEach(link => {
+    const onclickAttr = link.getAttribute('onclick');
+    if (onclickAttr && typeof onclickAttr === 'string' && onclickAttr.includes("'revisao'")) {
+      if (typeof mudarPagina === 'function') {
+        mudarPagina(link);
+      }
+    }
+  });
+}
+window.irParaRevisao = irParaRevisao;
+
+function verDetalhesMetodo(tipoInteligencia, metodoId) {
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  if (!metodosData) return;
+  
+  const metodo = metodosData.metodos.find(m => m.id === metodoId);
+  if (!metodo) return;
+
+  const modalTitulo = document.getElementById("modalMetodoTitulo");
+  const modalTempo = document.getElementById("modalMetodoTempo");
+  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
+  const passosList = document.getElementById("modalMetodoPassos");
+  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
+  const beneficiosList = document.getElementById("modalMetodoBeneficios");
+  const modalDica = document.getElementById("modalMetodoDica");
+  const footer = document.getElementById("modalMetodoFooter");
+
+  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
+  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
+  
+  if (modalDificuldade) {
+    modalDificuldade.textContent = metodo.dificuldade;
+    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+  }
+
+  if (passosList) {
+    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
+  }
+
+  if (beneficiosList && beneficiosContainer) {
+    if (metodo.beneficios && metodo.beneficios.length > 0) {
+      beneficiosContainer.style.display = "block";
+      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+    } else {
+      beneficiosContainer.style.display = "none";
+    }
+  }
+
+  if (modalDica) {
+    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+  }
+
+  if (footer) {
+    footer.innerHTML = "";
+    if (metodo.titulo === "Flashcards") {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
+      btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
+      footer.appendChild(btn);
+    } else if (metodo.irParaRevisao) {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
+      btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+      footer.appendChild(btn);
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = window.fecharMetodoModal;
+      footer.appendChild(btn);
+    }
+  }
+
+  const modalOverlay = document.getElementById("metodoModalOverlay");
+  if (modalOverlay) {
+    modalOverlay.style.display = "flex";
+  }
+}
+window.verDetalhesMetodo = verDetalhesMetodo;
+
+function renderizarMetodosEstudo() {
+  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
+  
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    if (user.tipo_dom) {
+      tipoInteligencia = normalizarInteligencia(user.tipo_dom);
+    }
+  }
+
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    tipoInteligencia = 'logico';
+  }
+
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  document.documentElement.style.setProperty('--cor-primaria', metodosData.cor);
+
+  const badgeNome = document.getElementById("inteligenciaBadgeNome");
+  const badgeIcon = document.getElementById("inteligenciaBadgeIcon");
+  const badgeDiv = document.getElementById("inteligenciaBadge");
+  const badgeDescricao = document.getElementById("inteligenciaBadgeDescricao");
+
+  if (badgeNome) badgeNome.textContent = `Inteligência ${metodosData.nome}`;
+  if (badgeIcon) badgeIcon.src = iconesInteligencia[tipoInteligencia] || "Icones/logico.png";
+  if (badgeDiv) badgeDiv.style.background = metodosData.cor;
+  if (badgeDescricao) badgeDescricao.textContent = metodosData.descricao;
+
+  const containerRecomendados = document.getElementById("listaMetodosRecomendados");
+  if (containerRecomendados) {
+    containerRecomendados.innerHTML = "";
+    metodosData.metodos.forEach(metodo => {
+      containerRecomendados.innerHTML += `
+        <div class="metodo-card" onclick="window.verDetalhesMetodo('${tipoInteligencia}', ${metodo.id})">
+          <div class="metodo-card-header">
+            <h3>${metodo.titulo}</h3>
+            <div class="metodo-tags">
+              <span class="tag-tempo">
+                <i class="bi bi-clock"></i> ${metodo.tempo}
+              </span>
+              <span class="tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">
+                ${metodo.dificuldade}
+              </span>
+            </div>
+          </div>
+          <p class="metodo-descricao">${metodo.descricao}</p>
+          <button class="btn-ver-mais" style="color: ${metodosData.cor}">
+            Ver método completo <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    });
+  }
+}
+
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
   if (typeof anexosTemp !== 'undefined') {
@@ -68,17 +992,20 @@ function mostrarTela(tela) {
   if (tela === "planos") {
     atualizarBotoesPlanos();
   }
+  if (tela === "metodos") {
+    renderizarMetodosEstudo();
+  }
 }// CONEXÃO COM EFEITO
 document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   const tipoInteligencia = params.get('tipo');
 
   if (tipoInteligencia) {
-    aplicarTemaInteligencia(tipoInteligencia);
+    aplicarTemaInteligencia(normalizarInteligencia(tipoInteligencia));
   } else {
     const tipoSalvo = localStorage.getItem('inteligenciaUsuario');
     if (tipoSalvo) {
-      aplicarTemaInteligencia(tipoSalvo);
+      aplicarTemaInteligencia(normalizarInteligencia(tipoSalvo));
     }
   }
 });
@@ -137,7 +1064,7 @@ function hojeFormatado() {
   const dia = String(hoje.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
 }
-function adicionarTarefa() {
+async function adicionarTarefa() {
   const tituloEl = document.getElementById("titulo");
   const prioridadeEl = document.getElementById("prioridade");
   const dataEl = document.getElementById("data");
@@ -159,16 +1086,32 @@ function adicionarTarefa() {
   tituloEl.value = "";
   dataEl.value = "";
   prioridadeEl.value = "alta";
-  tarefas.push({
-    id: Date.now(),
-    titulo,
-    prioridade,
-    data,
-    concluida: false
-  });
-  salvarTarefas();
-  atualizarTudo();
-  atualizarEventosTarefas();
+
+  try {
+    const response = await apiFetch("tarefas", {
+      method: "POST",
+      body: JSON.stringify({
+        nome_tarefa: titulo,
+        dificuldade: prioridade,
+        prazo: data
+      })
+    });
+    if (response.ok) {
+      const resData = await response.json();
+      tarefas.push({
+        id: resData.id_tarefa,
+        titulo,
+        prioridade,
+        data,
+        concluida: false
+      });
+      salvarTarefas();
+      atualizarTudo();
+      atualizarEventosTarefas();
+    }
+  } catch (err) {
+    console.error("Erro ao adicionar tarefa:", err);
+  }
 }
 let filtroPrioridadeAtual = "todas";
 
@@ -208,12 +1151,28 @@ function renderizarTarefas() {
     const btnConcluir = document.createElement("button");
     btnConcluir.classList.add("btn-concluir");
     btnConcluir.textContent = tarefa.concluida ? " ↩ " : " ✔ ";
-    btnConcluir.onclick = () => {
-      tarefa.concluida = !tarefa.concluida;
-      salvarTarefas();
-      renderizarTarefas();
-      atualizarResumoInicio();
-      atualizarEventosTarefas();
+    btnConcluir.onclick = async () => {
+      const novoEstado = !tarefa.concluida;
+      const dificuldade = tarefa.prioridade + (novoEstado ? "-concluida" : "");
+      try {
+        const response = await apiFetch(`tarefas/${tarefa.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            nome_tarefa: tarefa.titulo,
+            dificuldade: dificuldade,
+            prazo: tarefa.data
+          })
+        });
+        if (response.ok) {
+          tarefa.concluida = novoEstado;
+          salvarTarefas();
+          renderizarTarefas();
+          atualizarResumoInicio();
+          atualizarEventosTarefas();
+        }
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     const btnEditar = document.createElement("button");
@@ -233,7 +1192,7 @@ function renderizarTarefas() {
         `,
         showCancelButton: true,
         confirmButtonText: 'Salvar'
-      }).then(result => {
+      }).then(async (result) => {
         if (result.isConfirmed) {
           const novoTitulo = document.getElementById('editTitulo').value.trim();
           const novaPrioridade = document.getElementById('editPrioridade').value;
@@ -242,12 +1201,27 @@ function renderizarTarefas() {
             Swal.fire({ icon: 'error', title: 'Preencha todos os campos!' });
             return;
           }
-          tarefa.titulo = novoTitulo;
-          tarefa.prioridade = novaPrioridade;
-          tarefa.data = novaData;
-          salvarTarefas();
-          atualizarTudo();
-          atualizarEventosTarefas();
+          const dificuldade = novaPrioridade + (tarefa.concluida ? "-concluida" : "");
+          try {
+            const response = await apiFetch(`tarefas/${tarefa.id}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                nome_tarefa: novoTitulo,
+                dificuldade: dificuldade,
+                prazo: novaData
+              })
+            });
+            if (response.ok) {
+              tarefa.titulo = novoTitulo;
+              tarefa.prioridade = novaPrioridade;
+              tarefa.data = novaData;
+              salvarTarefas();
+              atualizarTudo();
+              atualizarEventosTarefas();
+            }
+          } catch (err) {
+            console.error(err);
+          }
         }
       });
     };
@@ -255,12 +1229,21 @@ function renderizarTarefas() {
     const btnExcluir = document.createElement("button");
     btnExcluir.classList.add("btn-excluir");
     btnExcluir.textContent = " ❌ ";
-    btnExcluir.onclick = () => {
-      tarefas = tarefas.filter(t => t.id !== tarefa.id);
-      salvarTarefas();
-      renderizarTarefas();
-      atualizarResumoInicio();
-      atualizarEventosTarefas();
+    btnExcluir.onclick = async () => {
+      try {
+        const response = await apiFetch(`tarefas/${tarefa.id}`, {
+          method: "DELETE"
+        });
+        if (response.ok) {
+          tarefas = tarefas.filter(t => t.id !== tarefa.id);
+          salvarTarefas();
+          renderizarTarefas();
+          atualizarResumoInicio();
+          atualizarEventosTarefas();
+        }
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     card.appendChild(info);
@@ -307,7 +1290,7 @@ let calendar;
 let isUpdating = false;
 let updateTimeout = null;
 
-function adicionarEvento() {
+async function adicionarEvento() {
   if (!calendar) return;
 
   const titulo = document.getElementById("tituloEvento").value.trim();
@@ -332,17 +1315,11 @@ function adicionarEvento() {
     return;
   }
 
-  // Adicionar evento principal
-  calendar.addEvent({
-    title: titulo,
-    start: data,
-    backgroundColor: cor,
-    borderColor: cor,
-    extendedProps: { isTarefa: false, tipo: tipo, recorrencia: recorrencia }
-  });
+  // Salva o evento principal no backend
+  const extProps = { isTarefa: false, tipo: tipo, recorrencia: recorrencia };
+  const ok = await salvarEventoNoBackend(titulo, data, cor, extProps);
 
-  // Adicionar eventos recorrentes
-  if (recorrencia !== "nenhuma") {
+  if (ok && recorrencia !== "nenhuma") {
     const dataInicio = new Date(data + 'T12:00:00'); // Evita problema de fuso
     let maxIteracoes = 0;
 
@@ -360,61 +1337,38 @@ function adicionarEvento() {
       } else if (recorrencia === "mensal") {
         novaData.setMonth(dataInicio.getMonth() + i);
       }
-
-      calendar.addEvent({
-        title: titulo,
-        start: novaData.toISOString().split('T')[0],
-        backgroundColor: cor,
-        borderColor: cor,
-        extendedProps: { isTarefa: false, tipo: tipo, recorrencia: recorrencia, isRecorrente: true }
-      });
+      
+      const dataStr = novaData.toISOString().split('T')[0];
+      await salvarEventoNoBackend(titulo, dataStr, cor, { ...extProps, isRecorrente: true });
     }
   }
 
-  calendar.render();
-  salvarEventos();
-  atualizarResumoInicio();
+  if (ok) {
+    calendar.refetchEvents();
+    atualizarResumoInicio();
 
-  // Limpar formulário
-  document.getElementById("tituloEvento").value = "";
-  document.getElementById("dataEvento").value = "";
-  document.getElementById("corEvento").value = "#3788d8";
-  document.getElementById("recorrenciaEvento").value = "nenhuma";
+    // Limpar formulário
+    document.getElementById("tituloEvento").value = "";
+    document.getElementById("dataEvento").value = "";
+    document.getElementById("corEvento").value = "#3788d8";
+    document.getElementById("recorrenciaEvento").value = "nenhuma";
 
-  // Feedback de sucesso
-  Swal.fire({
-    icon: 'success',
-    title: 'Evento adicionado!',
-    text: `"${titulo}" foi agendado com sucesso!`,
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true,
-    iconColor: '#22c55e'
-  });
+    // Feedback de sucesso
+    Swal.fire({
+      icon: 'success',
+      title: 'Evento adicionado!',
+      text: `"${titulo}" foi agendado com sucesso!`,
+      timer: 1500,
+      showConfirmButton: false,
+      position: 'top-end',
+      toast: true,
+      iconColor: '#22c55e'
+    });
+  }
 }
 
 function salvarEventos() {
-  if (isUpdating || !calendar) return;
-
-  console.log('💾 salvarEventos foi chamada!'); // ← ADICIONE
-
-  try {
-    const eventos = calendar.getEvents();
-    console.log('📊 Total de eventos no calendário:', eventos.length); // ← ADICIONE
-
-    const eventosParaSalvar = eventos.map(ev => ({
-      title: ev.title,
-      start: ev.startStr,
-      backgroundColor: ev.backgroundColor,
-      extendedProps: ev.extendedProps
-    }));
-
-    console.log('💿 Salvando no localStorage:', eventosParaSalvar.length, 'eventos'); // ← ADICIONE
-    localStorage.setItem("eventosCalendario", JSON.stringify(eventosParaSalvar));
-  } catch (error) {
-    console.error("Erro ao salvar eventos:", error);
-  }
+  // Chamada fictícia - os dados agora são salvos diretamente no banco de dados.
 }
 
 // ADICIONE esta nova função logo abaixo:
@@ -531,22 +1485,37 @@ document.addEventListener('DOMContentLoaded', function () {
         const tarefaId = props.tarefaId;
         const tarefa = tarefas.find(t => t.id === tarefaId);
         if (tarefa) {
-          tarefa.data = novaData;
-          salvarTarefas();
+          const dificuldade = tarefa.prioridade + (tarefa.concluida ? "-concluida" : "");
+          apiFetch(`tarefas/${tarefa.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              nome_tarefa: tarefa.titulo,
+              dificuldade: dificuldade,
+              prazo: novaData
+            })
+          }).then(response => {
+            if (response.ok) {
+              tarefa.data = novaData;
+              calendar.refetchEvents();
+              atualizarResumoInicio();
+            }
+          }).catch(err => console.error(err));
         }
+      } else {
+        apiFetch(`eventos/${event.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            tipo: JSON.stringify({ title: titulo, extendedProps: props }),
+            data: novaData,
+            cor: cor
+          })
+        }).then(response => {
+          if (response.ok) {
+            calendar.refetchEvents();
+            atualizarResumoInicio();
+          }
+        }).catch(err => console.error(err));
       }
-      event.remove();
-      calendar.addEvent({
-        title: titulo,
-        start: novaData,
-        backgroundColor: cor,
-        borderColor: cor,
-        extendedProps: props
-      });
-
-      // Salva e atualiza
-      salvarEventos();
-      atualizarResumoInicio();
 
       // Feedback
       const dataFormatada = novaData.split('-').reverse().join('/');
@@ -559,13 +1528,23 @@ document.addEventListener('DOMContentLoaded', function () {
         position: 'top-end',
         toast: true
       });
-
-      console.log('✅ Evento recriado na nova data!');
     },
 
     eventResize: function (info) {
-      salvarEventos();
-      atualizarResumoInicio();
+      const event = info.event;
+      apiFetch(`eventos/${event.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          tipo: JSON.stringify({ title: event.title, extendedProps: event.extendedProps }),
+          data: event.startStr,
+          cor: event.backgroundColor
+        })
+      }).then(response => {
+        if (response.ok) {
+          calendar.refetchEvents();
+          atualizarResumoInicio();
+        }
+      }).catch(err => console.error(err));
 
       Swal.fire({
         icon: 'success',
@@ -587,7 +1566,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!tarefa) {
           event.remove();
-          salvarEventos();
           return;
         }
 
@@ -601,38 +1579,60 @@ document.addEventListener('DOMContentLoaded', function () {
           confirmButtonText: 'Salvar',
           denyButtonText: 'Excluir',
           showDenyButton: true
-        }).then(result => {
+        }).then(async (result) => {
           if (result.isConfirmed) {
             const novoTitulo = document.getElementById('editTitulo').value.trim();
             const novaData = document.getElementById('editData').value;
             if (novoTitulo && novaData) {
-              tarefa.titulo = novoTitulo;
-              tarefa.data = novaData;
-              salvarTarefas();
-              atualizarEventosTarefas();
-              atualizarResumoInicio();
-              renderizarTarefas();
+              const dificuldade = tarefa.prioridade + (tarefa.concluida ? "-concluida" : "");
+              try {
+                const response = await apiFetch(`tarefas/${tarefa.id}`, {
+                  method: "PUT",
+                  body: JSON.stringify({
+                    nome_tarefa: novoTitulo,
+                    dificuldade: dificuldade,
+                    prazo: novaData
+                  })
+                });
+                if (response.ok) {
+                  tarefa.titulo = novoTitulo;
+                  tarefa.data = novaData;
+                  calendar.refetchEvents();
+                  atualizarResumoInicio();
+                  renderizarTarefas();
 
-              Swal.fire({
-                icon: 'success',
-                title: 'Tarefa atualizada!',
-                timer: 1000,
-                showConfirmButton: false
-              });
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Tarefa atualizada!',
+                    timer: 1000,
+                    showConfirmButton: false
+                  });
+                }
+              } catch (err) {
+                console.error(err);
+              }
             }
           } else if (result.isDenied) {
-            tarefas = tarefas.filter(t => t.id !== tarefa.id);
-            salvarTarefas();
-            atualizarEventosTarefas();
-            atualizarResumoInicio();
-            renderizarTarefas();
+            try {
+              const response = await apiFetch(`tarefas/${tarefa.id}`, {
+                method: "DELETE"
+              });
+              if (response.ok) {
+                tarefas = tarefas.filter(t => t.id !== tarefa.id);
+                calendar.refetchEvents();
+                atualizarResumoInicio();
+                renderizarTarefas();
 
-            Swal.fire({
-              icon: 'success',
-              title: 'Tarefa excluída!',
-              timer: 1000,
-              showConfirmButton: false
-            });
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Tarefa excluída!',
+                  timer: 1000,
+                  showConfirmButton: false
+                });
+              }
+            } catch (err) {
+              console.error(err);
+            }
           }
         });
 
@@ -646,18 +1646,24 @@ document.addEventListener('DOMContentLoaded', function () {
           confirmButtonText: 'Apenas este dia',
           denyButtonText: 'Todas repetições',
           cancelButtonText: 'Cancelar'
-        }).then(result => {
+        }).then(async (result) => {
           if (result.isConfirmed) {
-            event.remove();
-            salvarEventos();
-            atualizarResumoInicio();
+            const response = await apiFetch(`eventos/${event.id}`, { method: "DELETE" });
+            if (response.ok) {
+              calendar.refetchEvents();
+              atualizarResumoInicio();
+            }
           } else if (result.isDenied) {
             const eventosParaRemover = calendar.getEvents().filter(e =>
               e.title === event.title &&
               e.extendedProps?.recorrencia === event.extendedProps?.recorrencia
             );
-            eventosParaRemover.forEach(e => e.remove());
-            salvarEventos();
+            for (const ev of eventosParaRemover) {
+              if (ev.id) {
+                await apiFetch(`eventos/${ev.id}`, { method: "DELETE" });
+              }
+            }
+            calendar.refetchEvents();
             atualizarResumoInicio();
           }
         });
@@ -667,15 +1673,15 @@ document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
           title: 'Editar evento',
           html: `
-    <input type="text" id="editTitulo" class="swal2-input" value="${event.title.replace(/"/g, '&quot;')}" placeholder="Título">
-    <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
-    <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}" style="width: 100%; height: 45px; padding: 5px; border-radius: 8px; cursor: pointer;">
-  `,
+            <input type="text" id="editTitulo" class="swal2-input" value="${event.title.replace(/"/g, '&quot;')}" placeholder="Título">
+            <input type="date" id="editData" class="swal2-input" value="${event.startStr}">
+            <input type="color" id="editCor" class="swal2-input" value="${event.backgroundColor || '#3788d8'}" style="width: 100%; height: 45px; padding: 5px; border-radius: 8px; cursor: pointer;">
+          `,
           showCancelButton: true,
           confirmButtonText: 'Salvar',
           denyButtonText: 'Excluir',
           showDenyButton: true
-        }).then(result => {
+        }).then(async (result) => {
           if (result.isConfirmed) {
             const novoTitulo = document.getElementById('editTitulo').value.trim();
             const novaData = document.getElementById('editData').value;
@@ -690,35 +1696,33 @@ document.addEventListener('DOMContentLoaded', function () {
               });
               return;
             }
-            const eventoAntigo = event;
-            const props = eventoAntigo.extendedProps;
-            eventoAntigo.remove();
-            event.setProp('title', novoTitulo);
-            event.setStart(novaData);
-            event.setProp('backgroundColor', novaCor);
-            event.setProp('borderColor', novaCor);
-            calendar.addEvent({
-              title: novoTitulo,
-              start: novaData,
-              backgroundColor: novaCor,
-              borderColor: novaCor,
-              extendedProps: props
-            });
-            calendar.render();
-            salvarEventos();
-            atualizarResumoInicio();
-            calendar.refetchEvents();
+            
+            try {
+              const response = await apiFetch(`eventos/${event.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  tipo: JSON.stringify({ title: novoTitulo, extendedProps: event.extendedProps }),
+                  data: novaData,
+                  cor: novaCor
+                })
+              });
+              if (response.ok) {
+                calendar.refetchEvents();
+                atualizarResumoInicio();
 
-            Swal.fire({
-              icon: 'success',
-              title: 'Evento atualizado!',
-              timer: 1200,
-              showConfirmButton: false,
-              position: 'top-end',
-              toast: true
-            });
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Evento atualizado!',
+                  timer: 1200,
+                  showConfirmButton: false,
+                  position: 'top-end',
+                  toast: true
+                });
+              }
+            } catch (err) {
+              console.error(err);
+            }
           } else if (result.isDenied) {
-            // Excluir evento
             Swal.fire({
               title: 'Confirmar exclusão',
               text: 'Tem certeza que deseja excluir este evento?',
@@ -727,28 +1731,60 @@ document.addEventListener('DOMContentLoaded', function () {
               confirmButtonText: 'Sim, excluir',
               cancelButtonText: 'Cancelar',
               confirmButtonColor: '#dc3545'
-            }).then(confirmResult => {
+            }).then(async (confirmResult) => {
               if (confirmResult.isConfirmed) {
-                event.remove();
-                calendar.render();
-                salvarEventos();
-                atualizarResumoInicio();
+                try {
+                  const response = await apiFetch(`eventos/${event.id}`, {
+                    method: "DELETE"
+                  });
+                  if (response.ok) {
+                    calendar.refetchEvents();
+                    atualizarResumoInicio();
 
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Evento excluído!',
-                  timer: 1200,
-                  showConfirmButton: false,
-                  position: 'top-end',
-                  toast: true
-                });
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'Evento excluído!',
+                      timer: 1200,
+                      showConfirmButton: false,
+                      position: 'top-end',
+                      toast: true
+                    });
+                  }
+                } catch (err) {
+                  console.error(err);
+                }
               }
             });
           }
         });
       }
     },
-    events: carregarEventos()
+    events: async function (info, successCallback, failureCallback) {
+      try {
+        const eventosBackend = await carregarEventosDoBackend();
+        const eventosTarefas = tarefas
+          .filter(t => t.data && !t.concluida)
+          .map(t => ({
+            id: 't_' + t.id,
+            title: `${t.titulo}`,
+            start: t.data,
+            backgroundColor: corPrioridade(t.prioridade),
+            borderColor: corPrioridade(t.prioridade),
+            textColor: '#ffffff',
+            extendedProps: {
+              isTarefa: true,
+              tarefaId: t.id
+            }
+          }));
+        successCallback([...eventosBackend, ...eventosTarefas]);
+      } catch (err) {
+        console.error(err);
+        failureCallback(err);
+      }
+    },
+    eventsSet: function (events) {
+      atualizarResumoInicio();
+    }
   });
 
   calendar.render();
@@ -764,15 +1800,7 @@ window.adicionarEvento = adicionarEvento;
 
 // NOTAS
 document.addEventListener("DOMContentLoaded", () => {
-  let notas = JSON.parse(localStorage.getItem("notas")) || [];
-
-  // Garantir que todas as notas tenham ID
-  notas = notas.map(nota => {
-    if (!nota.id) {
-      nota.id = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    return nota;
-  });
+  let notas = [];
 
   let notaAtual = null;
   const notasContainer = document.getElementById("notasContainer");
@@ -780,7 +1808,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
 
   function salvarNotas() {
-    localStorage.setItem("notas", JSON.stringify(notas));
+    // Chamada fictícia - as notas são persistidas diretamente no backend.
   }
 
   function renderNotas() {
@@ -850,7 +1878,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Checkbox do checklist
     document.querySelectorAll(".check-item input").forEach(input => {
-      input.addEventListener("change", (e) => {
+      input.addEventListener("change", async (e) => {
         const div = e.target.closest('.check-item');
         const notaId = div.dataset.notaId;
         const checkIndex = parseInt(div.dataset.checkIndex);
@@ -858,15 +1886,34 @@ document.addEventListener("DOMContentLoaded", () => {
         const nota = notas.find(n => n.id === notaId);
         if (nota && nota.checklist[checkIndex]) {
           nota.checklist[checkIndex].checked = e.target.checked;
-          salvarNotas();
-          renderNotas();
+          const payload = {
+            conteudo: JSON.stringify({
+              titulo: nota.titulo,
+              texto: nota.texto,
+              corTexto: nota.corTexto,
+              checklist: nota.checklist,
+              favorito: nota.favorito,
+              dataCriacao: nota.dataCriacao,
+              anexos: nota.anexos
+            }),
+            cor_nota: nota.cor
+          };
+          try {
+            await apiFetch(`blocos/${notaId}`, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+            renderNotas();
+          } catch (err) {
+            console.error(err);
+          }
         }
       });
     });
 
     // Botão excluir item do checklist
     document.querySelectorAll(".btn-excluir-check").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const div = e.target.closest('.check-item');
         const notaId = div.dataset.notaId;
@@ -875,22 +1922,60 @@ document.addEventListener("DOMContentLoaded", () => {
         const nota = notas.find(n => n.id === notaId);
         if (nota) {
           nota.checklist.splice(checkIndex, 1);
-          salvarNotas();
-          renderNotas();
+          const payload = {
+            conteudo: JSON.stringify({
+              titulo: nota.titulo,
+              texto: nota.texto,
+              corTexto: nota.corTexto,
+              checklist: nota.checklist,
+              favorito: nota.favorito,
+              dataCriacao: nota.dataCriacao,
+              anexos: nota.anexos
+            }),
+            cor_nota: nota.cor
+          };
+          try {
+            await apiFetch(`blocos/${notaId}`, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+            renderNotas();
+          } catch (err) {
+            console.error(err);
+          }
         }
       });
     });
 
     // Estrela (favorito)
     document.querySelectorAll(".estrela").forEach(estrela => {
-      estrela.addEventListener("click", (e) => {
+      estrela.addEventListener("click", async (e) => {
         e.stopPropagation();
         const notaId = e.target.dataset.notaId;
         const nota = notas.find(n => n.id === notaId);
         if (nota) {
           nota.favorito = !nota.favorito;
-          salvarNotas();
-          renderNotas();
+          const payload = {
+            conteudo: JSON.stringify({
+              titulo: nota.titulo,
+              texto: nota.texto,
+              corTexto: nota.corTexto,
+              checklist: nota.checklist,
+              favorito: nota.favorito,
+              dataCriacao: nota.dataCriacao,
+              anexos: nota.anexos
+            }),
+            cor_nota: nota.cor
+          };
+          try {
+            await apiFetch(`blocos/${notaId}`, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+            renderNotas();
+          } catch (err) {
+            console.error(err);
+          }
         }
       });
     });
@@ -924,12 +2009,20 @@ document.addEventListener("DOMContentLoaded", () => {
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
             confirmButtonText: 'Sim, excluir'
-          }).then(result => {
+          }).then(async (result) => {
             if (result.isConfirmed) {
-              notas = notas.filter(n => n.id !== notaId);
-              salvarNotas();
-              renderNotas();
-              Swal.fire('Excluída!', '', 'success');
+              try {
+                const response = await apiFetch(`blocos/${notaId}`, {
+                  method: "DELETE"
+                });
+                if (response.ok) {
+                  notas = notas.filter(n => n.id !== notaId);
+                  renderNotas();
+                  Swal.fire('Excluída!', '', 'success');
+                }
+              } catch (err) {
+                console.error(err);
+              }
             }
           });
         }
@@ -1133,7 +2226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderChecklist(items);
   });
 
-  document.getElementById("btnSalvar").addEventListener("click", () => {
+  document.getElementById("btnSalvar").addEventListener("click", async () => {
     const titulo = document.getElementById("notaTitulo").value;
     const texto = document.getElementById("notaTexto").innerHTML;
     const cor = document.getElementById("notaCor").value;
@@ -1153,34 +2246,73 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Garantir ID para nova nota
-    const novoId = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
-    const novaNota = {
-      id: (notaAtual !== null && notas[notaAtual]) ? notas[notaAtual].id : novoId,
-      titulo,
-      texto,
-      cor,
-      corTexto,
-      checklist: checklist,
-      anexos: [...anexosTemp],
-      favorito: notaAtual !== null && notas[notaAtual] ? notas[notaAtual].favorito : false,
-      dataCriacao: notaAtual !== null && notas[notaAtual]
-        ? notas[notaAtual].dataCriacao
-        : new Date().toLocaleString()
+    const payload = {
+      conteudo: JSON.stringify({
+        titulo,
+        texto,
+        corTexto,
+        checklist,
+        favorito: notaAtual !== null && notas[notaAtual] ? notas[notaAtual].favorito : false,
+        dataCriacao: notaAtual !== null && notas[notaAtual] ? notas[notaAtual].dataCriacao : new Date().toLocaleString(),
+        anexos: [...anexosTemp]
+      }),
+      cor_nota: cor
     };
 
     if (notaAtual !== null && notas[notaAtual]) {
-      notas[notaAtual] = novaNota;
+      const notaId = notas[notaAtual].id;
+      try {
+        const response = await apiFetch(`blocos/${notaId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          notas[notaAtual] = {
+            id: notaId,
+            titulo,
+            texto,
+            cor,
+            corTexto,
+            checklist,
+            anexos: [...anexosTemp],
+            favorito: notas[notaAtual].favorito,
+            dataCriacao: notas[notaAtual].dataCriacao
+          };
+          renderNotas();
+          notaModal.hide();
+          Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     } else {
-      notas.push(novaNota);
+      try {
+        const response = await apiFetch("blocos", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          notas.push({
+            id: resData.id_anotacao,
+            titulo,
+            texto,
+            cor,
+            corTexto,
+            checklist,
+            anexos: [...anexosTemp],
+            favorito: false,
+            dataCriacao: new Date().toLocaleString()
+          });
+          renderNotas();
+          notaModal.hide();
+          Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
-
-    salvarNotas();
     anexosTemp = [];
-    notaModal.hide();
-    renderNotas();
-    Swal.fire({ icon: 'success', title: 'Nota salva!', timer: 1500, showConfirmButton: false });
   });
 
   document.getElementById("btnNova").addEventListener("click", () => abrirModal());
@@ -1311,8 +2443,8 @@ function atualizarResumoInicio() {
   }
   // ---------- MATÉRIAS DO DIA ----------
   // pegar cronograma novo
-  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-  const blocosHoje = cronogramaNovo
+  const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
+  const blocosHoje = cronogramaLocal
     .filter(b => b.dia === hojeSemana)
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
 
@@ -1344,7 +2476,17 @@ function atualizarTudo() {
 }
 
 // No final do arquivo PaginaUsuario.js, após TODAS as funções
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Carrega os dados do backend antes de renderizar
+  await carregarPerfilUsuario();
+  await carregarTarefasDoBackend();
+  await carregarNotasDoBackend();
+  await carregarMateriasDoBackend();
+  await carregarCronogramaDoBackend();
+  await carregarSessoesDoBackend();
+  await carregarFlashcardsDoBackend();
+  await carregarInteligenciasDoBackend();
+
   configurarFiltroRevisao();
   initToggleNotificacoes();
   configurarFiltroPrioridade();
@@ -1364,17 +2506,21 @@ document.addEventListener("DOMContentLoaded", () => {
   renderizarHistoricoCronometro();
   mostrarTourBoasVindas();
   if (typeof calendar !== "undefined" && calendar) {
-    atualizarEventosTarefas();
+    calendar.refetchEvents();
     atualizarResumoInicio();
   }
   atualizarTudo();
 
   const fotoSalva = localStorage.getItem("userFoto");
+  const sidebarFoto = document.getElementById('sidebarFoto');
+  const previewFoto = document.getElementById('previewFoto');
+  const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
   if (fotoSalva) {
-    const sidebarFoto = document.getElementById('sidebarFoto');
-    const previewFoto = document.getElementById('previewFoto');
     if (sidebarFoto) sidebarFoto.src = fotoSalva;
     if (previewFoto) previewFoto.src = fotoSalva;
+  } else {
+    if (sidebarFoto) sidebarFoto.src = defaultAvatar;
+    if (previewFoto) previewFoto.src = defaultAvatar;
   }
 });
 
@@ -1383,9 +2529,9 @@ function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
   const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
-  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
   lista.innerHTML = "";
-  const blocosHoje = cronogramaNovo.filter(b => b.dia === hojeSemana);
+  const blocosHoje = cronogramaLocal.filter(b => b.dia === hojeSemana);
   if (blocosHoje.length === 0) {
     lista.innerHTML = "<li>Sem atividades hoje</li>";
     return;
@@ -1408,44 +2554,58 @@ document.getElementById('userInfo').addEventListener('click', function () {
   modal.show();
 });
 // SALVAR CONFIGURAÇÕES
-function salvarConfiguracao() {
-  const novoNome = document.getElementById('novoNome').value;
-  const novoEmail = document.getElementById('novoEmail').value;
-  const novaFotoInput = document.getElementById('novaFoto');
+async function salvarConfiguracao() {
+  const novoNome = document.getElementById('novoNome').value.trim();
+  const previewFoto = document.getElementById('previewFoto');
+  const foto = previewFoto ? previewFoto.src : "";
 
-  document.getElementById('sidebarNome').textContent = novoNome;
-  document.getElementById('sidebarEmail').textContent = novoEmail;
+  try {
+    const response = await apiFetch("perfil", {
+      method: "PUT",
+      body: JSON.stringify({
+        nome: novoNome,
+        foto: foto
+      })
+    });
+    if (response.ok) {
+      document.getElementById('sidebarNome').textContent = novoNome;
+      if (foto) {
+        const sidebarFoto = document.getElementById('sidebarFoto');
+        if (sidebarFoto) sidebarFoto.src = foto;
+        localStorage.setItem("userFoto", foto);
+      }
+      localStorage.setItem("userName", novoNome);
+      
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      user.nome = novoNome;
+      user.foto = foto;
+      localStorage.setItem("user", JSON.stringify(user));
 
-  // CORREÇÃO: Verifica se o usuário selecionou uma nova foto
-  if (novaFotoInput.files && novaFotoInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      // Atualiza a foto da sidebar E do preview
-      const sidebarFoto = document.getElementById('sidebarFoto');
-      const previewFoto = document.getElementById('previewFoto');
+      Swal.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: 'Configurações salvas com sucesso.',
+        timer: 1500,
+        showConfirmButton: false
+      });
 
-      if (sidebarFoto) sidebarFoto.src = e.target.result;
-      if (previewFoto) previewFoto.src = e.target.result;
-
-      // Salva a foto no localStorage para persistir
-      localStorage.setItem("userFoto", e.target.result);
+      bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
+    } else {
+      const data = await response.json();
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro!',
+        text: data.message || 'Erro ao salvar configurações.',
+      });
     }
-    reader.readAsDataURL(novaFotoInput.files[0]);
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Erro de conexão com o servidor.',
+    });
   }
-
-  // Salvar nome e email no localStorage
-  localStorage.setItem("userName", novoNome);
-  localStorage.setItem("userEmail", novoEmail);
-
-  Swal.fire({
-    icon: 'success',
-    title: 'Sucesso!',
-    text: 'Configurações salvas com sucesso.',
-    timer: 1500,
-    showConfirmButton: false
-  });
-
-  bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
 }
 
 // ADICIONE esta função no seu JS (após a função salvarConfiguracao, por exemplo)
@@ -1466,6 +2626,7 @@ let materiaAtualAuto = null;
 let materiaAnterior = null;
 let notificarMudanca = true;
 let estudoAtual = null;
+let segundosSessaoAtual = 0;
 let modoEstudo = "auto";
 let materias = [];  // APENAS UM ARRAY para todas as matérias
 let cronogramaNovo = [];
@@ -1587,30 +2748,47 @@ function adicionarMateria() {
     return;
   }
 
-  const novaMateria = {
-    id: Date.now().toString(),
-    nome: nome,
-    cor: cor
-  };
+  apiFetch("materias", {
+    method: "POST",
+    body: JSON.stringify({ nome: nome, cor: cor })
+  }).then(async res => {
+    if (res.ok) {
+      const respData = await res.json();
+      const novaMateria = {
+        id: respData.id_materia.toString(),
+        nome: nome,
+        cor: cor
+      };
 
-  materias.push(novaMateria);
-  salvarMaterias();
+      materias.push(novaMateria);
+      salvarMaterias();
 
-  inputNome.value = "";
-  inputCor.value = "#9f042c";
+      inputNome.value = "";
+      inputCor.value = "#9f042c";
 
-  renderMaterias();
-  renderCronogramaNovo();
-  renderTabelaMaterias();
+      renderMaterias();
+      renderCronogramaNovo();
+      renderTabelaMaterias();
 
-  Swal.fire({
-    icon: 'success',
-    title: 'Pronto!',
-    text: `Matéria "${nome}" adicionada!`,
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
+      Swal.fire({
+        icon: 'success',
+        title: 'Pronto!',
+        text: `Matéria "${nome}" adicionada!`,
+        timer: 1500,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro!',
+        text: 'Não foi possível adicionar a matéria no servidor.',
+        confirmButtonColor: '#9f042c'
+      });
+    }
+  }).catch(err => {
+    console.error("Erro ao adicionar matéria:", err);
   });
 }
 
@@ -1638,37 +2816,7 @@ function renderMaterias() {
       e.dataTransfer.setData("text/plain", m.id);
     };
 
-    // Duplo clique para editar
-    div.addEventListener("dblclick", () => {
-      Swal.fire({
-        title: 'Editar Matéria',
-        html: `
-          <input type="text" id="editNome" class="swal2-input" value="${m.nome}">
-          <input type="color" id="editCor" class="swal2-input" value="${m.cor}">
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Salvar'
-      }).then(result => {
-        if (result.isConfirmed) {
-          const novoNome = document.getElementById('editNome').value.trim();
-          const novaCor = document.getElementById('editCor').value;
-          if (novoNome) {
-            m.nome = novoNome;
-            m.cor = novaCor;
-            cronogramaNovo.forEach(bloco => {
-              if (bloco.materia.id === m.id) {
-                bloco.materia.nome = novoNome;
-                bloco.materia.cor = novaCor;
-              }
-            });
-            salvarMaterias();
-            salvarCronogramaNovo();
-            renderMaterias();
-            renderCronogramaNovo();
-          }
-        }
-      });
-    });    // Duplo clique para editar OU excluir
+    // Duplo clique para editar ou excluir
     div.addEventListener("dblclick", () => {
       Swal.fire({
         title: 'Editar Matéria',
@@ -1685,11 +2833,30 @@ function renderMaterias() {
           const novoNome = document.getElementById('editNome').value.trim();
           const novaCor = document.getElementById('editCor').value;
           if (novoNome) {
-            m.nome = novoNome;
-            m.cor = novaCor;
-            salvarMaterias();
-            renderMaterias();
-            renderCronogramaNovo();
+            apiFetch(`materias/${m.id}`, {
+              method: "PUT",
+              body: JSON.stringify({ nome: novoNome, cor: novaCor })
+            }).then(res => {
+              if (res.ok) {
+                m.nome = novoNome;
+                m.cor = novaCor;
+                cronogramaNovo.forEach(bloco => {
+                  if (bloco.materia.id === m.id) {
+                    bloco.materia.nome = novoNome;
+                    bloco.materia.cor = novaCor;
+                  }
+                });
+                salvarMaterias();
+                salvarCronogramaNovo();
+                renderMaterias();
+                renderCronogramaNovo();
+                renderTabelaMaterias();
+              } else {
+                Swal.fire('Erro', 'Não foi possível atualizar a matéria no servidor.', 'error');
+              }
+            }).catch(err => {
+              console.error("Erro ao atualizar matéria:", err);
+            });
           }
         } else if (result.isDenied) {
           Swal.fire({
@@ -1701,14 +2868,30 @@ function renderMaterias() {
             confirmButtonColor: '#dc3545'
           }).then(confirmResult => {
             if (confirmResult.isConfirmed) {
-              materias = materias.filter(mat => mat.id !== m.id);
-              cronogramaNovo = cronogramaNovo.filter(b => b.materia.id !== m.id);
-              salvarMaterias();
-              salvarCronogramaNovo();
-              renderMaterias();
-              renderCronogramaNovo();
-              renderTabelaMaterias();
-              renderizarResumoHoje();
+              apiFetch(`materias/${m.id}`, {
+                method: "DELETE"
+              }).then(res => {
+                if (res.ok) {
+                  // Remover também do cronograma no backend
+                  const associatedBlocos = cronogramaNovo.filter(b => b.materia.id === m.id);
+                  associatedBlocos.forEach(b => {
+                    apiFetch(`cronogramas/${b.id}`, { method: "DELETE" }).catch(e => console.error(e));
+                  });
+
+                  materias = materias.filter(mat => mat.id !== m.id);
+                  cronogramaNovo = cronogramaNovo.filter(b => b.materia.id !== m.id);
+                  salvarMaterias();
+                  salvarCronogramaNovo();
+                  renderMaterias();
+                  renderCronogramaNovo();
+                  renderTabelaMaterias();
+                  renderizarResumoHoje();
+                } else {
+                  Swal.fire('Erro', 'Não foi possível excluir a matéria no servidor.', 'error');
+                }
+              }).catch(err => {
+                console.error("Erro ao deletar matéria:", err);
+              });
             }
           });
         }
@@ -1759,16 +2942,45 @@ function renderCronogramaNovo() {
             const inicio = document.getElementById('editInicio').value;
             const fim = document.getElementById('editFim').value;
             if (inicio && fim && fim > inicio) {
-              bloco.inicio = inicio;
-              bloco.fim = fim;
-              salvarCronogramaNovo();
-              renderCronogramaNovo();
+              apiFetch(`cronogramas/${bloco.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  id_materia: bloco.materia.id,
+                  dia_semana: bloco.dia,
+                  hora_inicio: inicio,
+                  hora_final: fim
+                })
+              }).then(res => {
+                if (res.ok) {
+                  bloco.inicio = inicio;
+                  bloco.fim = fim;
+                  salvarCronogramaNovo();
+                  renderCronogramaNovo();
+                  renderizarResumoHoje();
+                  atualizarMateriaAgora();
+                } else {
+                  Swal.fire('Erro', 'Não foi possível atualizar o cronograma no servidor.', 'error');
+                }
+              }).catch(err => {
+                console.error("Erro ao atualizar cronograma:", err);
+              });
             }
           } else if (result.isDenied) {
-            cronogramaNovo = cronogramaNovo.filter(b => b.id !== bloco.id);
-            salvarCronogramaNovo();
-            renderCronogramaNovo();
-            renderizarResumoHoje();
+            apiFetch(`cronogramas/${bloco.id}`, {
+              method: "DELETE"
+            }).then(res => {
+              if (res.ok) {
+                cronogramaNovo = cronogramaNovo.filter(b => b.id !== bloco.id);
+                salvarCronogramaNovo();
+                renderCronogramaNovo();
+                renderizarResumoHoje();
+                atualizarMateriaAgora();
+              } else {
+                Swal.fire('Erro', 'Não foi possível excluir o cronograma no servidor.', 'error');
+              }
+            }).catch(err => {
+              console.error("Erro ao deletar cronograma:", err);
+            });
           }
         });
       });
@@ -1817,18 +3029,35 @@ function drop(ev) {
     }
   }).then(result => {
     if (result.isConfirmed) {
-      cronogramaNovo.push({
-        id: Date.now(),
-        materia: materia,
-        dia: dia,
-        inicio: result.value.inicio,
-        fim: result.value.fim
-      });
+      apiFetch("cronogramas", {
+        method: "POST",
+        body: JSON.stringify({
+          id_materia: materia.id,
+          dia_semana: dia,
+          hora_inicio: result.value.inicio,
+          hora_final: result.value.fim
+        })
+      }).then(async res => {
+        if (res.ok) {
+          const respData = await res.json();
+          cronogramaNovo.push({
+            id: respData.id_cronograma,
+            materia: materia,
+            dia: dia,
+            inicio: result.value.inicio,
+            fim: result.value.fim
+          });
 
-      salvarCronogramaNovo();
-      renderCronogramaNovo();
-      renderizarResumoHoje();
-      atualizarMateriaAgora();
+          salvarCronogramaNovo();
+          renderCronogramaNovo();
+          renderizarResumoHoje();
+          atualizarMateriaAgora();
+        } else {
+          Swal.fire('Erro', 'Não foi possível salvar o cronograma no servidor.', 'error');
+        }
+      }).catch(err => {
+        console.error("Erro ao salvar cronograma:", err);
+      });
     }
   });
 }
@@ -2513,6 +3742,7 @@ function iniciarEstudo(id) {
 
   atualizarStreak();
   estudoAtual = id;
+  segundosSessaoAtual = 0;
   modoEstudo = "manual";
 
   if (!tempoEstudo[id]) {
@@ -2534,7 +3764,7 @@ function iniciarEstudo(id) {
     if (tempoEstudo[id] && tempoEstudo[id].historico) {
       tempoEstudo[id].total++;
       tempoEstudo[id].historico[hoje]++;
-      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+      segundosSessaoAtual++;
       renderTabelaMaterias();
       if (typeof atualizarMeta === 'function') atualizarMeta();
       if (typeof atualizarRelogioInfo === 'function') atualizarRelogioInfo();
@@ -2695,10 +3925,7 @@ function iniciarTimerFoco(materia, tempoMinutos) {
 
       // Salvar tempo estudado
       if (typeof tempoEstudo !== 'undefined' && tempoEstudo && materia.id) {
-        if (!tempoEstudo[materia.id]) tempoEstudo[materia.id] = 0;
-        tempoEstudo[materia.id] += tempoSegundos;
-        localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-        if (typeof renderTabelaMaterias === 'function') renderTabelaMaterias();
+        salvarSessaoEstudoNoBackend(materia.id, tempoSegundos, "Foco Pomodoro (" + tempoMinutos + " min)");
       }
 
       // Comemoração
@@ -2997,8 +4224,8 @@ function atualizarRelogioInfo() {
   const hojeSemana = dias[new Date().getDay()];
   const agora = new Date();
   const horaAtual = String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0");
-  const cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-  const blocoAtual = cronogramaNovo.find(b =>
+  const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
+  const blocoAtual = cronogramaLocal.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
     horaAtual < b.fim
@@ -3052,6 +4279,9 @@ function atualizarRelogioInfo() {
     intervaloEstudo = null;
   }
   if (estudoAtual) {
+    if (segundosSessaoAtual > 0) {
+      salvarSessaoEstudoNoBackend(estudoAtual, segundosSessaoAtual, "Estudo Manual (Pausado)");
+    }
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     const materia = materias.find(m => m.id == estudoAtual);
     const nomeMateria = materia ? materia.nome : 'Desconhecida';
@@ -3067,6 +4297,7 @@ function atualizarRelogioInfo() {
     });
   }
   estudoAtual = null;
+  segundosSessaoAtual = 0;
   modoEstudo = "manual";
   notificarMudanca = false;
   renderTabelaMaterias();
@@ -3077,22 +4308,35 @@ function atualizarRelogioInfo() {
 function adicionarMateriaRelogio() {
   const nome = document.getElementById("novaMateriaRelogio").value.trim();
   if (!nome) return;
-  const novaMateria = {
-    id: "m" + Date.now(),
-    nome: nome,
-    cor: "#9f042c"
-  };
-  materias.push(novaMateria);
-  localStorage.setItem("materias", JSON.stringify(materias));
-  document.getElementById("novaMateriaRelogio").value = "";
-  renderTabelaMaterias();
-  renderMaterias(); // atualiza o cronograma também
-  Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
+
+  apiFetch("materias", {
+    method: "POST",
+    body: JSON.stringify({ nome: nome, cor: "#9f042c" })
+  }).then(async res => {
+    if (res.ok) {
+      const respData = await res.json();
+      const novaMateria = {
+        id: respData.id_materia.toString(),
+        nome: nome,
+        cor: "#9f042c"
+      };
+      materias.push(novaMateria);
+      localStorage.setItem("materias", JSON.stringify(materias));
+      document.getElementById("novaMateriaRelogio").value = "";
+      renderTabelaMaterias();
+      renderMaterias(); // atualiza o cronograma também
+      Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
+    } else {
+      Swal.fire({ icon: "error", title: "Erro ao adicionar matéria!", timer: 1500, showConfirmButton: false });
+    }
+  }).catch(err => {
+    console.error("Erro ao adicionar matéria pelo relógio:", err);
+  });
 }
 function finalizarEstudo() {
   const materia = estudoAtual ? materias.find(m => m.id == estudoAtual) : null;
   const nomeMateria = materia ? materia.nome : 'Desconhecida';
-  const tempoSessao = tempoEstudo[estudoAtual]?.historico?.[hoje] || 0;
+  const tempoSessao = segundosSessaoAtual;
   const horas = Math.floor(tempoSessao / 3600);
   const minutos = Math.floor((tempoSessao % 3600) / 60);
   Swal.fire({
@@ -3114,8 +4358,12 @@ function finalizarEstudo() {
         clearInterval(intervaloEstudo);
         intervaloEstudo = null;
       }
+      if (estudoAtual && segundosSessaoAtual > 0) {
+        salvarSessaoEstudoNoBackend(estudoAtual, segundosSessaoAtual, "Estudo Manual");
+      }
       localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
       estudoAtual = null;
+      segundosSessaoAtual = 0;
       modoEstudo = "manual";
       renderTabelaMaterias();
       if (typeof atualizarRelogioInfo === 'function') {
@@ -3140,10 +4388,7 @@ function atualizarPainelEstudos() {
   const agora = new Date();
   let blocoAtual = null;
   let proximoBloco = null;
-  let cronogramaLocal = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-  if (cronogramaLocal.length === 0 && window.cronogramaNovo && window.cronogramaNovo.length > 0) {
-    cronogramaLocal = window.cronogramaNovo;
-  }
+  let cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
   console.log("Cronograma carregado:", cronogramaLocal.length, "blocos");
   if (!cronogramaLocal || cronogramaLocal.length === 0) {
     console.log("Nenhum bloco no cronograma");
@@ -4431,32 +5676,62 @@ function salvarFlashcard() {
     return;
   }
   const materia = materias.find(m => m.id == materiaId);
-  flashcards.push({
-    id: Date.now(),
-    materiaId: materiaId,
-    materiaNome: materia ? materia.nome : "Sem materia",
+  const temaJson = JSON.stringify({
     tema: tema || "Geral",
-    pergunta: pergunta,
-    resposta: resposta,
     nivel: 0,
     dataProxima: new Date().toISOString().split("T")[0],
     acertos: 0,
     erros: 0
   });
-  salvarFlashcards();
-  popularFiltroMaterias();
-  renderizarFlashcardsAgrupados();
-  atualizarEstatisticas();
-  const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
-  if (modal) modal.hide();
-  Swal.fire({
-    icon: 'success',
-    title: 'Flashcard criado!',
-    text: 'Comece a revisar para fixar o conteudo.',
-    timer: 2000,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
+
+  apiFetch("flashcards", {
+    method: "POST",
+    body: JSON.stringify({
+      id_materia: materiaId,
+      pergunta: pergunta,
+      resposta: resposta,
+      tema: temaJson
+    })
+  }).then(async res => {
+    if (res.ok) {
+      const respData = await res.json();
+      flashcards.push({
+        id: respData.id_flash,
+        materiaId: materiaId,
+        materiaNome: materia ? materia.nome : "Sem materia",
+        tema: tema || "Geral",
+        pergunta: pergunta,
+        resposta: resposta,
+        nivel: 0,
+        dataProxima: new Date().toISOString().split("T")[0],
+        acertos: 0,
+        erros: 0
+      });
+      salvarFlashcards();
+      popularFiltroMaterias();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
+      if (modal) modal.hide();
+      Swal.fire({
+        icon: 'success',
+        title: 'Flashcard criado!',
+        text: 'Comece a revisar para fixar o conteudo.',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro!',
+        text: 'Não foi possível salvar o flashcard no servidor.',
+        confirmButtonColor: '#9f042c'
+      });
+    }
+  }).catch(err => {
+    console.error("Erro ao salvar flashcard:", err);
   });
 }
 // ==================== RENDERIZAR LISTA ====================
@@ -4673,9 +5948,33 @@ function responderFlashcard(resultado) {
   const dias = intervalos[flashcardOriginal.nivel] || 1;
   const novaData = new Date();
   novaData.setDate(novaData.getDate() + dias);
-  flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
-  salvarFlashcards();
-  atualizarEstatisticas();
+  const dataProxima = novaData.toISOString().split('T')[0];
+
+  apiFetch(`flashcards/${flashcardOriginal.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      pergunta: flashcardOriginal.pergunta,
+      resposta: flashcardOriginal.resposta,
+      tema: JSON.stringify({
+        tema: flashcardOriginal.tema,
+        nivel: flashcardOriginal.nivel,
+        dataProxima: dataProxima,
+        acertos: flashcardOriginal.acertos,
+        erros: flashcardOriginal.erros
+      })
+    })
+  }).then(res => {
+    if (res.ok) {
+      flashcardOriginal.dataProxima = dataProxima;
+      salvarFlashcards();
+      atualizarEstatisticas();
+    } else {
+      console.error("Erro ao atualizar progresso do flashcard no backend");
+    }
+  }).catch(err => {
+    console.error("Erro ao atualizar flashcard:", err);
+  });
+
   indiceAtualFoco++;
   mostrarCardFoco();
 }
@@ -4716,14 +6015,40 @@ function editarFlashcard(id) {
         Swal.showValidationMessage('Preencha todos os campos!');
         return false;
       }
-      flashcard.pergunta = pergunta;
-      flashcard.resposta = resposta;
-      flashcard.tema = tema || "Geral";
-      salvarFlashcards();
-      renderizarFlashcardsAgrupados();
-      atualizarEstatisticas();
+      return { pergunta, resposta, tema };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const { pergunta, resposta, tema } = result.value;
 
-      Swal.fire('Atualizado!', '', 'success');
+      apiFetch(`flashcards/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          pergunta: pergunta,
+          resposta: resposta,
+          tema: JSON.stringify({
+            tema: tema || "Geral",
+            nivel: flashcard.nivel,
+            dataProxima: flashcard.dataProxima,
+            acertos: flashcard.acertos,
+            erros: flashcard.erros
+          })
+        })
+      }).then(res => {
+        if (res.ok) {
+          flashcard.pergunta = pergunta;
+          flashcard.resposta = resposta;
+          flashcard.tema = tema || "Geral";
+          salvarFlashcards();
+          renderizarFlashcardsAgrupados();
+          atualizarEstatisticas();
+          Swal.fire('Atualizado!', '', 'success');
+        } else {
+          Swal.fire('Erro!', 'Não foi possível salvar as alterações no servidor.', 'error');
+        }
+      }).catch(err => {
+        console.error("Erro ao atualizar flashcard:", err);
+      });
     }
   });
 }
@@ -4737,11 +6062,21 @@ function excluirFlashcard(id) {
     cancelButtonText: 'Cancelar'
   }).then(result => {
     if (result.isConfirmed) {
-      flashcards = flashcards.filter(f => f.id !== id);
-      salvarFlashcards();
-      renderizarFlashcardsAgrupados();
-      atualizarEstatisticas();
-      Swal.fire('Excluído!', '', 'success');
+      apiFetch(`flashcards/${id}`, {
+        method: "DELETE"
+      }).then(res => {
+        if (res.ok) {
+          flashcards = flashcards.filter(f => f.id !== id);
+          salvarFlashcards();
+          renderizarFlashcardsAgrupados();
+          atualizarEstatisticas();
+          Swal.fire('Excluído!', '', 'success');
+        } else {
+          Swal.fire('Erro!', 'Não foi possível excluir o flashcard no servidor.', 'error');
+        }
+      }).catch(err => {
+        console.error("Erro ao deletar flashcard:", err);
+      });
     }
   });
 }
@@ -4945,17 +6280,40 @@ function escolherPlano(tipo) {
     confirmButtonColor: '#9f042c'
   }).then(result => {
     if (result.isConfirmed) {
-      localStorage.setItem("planoUsuario", tipo);
-      atualizarBotoesPlanos();
-      atualizarBadgePlano();
-      aplicarBloqueiosPlano();
+      const planoDb = tipo.charAt(0).toUpperCase() + tipo.slice(1); // "Gratuito", "Basico", "Pro"
+      apiFetch("perfil", {
+        method: "PUT",
+        body: JSON.stringify({ plano: planoDb })
+      }).then(response => {
+        if (response.ok) {
+          localStorage.setItem("planoUsuario", tipo);
+          atualizarBotoesPlanos();
+          atualizarBadgePlano();
+          aplicarBloqueiosPlano();
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Plano atualizado!',
-        text: `Agora voce esta no plano ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}.`,
-        timer: 2000,
-        showConfirmButton: false
+          Swal.fire({
+            icon: 'success',
+            title: 'Plano atualizado!',
+            text: `Agora voce esta no plano ${planoDb}.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Não foi possível atualizar o plano no servidor.',
+            confirmButtonColor: '#9f042c'
+          });
+        }
+      }).catch(err => {
+        console.error("Erro ao atualizar plano:", err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erro de conexão!',
+          text: 'Não foi possível se conectar ao servidor.',
+          confirmButtonColor: '#9f042c'
+        });
       });
     }
   });
@@ -5201,3 +6559,9 @@ function abrirModalAmbiente() {
   
   mostrarPasso();
 }
+
+window.addEventListener("beforeunload", () => {
+  if (estudoAtual) {
+    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+  }
+});

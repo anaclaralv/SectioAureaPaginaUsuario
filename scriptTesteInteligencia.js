@@ -1,3 +1,45 @@
+// Fallback local caso api.js não seja carregado
+if (typeof apiFetch === 'undefined') {
+  const API_BASE_URL = 'http://localhost:8080/pi_api/api';
+  window.API_BASE_URL = API_BASE_URL;
+  window.apiFetch = async function (endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const config = {
+      ...options,
+      headers,
+    };
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'ProjetoIntegrador.html';
+    }
+    return response;
+  };
+}
+
+if (typeof normalizarInteligenciaParaBanco === 'undefined') {
+  window.normalizarInteligenciaParaBanco = function(slug) {
+    const mapa = {
+      "linguistica": "Linguística",
+      "logico": "Lógico-matemática",
+      "musical": "Musical",
+      "corporal": "Cinestésica",
+      "espacial": "Espacial",
+      "interpessoal": "Interpessoal",
+      "intrapessoal": "Intrapessoal"
+    };
+    return mapa[slug] || slug;
+  };
+}
+
 const area = document.getElementById("perguntasArea");
 
 const tipos = {
@@ -374,6 +416,32 @@ function mostrarResultado() {
   
   document.getElementById("dominante").innerHTML = 
     `<strong>Sua inteligência dominante é:</strong><br>${tipos[maior]}`;
+
+  // Calcula as três dominantes (maiores pontuações)
+  const ordenadas = Object.entries(pontuacao).sort((a, b) => b[1] - a[1]);
+  const top3 = ordenadas.slice(0, 3);
+  const tresDominantes = {};
+  top3.forEach(([letra, valor]) => {
+    tresDominantes[letra] = valor;
+  });
+
+  if (localStorage.getItem("token")) {
+    apiFetch("perfil", {
+      method: "PUT",
+      body: JSON.stringify({
+        tipo_dom: normalizarInteligenciaParaBanco(tipoFinal),
+        clas_inteli: tresDominantes
+      })
+    }).then(response => {
+      if (response.ok) {
+        console.log("Resultado de inteligência salvo no backend.");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        user.tipo_dom = tipoFinal;
+        user.clas_inteli = tresDominantes;
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+    }).catch(err => console.error("Erro ao salvar inteligência:", err));
+  }
 
   const modalEl = document.getElementById('resultadoModal');
   const modal = new bootstrap.Modal(modalEl);
