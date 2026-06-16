@@ -337,8 +337,8 @@ async function carregarFlashcardsDoBackend() {
           console.error("Erro ao fazer parse do tema JSON:", e);
         }
         return {
-          id: f.id_flash,
-          materiaId: f.id_materia,
+          id: Number(f.id_flash),
+          materiaId: Number(f.id_materia),
           materiaNome: f.nome_materia || "Sem materia",
           tema: parsedTema.tema || "Geral",
           pergunta: f.pergunta,
@@ -994,6 +994,11 @@ function mostrarTela(tela) {
   }
   if (tela === "metodos") {
     renderizarMetodosEstudo();
+  }
+  if (tela === "revisao") {
+    popularFiltroMaterias();
+    renderizarFlashcardsAgrupados();
+    atualizarMensagemRevisar();
   }
 }// CONEXÃO COM EFEITO
 document.addEventListener('DOMContentLoaded', function () {
@@ -5517,7 +5522,7 @@ function renderizarFlashcardsAgrupados() {
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
   let cardsFiltrados = [...flashcards];
   if (filtroMateria !== 'todas') {
-    cardsFiltrados = cardsFiltrados.filter(f => f.materiaId === filtroMateria);
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
   }
 
   if (cardsFiltrados.length === 0) {
@@ -5696,8 +5701,8 @@ function salvarFlashcard() {
     if (res.ok) {
       const respData = await res.json();
       flashcards.push({
-        id: respData.id_flash,
-        materiaId: materiaId,
+        id: Number(respData.id_flash),
+        materiaId: Number(materiaId),
         materiaNome: materia ? materia.nome : "Sem materia",
         tema: tema || "Geral",
         pergunta: pergunta,
@@ -5923,10 +5928,12 @@ function popularFiltroMaterias() {
   const select = document.getElementById('filtroMateriaRevisao');
   if (!select) return;
   select.innerHTML = '<option value="todas">Todas as matérias</option>';
-  const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))];
-  materiasUnicas.sort().forEach(materia => {
-    select.innerHTML += `<option value="${materia}">${materia}</option>`;
-  });
+  if (materias) {
+    const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
+    nomesOrdenados.forEach(materia => {
+      select.innerHTML += `<option value="${materia}">${materia}</option>`;
+    });
+  }
 }
 function mostrarRespostaFoco() {
   document.getElementById('focoResposta').style.display = 'block';
@@ -5980,7 +5987,8 @@ function responderFlashcard(resultado) {
 }
 function finalizarRevisao() {
   document.getElementById("modoFocoContainer").style.display = "none";
-  renderizarFlashcards();
+  renderizarFlashcardsAgrupados();
+  atualizarMensagemRevisar();
   Swal.fire({
     icon: 'success',
     title: '🎉 Revisão concluída!',
@@ -5994,7 +6002,7 @@ function fecharModoFoco() {
 }
 // ==================== EDITAR E EXCLUIR ====================
 function editarFlashcard(id) {
-  const flashcard = flashcards.find(f => f.id === id);
+  const flashcard = flashcards.find(f => f.id == id);
   if (!flashcard) return;
 
   Swal.fire({
@@ -6066,7 +6074,7 @@ function excluirFlashcard(id) {
         method: "DELETE"
       }).then(res => {
         if (res.ok) {
-          flashcards = flashcards.filter(f => f.id !== id);
+          flashcards = flashcards.filter(f => f.id != id);
           salvarFlashcards();
           renderizarFlashcardsAgrupados();
           atualizarEstatisticas();
@@ -6158,7 +6166,7 @@ function adicionarModalFlashcardHTML() {
   }
   const modalHTML = `
     <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Novo Flashcard</h5>

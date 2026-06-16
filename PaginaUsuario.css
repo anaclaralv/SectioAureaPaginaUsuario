@@ -4169,7 +4169,7 @@ canvas {
   animation: fadeIn 0.3s ease;
 }
 
-.modal-content {
+.modal-overlay .modal-content {
   background: white;
   border-radius: 24px;
   max-width: 600px;
@@ -4180,7 +4180,7 @@ canvas {
   animation: slideUp 0.3s ease;
 }
 
-.modal-close {
+.modal-overlay .modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -4198,17 +4198,17 @@ canvas {
   transition: all 0.2s;
 }
 
-.modal-close:hover {
+.modal-overlay .modal-close:hover {
   background: #f3f4f6;
   color: #1f2937;
 }
 
-.modal-header {
+.modal-overlay .modal-header {
   padding: 24px 24px 16px;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.modal-header h2 {
+.modal-overlay .modal-header h2 {
   font-size: 1.4rem;
   color: #1f2937;
   margin-bottom: 12px;
@@ -4220,11 +4220,11 @@ canvas {
   gap: 8px;
 }
 
-.modal-body {
+.modal-overlay .modal-body {
   padding: 24px;
 }
 
-.modal-body h4 {
+.modal-overlay .modal-body h4 {
   font-size: 1rem;
   color: #1f2937;
   margin-bottom: 16px;
@@ -4295,7 +4295,7 @@ canvas {
   font-size: 0.9rem;
 }
 
-.modal-footer {
+.modal-overlay .modal-footer {
   padding: 16px 24px 24px;
   border-top: 1px solid #e5e7eb;
 }
