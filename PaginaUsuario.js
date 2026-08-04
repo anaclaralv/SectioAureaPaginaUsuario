@@ -112,7 +112,7 @@ async function carregarTarefasDoBackend() {
         const prioridade = concluida ? dif.replace("-concluida", "") : dif;
         return {
           id: t.id_tarefa,
-          titulo: t.nome_tarefa || "Tarefa sem nome",
+          titulo: extrairTituloLimpo(t.nome_tarefa) || "Tarefa sem nome",
           prioridade: prioridade || "media",
           data: t.prazo || "",
           concluida: concluida
@@ -154,6 +154,27 @@ async function carregarNotasDoBackend() {
   }
 }
 
+function extrairTituloLimpo(val) {
+  if (!val) return "";
+  if (typeof val === "object" && val !== null) {
+    if (val.title) return extrairTituloLimpo(val.title);
+    return JSON.stringify(val);
+  }
+  if (typeof val === "string") {
+    const str = val.trim();
+    if (str.startsWith("{") && str.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(str);
+        if (parsed && typeof parsed === "object") {
+          if (parsed.title) return extrairTituloLimpo(parsed.title);
+        }
+      } catch (e) {}
+    }
+  }
+  return val;
+}
+window.extrairTituloLimpo = extrairTituloLimpo;
+
 async function carregarEventosDoBackend() {
   try {
     const response = await apiFetch("eventos");
@@ -161,18 +182,26 @@ async function carregarEventosDoBackend() {
       const data = await response.json();
       const events = data.map(e => {
         let parsed = {};
+        let rawTitle = e.tipo;
         try {
           parsed = JSON.parse(e.tipo);
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch(ex) {}
+          }
+          if (typeof parsed === 'object' && parsed !== null) {
+            rawTitle = parsed.title || e.tipo;
+          }
         } catch (err) {
           parsed = { title: e.tipo, extendedProps: {} };
         }
+        const cleanTitle = extrairTituloLimpo(rawTitle);
         return {
           id: e.id_evento,
-          title: parsed.title || e.tipo,
+          title: cleanTitle,
           start: e.data,
           backgroundColor: e.cor,
           borderColor: e.cor,
-          extendedProps: parsed.extendedProps || {}
+          extendedProps: (parsed && parsed.extendedProps) ? parsed.extendedProps : {}
         };
       });
       return events;
@@ -184,11 +213,12 @@ async function carregarEventosDoBackend() {
 }
 
 async function salvarEventoNoBackend(titulo, data, cor, extendedProps) {
+  const tituloLimpo = extrairTituloLimpo(titulo);
   try {
     const response = await apiFetch("eventos", {
       method: "POST",
       body: JSON.stringify({
-        tipo: JSON.stringify({ title: titulo, extendedProps: extendedProps }),
+        tipo: JSON.stringify({ title: tituloLimpo, extendedProps: extendedProps }),
         data: data,
         cor: cor
       })
