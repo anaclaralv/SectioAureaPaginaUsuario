@@ -1,6 +1,8 @@
 // Fallback local caso api.js não seja carregado
 if (typeof apiFetch === 'undefined') {
-  const API_BASE_URL = 'http://localhost:8080/pi_api/api';
+  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
+    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
+    : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
     const token = localStorage.getItem('token');

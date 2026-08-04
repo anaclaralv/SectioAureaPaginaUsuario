@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:8080/pi_api/api';
+const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
+    ? window.location.origin + '/Sectio%20Aurea%20-%20web/api' 
+    : 'http://localhost/Sectio%20Aurea%20-%20web/api';
 
 async function apiFetch(endpoint, options = {}) {
     const token = localStorage.getItem('token');
