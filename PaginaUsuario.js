@@ -154,6 +154,13 @@ async function carregarNotasDoBackend() {
   }
 }
 
+function decodeHtmlEntities(str) {
+  if (typeof str !== 'string') return str;
+  const txt = document.createElement('textarea');
+  txt.innerHTML = str;
+  return txt.value;
+}
+
 function extrairTituloLimpo(val) {
   if (!val) return "";
   if (typeof val === "object" && val !== null) {
@@ -161,7 +168,7 @@ function extrairTituloLimpo(val) {
     return JSON.stringify(val);
   }
   if (typeof val === "string") {
-    const str = val.trim();
+    let str = decodeHtmlEntities(val).trim();
     if (str.startsWith("{") && str.endsWith("}")) {
       try {
         const parsed = JSON.parse(str);
@@ -170,6 +177,7 @@ function extrairTituloLimpo(val) {
         }
       } catch (e) {}
     }
+    return str;
   }
   return val;
 }
@@ -182,17 +190,18 @@ async function carregarEventosDoBackend() {
       const data = await response.json();
       const events = data.map(e => {
         let parsed = {};
-        let rawTitle = e.tipo;
+        let rawTipo = decodeHtmlEntities(e.tipo);
+        let rawTitle = rawTipo;
         try {
-          parsed = JSON.parse(e.tipo);
+          parsed = JSON.parse(rawTipo);
           if (typeof parsed === 'string') {
             try { parsed = JSON.parse(parsed); } catch(ex) {}
           }
           if (typeof parsed === 'object' && parsed !== null) {
-            rawTitle = parsed.title || e.tipo;
+            rawTitle = parsed.title || rawTipo;
           }
         } catch (err) {
-          parsed = { title: e.tipo, extendedProps: {} };
+          parsed = { title: rawTipo, extendedProps: {} };
         }
         const cleanTitle = extrairTituloLimpo(rawTitle);
         return {

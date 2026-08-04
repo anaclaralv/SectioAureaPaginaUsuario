@@ -21,7 +21,7 @@ class Evento {
         
         $stmt = $this->conn->prepare($query);
         
-        $this->tipo = htmlspecialchars(strip_tags($this->tipo ?? ''));
+        $this->tipo = $this->tipo ?? '';
         $this->data = htmlspecialchars(strip_tags($this->data ?? ''));
         $this->cor = htmlspecialchars(strip_tags($this->cor ?? '#00FF00'));
         
