@@ -107,13 +107,14 @@ async function carregarTarefasDoBackend() {
     if (response.ok) {
       const data = await response.json();
       tarefas = data.map(t => {
-        const concluida = t.dificuldade.endsWith("-concluida");
-        const prioridade = concluida ? t.dificuldade.replace("-concluida", "") : t.dificuldade;
+        const dif = t.dificuldade || "media";
+        const concluida = dif.endsWith("-concluida");
+        const prioridade = concluida ? dif.replace("-concluida", "") : dif;
         return {
           id: t.id_tarefa,
-          titulo: t.nome_tarefa,
-          prioridade: prioridade,
-          data: t.prazo,
+          titulo: t.nome_tarefa || "Tarefa sem nome",
+          prioridade: prioridade || "media",
+          data: t.prazo || "",
           concluida: concluida
         };
       });
