@@ -73,7 +73,7 @@ const pontuacao = {
 let respostasPorEtapa = [];
 
 // ===== PERGUNTAS =====
-const etapas = [/*
+const etapas = [
   {
     titulo: "O que mais gosto de fazer:",
     itens: {
@@ -181,7 +181,7 @@ const etapas = [/*
       F: "Análise",
       G: "Música"
     }
-  },*/
+  },
   {
     titulo: "Eu me considero:",
     itens: {
