@@ -85,7 +85,7 @@ const etapas = [
       F: "Ordenar coisas",
       G: "Cantar"
     }
-  },
+  }/*,
   {
     titulo: "Tenho facilidade em:",
     itens: {
@@ -193,7 +193,7 @@ const etapas = [
       F: "Racional",
       G: "Musical"
     }
-  }
+  }*/
 ];
 
 let etapaAtual = 0;

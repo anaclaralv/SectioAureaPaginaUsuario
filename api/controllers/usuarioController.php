@@ -51,6 +51,7 @@ class UsuarioController {
                 "id_usuario" => $this->usuario->id_usuario,
                 "nome" => $this->usuario->nome,
                 "email" => $this->usuario->email,
+                "foto" => $this->usuario->foto,
                 "plano" => $this->usuario->plano,
                 "tipo_dom" => $this->usuario->tipo_dom,
                 "clas_inteli" => json_decode($this->usuario->clas_inteli)
@@ -75,6 +76,7 @@ class UsuarioController {
         
         $this->usuario->nome = $data->nome ?? $this->usuario->nome;
         $this->usuario->email = $data->email ?? $this->usuario->email;
+        $this->usuario->foto = isset($data->foto) ? $data->foto : $this->usuario->foto;
         $this->usuario->plano = $data->plano ?? $this->usuario->plano;
         $this->usuario->tipo_dom = $data->tipo_dom ?? $this->usuario->tipo_dom;
         $this->usuario->clas_inteli = isset($data->clas_inteli) ? json_encode($data->clas_inteli) : $this->usuario->clas_inteli;

@@ -365,26 +365,31 @@ async function carregarFlashcardsDoBackend() {
       const data = await response.json();
       flashcards = data.map(f => {
         let parsedTema = {
-          tema: f.tema || "Geral",
+          tema: "Geral",
           nivel: 0,
           dataProxima: new Date().toISOString().split("T")[0],
           acertos: 0,
           erros: 0
         };
+        const rawTema = decodeHtmlEntities(f.tema || "");
         try {
-          if (f.tema && f.tema.startsWith('{')) {
-            parsedTema = JSON.parse(f.tema);
+          if (rawTema && rawTema.trim().startsWith('{')) {
+            parsedTema = JSON.parse(rawTema);
+          } else if (rawTema) {
+            parsedTema.tema = rawTema;
           }
         } catch (e) {
           console.error("Erro ao fazer parse do tema JSON:", e);
+          if (rawTema) parsedTema.tema = rawTema;
         }
+
         return {
           id: Number(f.id_flash),
           materiaId: Number(f.id_materia),
-          materiaNome: f.nome_materia || "Sem materia",
+          materiaNome: decodeHtmlEntities(f.nome_materia || "Sem matéria"),
           tema: parsedTema.tema || "Geral",
-          pergunta: f.pergunta,
-          resposta: f.resposta,
+          pergunta: decodeHtmlEntities(f.pergunta || ""),
+          resposta: decodeHtmlEntities(f.resposta || ""),
           nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
           dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
           acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
@@ -392,6 +397,11 @@ async function carregarFlashcardsDoBackend() {
         };
       });
       localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+      if (typeof renderizarFlashcardsAgrupados === 'function') renderizarFlashcardsAgrupados();
+      if (typeof renderizarFlashcards === 'function') renderizarFlashcards();
+      if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+      if (typeof atualizarMensagemRevisar === 'function') atualizarMensagemRevisar();
     }
   } catch (err) {
     console.error("Erro ao carregar flashcards:", err);
@@ -1467,37 +1477,8 @@ function carregarEventos() {
 }
 
 function atualizarEventosTarefas() {
-  if (!calendar) return;
-
-  isUpdating = true;
-  // Remove todos os eventos
-  try {
-    // Remove apenas eventos de tarefas
-    calendar.getEvents()
-      .filter(ev => ev.extendedProps?.isTarefa === true)
-      .forEach(ev => ev.remove());
-
-    const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
-    tarefasLS
-      .filter(t => t.data && !t.concluida)
-      .forEach(t => {
-        calendar.addEvent({
-          title: `${t.titulo}`,
-          start: t.data,
-          backgroundColor: corPrioridade(t.prioridade),
-          borderColor: corPrioridade(t.prioridade),
-          textColor: '#ffffff',
-          
-          extendedProps: {
-            isTarefa: true,
-            tarefaId: t.id
-          }
-        });
-      });
-  } catch (error) {
-    console.error("Erro ao atualizar tarefas:", error);
-  } finally {
-    isUpdating = false;
+  if (calendar && typeof calendar.refetchEvents === 'function') {
+    calendar.refetchEvents();
   }
 }
 
@@ -1809,7 +1790,9 @@ document.addEventListener('DOMContentLoaded', function () {
     events: async function (info, successCallback, failureCallback) {
       try {
         const eventosBackend = await carregarEventosDoBackend();
-        const eventosTarefas = tarefas
+        const listaTarefas = (tarefas && tarefas.length > 0) ? tarefas : (JSON.parse(localStorage.getItem("tarefas")) || []);
+        
+        const eventosTarefas = listaTarefas
           .filter(t => t.data && !t.concluida)
           .map(t => ({
             id: 't_' + t.id,
@@ -1823,9 +1806,14 @@ document.addEventListener('DOMContentLoaded', function () {
               tarefaId: t.id
             }
           }));
-        successCallback([...eventosBackend, ...eventosTarefas]);
+
+        const mapEventos = new Map();
+        eventosBackend.forEach(e => mapEventos.set('e_' + (e.id || e.title + e.start), e));
+        eventosTarefas.forEach(t => mapEventos.set(t.id, t));
+
+        successCallback(Array.from(mapEventos.values()));
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar eventos no calendário:", err);
         failureCallback(err);
       }
     },
@@ -2489,31 +2477,7 @@ function atualizarResumoInicio() {
     }
   }
   // ---------- MATÉRIAS DO DIA ----------
-  // pegar cronograma novo
-  const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
-  const blocosHoje = cronogramaLocal
-    .filter(b => b.dia === hojeSemana)
-    .sort((a, b) => a.inicio.localeCompare(b.inicio));
-
-  // Usar o elemento que realmente existe no HTML
-  const listaHojeCronograma = document.getElementById("listaHojeCronograma");
-  if (listaHojeCronograma) {
-    listaHojeCronograma.innerHTML = "";
-    if (blocosHoje.length === 0) {
-      listaHojeCronograma.innerHTML = "<li>Sem matérias hoje</li>";
-    } else {
-      blocosHoje.forEach(bloco => {
-        const li = document.createElement("li");
-        li.textContent = `${bloco.materia.nome} - ${bloco.inicio} às ${bloco.fim}`;
-        li.style.background = bloco.materia.cor;
-        li.style.color = "#fff";
-        li.style.padding = "3px 5px";
-        li.style.borderRadius = "4px";
-        li.style.marginBottom = "3px";
-        listaHojeCronograma.appendChild(li);
-      });
-    }
-  }
+  renderizarResumoHoje();
 }
 
 function atualizarTudo() {
@@ -2575,17 +2539,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
-  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
+
+  const agora = new Date();
+  const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
+  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
   const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
+
   lista.innerHTML = "";
-  const blocosHoje = cronogramaLocal.filter(b => b.dia === hojeSemana);
+  const blocosHoje = cronogramaLocal
+    .filter(b => b.dia === hojeSemana)
+    .sort((a, b) => {
+      const aPassou = (a.fim || "00:00") <= horaAtual;
+      const bPassou = (b.fim || "00:00") <= horaAtual;
+
+      if (aPassou && !bPassou) return 1;  // 'a' já passou -> vai pro final
+      if (!aPassou && bPassou) return -1; // 'b' já passou -> vai pro final
+
+      return (a.inicio || "").localeCompare(b.inicio || "");
+    });
+
   if (blocosHoje.length === 0) {
-    lista.innerHTML = "<li>Sem atividades hoje</li>";
+    lista.innerHTML = "<li style='color: #6b7280; font-style: italic; list-style: none;'>Sem atividades agendadas para hoje</li>";
     return;
   }
+
   blocosHoje.forEach(bloco => {
     const li = document.createElement("li");
-    li.textContent = `${bloco.inicio} - ${bloco.fim} : ${bloco.materia.nome}`;
+    li.style.padding = "6px 10px";
+    li.style.borderRadius = "6px";
+    li.style.marginBottom = "6px";
+    li.style.display = "flex";
+    li.style.alignItems = "center";
+    li.style.justifyContent = "space-between";
+    li.style.fontSize = "0.9rem";
+    li.style.listStyle = "none";
+    li.style.transition = "all 0.2s ease";
+
+    const cor = bloco.materia?.cor || "#9f042c";
+    const nomeMateria = bloco.materia?.nome || "Matéria";
+    const inicio = bloco.inicio || "00:00";
+    const fim = bloco.fim || "00:00";
+
+    const jaPassou = fim <= horaAtual;
+    const emAndamento = inicio <= horaAtual && fim > horaAtual;
+
+    if (jaPassou) {
+      // Passou da hora -> Riscar (line-through) e esmaecer
+      li.style.background = "#f3f4f6";
+      li.style.color = "#9ca3af";
+      li.style.textDecoration = "line-through";
+      li.style.borderLeft = "4px solid #d1d5db";
+      li.innerHTML = `
+        <span><i class="bi bi-check-circle-fill me-1" style="color: #9ca3af;"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+        <span style="font-size: 0.75rem; text-decoration: none; font-style: italic; color: #9ca3af;">Encerrado</span>
+      `;
+    } else if (emAndamento) {
+      // Em andamento -> Destacar com a cor da matéria e badge
+      li.style.background = cor;
+      li.style.color = "#ffffff";
+      li.style.fontWeight = "bold";
+      li.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+      li.innerHTML = `
+        <span><i class="bi bi-play-circle-fill me-1"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+        <span class="badge bg-light text-dark" style="font-size: 0.75rem;">Agora!</span>
+      `;
+    } else {
+      // Futuro -> Normal
+      li.style.background = cor;
+      li.style.color = "#ffffff";
+      li.innerHTML = `
+        <span><i class="bi bi-clock me-1"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+      `;
+    }
+
     lista.appendChild(li);
   });
 }
@@ -2602,29 +2628,44 @@ document.getElementById('userInfo').addEventListener('click', function () {
 });
 // SALVAR CONFIGURAÇÕES
 async function salvarConfiguracao() {
-  const novoNome = document.getElementById('novoNome').value.trim();
+  const novoNome = document.getElementById('novoNome')?.value.trim();
+  const novoEmail = document.getElementById('novoEmail')?.value.trim();
   const previewFoto = document.getElementById('previewFoto');
   const foto = previewFoto ? previewFoto.src : "";
+
+  if (!novoNome || !novoEmail) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atenção',
+      text: 'Preencha o nome e o e-mail!'
+    });
+    return;
+  }
 
   try {
     const response = await apiFetch("perfil", {
       method: "PUT",
       body: JSON.stringify({
         nome: novoNome,
+        email: novoEmail,
         foto: foto
       })
     });
     if (response.ok) {
-      document.getElementById('sidebarNome').textContent = novoNome;
-      if (foto) {
-        const sidebarFoto = document.getElementById('sidebarFoto');
-        if (sidebarFoto) sidebarFoto.src = foto;
-        localStorage.setItem("userFoto", foto);
-      }
+      const sidebarNome = document.getElementById('sidebarNome');
+      const sidebarEmail = document.getElementById('sidebarEmail');
+      const sidebarFoto = document.getElementById('sidebarFoto');
+
+      if (sidebarNome) sidebarNome.textContent = novoNome;
+      if (sidebarEmail) sidebarEmail.textContent = novoEmail;
+      if (foto && sidebarFoto) sidebarFoto.src = foto;
+
       localStorage.setItem("userName", novoNome);
+      if (foto) localStorage.setItem("userFoto", foto);
       
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       user.nome = novoNome;
+      user.email = novoEmail;
       user.foto = foto;
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -2636,7 +2677,9 @@ async function salvarConfiguracao() {
         showConfirmButton: false
       });
 
-      bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
+      const modalEl = document.getElementById('configModal');
+      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
     } else {
       const data = await response.json();
       Swal.fire({
@@ -2646,7 +2689,7 @@ async function salvarConfiguracao() {
       });
     }
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao salvar perfil:", err);
     Swal.fire({
       icon: 'error',
       title: 'Erro!',
@@ -2661,11 +2704,39 @@ function previewFotoSelecionada() {
   const preview = document.getElementById('previewFoto');
 
   if (input.files && input.files[0]) {
+    const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function (e) {
-      preview.src = e.target.result;  // Atualiza o preview no modal
-    }
-    reader.readAsDataURL(input.files[0]);
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        const maxDimension = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        preview.src = resizedDataUrl;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 }
 // ---------- VARIÁVEIS GLOBAIS ----------
@@ -5907,7 +5978,7 @@ function atualizarEstatisticas() {
 function iniciarRevisao() {
   const hojeData = new Date().toISOString().split('T')[0];
   const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let cardsPendentes = flashcards.filter(f => f.dataProxima <= hojeData);
+  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
   if (filtroMateria !== 'todas') {
     cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
   }
@@ -5916,7 +5987,7 @@ function iniciarRevisao() {
       icon: 'info',
       title: 'Nada para revisar!',
       text: filtroMateria !== 'todas' ?
-        'Nao ha cards pendentes para esta materia.' :
+        'Não há cards pendentes para esta matéria.' :
         'Todos os cards foram revisados! Volte quando houver novos.',
       confirmButtonColor: '#9f042c',
       confirmButtonText: 'Entendi'
@@ -5928,8 +5999,8 @@ function iniciarRevisao() {
   mostrarCardFoco();
   Swal.fire({
     icon: 'success',
-    title: 'Boa revisao!',
-    text: `${cardsPendentes.length} cards para revisar.`,
+    title: 'Boa revisão!',
+    text: `${cardsPendentes.length} card(s) para revisar.`,
     timer: 1500,
     showConfirmButton: false,
     position: 'top-end',
@@ -5984,8 +6055,10 @@ function mostrarRespostaFoco() {
 }
 function responderFlashcard(resultado) {
   const card = revisoesEmAndamento[indiceAtualFoco];
+  if (!card) return;
   const flashcardOriginal = flashcards.find(f => f.id === card.id);
   if (!flashcardOriginal) return;
+
   if (resultado === 'acertei') {
     flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
     flashcardOriginal.acertos++;
@@ -5998,6 +6071,10 @@ function responderFlashcard(resultado) {
   const novaData = new Date();
   novaData.setDate(novaData.getDate() + dias);
   const dataProxima = novaData.toISOString().split('T')[0];
+
+  flashcardOriginal.dataProxima = dataProxima;
+  salvarFlashcards();
+  atualizarEstatisticas();
 
   apiFetch(`flashcards/${flashcardOriginal.id}`, {
     method: "PUT",
@@ -6013,11 +6090,7 @@ function responderFlashcard(resultado) {
       })
     })
   }).then(res => {
-    if (res.ok) {
-      flashcardOriginal.dataProxima = dataProxima;
-      salvarFlashcards();
-      atualizarEstatisticas();
-    } else {
+    if (!res.ok) {
       console.error("Erro ao atualizar progresso do flashcard no backend");
     }
   }).catch(err => {
