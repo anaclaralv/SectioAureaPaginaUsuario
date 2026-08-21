@@ -401,7 +401,7 @@ document.getElementById("btnLimpar").onclick = () => {
   }).then((result) => {
     if (result.isConfirmed) {
       // Reseta TODAS as respostas
-      respostasPorEtapa = {};
+      respostasPorEtapa = [];      // ← CORRETO: ARRAY!
       respostasEtapa = {};
       
       // Reseta as pontuações
@@ -426,7 +426,6 @@ document.getElementById("btnLimpar").onclick = () => {
     }
   });
 };
-
 function atualizarBarra() {
   const total = etapas.length;
   const progresso = (etapaAtual / total) * 100; // ✅ Usa etapaAtual (já foi decrementada no voltar)
