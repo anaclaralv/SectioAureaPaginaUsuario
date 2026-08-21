@@ -886,24 +886,69 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
   if (modalDica) {
     modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
   }
-
-  if (footer) {
+if (footer) {
     footer.innerHTML = "";
-    if (metodo.titulo === "Flashcards") {
+    
+    // ===== CASO: POMODORO =====
+    if (metodo.titulo === "Pomodoro" || metodo.titulo === "Pomodoro com Descanso Ativo") {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
+      btn.onclick = () => {
+        window.fecharMetodoModal();
+        
+        // Mostra a seção Relógio
+        if (typeof mostrarTela === 'function') {
+          mostrarTela('relogio');
+        }
+        
+        // Atualiza o link ativo no menu
+        const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
+        sidebarLinks.forEach(link => {
+          const onclickAttr = link.getAttribute('onclick');
+          if (onclickAttr && onclickAttr.includes("'relogio'")) {
+            if (typeof mudarPagina === 'function') {
+              mudarPagina(link);
+            }
+          }
+        });
+        
+        // Scroll até o card do Pomodoro
+        setTimeout(() => {
+          const cardPomodoro = document.getElementById('cardPomodoro');
+          if (cardPomodoro) {
+            cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardPomodoro.classList.add('destaque-pomodoro');
+            
+            setTimeout(() => {
+              cardPomodoro.classList.remove('destaque-pomodoro');
+            }, 3000);
+          }
+        }, 500);
+      };
+      footer.appendChild(btn);
+    }
+    // ===== CASO: FLASHCARDS =====
+    else if (metodo.titulo === "Flashcards") {
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
       btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
       footer.appendChild(btn);
-    } else if (metodo.irParaRevisao) {
+    }
+    // ===== MÉTODOS QUE VÃO PARA REVISÃO =====
+    else if (metodo.irParaRevisao) {
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
       btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
       footer.appendChild(btn);
-    } else {
+    }
+    // ===== MÉTODOS SEM REDIRECIONAMENTO =====
+    else {
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
@@ -912,7 +957,6 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
       footer.appendChild(btn);
     }
   }
-
   const modalOverlay = document.getElementById("metodoModalOverlay");
   if (modalOverlay) {
     modalOverlay.style.display = "flex";
