@@ -6018,6 +6018,203 @@ function atualizarEstatisticas() {
   document.getElementById("totalConcluidas").textContent = revisoesConcluidas;
   document.getElementById("taxaAcertoGeral").textContent = `${taxaAcerto}%`;
 }
+
+// ===== NOVAS FUNÇÕES PARA REVISÃO =====
+
+// Intervalos baseados no nível
+const intervalosRevisao = [1, 3, 7, 14, 30];
+
+// Função para iniciar revisão livre (todos os cards)
+function iniciarRevisaoLivre() {
+  if (flashcards.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nenhum card!',
+      text: 'Crie flashcards primeiro.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+  
+  revisoesEmAndamento = [...flashcards];
+  indiceAtualFoco = 0;
+  mostrarCardFoco();
+}
+
+// Função atualizada para mostrar nível e sugestão
+function mostrarCardFoco() {
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+    return;
+  }
+
+  const card = revisoesEmAndamento[indiceAtualFoco];
+
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = `📂 ${card.tema}`;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+  document.getElementById('focoResposta').innerHTML = card.resposta;
+  document.getElementById('focoResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+  
+  // Mostrar nível atual e sugestão
+  const nivelAtual = card.nivel || 0;
+  const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
+  document.getElementById('focoNivelAtual').textContent = `Nível: ${nivelAtual}`;
+  document.getElementById('focoSugestao').textContent = `Sugestão: revise em ${proximoIntervalo} dia(s)`;
+  document.getElementById('focoInfoNivel').style.display = 'block';
+
+  const total = revisoesEmAndamento.length;
+  const atual = indiceAtualFoco + 1;
+  document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
+
+  const progresso = (atual / total) * 100;
+  document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
+
+  document.getElementById('modoFocoContainer').style.display = 'flex';
+}
+
+// Função atualizada para responder com 3 opções
+function responderFlashcard(resultado) {
+  const card = revisoesEmAndamento[indiceAtualFoco];
+  const flashcardOriginal = flashcards.find(f => f.id === card.id);
+
+  if (!flashcardOriginal) return;
+
+  let intervaloDias = 1;
+
+  if (resultado === 'acertei') {
+    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
+    flashcardOriginal.acertos++;
+    intervaloDias = intervalosRevisao[flashcardOriginal.nivel] || 1;
+  } else if (resultado === 'errei') {
+    flashcardOriginal.nivel = 0;
+    flashcardOriginal.erros++;
+    intervaloDias = 1;
+  } else if (resultado === 'facil') {
+    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 2, 4);
+    flashcardOriginal.acertos++;
+    intervaloDias = intervalosRevisao[flashcardOriginal.nivel] || 1;
+  }
+
+  // Define próxima data
+  const novaData = new Date();
+  novaData.setDate(novaData.getDate() + intervaloDias);
+  flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
+  
+  // Adiciona ao histórico
+  if (!flashcardOriginal.historico) {
+    flashcardOriginal.historico = [];
+  }
+  flashcardOriginal.historico.push({
+    data: new Date().toISOString(),
+    resultado: resultado,
+    intervalo: intervaloDias
+  });
+
+  salvarFlashcards();
+  atualizarEstatisticas();
+  indiceAtualFoco++;
+  mostrarCardFoco();
+}
+
+// Função para configurar as abas
+function configurarAbasRevisao() {
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const aba = btn.dataset.aba;
+      document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
+      document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
+      document.getElementById('abaHistorico').style.display = aba === 'historico' ? 'block' : 'none';
+
+      if (aba === 'revisar') {
+        atualizarMensagemRevisar();
+      } else if (aba === 'historico') {
+        renderizarHistorico();
+      }
+
+      renderizarFlashcardsAgrupados();
+    });
+  });
+}
+
+// Função para renderizar histórico
+function renderizarHistorico() {
+  const container = document.getElementById('historicoRevisoes');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  let todasRevisoes = [];
+  
+  flashcards.forEach(f => {
+    if (f.historico && f.historico.length > 0) {
+      f.historico.forEach(h => {
+        todasRevisoes.push({
+          ...h,
+          pergunta: f.pergunta,
+          materia: f.materiaNome,
+          tema: f.tema
+        });
+      });
+    }
+  });
+  
+  // Ordena por data mais recente
+  todasRevisoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+  
+  if (todasRevisoes.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma revisão realizada ainda.</p>';
+    return;
+  }
+  
+  // Mostra as últimas 20 revisões
+  const recentes = todasRevisoes.slice(0, 20);
+  
+  recentes.forEach(rev => {
+    const data = new Date(rev.data);
+    const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    const icone = rev.resultado === 'acertei' ? '✅' : rev.resultado === 'facil' ? '🚀' : '❌';
+    const cor = rev.resultado === 'acertei' ? '#22c55e' : rev.resultado === 'facil' ? '#8b5cf6' : '#ef4444';
+    
+    const div = document.createElement('div');
+    div.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border-bottom: 1px solid #f1f5f9;
+      gap: 10px;
+    `;
+    
+    div.innerHTML = `
+      <div style="flex: 1;">
+        <div style="font-weight: 600; font-size: 0.9rem;">${rev.pergunta}</div>
+        <div style="font-size: 0.75rem; color: #6b7280;">${rev.materia} | ${rev.tema} | ${dataFormatada}</div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 1.2rem;">${icone}</span>
+        <div style="font-size: 0.7rem; color: ${cor};">+${rev.intervalo} dia(s)</div>
+      </div>
+    `;
+    
+    container.appendChild(div);
+  });
+}
+
+// Atualize a inicialização
+function initRevisao() {
+  adicionarModalFlashcardHTML();
+  carregarFlashcards();
+  configurarAbasRevisao();
+}
+
 // ==================== MODO FOCO ====================
 function iniciarRevisao() {
   const hojeData = new Date().toISOString().split('T')[0];
@@ -6051,36 +6248,7 @@ function iniciarRevisao() {
     toast: true
   });
 }
-function mostrarCardFoco() {
-  if (indiceAtualFoco >= revisoesEmAndamento.length) {
-    finalizarRevisao();
-    return;
-  }
-  const card = revisoesEmAndamento[indiceAtualFoco];
-  document.getElementById('focoMateria').textContent = card.materiaNome;
-  document.getElementById('focoMateria').className = 'badge';
-  document.getElementById('focoMateria').style.background = '#9f042c';
-  document.getElementById('focoMateria').style.color = 'white';
-  document.getElementById('focoMateria').style.padding = '5px 12px';
-  document.getElementById('focoMateria').style.borderRadius = '20px';
-  document.getElementById('focoTema').textContent = card.tema;
-  document.getElementById('focoTema').className = 'badge';
-  document.getElementById('focoTema').style.background = '#e5e7eb';
-  document.getElementById('focoTema').style.color = '#374151';
-  document.getElementById('focoTema').style.padding = '5px 12px';
-  document.getElementById('focoTema').style.borderRadius = '20px';
-  document.getElementById('focoPergunta').textContent = card.pergunta;
-  document.getElementById('focoResposta').innerHTML = card.resposta;
-  document.getElementById('focoResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'none';
-  document.getElementById('btnMostrarResposta').style.display = 'inline-block';
-  const total = revisoesEmAndamento.length;
-  const atual = indiceAtualFoco + 1;
-  document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
-  const progresso = (atual / total) * 100;
-  document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
-  document.getElementById('modoFocoContainer').style.display = 'flex';
-}
+
 function popularFiltroMaterias() {
   const select = document.getElementById('filtroMateriaRevisao');
   if (!select) return;
@@ -6097,53 +6265,7 @@ function mostrarRespostaFoco() {
   document.getElementById('btnMostrarResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'flex';
 }
-function responderFlashcard(resultado) {
-  const card = revisoesEmAndamento[indiceAtualFoco];
-  if (!card) return;
-  const flashcardOriginal = flashcards.find(f => f.id === card.id);
-  if (!flashcardOriginal) return;
 
-  if (resultado === 'acertei') {
-    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
-    flashcardOriginal.acertos++;
-  } else {
-    flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
-    flashcardOriginal.erros++;
-  }
-  const intervalos = [1, 3, 7, 14, 30]; // dias
-  const dias = intervalos[flashcardOriginal.nivel] || 1;
-  const novaData = new Date();
-  novaData.setDate(novaData.getDate() + dias);
-  const dataProxima = novaData.toISOString().split('T')[0];
-
-  flashcardOriginal.dataProxima = dataProxima;
-  salvarFlashcards();
-  atualizarEstatisticas();
-
-  apiFetch(`flashcards/${flashcardOriginal.id}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      pergunta: flashcardOriginal.pergunta,
-      resposta: flashcardOriginal.resposta,
-      tema: JSON.stringify({
-        tema: flashcardOriginal.tema,
-        nivel: flashcardOriginal.nivel,
-        dataProxima: dataProxima,
-        acertos: flashcardOriginal.acertos,
-        erros: flashcardOriginal.erros
-      })
-    })
-  }).then(res => {
-    if (!res.ok) {
-      console.error("Erro ao atualizar progresso do flashcard no backend");
-    }
-  }).catch(err => {
-    console.error("Erro ao atualizar flashcard:", err);
-  });
-
-  indiceAtualFoco++;
-  mostrarCardFoco();
-}
 function finalizarRevisao() {
   document.getElementById("modoFocoContainer").style.display = "none";
   renderizarFlashcardsAgrupados();

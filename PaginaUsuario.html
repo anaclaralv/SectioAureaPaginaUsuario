@@ -163,13 +163,18 @@
               <p id="tempoProximaInicio"></p>
             </div>
 
-                      <div class="col-12 mt-3">
-            <div class="card p-3 text-center" style="cursor: pointer; transition: 0.2s; border: 2px dashed var(--cor-primaria); background: #fefefe;" onclick="abrirModalAmbiente()" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.15)'; this.style.background='#fef2f2'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.style.background='#fefefe'">
-              <i class="bi bi-lightbulb-fill" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px; display: block;"></i>
-              <h5 style="margin-bottom: 4px !important;">Como preparar o ambiente?</h5>
-              <p style="font-size: 0.8rem; color: #9ca3af; margin: 0;">Clique aqui para ver as dicas</p>
+            <div class="col-12 mt-3">
+              <div class="card p-3 text-center"
+                style="cursor: pointer; transition: 0.2s; border: 2px dashed var(--cor-primaria); background: #fefefe;"
+                onclick="abrirModalAmbiente()"
+                onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.15)'; this.style.background='#fef2f2'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.style.background='#fefefe'">
+                <i class="bi bi-lightbulb-fill"
+                  style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px; display: block;"></i>
+                <h5 style="margin-bottom: 4px !important;">Como preparar o ambiente?</h5>
+                <p style="font-size: 0.8rem; color: #9ca3af; margin: 0;">Clique aqui para ver as dicas</p>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -390,15 +395,15 @@
         </div>
 
         <!-- POMODORO -->
-<div class="relogio-card" id="cardPomodoro" style="width: 100%;">
-  <h3><i class="bi bi-circle-fill" style="color: #ef4444; font-size: 0.8rem;"></i> Pomodoro</h3>
-  <p id="pomodoroDisplay">25:00</p>
-  <div class="relogio-botoes">
-    <button onclick="abrirModalPomodoro()">Iniciar</button>
-    <button onclick="pausarPomodoro()">Pausar</button>
-    <button onclick="resetarPomodoro()">Reset</button>
-  </div>
-</div>
+        <div class="relogio-card" id="cardPomodoro" style="width: 100%;">
+          <h3><i class="bi bi-circle-fill" style="color: #ef4444; font-size: 0.8rem;"></i> Pomodoro</h3>
+          <p id="pomodoroDisplay">25:00</p>
+          <div class="relogio-botoes">
+            <button onclick="abrirModalPomodoro()">Iniciar</button>
+            <button onclick="pausarPomodoro()">Pausar</button>
+            <button onclick="resetarPomodoro()">Reset</button>
+          </div>
+        </div>
 
         <!-- MODO FOCO -->
         <div class="relogio-card" style="width: 100%;">
@@ -842,7 +847,8 @@
     <section id="metodosSection" style="display:none;" class="metodos-container">
       <div id="metodosHeader" class="metodos-header">
         <div class="inteligencia-badge" id="inteligenciaBadge" style="background: var(--cor-primaria);">
-          <img id="inteligenciaBadgeIcon" src="Icones/logico.png" alt="Inteligência" style="width: 28px; height: 28px; object-fit: contain;">
+          <img id="inteligenciaBadgeIcon" src="Icones/logico.png" alt="Inteligência"
+            style="width: 28px; height: 28px; object-fit: contain;">
           <span id="inteligenciaBadgeNome">Inteligência Lógico-Matemática</span>
         </div>
         <h1>Métodos de Estudo para você</h1>
@@ -859,7 +865,7 @@
           <button class="modal-close" onclick="window.fecharMetodoModal()">
             <i class="bi bi-x-lg"></i>
           </button>
-          
+
           <div class="modal-header">
             <h2 id="modalMetodoTitulo">Título do Método</h2>
             <div class="modal-tags">
@@ -887,7 +893,8 @@
 
             <div class="modal-dica">
               <i class="bi bi-lightbulb-fill"></i>
-              <span id="modalMetodoDica">Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.</span>
+              <span id="modalMetodoDica">Dica: Adapte esse método ao seu estilo pessoal e combine com outras
+                técnicas.</span>
             </div>
           </div>
 
@@ -942,16 +949,18 @@
 
       <!-- REGRAS -->
       <div class="revisao-regras">
-        💡 Acertei = próximo nível | Errei = revisar amanhã
+        💡 <strong>Acertei</strong> = próximo nível | <strong>Errei</strong> = revisar amanhã | <strong>Revisão
+          livre</strong> = revise quando quiser
       </div>
 
       <!-- ABAS -->
       <div class="revisao-abas">
         <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
-        <button class="aba-btn" data-aba="revisar"> Revisar</button>
+        <button class="aba-btn" data-aba="revisar">Revisar</button>
+        <button class="aba-btn" data-aba="historico">Histórico</button>
       </div>
 
-      <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
+      <!-- FILTRO POR MATÉRIA -->
       <div class="revisao-filtro">
         <select id="filtroMateriaRevisao" class="filtro-materia-select">
           <option value="todas">Todas as matérias</option>
@@ -965,21 +974,50 @@
 
       <!-- CONTEÚDO ABA: REVISAR -->
       <div id="abaRevisar" class="aba-conteudo" style="display: none;">
-        <div class="revisar-centro" style="text-align: center; padding: 60px 20px;">
+        <div class="revisar-centro" style="text-align: center; padding: 40px 20px;">
           <i class="bi bi-arrow-repeat"
-            style="font-size: 4rem; color: var(--cor-primaria); display: block; margin-bottom: 20px;"></i>
-          <p style="font-size: 1.2rem; color: #4b5563; margin-bottom: 10px;">
-            Voce tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.5rem;">0</strong> cards
-            para revisar!
+            style="font-size: 3.5rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
+          <p style="font-size: 1.1rem; color: #4b5563; margin-bottom: 10px;">
+            Você tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.4rem;">0</strong> cards
+            pendentes
           </p>
-          <p style="color: #6b7280; margin-bottom: 30px; font-size: 0.9rem;">
-            A revisao espacada ajuda a fixar o conteudo na memoria de longo prazo.
+          <p style="color: #6b7280; margin-bottom: 25px; font-size: 0.9rem;">
+            Escolha o modo de revisão
           </p>
-          <button class="btn-iniciar-revisao" onclick="iniciarRevisao()"
-            style="background: var(--cor-primaria); color: white; border: none; padding: 15px 40px; border-radius: 40px; font-size: 1.1rem; cursor: pointer; font-weight: 600; transition: 0.2s;"
-            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            <i class="bi bi-play-fill"></i> Iniciar Revisao
-          </button>
+
+          <!-- BOTÕES LADO A LADO -->
+          <div
+            style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; max-width: 500px; margin: 0 auto;">
+
+            <!-- REVISÃO INTELIGENTE -->
+            <div style="flex: 1; min-width: 200px; text-align: center;">
+              <button class="btn-revisao-modo" onclick="iniciarRevisao()">
+                <i class="bi bi-lightning-charge-fill"></i> Inteligente
+              </button>
+              <span class="info-tooltip" title="Revisa apenas cards pendentes para hoje ou atrasados.">
+                <i class="bi bi-question-circle"></i>
+              </span>
+            </div>
+
+            <!-- REVISÃO LIVRE -->
+            <div style="flex: 1; min-width: 200px; text-align: center;">
+              <button class="btn-revisao-modo btn-revisao-livre" onclick="iniciarRevisaoLivre()">
+                <i class="bi bi-shuffle"></i> Livre
+              </button>
+              <span class="info-tooltip" title="Revisa todos os cards, independente da data.">
+                <i class="bi bi-question-circle"></i>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTEÚDO ABA: HISTÓRICO -->
+      <div id="abaHistorico" class="aba-conteudo" style="display: none;">
+        <div style="background: white; border-radius: 12px; padding: 20px;">
+          <h3 style="margin-bottom: 15px;"><i class="bi bi-clock-history"></i> Histórico de Revisões</h3>
+          <div id="historicoRevisoes"></div>
         </div>
       </div>
 
@@ -995,17 +1033,29 @@
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
+
           <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
           <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+
+          <!-- INFORMAÇÃO DO NÍVEL E SUGESTÃO -->
+          <div id="focoInfoNivel"
+            style="display: none; background: #f8fafc; border-radius: 10px; padding: 10px; margin: 10px 0; font-size: 0.85rem;">
+            <span id="focoNivelAtual">Nível: 0</span> |
+            <span id="focoSugestao">Sugestão: revise em 1 dia</span>
+          </div>
+
           <div class="foco-botoes">
             <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
               <i class="bi bi-eye"></i> Mostrar Resposta
             </button>
+
             <div id="botoesResposta" class="botoes-resposta" style="display: none;">
               <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
               <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
+              <button class="btn-facil" onclick="responderFlashcard('facil')">🚀 Muito Fácil</button>
             </div>
           </div>
+
           <div class="foco-progresso">
             <span id="focoContador">Card 0 de 0</span>
             <div class="progresso-barra">
@@ -1025,14 +1075,14 @@
             </div>
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label fw-bold"><i class="bi bi-book"></i> Materia</label>
+                <label class="form-label fw-bold"><i class="bi bi-book"></i> Matéria</label>
                 <select id="revisaoMateria" class="form-select">
-                  <option value="">Selecione uma materia</option>
+                  <option value="">Selecione uma matéria</option>
                 </select>
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold"><i class="bi bi-folder"></i> Tema</label>
-                <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
+                <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold"><i class="bi bi-question-circle"></i> Pergunta</label>
@@ -1045,7 +1095,7 @@
                   placeholder="Digite a resposta..."></textarea>
               </div>
               <div class="alert alert-info" style="font-size: 0.85rem;">
-                <i class="bi bi-lightbulb"></i> Dica: Use perguntas objetivas para revisoes mais eficientes!
+                <i class="bi bi-lightbulb"></i> Dica: Use perguntas objetivas para revisões mais eficientes!
               </div>
             </div>
             <div class="modal-footer">
@@ -1058,7 +1108,6 @@
         </div>
       </div>
     </section>
-
     <!-- ==================== PLANOS ==================== -->
     <section id="planosSection" style="display:none;">
       <h1>Planos</h1>
