@@ -38,18 +38,20 @@
         <!-- Área onde as perguntas serão injetadas -->
         <div id="perguntasArea"></div>
 
-        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap; width: 100%;">
 
-          <button type="button" class="btn btn-lg fw-bold" id="btnPrev"
-            style="background: transparent; color: #1a1a1a; border: 1px solid #ccc; width: 200px; padding: 12px;">
+          <button type="button" class="btn-padrao" id="btnPrev">
             Voltar
           </button>
 
-          <button type="button" class="btn btn-lg cor" id="btnNext"
-            style="background: #000; color: white; width: 200px; padding: 12px;">
+          <button type="button" class="btn-padrao btn-limpar" id="btnLimpar">
+            🗑 Limpar
+          </button>
+
+          <button type="button" class="btn-padrao btn-proximo" id="btnNext">
             Próxima
           </button>
-         
+
         </div>
       </form>
     </div>

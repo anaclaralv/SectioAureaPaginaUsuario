@@ -235,41 +235,57 @@ h1 {
 .radio-label input[type="radio"]:hover {
   transform: scale(2.5);
 }
-
-
-/* ===== BOTÕES ===== */
-#btnPrev {
+/* ===== BOTÕES PADRONIZADOS (NOVO) ===== */
+.btn-padrao {
   font-weight: bold;
   margin-top: 30px;
   transition: all 0.3s;
-  width: 250px;
-  padding: 12px;
-  font-size: 1.1rem;
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  cursor: pointer;
+  height: 50px;
 }
 
-#btnNext {
+#btnPrev {
+  background: transparent;
+  color: #1a1a1a;
+  border: 1px solid #ccc;
+}
+
+.btn-limpar {
+  background: transparent;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.btn-proximo {
   background-color: #000000;
   color: #f0f0f0;
-  font-weight: bold;
-  margin-top: 30px;
-  transition: all 0.3s;
-  width: 250px;
-  padding: 12px;
-  font-size: 1.1rem;
   border: none;
 }
 
-#btnNext:hover:not(:disabled) {
+.btn-proximo:hover:not(:disabled) {
   border: solid 1px #000000;
   background-color: #ffffff;
   color: #000000;
 }
 
-#btnNext:disabled {
+.btn-proximo:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 #btnVamo {
   background-color: #000000;
   color: #ffffff;
@@ -418,6 +434,11 @@ body.dark #btnVamo {
   border: 2px solid #ffffff !important;
 }
 
+body.dark #btnLimpar {
+  color: #ff6b6b !important;
+  border-color: #ff6b6b !important;
+}
+
 body.dark #btnPrev {
   background: transparent;
   color: #ffffff !important;
@@ -486,6 +507,7 @@ body.dark .modal-content {
 
 /* ===== RESPONSIVIDADE - CELULAR ===== */
 @media (max-width: 576px) {
+
   .centralizador {
     padding: 10px;
   }
@@ -537,11 +559,11 @@ body.dark .modal-content {
     font-size: 0.8rem;
   }
 
-  #btnNext,
-  #btnVamo
-  #btnPrev {
-    width: 100%;
-  }
+ .btn-padrao {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
 
 
   .theme-toggle {
@@ -621,12 +643,19 @@ body.dark .modal-content {
     width: 100%;
   }
 
-  #btnNext {
-    grid-column: 1 / -1;
-    justify-self: center;
-    margin-top: 30px;
-  }
+.btn-padrao {
+  grid-column: auto;
+  justify-self: center;
+  margin-top: 30px;
+}
 
+/* Container dos botões no grid */
+.etapa-container + div {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
   .barra-progresso {
     grid-column: 1 / -1;
   }

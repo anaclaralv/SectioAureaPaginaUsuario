@@ -387,6 +387,46 @@ document.getElementById("btnPrev").onclick = () => {
   }
 };
 
+// Botão Limpar - Reseta TODAS as respostas
+document.getElementById("btnLimpar").onclick = () => {
+  Swal.fire({
+    title: 'Limpar tudo?',
+    text: 'Todas as respostas de TODAS as etapas serão apagadas.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sim, limpar tudo',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Reseta TODAS as respostas
+      respostasPorEtapa = {};
+      respostasEtapa = {};
+      
+      // Reseta as pontuações
+      for (let letra in pontuacao) {
+        pontuacao[letra] = 0;
+      }
+      
+      // Volta para a primeira etapa
+      etapaAtual = 0;
+      
+      // Recarrega a etapa
+      mostrarEtapa();
+      
+      // Feedback visual
+      Swal.fire({
+        icon: 'success',
+        title: 'Formulário limpo!',
+        text: 'Todas as respostas foram apagadas.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+};
+
 function atualizarBarra() {
   const total = etapas.length;
   const progresso = (etapaAtual / total) * 100; // ✅ Usa etapaAtual (já foi decrementada no voltar)
