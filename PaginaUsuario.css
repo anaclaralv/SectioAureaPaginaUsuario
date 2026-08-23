@@ -758,25 +758,24 @@ body {
   background: linear-gradient(90deg, #22c55e, #16a34a);
 }
 
-/*DESTAQUE POMODORO*/
+/* ===== DESTAQUE POMODORO ===== */
 @keyframes pulseDestaque {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
-    border: 3px solid #f59e0b;
+    box-shadow: 0 0 0 0 transparent;
+    border: 2px solid var(--cor-primaria);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 25px rgba(245, 158, 11, 0);
-    border: 3px solid #f59e0b;
-    transform: scale(1.03);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid var(--cor-primaria);
+    transform: scale(1.01);
   }
 }
 
 .relogio-card.destaque-pomodoro {
   animation: pulseDestaque 1.5s ease-in-out 2;
-  background: #fffbeb !important;
+  background: color-mix(in srgb, var(--cor-primaria) 8%, white) !important;
 }
-
 /* ===== CARD EXPLICATIVO ===== */
 .info-relogio-card {
   background: linear-gradient(135deg, #f9fafb, #f3f4f6);
@@ -4542,5 +4541,136 @@ canvas {
   
   .modal-content {
     width: 95%;
+  }
+}/* ============================================= */
+/* ===== GRAVADOR DE ÁUDIO (MODAL) ============= */
+/* ============================================= */
+
+/* Modal do gravador */
+#gravadorModalOverlay {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+#gravadorModalOverlay .modal-content {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease-in-out;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Container do gravador (versão antiga - pode remover se não usar mais) */
+#gravadorAudioContainer {
+  display: none;
+  margin-top: 20px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 15px;
+}
+
+/* Destaque do gravador */
+.destaque-gravador {
+  animation: pulse 1s ease-in-out 3;
+  border: 2px solid var(--cor-primaria) !important;
+  box-shadow: 0 0 30px rgba(159, 4, 44, 0.3) !important;
+}
+
+/* ===== ITENS DE GRAVAÇÃO ===== */
+.gravacao-item {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  border: 1px solid #e5e7eb;
+  transition: 0.2s;
+}
+
+.gravacao-item:hover {
+  background: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.gravacao-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gravacao-data {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.btn-excluir-gravacao {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.btn-excluir-gravacao:hover {
+  background: #fecaca;
+  transform: scale(1.05);
+}
+
+.gravacao-checkboxes {
+  font-size: 0.8rem;
+  color: #16a34a;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* Responsividade do modal */
+@media (max-width: 768px) {
+  #gravadorModalOverlay .modal-content {
+    padding: 15px;
+    max-height: 95vh;
+  }
+  
+  #gravadorModalOverlay .modal-content h3 {
+    font-size: 1.1rem;
+  }
+  
+  #gravadorModalOverlay .modal-content button {
+    padding: 10px 15px;
+    font-size: 0.85rem;
+  }
+  
+  .gravacao-info {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

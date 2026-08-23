@@ -1052,7 +1052,7 @@
             <div id="botoesResposta" class="botoes-resposta" style="display: none;">
               <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
               <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
-              <button class="btn-facil" onclick="responderFlashcard('facil')">🚀 Muito Fácil</button>
+              <button class="btn-facil" onclick="responderFlashcard('facil')">Muito Fácil!</button>
             </div>
           </div>
 
@@ -1108,6 +1108,113 @@
         </div>
       </div>
     </section>
+
+<!-- ==================== MODAL DO GRAVADOR ==================== -->
+<div id="gravadorModalOverlay" 
+     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99999; align-items: center; justify-content: center; padding: 20px;" 
+     onclick="fecharGravadorModal()">
+  
+  <div style="background: white; border-radius: 15px; padding: 25px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);" 
+       onclick="event.stopPropagation()">
+    
+    <!-- CABEÇALHO -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 id="gravadorTitulo" style="display: flex; align-items: center; gap: 10px; margin: 0; color: #4b5563;">
+        <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+        Gravador de Explicação
+      </h3>
+      <button onclick="fecharGravadorModal()" 
+              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    
+    <!-- BOTÕES DE GRAVAÇÃO -->
+    <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+      <button id="btnGravar" onclick="iniciarGravacao()" 
+              style="background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+        <i class="bi bi-record-circle"></i> Gravar
+      </button>
+      
+      <button id="btnPausarAudio" onclick="pausarGravacao()" disabled 
+              style="background: #f59e0b; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+        <i class="bi bi-pause-circle"></i> Pausar
+      </button>
+      
+      <button id="btnPararAudio" onclick="pararGravacao()" disabled 
+              style="background: #6b7280; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+        <i class="bi bi-stop-circle"></i> Parar
+      </button>
+    </div>
+    
+    <!-- TEMPO DE GRAVAÇÃO -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <span id="tempoGravacao" style="font-size: 1.5rem; font-weight: 700; color: var(--cor-primaria);">00:00</span>
+    </div>
+    
+    <!-- CHECKLIST -->
+    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+      <h4 style="margin-bottom: 15px; font-size: 0.95rem; color: #4b5563; font-weight: 600;">
+        <i class="bi bi-clipboard-check"></i> Autoavaliação:
+      </h4>
+      
+      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+        <input type="checkbox" id="checkPalavrasSimples" style="width: 18px; height: 18px;">
+        <span>Expliquei com palavras simples?</span>
+      </label>
+      
+      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+        <input type="checkbox" id="checkAnalogias" style="width: 18px; height: 18px;">
+        <span>Usei analogias ou exemplos?</span>
+      </label>
+      
+      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+        <input type="checkbox" id="checkLacunas" style="width: 18px; height: 18px;">
+        <span>Identifiquei lacunas no entendimento?</span>
+      </label>
+      
+      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+        <input type="checkbox" id="checkSimplificado" style="width: 18px; height: 18px;">
+        <span>Consegui simplificar o conceito?</span>
+      </label>
+    </div>
+    
+    <!-- ANOTAÇÕES -->
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+        <i class="bi bi-pencil"></i> Anotações do que melhorar:
+      </label>
+      <textarea id="anotacoesGravacao" rows="3" 
+                placeholder="Enquanto ouve, anote os pontos que precisa melhorar..."
+                style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; resize: vertical;"></textarea>
+    </div>
+    
+    <!-- ÁUDIO GRAVADO -->
+    <div id="audioGravadoArea" style="display: none; margin-bottom: 20px; background: #f0fdf4; padding: 15px; border-radius: 10px;">
+      <p style="font-size: 0.85rem; color: #16a34a; margin-bottom: 10px; font-weight: 600;">
+        <i class="bi bi-check-circle-fill"></i> Gravação concluída!
+      </p>
+      <audio id="audioGravadoPlayer" controls style="width: 100%;"></audio>
+    </div>
+    
+    <!-- BOTÃO SALVAR -->
+    <button onclick="salvarGravacao()" 
+            style="background: #22c55e; color: white; border: none; padding: 12px 30px; border-radius: 40px; cursor: pointer; font-weight: 600; width: 100%;">
+      <i class="bi bi-save"></i> Salvar Gravação
+    </button>
+    
+    <!-- LISTA DE GRAVAÇÕES -->
+    <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <h4 style="margin-bottom: 15px; font-size: 1rem; color: #4b5563;">
+        <i class="bi bi-folder2-open"></i> Minhas Gravações
+      </h4>
+      <div id="listaGravacoes"></div>
+    </div>
+    
+  </div>
+</div>
+
+
     <!-- ==================== PLANOS ==================== -->
     <section id="planosSection" style="display:none;">
       <h1>Planos</h1>

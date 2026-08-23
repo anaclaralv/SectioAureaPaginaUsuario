@@ -1,7 +1,7 @@
 // Fallback local caso api.js não seja carregado
 if (typeof apiFetch === 'undefined') {
-  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
-    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
+  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:'))
+    ? window.location.origin + '/SectioAureaPaginaUsuario/api'
     : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
@@ -28,7 +28,7 @@ if (typeof apiFetch === 'undefined') {
 }
 
 if (typeof normalizarInteligencia === 'undefined') {
-  window.normalizarInteligencia = function(nomeDb) {
+  window.normalizarInteligencia = function (nomeDb) {
     if (!nomeDb || typeof nomeDb !== 'string') return "";
     const mapa = {
       "Linguística": "linguistica",
@@ -86,11 +86,11 @@ async function carregarPerfilUsuario() {
         localStorage.setItem("planoUsuario", data.plano.toLowerCase());
       }
       localStorage.setItem("user", JSON.stringify(data));
-      
+
       if (data.tipo_dom) {
         aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
       }
-      
+
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
@@ -175,7 +175,7 @@ function extrairTituloLimpo(val) {
         if (parsed && typeof parsed === "object") {
           if (parsed.title) return extrairTituloLimpo(parsed.title);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return str;
   }
@@ -195,7 +195,7 @@ async function carregarEventosDoBackend() {
         try {
           parsed = JSON.parse(rawTipo);
           if (typeof parsed === 'string') {
-            try { parsed = JSON.parse(parsed); } catch(ex) {}
+            try { parsed = JSON.parse(parsed); } catch (ex) { }
           }
           if (typeof parsed === 'object' && parsed !== null) {
             rawTitle = parsed.title || rawTipo;
@@ -288,21 +288,21 @@ async function carregarSessoesDoBackend() {
     if (response.ok) {
       const sessoes = await response.json();
       tempoEstudo = {};
-      
+
       materias.forEach(m => {
         tempoEstudo[m.id] = { total: 0, historico: {} };
       });
-      
+
       sessoes.forEach(sessao => {
         const matId = sessao.id_materia;
         if (!matId) return;
         if (!tempoEstudo[matId]) {
           tempoEstudo[matId] = { total: 0, historico: {} };
         }
-        
+
         const segundos = timeToSeconds(sessao.tempo_cronometro);
         tempoEstudo[matId].total += segundos;
-        
+
         const dataStr = sessao.created_at.split(' ')[0];
         if (!tempoEstudo[matId].historico[dataStr]) {
           tempoEstudo[matId].historico[dataStr] = 0;
@@ -827,13 +827,13 @@ window.fecharMetodoModal = fecharMetodoModal;
 function irParaRevisao(tipoRevisao, metodoTitulo) {
   localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
   localStorage.setItem('metodoSelecionado', metodoTitulo);
-  
+
   fecharMetodoModal();
-  
+
   if (typeof mostrarTela === 'function') {
     mostrarTela('revisao');
   }
-  
+
   const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
   sidebarLinks.forEach(link => {
     const onclickAttr = link.getAttribute('onclick');
@@ -846,12 +846,17 @@ function irParaRevisao(tipoRevisao, metodoTitulo) {
 }
 window.irParaRevisao = irParaRevisao;
 
+
 function verDetalhesMetodo(tipoInteligencia, metodoId) {
+  console.log('🔍 Abrindo método:', tipoInteligencia, metodoId);
+
   const metodosData = metodosPorInteligencia[tipoInteligencia];
   if (!metodosData) return;
-  
+
   const metodo = metodosData.metodos.find(m => m.id === metodoId);
   if (!metodo) return;
+
+  console.log('📌 Método:', metodo.titulo);
 
   const modalTitulo = document.getElementById("modalMetodoTitulo");
   const modalTempo = document.getElementById("modalMetodoTempo");
@@ -864,7 +869,7 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
 
   if (modalTitulo) modalTitulo.textContent = metodo.titulo;
   if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-  
+
   if (modalDificuldade) {
     modalDificuldade.textContent = metodo.dificuldade;
     modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
@@ -886,69 +891,117 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
   if (modalDica) {
     modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
   }
-if (footer) {
+
+  if (footer) {
     footer.innerHTML = "";
-    
+
+    console.log('🔘 Criando botão para:', metodo.titulo);
+
+    // ===== CASO: GRAVAÇÃO DE PODCAST =====
+    if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
+      console.log('✅ Botão de Podcast');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
+      btn.onclick = function () {
+        console.log('🎙️ Clique em Gravar Podcast');
+        window.fecharMetodoModal();
+        window.abrirGravadorPodcast();
+      };
+      footer.appendChild(btn);
+    }
+    // ===== CASO: TÉCNICA FEYNMAN =====
+    else if (metodo.titulo.includes("Feynman") || metodo.titulo.includes("feynman")) {
+      console.log('✅ Botão de Feynman');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
+      btn.onclick = function () {
+        console.log('📝 Clique em Feynman');
+        window.fecharMetodoModal();
+        window.abrirGravadorFeynman();
+      };
+      footer.appendChild(btn);
+    }
     // ===== CASO: POMODORO =====
-    if (metodo.titulo === "Pomodoro" || metodo.titulo === "Pomodoro com Descanso Ativo") {
+    else if (metodo.titulo.includes("Pomodoro") || metodo.titulo.includes("pomodoro")) {
+      console.log('✅ Botão de Pomodoro');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
-      btn.onclick = () => {
+      btn.onclick = function () {
         window.fecharMetodoModal();
-        
-        // Mostra a seção Relógio
         if (typeof mostrarTela === 'function') {
           mostrarTela('relogio');
         }
-        
-        // Atualiza o link ativo no menu
-        const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
-        sidebarLinks.forEach(link => {
-          const onclickAttr = link.getAttribute('onclick');
-          if (onclickAttr && onclickAttr.includes("'relogio'")) {
-            if (typeof mudarPagina === 'function') {
-              mudarPagina(link);
-            }
-          }
-        });
-        
-        // Scroll até o card do Pomodoro
         setTimeout(() => {
           const cardPomodoro = document.getElementById('cardPomodoro');
           if (cardPomodoro) {
             cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
             cardPomodoro.classList.add('destaque-pomodoro');
-            
-            setTimeout(() => {
-              cardPomodoro.classList.remove('destaque-pomodoro');
-            }, 3000);
+            setTimeout(() => cardPomodoro.classList.remove('destaque-pomodoro'), 3000);
           }
         }, 500);
       };
       footer.appendChild(btn);
     }
+
+    // ===== CASO: TESTE PRÁTICO =====
+    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") || 
+             metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
+      console.log('✅ Botão de Teste Prático - Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+      };
+      footer.appendChild(btn);
+    }
+    // ===== CASO: MNEMÔNICA =====
+    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") || 
+             metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
+      console.log('✅ Botão de Mnemônica - Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+      };
+      footer.appendChild(btn);
+    }
     // ===== CASO: FLASHCARDS =====
-    else if (metodo.titulo === "Flashcards") {
+    else if (metodo.titulo.includes("Flashcards") || metodo.titulo.includes("flashcards")) {
+      console.log('✅ Botão de Flashcards');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
+      btn.onclick = function () {
+        window.irParaRevisao("flashcards", metodo.titulo);
+      };
       footer.appendChild(btn);
     }
     // ===== MÉTODOS QUE VÃO PARA REVISÃO =====
     else if (metodo.irParaRevisao) {
+      console.log('✅ Botão de Revisão');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+      btn.onclick = function () {
+        window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+      };
       footer.appendChild(btn);
     }
     // ===== MÉTODOS SEM REDIRECIONAMENTO =====
     else {
+      console.log('✅ Botão Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
@@ -957,66 +1010,13 @@ if (footer) {
       footer.appendChild(btn);
     }
   }
+
   const modalOverlay = document.getElementById("metodoModalOverlay");
   if (modalOverlay) {
     modalOverlay.style.display = "flex";
   }
 }
 window.verDetalhesMetodo = verDetalhesMetodo;
-
-function renderizarMetodosEstudo() {
-  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
-  
-  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    if (user.tipo_dom) {
-      tipoInteligencia = normalizarInteligencia(user.tipo_dom);
-    }
-  }
-
-  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
-    tipoInteligencia = 'logico';
-  }
-
-  const metodosData = metodosPorInteligencia[tipoInteligencia];
-  document.documentElement.style.setProperty('--cor-primaria', metodosData.cor);
-
-  const badgeNome = document.getElementById("inteligenciaBadgeNome");
-  const badgeIcon = document.getElementById("inteligenciaBadgeIcon");
-  const badgeDiv = document.getElementById("inteligenciaBadge");
-  const badgeDescricao = document.getElementById("inteligenciaBadgeDescricao");
-
-  if (badgeNome) badgeNome.textContent = `Inteligência ${metodosData.nome}`;
-  if (badgeIcon) badgeIcon.src = iconesInteligencia[tipoInteligencia] || "Icones/logico.png";
-  if (badgeDiv) badgeDiv.style.background = metodosData.cor;
-  if (badgeDescricao) badgeDescricao.textContent = metodosData.descricao;
-
-  const containerRecomendados = document.getElementById("listaMetodosRecomendados");
-  if (containerRecomendados) {
-    containerRecomendados.innerHTML = "";
-    metodosData.metodos.forEach(metodo => {
-      containerRecomendados.innerHTML += `
-        <div class="metodo-card" onclick="window.verDetalhesMetodo('${tipoInteligencia}', ${metodo.id})">
-          <div class="metodo-card-header">
-            <h3>${metodo.titulo}</h3>
-            <div class="metodo-tags">
-              <span class="tag-tempo">
-                <i class="bi bi-clock"></i> ${metodo.tempo}
-              </span>
-              <span class="tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">
-                ${metodo.dificuldade}
-              </span>
-            </div>
-          </div>
-          <p class="metodo-descricao">${metodo.descricao}</p>
-          <button class="btn-ver-mais" style="color: ${metodosData.cor}">
-            Ver método completo <i class="bi bi-arrow-right"></i>
-          </button>
-        </div>
-      `;
-    });
-  }
-}
 
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
@@ -1043,6 +1043,7 @@ window.abrirLightbox = function (src) {
   document.body.appendChild(lightbox);
 };
 function mostrarTela(tela) {
+  console.log('🔄 Mostrando tela:', tela);
   if (tela === "estatistica" && !verificarAcesso('estatisticas')) return;
   if (tela === "cronogramaNovo" && !verificarAcesso('cronograma')) return;
   const telas = [
@@ -1089,6 +1090,7 @@ function mostrarTela(tela) {
     atualizarBotoesPlanos();
   }
   if (tela === "metodos") {
+    console.log('🎨 Chamando renderizarMetodosEstudo');
     renderizarMetodosEstudo();
   }
   if (tela === "revisao") {
@@ -1438,7 +1440,7 @@ async function adicionarEvento() {
       } else if (recorrencia === "mensal") {
         novaData.setMonth(dataInicio.getMonth() + i);
       }
-      
+
       const dataStr = novaData.toISOString().split('T')[0];
       await salvarEventoNoBackend(titulo, dataStr, cor, { ...extProps, isRecorrente: true });
     }
@@ -1768,7 +1770,7 @@ document.addEventListener('DOMContentLoaded', function () {
               });
               return;
             }
-            
+
             try {
               const response = await apiFetch(`eventos/${event.id}`, {
                 method: "PUT",
@@ -1835,7 +1837,7 @@ document.addEventListener('DOMContentLoaded', function () {
       try {
         const eventosBackend = await carregarEventosDoBackend();
         const listaTarefas = (tarefas && tarefas.length > 0) ? tarefas : (JSON.parse(localStorage.getItem("tarefas")) || []);
-        
+
         const eventosTarefas = listaTarefas
           .filter(t => t.data && !t.concluida)
           .map(t => ({
@@ -2706,7 +2708,7 @@ async function salvarConfiguracao() {
 
       localStorage.setItem("userName", novoNome);
       if (foto) localStorage.setItem("userFoto", foto);
-      
+
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       user.nome = novoNome;
       user.email = novoEmail;
@@ -6036,7 +6038,7 @@ function iniciarRevisaoLivre() {
     });
     return;
   }
-  
+
   revisoesEmAndamento = [...flashcards];
   indiceAtualFoco = 0;
   mostrarCardFoco();
@@ -6058,7 +6060,7 @@ function mostrarCardFoco() {
   document.getElementById('focoResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'none';
   document.getElementById('btnMostrarResposta').style.display = 'block';
-  
+
   // Mostrar nível atual e sugestão
   const nivelAtual = card.nivel || 0;
   const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
@@ -6103,7 +6105,7 @@ function responderFlashcard(resultado) {
   const novaData = new Date();
   novaData.setDate(novaData.getDate() + intervaloDias);
   flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
-  
+
   // Adiciona ao histórico
   if (!flashcardOriginal.historico) {
     flashcardOriginal.historico = [];
@@ -6147,11 +6149,11 @@ function configurarAbasRevisao() {
 function renderizarHistorico() {
   const container = document.getElementById('historicoRevisoes');
   if (!container) return;
-  
+
   container.innerHTML = '';
-  
+
   let todasRevisoes = [];
-  
+
   flashcards.forEach(f => {
     if (f.historico && f.historico.length > 0) {
       f.historico.forEach(h => {
@@ -6164,25 +6166,25 @@ function renderizarHistorico() {
       });
     }
   });
-  
+
   // Ordena por data mais recente
   todasRevisoes.sort((a, b) => new Date(b.data) - new Date(a.data));
-  
+
   if (todasRevisoes.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma revisão realizada ainda.</p>';
     return;
   }
-  
+
   // Mostra as últimas 20 revisões
   const recentes = todasRevisoes.slice(0, 20);
-  
+
   recentes.forEach(rev => {
     const data = new Date(rev.data);
     const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
+
     const icone = rev.resultado === 'acertei' ? '✅' : rev.resultado === 'facil' ? '🚀' : '❌';
     const cor = rev.resultado === 'acertei' ? '#22c55e' : rev.resultado === 'facil' ? '#8b5cf6' : '#ef4444';
-    
+
     const div = document.createElement('div');
     div.style.cssText = `
       display: flex;
@@ -6192,7 +6194,7 @@ function renderizarHistorico() {
       border-bottom: 1px solid #f1f5f9;
       gap: 10px;
     `;
-    
+
     div.innerHTML = `
       <div style="flex: 1;">
         <div style="font-weight: 600; font-size: 0.9rem;">${rev.pergunta}</div>
@@ -6203,7 +6205,7 @@ function renderizarHistorico() {
         <div style="font-size: 0.7rem; color: ${cor};">+${rev.intervalo} dia(s)</div>
       </div>
     `;
-    
+
     container.appendChild(div);
   });
 }
@@ -6671,9 +6673,9 @@ function aplicarBloqueiosPlano() {
 function mostrarTourBoasVindas() {
   const jaViu = localStorage.getItem("tourBoasVindas");
   if (jaViu) return;
-  
+
   const { plano } = verificarPlano();
-  
+
   const passos = [
     {
       titulo: "Bem-vindo ao Sectio Aurea!",
@@ -6714,7 +6716,7 @@ function mostrarTourBoasVindas() {
     },
     {
       titulo: "Cronograma Inteligente",
-      texto: plano === "gratuito" 
+      texto: plano === "gratuito"
         ? "Disponivel nos planos Basico e Pro. Monte sua grade semanal arrastando as materias para os dias."
         : "Arraste as materias para os dias da semana e monte sua grade de estudos. O relogio inteligente segue esse cronograma.",
       icone: "bi bi-diagram-3"
@@ -6731,14 +6733,14 @@ function mostrarTourBoasVindas() {
         : `Voce esta no plano ${plano.charAt(0).toUpperCase() + plano.slice(1)}. Aproveite todas as funcionalidades!`,
       icone: "bi bi-check-circle-fill"
     }
-  ];  
+  ];
   let passoAtual = 0;
-  
+
   function mostrarPasso() {
     const passo = passos[passoAtual];
     const isUltimo = passoAtual === passos.length - 1;
     const isPrimeiro = passoAtual === 0;
-    
+
     Swal.fire({
       title: passo.titulo,
       html: `
@@ -6774,7 +6776,7 @@ function mostrarTourBoasVindas() {
       }
     });
   }
-  
+
   mostrarPasso();
 }
 function abrirModalAmbiente() {
@@ -6810,14 +6812,14 @@ function abrirModalAmbiente() {
       icone: "bi bi-bullseye"
     }
   ];
-  
+
   let passoAtual = 0;
-  
+
   function mostrarPasso() {
     const passo = passos[passoAtual];
     const isUltimo = passoAtual === passos.length - 1;
     const isPrimeiro = passoAtual === 0;
-    
+
     Swal.fire({
       title: passo.titulo,
       html: `
@@ -6845,7 +6847,7 @@ function abrirModalAmbiente() {
       }
     });
   }
-  
+
   mostrarPasso();
 }
 
@@ -6854,3 +6856,542 @@ window.addEventListener("beforeunload", () => {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
   }
 });
+// ===== GRAVADOR DE ÁUDIO (Feynman + Podcast) - VERSÃO MODAL =====
+
+let mediaRecorder = null;
+let audioChunks = [];
+let audioUrl = null;
+let gravando = false;
+let pausado = false;
+let segundosGravacao = 0;
+let timerGravacao = null;
+
+const gravacoesSalvas = JSON.parse(localStorage.getItem('gravacoesEstudo') || '[]');
+
+// ===== FUNÇÃO GENÉRICA PARA ABRIR O GRAVADOR COMO MODAL =====
+function abrirGravador(modo) {
+  console.log('🎙️ Abrindo gravador modal no modo:', modo);
+
+  // Salva o modo
+  localStorage.setItem('modoGravadorAtivo', modo);
+
+  // Fecha o modal de métodos (se estiver aberto)
+  if (typeof fecharMetodoModal === 'function') {
+    fecharMetodoModal();
+  }
+
+  // Mostra o modal do gravador
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+
+    // Atualiza o título
+    const tituloGravador = document.getElementById('gravadorTitulo');
+    if (tituloGravador) {
+      if (modo === 'podcast') {
+        tituloGravador.innerHTML = `
+          <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+          Gravação de Podcast
+        `;
+      } else {
+        tituloGravador.innerHTML = `
+          <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+          Técnica Feynman - Grave sua Explicação
+        `;
+      }
+    }
+
+    // Limpa campos anteriores
+    limparCamposGravador();
+
+    // Renderiza as gravações salvas
+    renderizarGravacoes();
+  } else {
+    console.error('❌ Modal do gravador não encontrado! Verifique o HTML.');
+  }
+}
+
+// ===== FUNÇÃO PARA FECHAR O MODAL DO GRAVADOR =====
+function fecharGravadorModal() {
+  console.log('🔒 Fechando modal do gravador');
+
+  // Para a gravação se estiver gravando
+  if (gravando && mediaRecorder) {
+    mediaRecorder.stop();
+    gravando = false;
+    pausado = false;
+    clearInterval(timerGravacao);
+
+    // Reseta botões
+    const btnGravar = document.getElementById('btnGravar');
+    const btnPausar = document.getElementById('btnPausarAudio');
+    const btnParar = document.getElementById('btnPararAudio');
+
+    if (btnGravar) btnGravar.disabled = false;
+    if (btnPausar) {
+      btnPausar.disabled = true;
+      btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+    }
+    if (btnParar) btnParar.disabled = true;
+  }
+
+  // Esconde o modal
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  // Limpa campos
+  limparCamposGravador();
+}
+
+// ===== FUNÇÃO PARA LIMPAR CAMPOS DO GRAVADOR =====
+function limparCamposGravador() {
+  const checkPalavrasSimples = document.getElementById('checkPalavrasSimples');
+  const checkAnalogias = document.getElementById('checkAnalogias');
+  const checkLacunas = document.getElementById('checkLacunas');
+  const checkSimplificado = document.getElementById('checkSimplificado');
+  const anotacoesGravacao = document.getElementById('anotacoesGravacao');
+  const tempoGravacao = document.getElementById('tempoGravacao');
+  const audioGravadoArea = document.getElementById('audioGravadoArea');
+
+  if (checkPalavrasSimples) checkPalavrasSimples.checked = false;
+  if (checkAnalogias) checkAnalogias.checked = false;
+  if (checkLacunas) checkLacunas.checked = false;
+  if (checkSimplificado) checkSimplificado.checked = false;
+  if (anotacoesGravacao) anotacoesGravacao.value = '';
+  if (tempoGravacao) tempoGravacao.textContent = '00:00';
+  if (audioGravadoArea) audioGravadoArea.style.display = 'none';
+
+  audioUrl = null;
+  segundosGravacao = 0;
+}
+
+// ===== FUNÇÕES ESPECÍFICAS =====
+function abrirGravadorPodcast() {
+  abrirGravador('podcast');
+}
+
+function abrirGravadorFeynman() {
+  abrirGravador('feynman');
+}
+
+// ===== FUNÇÕES DE GRAVAÇÃO =====
+async function iniciarGravacao() {
+  console.log('🎤 Iniciando gravação...');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      console.log('⏹️ Gravação parada');
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      audioUrl = URL.createObjectURL(audioBlob);
+
+      const audioPlayer = document.getElementById('audioGravadoPlayer');
+      const audioArea = document.getElementById('audioGravadoArea');
+      if (audioPlayer && audioArea) {
+        audioPlayer.src = audioUrl;
+        audioArea.style.display = 'block';
+      }
+
+      const btnGravar = document.getElementById('btnGravar');
+      const btnPausar = document.getElementById('btnPausarAudio');
+      const btnParar = document.getElementById('btnPararAudio');
+
+      if (btnGravar) btnGravar.disabled = false;
+      if (btnPausar) btnPausar.disabled = true;
+      if (btnParar) btnParar.disabled = true;
+
+      clearInterval(timerGravacao);
+
+      // Para as tracks do stream
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    gravando = true;
+
+    const btnGravar = document.getElementById('btnGravar');
+    const btnPausar = document.getElementById('btnPausarAudio');
+    const btnParar = document.getElementById('btnPararAudio');
+    const tempoGravacao = document.getElementById('tempoGravacao');
+
+    if (btnGravar) btnGravar.disabled = true;
+    if (btnPausar) btnPausar.disabled = false;
+    if (btnParar) btnParar.disabled = false;
+
+    segundosGravacao = 0;
+    if (tempoGravacao) tempoGravacao.textContent = '00:00';
+
+    timerGravacao = setInterval(() => {
+      segundosGravacao++;
+      const min = String(Math.floor(segundosGravacao / 60)).padStart(2, '0');
+      const seg = String(segundosGravacao % 60).padStart(2, '0');
+      const tempoEl = document.getElementById('tempoGravacao');
+      if (tempoEl) tempoEl.textContent = `${min}:${seg}`;
+    }, 1000);
+
+  } catch (err) {
+    console.error('❌ Erro ao acessar microfone:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Não foi possível acessar o microfone. Verifique as permissões do navegador.',
+      confirmButtonColor: '#9f042c'
+    });
+  }
+}
+
+function pausarGravacao() {
+  if (!mediaRecorder || !gravando) return;
+
+  const btnPausar = document.getElementById('btnPausarAudio');
+
+  if (!pausado) {
+    mediaRecorder.pause();
+    pausado = true;
+    clearInterval(timerGravacao);
+    if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-play-circle"></i> Continuar';
+  } else {
+    mediaRecorder.resume();
+    pausado = false;
+    timerGravacao = setInterval(() => {
+      segundosGravacao++;
+      const min = String(Math.floor(segundosGravacao / 60)).padStart(2, '0');
+      const seg = String(segundosGravacao % 60).padStart(2, '0');
+      const tempoEl = document.getElementById('tempoGravacao');
+      if (tempoEl) tempoEl.textContent = `${min}:${seg}`;
+    }, 1000);
+    if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+}
+
+function pararGravacao() {
+  if (!mediaRecorder || !gravando) return;
+
+  mediaRecorder.stop();
+  gravando = false;
+  pausado = false;
+
+  const btnPausar = document.getElementById('btnPausarAudio');
+  if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+}
+
+function salvarGravacao() {
+  if (!audioUrl) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atenção!',
+      text: 'Grave um áudio primeiro!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const modoAtivo = localStorage.getItem('modoGravadorAtivo') || 'feynman';
+
+  const gravacao = {
+    id: Date.now(),
+    data: new Date().toISOString(),
+    url: audioUrl,
+    modo: modoAtivo,
+    checkPalavrasSimples: document.getElementById('checkPalavrasSimples')?.checked || false,
+    checkAnalogias: document.getElementById('checkAnalogias')?.checked || false,
+    checkLacunas: document.getElementById('checkLacunas')?.checked || false,
+    checkSimplificado: document.getElementById('checkSimplificado')?.checked || false,
+    anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
+    duracao: segundosGravacao
+  };
+
+  gravacoesSalvas.push(gravacao);
+  localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+
+  renderizarGravacoes();
+
+  // Limpar campos
+  limparCamposGravador();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Gravação salva!',
+    text: 'Sua gravação foi salva com sucesso.',
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+
+function renderizarGravacoes() {
+  const container = document.getElementById('listaGravacoes');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (gravacoesSalvas.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma gravação ainda.</p>';
+    return;
+  }
+
+  const ordenadas = [...gravacoesSalvas].reverse();
+
+  ordenadas.forEach(grav => {
+    const data = new Date(grav.data);
+    const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const modoIcone = grav.modo === 'podcast' ? '🎙️' : '📝';
+    const modoNome = grav.modo === 'podcast' ? 'Podcast' : 'Feynman';
+
+    const div = document.createElement('div');
+    div.className = 'gravacao-item';
+
+    const checkboxes = [];
+    if (grav.checkPalavrasSimples) checkboxes.push('✅ Palavras simples');
+    if (grav.checkAnalogias) checkboxes.push('✅ Analogias');
+    if (grav.checkLacunas) checkboxes.push('✅ Lacunas');
+    if (grav.checkSimplificado) checkboxes.push('✅ Simplificado');
+
+    div.innerHTML = `
+      <div class="gravacao-info">
+        <span class="gravacao-data">${modoIcone} ${modoNome} | ${dataFormatada}</span>
+        <button class="btn-excluir-gravacao" onclick="excluirGravacao(${grav.id})">🗑 Excluir</button>
+      </div>
+      <audio controls src="${grav.url}" style="width: 100%; margin: 10px 0;"></audio>
+      ${checkboxes.length > 0 ? `<div class="gravacao-checkboxes">${checkboxes.join(' | ')}</div>` : ''}
+      ${grav.anotacoes ? `<p style="font-size: 0.8rem; color: #6b7280; margin-top: 8px;"><strong>Anotações:</strong> ${grav.anotacoes}</p>` : ''}
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function excluirGravacao(id) {
+  const index = gravacoesSalvas.findIndex(g => g.id === id);
+  if (index !== -1) {
+    gravacoesSalvas.splice(index, 1);
+    localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+    renderizarGravacoes();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Excluída!',
+      timer: 1000,
+      showConfirmButton: false
+    });
+  }
+}
+
+// ===== EXPOR FUNÇÕES GLOBALMENTE =====
+window.abrirGravador = abrirGravador;
+window.abrirGravadorPodcast = abrirGravadorPodcast;
+window.abrirGravadorFeynman = abrirGravadorFeynman;
+window.fecharGravadorModal = fecharGravadorModal;
+window.iniciarGravacao = iniciarGravacao;
+window.pausarGravacao = pausarGravacao;
+window.pararGravacao = pararGravacao;
+window.salvarGravacao = salvarGravacao;
+window.excluirGravacao = excluirGravacao;
+
+// ===== INICIALIZAR =====
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('🎙️ Gravador modal inicializado!');
+});
+
+// =============================================
+// ===== REDEFINIÇÃO FORÇADA DO GRAVADOR =====
+// =============================================
+console.log('🔄 Aplicando correção final do gravador...');
+
+// Sobrescreve TODAS as funções anteriores
+window.abrirGravador = function (modo) {
+  console.log('🎙️ [FINAL] Abrindo gravador:', modo);
+
+  // Salva o modo
+  localStorage.setItem('modoGravadorAtivo', modo);
+
+  // Fecha o modal de métodos
+  const metodoModal = document.getElementById('metodoModalOverlay');
+  if (metodoModal) {
+    metodoModal.style.display = 'none';
+  }
+
+  // Mostra o modal do gravador
+  const gravadorModal = document.getElementById('gravadorModalOverlay');
+  if (gravadorModal) {
+    gravadorModal.style.display = 'flex';
+
+    // Atualiza título
+    const titulo = document.getElementById('gravadorTitulo');
+    if (titulo) {
+      if (modo === 'podcast') {
+        titulo.innerHTML = '<i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i> Gravação de Podcast';
+      } else {
+        titulo.innerHTML = '<i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i> Técnica Feynman - Grave sua Explicação';
+      }
+    }
+
+    // Limpa campos
+    const checkboxes = ['checkPalavrasSimples', 'checkAnalogias', 'checkLacunas', 'checkSimplificado'];
+    checkboxes.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+
+    const anotacoes = document.getElementById('anotacoesGravacao');
+    if (anotacoes) anotacoes.value = '';
+
+    const tempo = document.getElementById('tempoGravacao');
+    if (tempo) tempo.textContent = '00:00';
+
+    const audioArea = document.getElementById('audioGravadoArea');
+    if (audioArea) audioArea.style.display = 'none';
+
+    // Renderiza gravações
+    if (typeof renderizarGravacoes === 'function') {
+      renderizarGravacoes();
+    }
+  } else {
+    console.error('❌ Modal do gravador NÃO encontrado no HTML!');
+    alert('Erro: Modal do gravador não encontrado. Verifique se o HTML está correto.');
+  }
+};
+
+window.abrirGravadorPodcast = function () {
+  console.log('🎙️ [FINAL] Abrindo Podcast');
+  window.abrirGravador('podcast');
+};
+
+window.abrirGravadorFeynman = function () {
+  console.log('📝 [FINAL] Abrindo Feynman');
+  window.abrirGravador('feynman');
+};
+
+window.fecharGravadorModal = function () {
+  console.log('🔒 [FINAL] Fechando gravador');
+
+  // Para gravação se estiver ativa
+  if (typeof gravando !== 'undefined' && gravando && typeof mediaRecorder !== 'undefined' && mediaRecorder) {
+    try {
+      mediaRecorder.stop();
+    } catch (e) { }
+    gravando = false;
+    pausado = false;
+    clearInterval(timerGravacao);
+  }
+
+  // Esconde modal
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  // Reseta botões
+  const btnGravar = document.getElementById('btnGravar');
+  const btnPausar = document.getElementById('btnPausarAudio');
+  const btnParar = document.getElementById('btnPararAudio');
+
+  if (btnGravar) btnGravar.disabled = false;
+  if (btnPausar) {
+    btnPausar.disabled = true;
+    btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+  if (btnParar) btnParar.disabled = true;
+};
+
+console.log('✅ Correção final aplicada!');
+
+// =============================================
+// ===== CORREÇÃO FINAL DOS MÉTODOS ============
+// =============================================
+console.log('🔄 Aplicando correção final dos métodos...');
+
+// Verifica se metodosPorInteligencia existe
+if (typeof metodosPorInteligencia === 'undefined') {
+  console.error('❌ metodosPorInteligencia NÃO encontrado!');
+} else {
+  console.log('✅ metodosPorInteligencia encontrado com', Object.keys(metodosPorInteligencia).length, 'inteligências');
+}
+
+// Redefine a função renderizarMetodosEstudo
+window.renderizarMetodosEstudo = function () {
+  console.log('🎨 Renderizando métodos de estudo...');
+
+  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
+  console.log('📌 Inteligência salva:', tipoInteligencia);
+
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.tipo_dom) {
+      tipoInteligencia = normalizarInteligencia(user.tipo_dom);
+      console.log('📌 Inteligência do usuário:', tipoInteligencia);
+    }
+  }
+
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    tipoInteligencia = 'logico';
+    console.log('📌 Usando inteligência padrão: logico');
+  }
+
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  console.log('📌 Dados da inteligência:', metodosData.nome, '| Cor:', metodosData.cor);
+
+  document.documentElement.style.setProperty('--cor-primaria', metodosData.cor);
+
+  const badgeNome = document.getElementById("inteligenciaBadgeNome");
+  const badgeIcon = document.getElementById("inteligenciaBadgeIcon");
+  const badgeDiv = document.getElementById("inteligenciaBadge");
+  const badgeDescricao = document.getElementById("inteligenciaBadgeDescricao");
+
+  if (badgeNome) badgeNome.textContent = `Inteligência ${metodosData.nome}`;
+  if (badgeIcon) badgeIcon.src = iconesInteligencia[tipoInteligencia] || "Icones/logico.png";
+  if (badgeDiv) badgeDiv.style.background = metodosData.cor;
+  if (badgeDescricao) badgeDescricao.textContent = metodosData.descricao;
+
+  const containerRecomendados = document.getElementById("listaMetodosRecomendados");
+  if (containerRecomendados) {
+    containerRecomendados.innerHTML = "";
+
+    metodosData.metodos.forEach(metodo => {
+      console.log('📌 Adicionando método:', metodo.titulo);
+
+      containerRecomendados.innerHTML += `
+        <div class="metodo-card" onclick="window.verDetalhesMetodo('${tipoInteligencia}', ${metodo.id})">
+          <div class="metodo-card-header">
+            <h3>${metodo.titulo}</h3>
+            <div class="metodo-tags">
+              <span class="tag-tempo">
+                <i class="bi bi-clock"></i> ${metodo.tempo}
+              </span>
+              <span class="tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">
+                ${metodo.dificuldade}
+              </span>
+            </div>
+          </div>
+          <p class="metodo-descricao">${metodo.descricao}</p>
+          <button class="btn-ver-mais" style="color: ${metodosData.cor}">
+            Ver método completo <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    });
+
+    console.log('✅ Métodos renderizados:', metodosData.metodos.length);
+  } else {
+    console.error('❌ Container de métodos não encontrado!');
+  }
+};
+
+// Chama a função imediatamente
+setTimeout(() => {
+  renderizarMetodosEstudo();
+}, 500);
+
+console.log('✅ Correção dos métodos aplicada!');

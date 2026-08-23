@@ -397,7 +397,6 @@ const metodosPorInteligencia = {
     ]
   }
 };
-
 const Metodos = () => {
   const [tipoInteligencia, setTipoInteligencia] = useState(null);
   const [metodos, setMetodos] = useState(null);
@@ -420,22 +419,219 @@ const Metodos = () => {
     setLoading(false);
   }, []);
 
+  // ===== FUNÇÃO PARA NAVEGAR PARA REVISÃO =====
   const irParaRevisao = (tipoRevisao, metodoTitulo) => {
     localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
     localStorage.setItem('metodoSelecionado', metodoTitulo);
     
-    if (window.mostrarTela) {
+    // Fecha o modal
+    setMetodoSelecionado(null);
+    
+    // Navega para a tela de revisão
+    if (typeof window.mostrarTela === 'function') {
       window.mostrarTela('revisao');
     }
     
+    // Dispara evento para o menu lateral
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
+  };
+
+  // ===== FUNÇÃO PARA NAVEGAR PARA O RELÓGIO (POMODORO) =====
+  const irParaPomodoro = () => {
+    // Fecha o modal
     setMetodoSelecionado(null);
+    
+    // Navega para a tela do relógio
+    if (typeof window.mostrarTela === 'function') {
+      window.mostrarTela('relogio');
+    }
+    
+    // Dispara evento para o menu lateral
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'relogio' }));
+    
+    // Scroll até o card do Pomodoro
+    setTimeout(() => {
+      const cardPomodoro = document.getElementById('cardPomodoro');
+      if (cardPomodoro) {
+        cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cardPomodoro.classList.add('destaque-pomodoro');
+        
+        setTimeout(() => {
+          cardPomodoro.classList.remove('destaque-pomodoro');
+        }, 3000);
+      }
+    }, 500);
+  };
+
+  // ===== FUNÇÃO PARA ABRIR O GRAVADOR (PODCAST) =====
+  const abrirGravadorPodcast = () => {
+    // Fecha o modal
+    setMetodoSelecionado(null);
+    
+    // Salva o modo no localStorage
+    localStorage.setItem('modoGravadorAtivo', 'podcast');
+    
+    // Navega para a tela de revisão (onde o gravador está)
+    if (typeof window.mostrarTela === 'function') {
+      window.mostrarTela('revisao');
+    }
+    
+    // Dispara evento para o menu lateral
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
+    
+    // Scroll até o gravador
+    setTimeout(() => {
+      const gravadorContainer = document.getElementById('gravadorAudioContainer');
+      if (gravadorContainer) {
+        gravadorContainer.style.display = 'block';
+        gravadorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        gravadorContainer.classList.add('destaque-gravador');
+        
+        // Atualiza o título do gravador
+        const tituloGravador = document.getElementById('gravadorTitulo');
+        if (tituloGravador) {
+          tituloGravador.innerHTML = `
+            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+            Gravação de Podcast
+          `;
+        }
+        
+        setTimeout(() => {
+          gravadorContainer.classList.remove('destaque-gravador');
+        }, 3000);
+      }
+    }, 500);
+  };
+
+  // ===== FUNÇÃO PARA ABRIR O GRAVADOR (FEYNMAN) =====
+  const abrirGravadorFeynman = () => {
+    // Fecha o modal
+    setMetodoSelecionado(null);
+    
+    // Salva o modo no localStorage
+    localStorage.setItem('modoGravadorAtivo', 'feynman');
+    
+    // Navega para a tela de revisão (onde o gravador está)
+    if (typeof window.mostrarTela === 'function') {
+      window.mostrarTela('revisao');
+    }
+    
+    // Dispara evento para o menu lateral
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
+    
+    // Scroll até o gravador
+    setTimeout(() => {
+      const gravadorContainer = document.getElementById('gravadorAudioContainer');
+      if (gravadorContainer) {
+        gravadorContainer.style.display = 'block';
+        gravadorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        gravadorContainer.classList.add('destaque-gravador');
+        
+        // Atualiza o título do gravador
+        const tituloGravador = document.getElementById('gravadorTitulo');
+        if (tituloGravador) {
+          tituloGravador.innerHTML = `
+            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+            Técnica Feynman - Grave sua Explicação
+          `;
+        }
+        
+        setTimeout(() => {
+          gravadorContainer.classList.remove('destaque-gravador');
+        }, 3000);
+      }
+    }, 500);
+  };
+
+  // ===== FUNÇÃO PARA RENDERIZAR O BOTÃO DO MODAL =====
+  const renderizarBotaoModal = () => {
+    if (!metodoSelecionado) return null;
+    
+    const titulo = metodoSelecionado.titulo;
+    const cor = metodos.cor;
+    
+    // Caso: Pomodoro
+    if (titulo === "Pomodoro" || titulo === "Pomodoro com Descanso Ativo") {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ background: cor }}
+          onClick={irParaPomodoro}
+        >
+          <i className="bi bi-play-circle-fill"></i> Usar Pomodoro
+        </button>
+      );
+    }
+    
+    // Caso: Gravação de Podcast
+    if (titulo === "Gravação de Podcast" || titulo === "Gravacao de Podcast") {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ background: cor }}
+          onClick={abrirGravadorPodcast}
+        >
+          <i className="bi bi-mic-fill"></i> Gravar Podcast
+        </button>
+      );
+    }
+    
+    // Caso: Técnica Feynman
+    if (titulo === "Técnica Feynman" || titulo === "Tecnica Feynman") {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ background: cor }}
+          onClick={abrirGravadorFeynman}
+        >
+          <i className="bi bi-mic-fill"></i> Gravar Explicação
+        </button>
+      );
+    }
+    
+    // Caso: Flashcards
+    if (titulo === "Flashcards") {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ background: cor }}
+          onClick={() => irParaRevisao("flashcards", titulo)}
+        >
+          <i className="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)
+        </button>
+      );
+    }
+    
+    // Caso: Métodos que vão para revisão
+    if (metodoSelecionado.irParaRevisao) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ background: cor }}
+          onClick={() => irParaRevisao(metodoSelecionado.tipoRevisao || "revisao_normal", titulo)}
+        >
+          <i className="bi bi-arrow-repeat"></i> Ir para Revisão
+        </button>
+      );
+    }
+    
+    // Caso: Métodos sem redirecionamento
+    return (
+      <button 
+        className="btn-aplicar"
+        style={{ background: cor }}
+        onClick={() => setMetodoSelecionado(null)}
+      >
+        <i className="bi bi-check-circle-fill"></i> Entendi
+      </button>
+    );
   };
 
   if (loading) {
     return (
       <div className="metodos-loading">
         <div className="spinner"></div>
-        <p>Carregando metodos personalizados...</p>
+        <p>Carregando métodos personalizados...</p>
       </div>
     );
   }
@@ -449,10 +645,10 @@ const Metodos = () => {
             alt={metodos.nome}
             style={{ width: 28, height: 28, objectFit: 'contain' }}
           />
-          <span>Inteligencia {metodos.nome}</span>
+          <span>Inteligência {metodos.nome}</span>
         </div>
         
-        <h1>Metodos de Estudo para voce</h1>
+        <h1>Métodos de Estudo para você</h1>
         <p className="metodos-descricao">{metodos.descricao}</p>
       </div>
 
@@ -476,7 +672,7 @@ const Metodos = () => {
             </div>
             <p className="metodo-descricao">{metodo.descricao}</p>
             <button className="btn-ver-mais" style={{ color: metodos.cor }}>
-              Ver metodo completo <i className="bi bi-arrow-right"></i>
+              Ver método completo <i className="bi bi-arrow-right"></i>
             </button>
           </div>
         ))}
@@ -511,7 +707,7 @@ const Metodos = () => {
 
               {metodoSelecionado.beneficios && (
                 <div className="modal-beneficios">
-                  <strong>Beneficios:</strong>
+                  <strong>Benefícios:</strong>
                   <ul>
                     {metodoSelecionado.beneficios.map((b, idx) => (
                       <li key={idx}>{b}</li>
@@ -522,33 +718,13 @@ const Metodos = () => {
 
               <div className="modal-dica">
                 <i className="bi bi-lightbulb-fill"></i>
-                <span>Dica: Adapte esse metodo ao seu estilo pessoal e combine com outras tecnicas.</span>
+                <span>Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.</span>
               </div>
             </div>
 
             <div className="modal-footer">
-  {metodoSelecionado.titulo === 'Flashcards' ? (
-    <button 
-      className="btn-aplicar"
-      style={{ background: metodos.cor }}
-      onClick={() => {
-        localStorage.setItem('metodoSelecionado', metodoSelecionado.titulo);
-        setMetodoSelecionado(null);
-        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
-      }}
-    >
-      <i className="bi bi-arrow-repeat"></i> Ir para Revisao (Criar Flashcards)
-    </button>
-  ) : (
-    <button 
-      className="btn-aplicar"
-      style={{ background: metodos.cor }}
-      onClick={() => setMetodoSelecionado(null)}
-    >
-      <i className="bi bi-check-circle-fill"></i> Entendi
-    </button>
-  )}
-</div>
+              {renderizarBotaoModal()}
+            </div>
           </div>
         </div>
       )}
