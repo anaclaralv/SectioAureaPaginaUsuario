@@ -6954,7 +6954,8 @@ function limparCamposGravador() {
   const anotacoesGravacao = document.getElementById('anotacoesGravacao');
   const tempoGravacao = document.getElementById('tempoGravacao');
   const audioGravadoArea = document.getElementById('audioGravadoArea');
-
+  const nomeGravacao = document.getElementById('nomeGravacao'); // ⬅️ NOVO
+  
   if (checkPalavrasSimples) checkPalavrasSimples.checked = false;
   if (checkAnalogias) checkAnalogias.checked = false;
   if (checkLacunas) checkLacunas.checked = false;
@@ -6962,11 +6963,11 @@ function limparCamposGravador() {
   if (anotacoesGravacao) anotacoesGravacao.value = '';
   if (tempoGravacao) tempoGravacao.textContent = '00:00';
   if (audioGravadoArea) audioGravadoArea.style.display = 'none';
-
+  if (nomeGravacao) nomeGravacao.value = ''; // ⬅️ NOVO
+  
   audioUrl = null;
   segundosGravacao = 0;
 }
-
 // ===== FUNÇÕES ESPECÍFICAS =====
 function abrirGravadorPodcast() {
   abrirGravador('podcast');
@@ -7097,14 +7098,16 @@ function salvarGravacao() {
     });
     return;
   }
-
+  
   const modoAtivo = localStorage.getItem('modoGravadorAtivo') || 'feynman';
-
+  const nomeGravacao = document.getElementById('nomeGravacao').value.trim();
+  
   const gravacao = {
     id: Date.now(),
     data: new Date().toISOString(),
     url: audioUrl,
     modo: modoAtivo,
+    nome: nomeGravacao || `Gravação ${modoAtivo === 'podcast' ? 'Podcast' : 'Feynman'} ${new Date().toLocaleDateString('pt-BR')}`,
     checkPalavrasSimples: document.getElementById('checkPalavrasSimples')?.checked || false,
     checkAnalogias: document.getElementById('checkAnalogias')?.checked || false,
     checkLacunas: document.getElementById('checkLacunas')?.checked || false,
@@ -7112,20 +7115,20 @@ function salvarGravacao() {
     anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
     duracao: segundosGravacao
   };
-
+  
   gravacoesSalvas.push(gravacao);
   localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-
+  
   renderizarGravacoes();
-
+  
   // Limpar campos
   limparCamposGravador();
-
+  
   Swal.fire({
     icon: 'success',
     title: 'Gravação salva!',
-    text: 'Sua gravação foi salva com sucesso.',
-    timer: 1500,
+    text: `"${gravacao.nome}" foi salva com sucesso.`,
+    timer: 2000,
     showConfirmButton: false
   });
 }
@@ -7133,42 +7136,70 @@ function salvarGravacao() {
 function renderizarGravacoes() {
   const container = document.getElementById('listaGravacoes');
   if (!container) return;
-
+  
   container.innerHTML = '';
-
+  
   if (gravacoesSalvas.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma gravação ainda.</p>';
     return;
   }
-
+  
   const ordenadas = [...gravacoesSalvas].reverse();
-
+  
   ordenadas.forEach(grav => {
     const data = new Date(grav.data);
     const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
+    
     const modoIcone = grav.modo === 'podcast' ? '🎙️' : '📝';
     const modoNome = grav.modo === 'podcast' ? 'Podcast' : 'Feynman';
-
+    const nomeExibicao = grav.nome || 'Gravação sem nome';
+    
+    // Formata a duração
+    const minutos = Math.floor(grav.duracao / 60);
+    const segundos = grav.duracao % 60;
+    const duracaoFormatada = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+    
     const div = document.createElement('div');
     div.className = 'gravacao-item';
-
+    
     const checkboxes = [];
     if (grav.checkPalavrasSimples) checkboxes.push('✅ Palavras simples');
     if (grav.checkAnalogias) checkboxes.push('✅ Analogias');
     if (grav.checkLacunas) checkboxes.push('✅ Lacunas');
     if (grav.checkSimplificado) checkboxes.push('✅ Simplificado');
-
+    
     div.innerHTML = `
       <div class="gravacao-info">
-        <span class="gravacao-data">${modoIcone} ${modoNome} | ${dataFormatada}</span>
-        <button class="btn-excluir-gravacao" onclick="excluirGravacao(${grav.id})">🗑 Excluir</button>
+        <div style="flex: 1;">
+          <strong style="display: block; font-size: 0.95rem; color: #374151; margin-bottom: 4px;">
+            ${nomeExibicao}
+          </strong>
+          <span class="gravacao-data">
+            ${modoIcone} ${modoNome} | ${dataFormatada} | ⏱ ${duracaoFormatada}
+          </span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <button class="btn-editar-gravacao" onclick="editarGravacao(${grav.id})" 
+                  title="Editar">
+            ✏️
+          </button>
+          <button class="btn-excluir-gravacao" onclick="excluirGravacao(${grav.id})" 
+                  title="Excluir">
+            🗑
+          </button>
+        </div>
       </div>
       <audio controls src="${grav.url}" style="width: 100%; margin: 10px 0;"></audio>
       ${checkboxes.length > 0 ? `<div class="gravacao-checkboxes">${checkboxes.join(' | ')}</div>` : ''}
-      ${grav.anotacoes ? `<p style="font-size: 0.8rem; color: #6b7280; margin-top: 8px;"><strong>Anotações:</strong> ${grav.anotacoes}</p>` : ''}
+      ${grav.anotacoes ? `
+        <div class="gravacao-anotacoes" style="background: #f9fafb; padding: 10px; border-radius: 8px; margin-top: 8px;">
+          <p style="font-size: 0.8rem; color: #6b7280; margin: 0;">
+            <strong>📝 Anotações:</strong> ${grav.anotacoes}
+          </p>
+        </div>
+      ` : ''}
     `;
-
+    
     container.appendChild(div);
   });
 }
@@ -7199,6 +7230,7 @@ window.pausarGravacao = pausarGravacao;
 window.pararGravacao = pararGravacao;
 window.salvarGravacao = salvarGravacao;
 window.excluirGravacao = excluirGravacao;
+window.editarGravacao = editarGravacao;
 
 // ===== INICIALIZAR =====
 document.addEventListener('DOMContentLoaded', function () {
@@ -7395,3 +7427,108 @@ setTimeout(() => {
 }, 500);
 
 console.log('✅ Correção dos métodos aplicada!');
+
+// ===== FUNÇÃO PARA EDITAR GRAVAÇÃO =====
+function editarGravacao(id) {
+  console.log('✏️ Editando gravação:', id);
+  
+  const gravacao = gravacoesSalvas.find(g => g.id === id);
+  if (!gravacao) return;
+  
+  Swal.fire({
+    title: 'Editar Gravação',
+    html: `
+      <div style="text-align: left;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+          <i class="bi bi-tag"></i> Nome:
+        </label>
+        <input id="swalNomeGravacao" class="swal2-input" 
+               value="${gravacao.nome || ''}" 
+               placeholder="Nome da gravação">
+        
+        <label style="display: block; margin-bottom: 8px; margin-top: 15px; font-weight: 600; color: #4b5563;">
+          <i class="bi bi-pencil"></i> Anotações:
+        </label>
+        <textarea id="swalAnotacoesGravacao" class="swal2-textarea" 
+                  placeholder="Suas anotações..." 
+                  style="height: 120px;">${gravacao.anotacoes || ''}</textarea>
+        
+        <div style="margin-top: 15px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-clipboard-check"></i> Autoavaliação:
+          </label>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckPalavras" ${gravacao.checkPalavrasSimples ? 'checked' : ''}>
+              <span>Expliquei com palavras simples?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckAnalogias" ${gravacao.checkAnalogias ? 'checked' : ''}>
+              <span>Usei analogias ou exemplos?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckLacunas" ${gravacao.checkLacunas ? 'checked' : ''}>
+              <span>Identifiquei lacunas no entendimento?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckSimplificado" ${gravacao.checkSimplificado ? 'checked' : ''}>
+              <span>Consegui simplificar o conceito?</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-save"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const nome = document.getElementById('swalNomeGravacao').value.trim();
+      const anotacoes = document.getElementById('swalAnotacoesGravacao').value;
+      const checkPalavras = document.getElementById('swalCheckPalavras').checked;
+      const checkAnalogias = document.getElementById('swalCheckAnalogias').checked;
+      const checkLacunas = document.getElementById('swalCheckLacunas').checked;
+      const checkSimplificado = document.getElementById('swalCheckSimplificado').checked;
+      
+      if (!nome) {
+        Swal.showValidationMessage('Dê um nome para a gravação!');
+        return false;
+      }
+      
+      return {
+        nome: nome,
+        anotacoes: anotacoes,
+        checkPalavrasSimples: checkPalavras,
+        checkAnalogias: checkAnalogias,
+        checkLacunas: checkLacunas,
+        checkSimplificado: checkSimplificado
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Atualiza a gravação
+      gravacao.nome = result.value.nome;
+      gravacao.anotacoes = result.value.anotacoes;
+      gravacao.checkPalavrasSimples = result.value.checkPalavrasSimples;
+      gravacao.checkAnalogias = result.value.checkAnalogias;
+      gravacao.checkLacunas = result.value.checkLacunas;
+      gravacao.checkSimplificado = result.value.checkSimplificado;
+      
+      // Salva no localStorage
+      localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+      
+      // Re-renderiza a lista
+      renderizarGravacoes();
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Atualizada!',
+        text: 'Gravação atualizada com sucesso.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}

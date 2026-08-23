@@ -4545,7 +4545,65 @@ canvas {
 }/* ============================================= */
 /* ===== GRAVADOR DE ÁUDIO (MODAL) ============= */
 /* ============================================= */
+/* Campo de nome da gravação */
+#nomeGravacao {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
 
+#nomeGravacao:focus {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-primaria) 10%, transparent);
+  outline: none;
+}
+
+/* Nome da gravação na lista */
+.gravacao-item strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #374151;
+  margin-bottom: 4px;
+}
+/* Botão de editar gravação */
+.btn-editar-gravacao {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.btn-editar-gravacao:hover {
+  background: #bae6fd;
+  transform: scale(1.05);
+}
+
+/* Anotações na lista */
+.gravacao-anotacoes {
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border-left: 3px solid var(--cor-primaria);
+}
+
+/* Estilo do modal de edição (SweetAlert) */
+.swal2-input, .swal2-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.swal2-input:focus, .swal2-textarea:focus {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-primaria) 10%, transparent);
+  outline: none;
+}
 /* Modal do gravador */
 #gravadorModalOverlay {
   display: none;
