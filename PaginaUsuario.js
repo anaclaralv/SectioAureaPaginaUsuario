@@ -1018,6 +1018,803 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
 }
 window.verDetalhesMetodo = verDetalhesMetodo;
 
+function verDetalhesMetodo(tipoInteligencia, metodoId) {
+    const metodosData = metodosPorInteligencia[tipoInteligencia];
+    if (!metodosData) return;
+    
+    const metodo = metodosData.metodos.find(m => m.id === metodoId);
+    if (!metodo) return;
+
+    const modalTitulo = document.getElementById("modalMetodoTitulo");
+    const modalTempo = document.getElementById("modalMetodoTempo");
+    const modalDificuldade = document.getElementById("modalMetodoDificuldade");
+    const passosList = document.getElementById("modalMetodoPassos");
+    const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
+    const beneficiosList = document.getElementById("modalMetodoBeneficios");
+    const modalDica = document.getElementById("modalMetodoDica");
+    const footer = document.getElementById("modalMetodoFooter");
+
+    if (modalTitulo) modalTitulo.textContent = metodo.titulo;
+    if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
+    
+    if (modalDificuldade) {
+        modalDificuldade.textContent = metodo.dificuldade;
+        modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+    }
+
+    if (passosList) {
+        passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
+    }
+
+    if (beneficiosList && beneficiosContainer) {
+        if (metodo.beneficios && metodo.beneficios.length > 0) {
+            beneficiosContainer.style.display = "block";
+            beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+        } else {
+            beneficiosContainer.style.display = "none";
+        }
+    }
+
+    if (modalDica) {
+        modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+    }
+
+    if (footer) {
+        footer.innerHTML = "";
+        
+        // ===== VERIFICAÇÃO DO CORNELL (ADICIONAR AQUI) =====
+        if (metodo.titulo === "Metodo Cornell" || metodo.titulo === "Método Cornell" || metodo.titulo.includes("Cornell")) {
+            const btn = document.createElement("button");
+            btn.className = "btn-aplicar";
+            btn.style.background = metodosData.cor;
+            btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
+            btn.onclick = function() {
+                console.log('Botão Cornell clicado!');
+                if (typeof window.abrirCornell === 'function') {
+                    window.abrirCornell();
+                } else {
+                    console.error('Função abrirCornell não encontrada!');
+                }
+            };
+            footer.appendChild(btn);
+        }
+        // ===== FIM DA VERIFICAÇÃO DO CORNELL =====
+        
+        else if (metodo.titulo === "Flashcards") {
+            const btn = document.createElement("button");
+            btn.className = "btn-aplicar";
+            btn.style.background = metodosData.cor;
+            btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
+            btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
+            footer.appendChild(btn);
+        } else if (metodo.irParaRevisao) {
+            const btn = document.createElement("button");
+            btn.className = "btn-aplicar";
+            btn.style.background = metodosData.cor;
+            btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
+            btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+            footer.appendChild(btn);
+        } else {
+            const btn = document.createElement("button");
+            btn.className = "btn-aplicar";
+            btn.style.background = metodosData.cor;
+            btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+            btn.onclick = window.fecharMetodoModal;
+            footer.appendChild(btn);
+        }
+    }
+
+    const modalOverlay = document.getElementById("metodoModalOverlay");
+    if (modalOverlay) {
+        modalOverlay.style.display = "flex";
+    }
+}
+window.verDetalhesMetodo = verDetalhesMetodo;
+
+// ===== FUNÇÃO PARA ABRIR O CORNELL (NOTAS) =====
+function abrirCornell() {
+    console.log('Abrindo Cornell...');
+    
+    // Fecha o modal
+    fecharMetodoModal();
+    
+    // Salva o modo no localStorage
+    localStorage.setItem('modoCornellAtivo', 'true');
+    
+    // Salva a inteligência atual
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    localStorage.setItem('inteligenciaAtual', inteligencia);
+    
+    // Salva o título do método para referência
+    localStorage.setItem('metodoAtivo', 'Cornell');
+    
+    // Navega para a tela de notas
+    if (typeof mostrarTela === 'function') {
+        mostrarTela('notas');
+    }
+    
+    // Dispara evento para ativar o modo Cornell
+    setTimeout(() => {
+        const notasSection = document.getElementById('notasSection');
+        if (notasSection) {
+            notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Dispara evento para ativar o modo Cornell
+            window.dispatchEvent(new CustomEvent('ativarModoCornell', { 
+                detail: { ativo: true } 
+            }));
+        }
+    }, 500);
+}
+window.abrirCornell = abrirCornell;
+
+// ===== FUNÇÕES DO CORNELL =====
+
+// ===== CARREGAR NOTAS CORNELL (INTEGRADO) =====
+function carregarNotasCornell() {
+    let notas = [];
+    try {
+        const notasSalvas = localStorage.getItem('notas');
+        if (notasSalvas) {
+            notas = JSON.parse(notasSalvas);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    // Filtra apenas notas do tipo Cornell
+    const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
+    renderizarNotasCornell(notasCornell);
+}
+window.carregarNotasCornell = carregarNotasCornell;
+
+// ===== RENDERIZAR NOTAS CORNELL (ESTILO ARQUIVOS) =====
+function renderizarNotasCornell(notas) {
+    const container = document.getElementById('cornellListaCards');
+    const total = document.getElementById('cornellTotal');
+    const emptyMessage = document.getElementById('cornellEmptyMessage');
+    
+    if (!container) return;
+    
+    if (total) {
+        total.textContent = notas.length;
+    }
+    
+    if (notas.length === 0) {
+        container.innerHTML = '';
+        if (emptyMessage) emptyMessage.style.display = 'block';
+        return;
+    }
+    
+    if (emptyMessage) emptyMessage.style.display = 'none';
+    
+    container.innerHTML = notas.map((nota, index) => `
+        <div class="cornell-arquivo-card" style="
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            position: relative;
+            cursor: pointer;
+        " onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; this.style.borderColor='var(--cor-primaria)'" 
+           onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'; this.style.borderColor='#e5e7eb'">
+            
+            <!-- Cabeçalho do arquivo -->
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 8px;
+            ">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex: 1;
+                    min-width: 0;
+                ">
+                    <i class="bi bi-file-earmark-text" style="color: var(--cor-primaria); font-size: 18px;"></i>
+                    <span style="
+                        font-weight: 600;
+                        color: #1f2937;
+                        font-size: 14px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    ">${nota.titulo || 'Sem título'}</span>
+                </div>
+                <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                    <button onclick="event.stopPropagation(); abrirNotaCornellParaEdicao('${nota.id}')" style="
+                        background: none;
+                        border: none;
+                        color: #6c757d;
+                        cursor: pointer;
+                        padding: 4px 6px;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        transition: all 0.3s;
+                    " onmouseover="this.style.background='#f0f0f0'; this.style.color='#374151'" 
+                       onmouseout="this.style.background='transparent'; this.style.color='#6c757d'" 
+                       title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); excluirNotaCornell('${nota.id}')" style="
+                        background: none;
+                        border: none;
+                        color: #dc3545;
+                        cursor: pointer;
+                        padding: 4px 6px;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        transition: all 0.3s;
+                    " onmouseover="this.style.background='#fef2f2'" 
+                       onmouseout="this.style.background='transparent'" 
+                       title="Excluir">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Prévia do conteúdo -->
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                font-size: 13px;
+                color: #4b5563;
+                background: #f8f9fa;
+                padding: 10px 12px;
+                border-radius: 6px;
+                margin-top: 4px;
+            ">
+                <div style="
+                    border-right: 2px solid #e5e7eb;
+                    padding-right: 10px;
+                ">
+                    <span style="
+                        font-size: 10px;
+                        color: #dc3545;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        display: block;
+                        margin-bottom: 2px;
+                    ">❓ Pergunta</span>
+                    <span style="
+                        display: block;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-size: 12px;
+                    ">${nota.pergunta || '—'}</span>
+                </div>
+                <div>
+                    <span style="
+                        font-size: 10px;
+                        color: #28a745;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        display: block;
+                        margin-bottom: 2px;
+                    ">💡 Resposta</span>
+                    <span style="
+                        display: block;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-size: 12px;
+                    ">${nota.resposta || '—'}</span>
+                </div>
+            </div>
+            
+            <!-- Rodapé -->
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+            ">
+                <span style="font-size: 11px; color: #999;">
+                    <i class="bi bi-clock"></i> ${nota.dataCriacao || new Date().toLocaleDateString('pt-BR')}
+                </span>
+                <span style="
+                    font-size: 10px;
+                    background: #e5e7eb;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    color: #6b7280;
+                ">
+                    <i class="bi bi-tag"></i> Cornell
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+window.renderizarNotasCornell = renderizarNotasCornell;
+
+// Salvar nota Cornell
+// ===== SALVAR NOTA CORNELL (INTEGRADO COM NOTAS) =====
+function salvarNotaCornell() {
+    const pergunta = document.getElementById('cornellPergunta');
+    const resposta = document.getElementById('cornellResposta');
+    
+    if (!pergunta || !resposta) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Erro!',
+            text: 'Campos não encontrados.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    const perguntaText = pergunta.value.trim();
+    const respostaText = resposta.value.trim();
+    
+    if (!perguntaText || !respostaText) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos incompletos!',
+            text: 'Preencha tanto a pergunta quanto a resposta.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    // Busca as notas existentes
+    let notas = [];
+    try {
+        const notasSalvas = localStorage.getItem('notas');
+        if (notasSalvas) {
+            notas = JSON.parse(notasSalvas);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    // Cria a nota no formato Cornell
+    const novaNota = {
+        id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        titulo: `📝 Cornell: ${perguntaText.substring(0, 40)}${perguntaText.length > 40 ? '...' : ''}`,
+        texto: `
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
+        <strong style="color: #dc3545;">❓ Pergunta:</strong>
+        <p style="margin-top: 8px; color: #dc3545;">${perguntaText}</p>
+    </div>
+    <div>
+        <strong style="color: #28a745;">💡 Resposta:</strong>
+        <p style="margin-top: 8px; color: #28a745;">${respostaText}</p>
+    </div>
+</div>
+<div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 12px; color: #666;">
+    <i class="bi bi-tag"></i> Método Cornell
+</div>
+        `,
+        cor: '#ffffff',
+        corTexto: '#000000',
+        checklist: [],
+        anexos: [],
+        favorito: false,
+        dataCriacao: new Date().toLocaleString('pt-BR'),
+        tipo: 'cornell',
+        pergunta: perguntaText,
+        resposta: respostaText
+    };
+    
+    // Adiciona a nota
+    notas.unshift(novaNota);
+    localStorage.setItem('notas', JSON.stringify(notas));
+    
+    // Limpa os campos
+    pergunta.value = '';
+    resposta.value = '';
+    
+    // Re-renderiza as notas
+    if (typeof renderNotas === 'function') {
+        renderNotas();
+    }
+    
+    // Re-renderiza o Cornell
+    carregarNotasCornell();
+    
+    // Feedback
+    const btn = document.querySelector('.cornell-botoes button:first-child');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado!';
+        btn.style.background = '#28a745';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--cor-primaria)';
+        }, 1500);
+    }
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Anotação salva!',
+        text: 'A nota foi adicionada à sua lista de notas.',
+        timer: 1500,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+    
+    // Abre a seção de notas para mostrar a nota criada
+    setTimeout(() => {
+        const notasSection = document.getElementById('notasSection');
+        if (notasSection) {
+            notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // Abre a aba de notas se estiver em outro lugar
+        if (typeof mostrarTela === 'function') {
+            mostrarTela('notas');
+        }
+    }, 500);
+}
+window.salvarNotaCornell = salvarNotaCornell;
+
+// ===== EXCLUIR NOTA CORNELL (INTEGRADO) =====
+function excluirNotaCornell(id) {
+    let notas = [];
+    try {
+        const notasSalvas = localStorage.getItem('notas');
+        if (notasSalvas) {
+            notas = JSON.parse(notasSalvas);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    const notaIndex = notas.findIndex(n => n.id === id);
+    if (notaIndex === -1) return;
+    
+    Swal.fire({
+        title: 'Excluir anotação?',
+        text: 'Essa ação não pode ser desfeita!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545'
+    }).then(result => {
+        if (result.isConfirmed) {
+            notas.splice(notaIndex, 1);
+            localStorage.setItem('notas', JSON.stringify(notas));
+            
+            // Re-renderiza tudo
+            if (typeof renderNotas === 'function') {
+                renderNotas();
+            }
+            carregarNotasCornell();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Anotação excluída!',
+                timer: 1200,
+                showConfirmButton: false,
+                position: 'top-end',
+                toast: true
+            });
+        }
+    });
+}
+window.excluirNotaCornell = excluirNotaCornell;
+
+
+// ===== ABRIR NOTA CORNELL PARA EDIÇÃO =====
+function abrirNotaCornellParaEdicao(id) {
+    let notas = [];
+    try {
+        const notasSalvas = localStorage.getItem('notas');
+        if (notasSalvas) {
+            notas = JSON.parse(notasSalvas);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    const nota = notas.find(n => n.id === id);
+    if (!nota) return;
+    
+    // Abre a seção de notas
+    if (typeof mostrarTela === 'function') {
+        mostrarTela('notas');
+    }
+    
+    // Tenta abrir a nota no modal de edição
+    setTimeout(() => {
+        // Procura a nota no DOM e clica no botão editar
+        const cardNota = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+        if (cardNota) {
+            const btnEditar = cardNota.querySelector('.btn-editar');
+            if (btnEditar) {
+                btnEditar.click();
+            }
+        } else {
+            // Se não encontrar, recarrega as notas e tenta novamente
+            if (typeof renderNotas === 'function') {
+                renderNotas();
+                setTimeout(() => {
+                    const cardNota2 = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+                    if (cardNota2) {
+                        const btnEditar2 = cardNota2.querySelector('.btn-editar');
+                        if (btnEditar2) {
+                            btnEditar2.click();
+                        }
+                    }
+                }, 300);
+            }
+        }
+    }, 300);
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Abrindo nota...',
+        text: 'Você será redirecionado para editar a nota.',
+        timer: 1000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.abrirNotaCornellParaEdicao = abrirNotaCornellParaEdicao;
+
+// Editar nota Cornell
+function editarNotaCornell(index) {
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    const chave = `notasCornell_${inteligencia}`;
+    let notas = [];
+    
+    try {
+        const salvo = localStorage.getItem(chave);
+        if (salvo) {
+            notas = JSON.parse(salvo);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    if (index < 0 || index >= notas.length) return;
+    
+    const nota = notas[index];
+    
+    Swal.fire({
+        title: 'Editar Anotação Cornell',
+        html: `
+            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #dc3545;">
+                    <i class="bi bi-question-circle"></i> Pergunta:
+                </label>
+                <textarea id="editCornellPergunta" class="swal2-textarea" rows="2" style="border-color: #dc3545;">${nota.pergunta.replace(/"/g, '&quot;')}</textarea>
+                
+                <label style="display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; color: #28a745;">
+                    <i class="bi bi-lightbulb"></i> Resposta:
+                </label>
+                <textarea id="editCornellResposta" class="swal2-textarea" rows="3" style="border-color: #28a745;">${nota.resposta.replace(/"/g, '&quot;')}</textarea>
+            </div>
+        `,
+        confirmButtonText: 'Salvar',
+        cancelButtonText: 'Cancelar',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--cor-primaria)',
+        preConfirm: () => {
+            const pergunta = document.getElementById('editCornellPergunta').value.trim();
+            const resposta = document.getElementById('editCornellResposta').value.trim();
+            
+            if (!pergunta || !resposta) {
+                Swal.showValidationMessage('Preencha ambos os campos!');
+                return false;
+            }
+            
+            return { pergunta, resposta };
+        }
+    }).then(result => {
+        if (result.isConfirmed && result.value) {
+            notas[index].pergunta = result.value.pergunta;
+            notas[index].resposta = result.value.resposta;
+            notas[index].data = new Date().toLocaleDateString('pt-BR');
+            
+            localStorage.setItem(chave, JSON.stringify(notas));
+            renderizarNotasCornell(notas);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Anotação atualizada!',
+                timer: 1200,
+                showConfirmButton: false,
+                position: 'top-end',
+                toast: true
+            });
+        }
+    });
+}
+window.editarNotaCornell = editarNotaCornell;
+
+// Ativar modo revisão (oculta as respostas)
+function ativarModoRevisaoCornell() {
+    const cards = document.querySelectorAll('.cornell-card');
+    const isAtivo = document.querySelector('.modo-revisao-ativo');
+    
+    if (isAtivo) {
+        // Desativar
+        cards.forEach(card => {
+            card.style.filter = 'none';
+            const resposta = card.querySelector('.cornell-card .coluna-direita p');
+            if (resposta) resposta.style.display = 'block';
+        });
+        document.querySelector('.modo-revisao-ativo')?.remove();
+        
+        Swal.fire({
+            icon: 'info',
+            title: 'Modo revisão desativado',
+            timer: 1000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+        });
+        return;
+    }
+    
+    // Ativar
+    cards.forEach(card => {
+        const pergunta = card.querySelector('.cornell-card .coluna-esquerda p');
+        const resposta = card.querySelector('.cornell-card .coluna-direita p');
+        
+        if (pergunta && resposta) {
+            // Cria um botão para revelar
+            const btnRevelar = document.createElement('button');
+            btnRevelar.innerHTML = '<i class="bi bi-eye"></i> Ver Resposta';
+            btnRevelar.style.cssText = `
+                background: var(--cor-primaria);
+                color: white;
+                border: none;
+                padding: 4px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin-top: 8px;
+            `;
+            btnRevelar.onclick = function(e) {
+                e.stopPropagation();
+                Swal.fire({
+                    title: '📝 Pergunta',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <p><strong>Pergunta:</strong></p>
+                            <p style="background: #f8f9fa; padding: 10px; border-radius: 8px;">${pergunta.textContent}</p>
+                            <p><strong>💡 Resposta:</strong></p>
+                            <p style="background: #e8f5e9; padding: 10px; border-radius: 8px;">${resposta.textContent}</p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonColor: 'var(--cor-primaria)',
+                    confirmButtonText: 'Entendi!'
+                });
+            };
+            
+            // Oculta a resposta e adiciona o botão
+            resposta.style.display = 'none';
+            const container = resposta.parentElement;
+            const existingBtn = container.querySelector('.btn-revelar-resposta-cornell');
+            if (existingBtn) existingBtn.remove();
+            btnRevelar.className = 'btn-revelar-resposta-cornell';
+            container.appendChild(btnRevelar);
+        }
+        
+        card.style.filter = 'blur(2px)';
+        card.style.transition = 'filter 0.3s';
+    });
+    
+    // Adiciona indicador
+    const btnRevisao = document.querySelector('.cornell-botoes button:nth-child(2)');
+    if (btnRevisao) {
+        btnRevisao.innerHTML = '<i class="bi bi-eye-slash"></i> Desativar Revisão';
+        btnRevisao.classList.add('modo-revisao-ativo');
+    }
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Modo revisão ativado!',
+        text: 'As respostas estão ocultas. Clique em "Ver Resposta" para conferir.',
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.ativarModoRevisaoCornell = ativarModoRevisaoCornell;
+
+// Limpar campos
+function limparCamposCornell() {
+    const pergunta = document.getElementById('cornellPergunta');
+    const resposta = document.getElementById('cornellResposta');
+    
+    if (pergunta) pergunta.value = '';
+    if (resposta) resposta.value = '';
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Campos limpos!',
+        timer: 800,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.limparCamposCornell = limparCamposCornell;
+
+// Fechar modo Cornell
+function fecharModoCornell() {
+    const container = document.getElementById('cornellContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+    localStorage.removeItem('modoCornellAtivo');
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Modo Cornell fechado',
+        timer: 1000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.fecharModoCornell = fecharModoCornell;
+
+// Exportar notas Cornell
+function exportarCornell() {
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    const chave = `notasCornell_${inteligencia}`;
+    let notas = [];
+    
+    try {
+        const salvo = localStorage.getItem(chave);
+        if (salvo) {
+            notas = JSON.parse(salvo);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    if (notas.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nenhuma anotação!',
+            text: 'Adicione algumas anotações antes de exportar.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    const dataStr = JSON.stringify(notas, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cornell_${inteligencia}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Exportado!',
+        text: 'Arquivo salvo com sucesso!',
+        timer: 1500,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.exportarCornell = exportarCornell;
+
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
   if (typeof anexosTemp !== 'undefined') {
@@ -1888,9 +2685,119 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
 
-  function salvarNotas() {
-    // Chamada fictícia - as notas são persistidas diretamente no backend.
-  }
+  // ===== SALVAR NOTA CORNELL =====
+function salvarNotaCornell() {
+    const titulo = document.getElementById('cornellTitulo');
+    const pergunta = document.getElementById('cornellPergunta');
+    const resposta = document.getElementById('cornellResposta');
+    
+    if (!pergunta || !resposta) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Erro!',
+            text: 'Campos não encontrados.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    const tituloText = titulo ? titulo.value.trim() : 'Anotação Cornell';
+    const perguntaText = pergunta.value.trim();
+    const respostaText = resposta.value.trim();
+    
+    if (!perguntaText || !respostaText) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos incompletos!',
+            text: 'Preencha tanto a pergunta quanto a resposta.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    // Busca as notas existentes
+    let notas = [];
+    try {
+        const notasSalvas = localStorage.getItem('notas');
+        if (notasSalvas) {
+            notas = JSON.parse(notasSalvas);
+        }
+    } catch (e) {
+        notas = [];
+    }
+    
+    // Cria a nota no formato Cornell
+    const novaNota = {
+        id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        titulo: tituloText,
+        texto: `
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
+        <strong style="color: #dc3545;">❓ Pergunta:</strong>
+        <p style="margin-top: 8px; color: #dc3545;">${perguntaText}</p>
+    </div>
+    <div>
+        <strong style="color: #28a745;">💡 Resposta:</strong>
+        <p style="margin-top: 8px; color: #28a745;">${respostaText}</p>
+    </div>
+</div>
+<div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 12px; color: #666;">
+    <i class="bi bi-tag"></i> Método Cornell
+</div>
+        `,
+        cor: '#ffffff',
+        corTexto: '#000000',
+        checklist: [],
+        anexos: [],
+        favorito: false,
+        dataCriacao: new Date().toLocaleString('pt-BR'),
+        tipo: 'cornell',
+        pergunta: perguntaText,
+        resposta: respostaText
+    };
+    
+    // Adiciona a nota
+    notas.unshift(novaNota);
+    localStorage.setItem('notas', JSON.stringify(notas));
+    
+    // Limpa os campos
+    if (titulo) titulo.value = '';
+    pergunta.value = '';
+    resposta.value = '';
+    document.getElementById('contadorPergunta').textContent = '0';
+    document.getElementById('contadorResposta').textContent = '0';
+    
+    // Re-renderiza
+    carregarNotasCornell();
+    if (typeof renderNotas === 'function') {
+        renderNotas();
+    }
+    
+    // Feedback
+    const btn = document.querySelector('.cornell-botoes button:first-child');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
+        btn.style.background = '#28a745';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--cor-primaria)';
+        }, 1500);
+    }
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Anotação salva!',
+        text: `"${tituloText}" foi adicionado aos seus arquivos.`,
+        timer: 1500,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+window.salvarNotaCornell = salvarNotaCornell;
 
   function renderNotas() {
     notasContainer.innerHTML = "";
@@ -2434,6 +3341,363 @@ document.addEventListener("DOMContentLoaded", () => {
       processarImagens(files);
     });
   }
+    
+   // ===== LISTENER PARA ATIVAR MODO CORNELL =====
+window.addEventListener('ativarModoCornell', function(e) {
+    console.log('Evento ativarModoCornell recebido!', e.detail);
+    const notasSection = document.getElementById('notasSection');
+    if (!notasSection) return;
+    
+    // Remove container antigo se existir
+    const oldContainer = document.getElementById('cornellContainer');
+    if (oldContainer) oldContainer.remove();
+    
+    // Pega a inteligência atual para personalizar
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    
+    // Cria o container Cornell
+    const cornellContainer = document.createElement('div');
+    cornellContainer.id = 'cornellContainer';
+    cornellContainer.className = 'cornell-container';
+    cornellContainer.style.cssText = `
+        margin: 20px 0 30px 0;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+    `;
+    
+    cornellContainer.innerHTML = `
+        <!-- Header -->
+        <div class="cornell-header" style="
+            background: linear-gradient(135deg, var(--cor-primaria), var(--cor-primaria)dd);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        ">
+            <div>
+                <h3 style="margin: 0; color: #ffffff; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                    <i class="bi bi-journal-text" style="color: #ffffff;"></i> Método Cornell
+                    <span style="
+                        font-size: 12px;
+                        background: rgba(255,255,255,0.2);
+                        padding: 2px 12px;
+                        border-radius: 12px;
+                        color: #ffffff;
+                        font-weight: 400;
+                    ">${inteligencia === 'logico' ? '🧮 Lógico' :
+                      inteligencia === 'intrapessoal' ? '🧠 Intrapessoal' : '🌌 Espacial'}</span>
+                </h3>
+                <small style="
+                    display: block; 
+                    margin-top: 2px; 
+                    color: rgba(255,255,255,0.85);
+                    font-size: 13px;
+                ">
+                    ${inteligencia === 'logico' ? 'Organize fórmulas e equações' :
+                      inteligencia === 'intrapessoal' ? 'Organize reflexões pessoais' :
+                      'Organize conceitos visuais'}
+                </small>
+            </div>
+            <button onclick="fecharModoCornell()" style="
+                background: rgba(255,255,255,0.15);
+                color: white;
+                border: 1px solid rgba(255,255,255,0.2);
+                padding: 6px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.3s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.25)'" 
+               onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                <i class="bi bi-x-lg"></i> Fechar
+            </button>
+        </div>
+        
+        <!-- Corpo - Folha de Anotações -->
+        <div class="cornell-body" style="padding: 24px;">
+            <!-- Título da anotação -->
+            <div style="margin-bottom: 20px;">
+                <label style="
+                    display: block;
+                    font-weight: 600;
+                    color: #374151;
+                    margin-bottom: 6px;
+                    font-size: 14px;
+                ">
+                    <i class="bi bi-tag"></i> Título da anotação
+                </label>
+                <input id="cornellTitulo" type="text" style="
+                    width: 100%;
+                    padding: 10px 14px;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    transition: border-color 0.3s;
+                    font-family: inherit;
+                " placeholder="Ex: Fórmulas de Matemática, Reflexões sobre o tema..." 
+                onfocus="this.style.borderColor='var(--cor-primaria)'" 
+                onblur="this.style.borderColor='#e5e7eb'">
+            </div>
+            
+            <!-- Folha de anotações lado a lado -->
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                background: #fafafa;
+                border-radius: 12px;
+                padding: 20px;
+                border: 2px solid #e5e7eb;
+                min-height: 250px;
+            ">
+                <!-- Lado Esquerdo - Perguntas -->
+                <div class="cornell-esquerda" style="
+                    background: #ffffff;
+                    border-radius: 10px;
+                    padding: 16px;
+                    border-left: 4px solid #dc3545;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin-bottom: 12px;
+                    ">
+                        <span style="
+                            background: #dc3545;
+                            color: white;
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 14px;
+                            font-weight: bold;
+                        ">❓</span>
+                        <span style="
+                            font-weight: 600;
+                            color: #dc3545;
+                            font-size: 14px;
+                        ">Perguntas / Fórmulas</span>
+                    </div>
+                    <textarea id="cornellPergunta" style="
+                        width: 100%;
+                        min-height: 150px;
+                        padding: 12px;
+                        border: 1px solid #f0f0f0;
+                        border-radius: 8px;
+                        font-family: inherit;
+                        font-size: 14px;
+                        resize: vertical;
+                        transition: border-color 0.3s;
+                        background: #fafafa;
+                        line-height: 1.6;
+                    " placeholder="${inteligencia === 'logico' ? 'Ex: Qual a fórmula de Bhaskara?\nComo calcular a área de um círculo?' :
+                                  inteligencia === 'intrapessoal' ? 'Ex: Como me sinto em relação a este tema?\nO que aprendi sobre mim?' :
+                                  'Ex: Como visualizo este conceito?\nQue diagramas posso criar?'}"
+                    onfocus="this.style.borderColor='#dc3545'; this.style.background='#ffffff'" 
+                    onblur="this.style.borderColor='#f0f0f0'; this.style.background='#fafafa'"></textarea>
+                    <div style="
+                        margin-top: 8px;
+                        font-size: 12px;
+                        color: #999;
+                        text-align: right;
+                    ">
+                        <span id="contadorPergunta">0</span> caracteres
+                    </div>
+                </div>
+                
+                <!-- Lado Direito - Respostas -->
+                <div class="cornell-direita" style="
+                    background: #ffffff;
+                    border-radius: 10px;
+                    padding: 16px;
+                    border-left: 4px solid #28a745;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin-bottom: 12px;
+                    ">
+                        <span style="
+                            background: #28a745;
+                            color: white;
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 14px;
+                            font-weight: bold;
+                        ">💡</span>
+                        <span style="
+                            font-weight: 600;
+                            color: #28a745;
+                            font-size: 14px;
+                        ">Respostas / Explicações</span>
+                    </div>
+                    <textarea id="cornellResposta" style="
+                        width: 100%;
+                        min-height: 150px;
+                        padding: 12px;
+                        border: 1px solid #f0f0f0;
+                        border-radius: 8px;
+                        font-family: inherit;
+                        font-size: 14px;
+                        resize: vertical;
+                        transition: border-color 0.3s;
+                        background: #fafafa;
+                        line-height: 1.6;
+                    " placeholder="Ex: x = (-b ± √(b²-4ac)) / 2a\nÁrea = π × r²"
+                    onfocus="this.style.borderColor='#28a745'; this.style.background='#ffffff'" 
+                    onblur="this.style.borderColor='#f0f0f0'; this.style.background='#fafafa'"></textarea>
+                    <div style="
+                        margin-top: 8px;
+                        font-size: 12px;
+                        color: #999;
+                        text-align: right;
+                    ">
+                        <span id="contadorResposta">0</span> caracteres
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de ação -->
+            <div class="cornell-botoes" style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 2px solid #f0f0f0;
+            ">
+                <button onclick="salvarNotaCornell()" style="
+                    background: var(--cor-primaria);
+                    color: white;
+                    border: none;
+                    padding: 10px 28px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <i class="bi bi-save"></i> Salvar Anotação
+                </button>
+                <button onclick="limparCamposCornell()" style="
+                    background: #6c757d;
+                    color: white;
+                    border: none;
+                    padding: 10px 24px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                " onmouseover="this.style.transform='translateY(-2px)'" 
+                   onmouseout="this.style.transform='translateY(0)'">
+                    <i class="bi bi-eraser"></i> Limpar
+                </button>
+            </div>
+            
+            <!-- Arquivos/Anotações Salvas -->
+            <div class="cornell-arquivos" style="
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 2px solid #f0f0f0;
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 16px;
+                ">
+                    <h4 style="margin: 0; font-size: 16px; color: #374151; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-archive" style="color: var(--cor-primaria);"></i> 
+                        Meus Arquivos Cornell
+                        <span id="cornellTotal" style="
+                            font-size: 13px;
+                            font-weight: normal;
+                            color: #999;
+                            margin-left: 8px;
+                        ">0</span>
+                    </h4>
+                </div>
+                
+                <!-- Lista de arquivos -->
+                <div id="cornellListaCards" style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 12px;
+                    max-height: 350px;
+                    overflow-y: auto;
+                    padding-right: 4px;
+                ">
+                    <!-- Cards serão inseridos aqui -->
+                </div>
+                
+                <!-- Mensagem vazia (aparece quando não tem arquivos) -->
+                <div id="cornellEmptyMessage" style="
+                    text-align: center;
+                    padding: 30px;
+                    background: #fafafa;
+                    border-radius: 12px;
+                    border: 2px dashed #e5e7eb;
+                    display: block;
+                ">
+                    <i class="bi bi-inbox" style="font-size: 32px; color: #ccc; display: block; margin-bottom: 8px;"></i>
+                    <p style="margin: 0; color: #999; font-size: 14px;">Nenhum arquivo criado ainda.</p>
+                    <p style="margin: 4px 0 0 0; color: #bbb; font-size: 13px;">Preencha a folha acima e clique em "Salvar Anotação"</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insere o container após o título das notas
+    const notasHeader = notasSection.querySelector('.notas-header') || notasSection.querySelector('h1');
+    if (notasHeader) {
+        notasHeader.after(cornellContainer);
+    } else {
+        notasSection.prepend(cornellContainer);
+    }
+    
+    // Contadores de caracteres
+    const perguntaTextarea = document.getElementById('cornellPergunta');
+    const respostaTextarea = document.getElementById('cornellResposta');
+    const contPergunta = document.getElementById('contadorPergunta');
+    const contResposta = document.getElementById('contadorResposta');
+    
+    if (perguntaTextarea && contPergunta) {
+        perguntaTextarea.addEventListener('input', function() {
+            contPergunta.textContent = this.value.length;
+        });
+    }
+    
+    if (respostaTextarea && contResposta) {
+        respostaTextarea.addEventListener('input', function() {
+            contResposta.textContent = this.value.length;
+        });
+    }
+    
+    // Carrega as anotações Cornell
+    carregarNotasCornell();
+});
 });
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
