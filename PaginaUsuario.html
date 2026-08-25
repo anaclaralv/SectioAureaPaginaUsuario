@@ -21,6 +21,10 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+
+  <!-- Mapa mental -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <!-- Seu CSS SEMPRE por último -->
   <link rel="stylesheet" href="PaginaUsuario.css">
 </head>
@@ -860,7 +864,8 @@
       </div>
 
       <!-- Modal Overlay Customizado -->
-      <div id="metodoModalOverlay" class="modal-overlay" style="display:none; z-index: 1000;" onclick="window.fecharMetodoModal()">
+      <div id="metodoModalOverlay" class="modal-overlay" style="display:none; z-index: 1000;"
+        onclick="window.fecharMetodoModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           <button class="modal-close" onclick="window.fecharMetodoModal()">
             <i class="bi bi-x-lg"></i>
@@ -1109,122 +1114,248 @@
       </div>
     </section>
 
-<!-- ==================== MODAL DO GRAVADOR ==================== -->
-<div id="gravadorModalOverlay" 
-     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;" 
-     onclick="fecharGravadorModal()">
-  
-  <div style="background: white; border-radius: 15px; padding: 25px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);" 
-       onclick="event.stopPropagation()">
-    
-    <!-- CABEÇALHO -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 id="gravadorTitulo" style="display: flex; align-items: center; gap: 10px; margin: 0; color: #4b5563;">
-        <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
-        Gravador de Explicação
-      </h3>
-      <button onclick="fecharGravadorModal()" 
-              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
-        <i class="bi bi-x-lg"></i>
-      </button>
+    <!-- ==================== MODAL DO MAPA MENTAL ==================== -->
+    <div id="mapaMentalModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharMapaMental()">
+
+      <div class="modal-content-mapa"
+        style="background: white; border-radius: 20px; width: 95%; max-width: 1200px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
+          <div>
+            <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: 1.3rem;">
+              <i class="bi bi-diagram-3" style="color: var(--cor-primaria);"></i>
+              Mapa Mental
+            </h2>
+            <p style="margin: 3px 0 0; font-size: 0.75rem; color: #9ca3af;">
+              Clique para adicionar | Arraste para mover | Duplo clique para editar | ctrl z para desfazer
+            </p>
+          </div>
+          <button onclick="fecharMapaMental()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 5px;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- BARRA DE FERRAMENTAS -->
+        <div
+          style="display: flex; gap: 8px; padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; align-items: center; flex-shrink: 0;">
+          <input type="text" id="mapaMentalTitulo" placeholder="Nome do mapa (ex: Citologia)"
+            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+
+          <input type="color" id="mapaMentalCorNo" value="#9f042c"
+            style="width: 35px; height: 35px; border: none; border-radius: 8px; cursor: pointer;"
+            title="Cor do novo nó">
+
+          <button onclick="adicionarNoCentral()"
+            style="background: var(--cor-primaria); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-plus-circle"></i> Central
+          </button>
+
+          <button onclick="limparMapa()"
+            style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-trash"></i> Limpar
+          </button>
+
+          <button onclick="salvarMapaMental()"
+            style="background: #22c55e; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-save"></i> Salvar
+          </button>
+          <!-- BOTÕES DE ZOOM -->
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <button onclick="zoomOut()"
+              style="background: #f3f4f6; color: #374151; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; display: flex; align-items: center; justify-content: center;"
+              title="Zoom out (mapa fica pequeno)">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+
+            <span id="mapaMentalZoomIndicador"
+              style="font-size: 0.8rem; font-weight: 700; color: #374151; min-width: 45px; text-align: center;">
+              100%
+            </span>
+
+            <button onclick="zoomIn()"
+              style="background: #f3f4f6; color: #374151; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; display: flex; align-items: center; justify-content: center;"
+              title="Zoom in (mapa fica grande)">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+
+            <button onclick="resetZoom()"
+              style="background: #f3f4f6; color: #374151; border: none; padding: 5px 10px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 3px;"
+              title="Reset zoom (100%)">
+              <i class="bi bi-arrows-fullscreen"></i> 100%
+            </button>
+          </div>
+        </div>
+
+        <!-- ÁREA DO CANVAS -->
+        <div id="mapaMentalCanvasContainer"
+          style="flex: 1; min-height: 0; position: relative; background: #fefefe; overflow: hidden; cursor: crosshair;">
+
+          <!-- Grid de fundo -->
+          <div
+            style="position: absolute; inset: 0; background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5; pointer-events: none;">
+          </div>
+
+          <!-- Canvas para desenhar -->
+          <canvas id="mapaMentalCanvas"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+          </canvas>
+
+          <!-- Área dos nós -->
+          <div id="mapaMentalNosContainer" style="position: absolute; inset: 0; z-index: 10;">
+          </div>
+        </div>
+
+        <!-- RODAPÉ -->
+        <div
+          style="display: flex; gap: 12px; padding: 8px 20px; background: #f9fafb; border-top: 1px solid #e5e7eb; font-size: 0.7rem; color: #9ca3af; flex-wrap: wrap; flex-shrink: 0;">
+          <span><i class="bi bi-mouse"></i> Clique: adicionar</span>
+          <span><i class="bi bi-arrows-move"></i> Arraste: mover</span>
+          <span><i class="bi bi-pencil"></i> Duplo clique: editar</span>
+          <span><i class="bi bi-x-circle"></i> Botão ×: deletar</span>
+          <span>Ctrl + z : desfazer</span>
+
+        </div>
+        <!-- Dentro do modal do Mapa Mental, adicione após o rodapé -->
+        <div
+          style="padding: 15px 20px; background: #f9fafb; border-top: 2px solid #e5e7eb; max-height: 200px; overflow-y: auto; flex-shrink: 0;">
+          <h4
+            style="margin: 0 0 10px; font-size: 0.9rem; color: #4b5563; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-folder2-open"></i> Meus Mapas Salvos
+          </h4>
+          <div id="listaMapasSalvos" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+        </div>
+      </div>
     </div>
 
-     <!-- ⬇️ NOVO: CAMPO PARA NOMEAR A GRAVAÇÃO ⬇️ -->
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
-        <i class="bi bi-tag"></i> Nome da Gravação:
-      </label>
-      <input type="text" id="nomeGravacao" 
-             placeholder="Ex: Explicação sobre Citologia - Capítulo 3"
-             style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; transition: 0.2s;"
-             onfocus="this.style.borderColor='var(--cor-primaria)'"
-             onblur="this.style.borderColor='#e5e7eb'">
+    <!-- LISTA DE MAPAS SALVOS -->
+    <div id="mapasSalvosSection" style="display: none; margin-top: 30px;">
+      <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <i class="bi bi-folder2-open"></i> Meus Mapas Mentais
+      </h3>
+      <div id="listaMapasSalvos"></div>
     </div>
-    
-    <!-- BOTÕES DE GRAVAÇÃO -->
-    <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
-      <button id="btnGravar" onclick="iniciarGravacao()" 
-              style="background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-        <i class="bi bi-record-circle"></i> Gravar
-      </button>
-      
-      <button id="btnPausarAudio" onclick="pausarGravacao()" disabled 
-              style="background: #f59e0b; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
-        <i class="bi bi-pause-circle"></i> Pausar
-      </button>
-      
-      <button id="btnPararAudio" onclick="pararGravacao()" disabled 
-              style="background: #6b7280; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
-        <i class="bi bi-stop-circle"></i> Parar
-      </button>
+
+    <!-- ==================== MODAL DO GRAVADOR ==================== -->
+    <div id="gravadorModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharGravadorModal()">
+
+      <div
+        style="background: white; border-radius: 15px; padding: 25px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 id="gravadorTitulo" style="display: flex; align-items: center; gap: 10px; margin: 0; color: #4b5563;">
+            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+            Gravador de Explicação
+          </h3>
+          <button onclick="fecharGravadorModal()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- ⬇️ NOVO: CAMPO PARA NOMEAR A GRAVAÇÃO ⬇️ -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-tag"></i> Nome da Gravação:
+          </label>
+          <input type="text" id="nomeGravacao" placeholder="Ex: Explicação sobre Citologia - Capítulo 3"
+            style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; transition: 0.2s;"
+            onfocus="this.style.borderColor='var(--cor-primaria)'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+
+        <!-- BOTÕES DE GRAVAÇÃO -->
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+          <button id="btnGravar" onclick="iniciarGravacao()"
+            style="background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="bi bi-record-circle"></i> Gravar
+          </button>
+
+          <button id="btnPausarAudio" onclick="pausarGravacao()" disabled
+            style="background: #f59e0b; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+            <i class="bi bi-pause-circle"></i> Pausar
+          </button>
+
+          <button id="btnPararAudio" onclick="pararGravacao()" disabled
+            style="background: #6b7280; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+            <i class="bi bi-stop-circle"></i> Parar
+          </button>
+        </div>
+
+        <!-- TEMPO DE GRAVAÇÃO -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span id="tempoGravacao" style="font-size: 1.5rem; font-weight: 700; color: var(--cor-primaria);">00:00</span>
+        </div>
+
+        <!-- CHECKLIST -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <h4 style="margin-bottom: 15px; font-size: 0.95rem; color: #4b5563; font-weight: 600;">
+            <i class="bi bi-clipboard-check"></i> Autoavaliação:
+          </h4>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkPalavrasSimples" style="width: 18px; height: 18px;">
+            <span>Expliquei com palavras simples?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkAnalogias" style="width: 18px; height: 18px;">
+            <span>Usei analogias ou exemplos?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkLacunas" style="width: 18px; height: 18px;">
+            <span>Identifiquei lacunas no entendimento?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkSimplificado" style="width: 18px; height: 18px;">
+            <span>Consegui simplificar o conceito?</span>
+          </label>
+        </div>
+
+        <!-- ANOTAÇÕES -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-pencil"></i> Anotações do que melhorar:
+          </label>
+          <textarea id="anotacoesGravacao" rows="3" placeholder="Enquanto ouve, anote os pontos que precisa melhorar..."
+            style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; resize: vertical;"></textarea>
+        </div>
+
+        <!-- ÁUDIO GRAVADO -->
+        <div id="audioGravadoArea"
+          style="display: none; margin-bottom: 20px; background: #f0fdf4; padding: 15px; border-radius: 10px;">
+          <p style="font-size: 0.85rem; color: #16a34a; margin-bottom: 10px; font-weight: 600;">
+            <i class="bi bi-check-circle-fill"></i> Gravação concluída!
+          </p>
+          <audio id="audioGravadoPlayer" controls style="width: 100%;"></audio>
+        </div>
+
+        <!-- BOTÃO SALVAR -->
+        <button onclick="salvarGravacao()"
+          style="background: #22c55e; color: white; border: none; padding: 12px 30px; border-radius: 40px; cursor: pointer; font-weight: 600; width: 100%;">
+          <i class="bi bi-save"></i> Salvar Gravação
+        </button>
+
+        <!-- LISTA DE GRAVAÇÕES -->
+        <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+          <h4 style="margin-bottom: 15px; font-size: 1rem; color: #4b5563;">
+            <i class="bi bi-folder2-open"></i> Minhas Gravações
+          </h4>
+          <div id="listaGravacoes"></div>
+        </div>
+
+      </div>
     </div>
-    
-    <!-- TEMPO DE GRAVAÇÃO -->
-    <div style="text-align: center; margin-bottom: 20px;">
-      <span id="tempoGravacao" style="font-size: 1.5rem; font-weight: 700; color: var(--cor-primaria);">00:00</span>
-    </div>
-    
-    <!-- CHECKLIST -->
-    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-      <h4 style="margin-bottom: 15px; font-size: 0.95rem; color: #4b5563; font-weight: 600;">
-        <i class="bi bi-clipboard-check"></i> Autoavaliação:
-      </h4>
-      
-      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-        <input type="checkbox" id="checkPalavrasSimples" style="width: 18px; height: 18px;">
-        <span>Expliquei com palavras simples?</span>
-      </label>
-      
-      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-        <input type="checkbox" id="checkAnalogias" style="width: 18px; height: 18px;">
-        <span>Usei analogias ou exemplos?</span>
-      </label>
-      
-      <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-        <input type="checkbox" id="checkLacunas" style="width: 18px; height: 18px;">
-        <span>Identifiquei lacunas no entendimento?</span>
-      </label>
-      
-      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-        <input type="checkbox" id="checkSimplificado" style="width: 18px; height: 18px;">
-        <span>Consegui simplificar o conceito?</span>
-      </label>
-    </div>
-    
-    <!-- ANOTAÇÕES -->
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
-        <i class="bi bi-pencil"></i> Anotações do que melhorar:
-      </label>
-      <textarea id="anotacoesGravacao" rows="3" 
-                placeholder="Enquanto ouve, anote os pontos que precisa melhorar..."
-                style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; resize: vertical;"></textarea>
-    </div>
-    
-    <!-- ÁUDIO GRAVADO -->
-    <div id="audioGravadoArea" style="display: none; margin-bottom: 20px; background: #f0fdf4; padding: 15px; border-radius: 10px;">
-      <p style="font-size: 0.85rem; color: #16a34a; margin-bottom: 10px; font-weight: 600;">
-        <i class="bi bi-check-circle-fill"></i> Gravação concluída!
-      </p>
-      <audio id="audioGravadoPlayer" controls style="width: 100%;"></audio>
-    </div>
-    
-    <!-- BOTÃO SALVAR -->
-    <button onclick="salvarGravacao()" 
-            style="background: #22c55e; color: white; border: none; padding: 12px 30px; border-radius: 40px; cursor: pointer; font-weight: 600; width: 100%;">
-      <i class="bi bi-save"></i> Salvar Gravação
-    </button>
-    
-    <!-- LISTA DE GRAVAÇÕES -->
-    <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-      <h4 style="margin-bottom: 15px; font-size: 1rem; color: #4b5563;">
-        <i class="bi bi-folder2-open"></i> Minhas Gravações
-      </h4>
-      <div id="listaGravacoes"></div>
-    </div>
-    
-  </div>
-</div>
 
 
     <!-- ==================== PLANOS ==================== -->

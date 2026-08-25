@@ -949,9 +949,23 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
       footer.appendChild(btn);
     }
 
+    // ===== CASO: MAPA MENTAL =====
+    else if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
+      console.log('✅ Botão de Mapa Mental');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirMapaMental();
+      };
+      footer.appendChild(btn);
+    }
+
     // ===== CASO: TESTE PRÁTICO =====
-    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") || 
-             metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
+    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") ||
+      metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
       console.log('✅ Botão de Teste Prático - Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
@@ -963,8 +977,8 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
       footer.appendChild(btn);
     }
     // ===== CASO: MNEMÔNICA =====
-    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") || 
-             metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
+    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") ||
+      metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
       console.log('✅ Botão de Mnemônica - Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
@@ -1019,132 +1033,132 @@ function verDetalhesMetodo(tipoInteligencia, metodoId) {
 window.verDetalhesMetodo = verDetalhesMetodo;
 
 function verDetalhesMetodo(tipoInteligencia, metodoId) {
-    const metodosData = metodosPorInteligencia[tipoInteligencia];
-    if (!metodosData) return;
-    
-    const metodo = metodosData.metodos.find(m => m.id === metodoId);
-    if (!metodo) return;
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  if (!metodosData) return;
 
-    const modalTitulo = document.getElementById("modalMetodoTitulo");
-    const modalTempo = document.getElementById("modalMetodoTempo");
-    const modalDificuldade = document.getElementById("modalMetodoDificuldade");
-    const passosList = document.getElementById("modalMetodoPassos");
-    const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
-    const beneficiosList = document.getElementById("modalMetodoBeneficios");
-    const modalDica = document.getElementById("modalMetodoDica");
-    const footer = document.getElementById("modalMetodoFooter");
+  const metodo = metodosData.metodos.find(m => m.id === metodoId);
+  if (!metodo) return;
 
-    if (modalTitulo) modalTitulo.textContent = metodo.titulo;
-    if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-    
-    if (modalDificuldade) {
-        modalDificuldade.textContent = metodo.dificuldade;
-        modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+  const modalTitulo = document.getElementById("modalMetodoTitulo");
+  const modalTempo = document.getElementById("modalMetodoTempo");
+  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
+  const passosList = document.getElementById("modalMetodoPassos");
+  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
+  const beneficiosList = document.getElementById("modalMetodoBeneficios");
+  const modalDica = document.getElementById("modalMetodoDica");
+  const footer = document.getElementById("modalMetodoFooter");
+
+  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
+  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
+
+  if (modalDificuldade) {
+    modalDificuldade.textContent = metodo.dificuldade;
+    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+  }
+
+  if (passosList) {
+    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
+  }
+
+  if (beneficiosList && beneficiosContainer) {
+    if (metodo.beneficios && metodo.beneficios.length > 0) {
+      beneficiosContainer.style.display = "block";
+      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+    } else {
+      beneficiosContainer.style.display = "none";
     }
+  }
 
-    if (passosList) {
-        passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
-    }
+  if (modalDica) {
+    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+  }
 
-    if (beneficiosList && beneficiosContainer) {
-        if (metodo.beneficios && metodo.beneficios.length > 0) {
-            beneficiosContainer.style.display = "block";
-            beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+  if (footer) {
+    footer.innerHTML = "";
+
+    // ===== VERIFICAÇÃO DO CORNELL (ADICIONAR AQUI) =====
+    if (metodo.titulo === "Metodo Cornell" || metodo.titulo === "Método Cornell" || metodo.titulo.includes("Cornell")) {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
+      btn.onclick = function () {
+        console.log('Botão Cornell clicado!');
+        if (typeof window.abrirCornell === 'function') {
+          window.abrirCornell();
         } else {
-            beneficiosContainer.style.display = "none";
+          console.error('Função abrirCornell não encontrada!');
         }
+      };
+      footer.appendChild(btn);
     }
+    // ===== FIM DA VERIFICAÇÃO DO CORNELL =====
 
-    if (modalDica) {
-        modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+    else if (metodo.titulo === "Flashcards") {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
+      btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
+      footer.appendChild(btn);
+    } else if (metodo.irParaRevisao) {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
+      btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+      footer.appendChild(btn);
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = window.fecharMetodoModal;
+      footer.appendChild(btn);
     }
+  }
 
-    if (footer) {
-        footer.innerHTML = "";
-        
-        // ===== VERIFICAÇÃO DO CORNELL (ADICIONAR AQUI) =====
-        if (metodo.titulo === "Metodo Cornell" || metodo.titulo === "Método Cornell" || metodo.titulo.includes("Cornell")) {
-            const btn = document.createElement("button");
-            btn.className = "btn-aplicar";
-            btn.style.background = metodosData.cor;
-            btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
-            btn.onclick = function() {
-                console.log('Botão Cornell clicado!');
-                if (typeof window.abrirCornell === 'function') {
-                    window.abrirCornell();
-                } else {
-                    console.error('Função abrirCornell não encontrada!');
-                }
-            };
-            footer.appendChild(btn);
-        }
-        // ===== FIM DA VERIFICAÇÃO DO CORNELL =====
-        
-        else if (metodo.titulo === "Flashcards") {
-            const btn = document.createElement("button");
-            btn.className = "btn-aplicar";
-            btn.style.background = metodosData.cor;
-            btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-            btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
-            footer.appendChild(btn);
-        } else if (metodo.irParaRevisao) {
-            const btn = document.createElement("button");
-            btn.className = "btn-aplicar";
-            btn.style.background = metodosData.cor;
-            btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-            btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
-            footer.appendChild(btn);
-        } else {
-            const btn = document.createElement("button");
-            btn.className = "btn-aplicar";
-            btn.style.background = metodosData.cor;
-            btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-            btn.onclick = window.fecharMetodoModal;
-            footer.appendChild(btn);
-        }
-    }
-
-    const modalOverlay = document.getElementById("metodoModalOverlay");
-    if (modalOverlay) {
-        modalOverlay.style.display = "flex";
-    }
+  const modalOverlay = document.getElementById("metodoModalOverlay");
+  if (modalOverlay) {
+    modalOverlay.style.display = "flex";
+  }
 }
 window.verDetalhesMetodo = verDetalhesMetodo;
 
 // ===== FUNÇÃO PARA ABRIR O CORNELL (NOTAS) =====
 function abrirCornell() {
-    console.log('Abrindo Cornell...');
-    
-    // Fecha o modal
-    fecharMetodoModal();
-    
-    // Salva o modo no localStorage
-    localStorage.setItem('modoCornellAtivo', 'true');
-    
-    // Salva a inteligência atual
-    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-    localStorage.setItem('inteligenciaAtual', inteligencia);
-    
-    // Salva o título do método para referência
-    localStorage.setItem('metodoAtivo', 'Cornell');
-    
-    // Navega para a tela de notas
-    if (typeof mostrarTela === 'function') {
-        mostrarTela('notas');
+  console.log('Abrindo Cornell...');
+
+  // Fecha o modal
+  fecharMetodoModal();
+
+  // Salva o modo no localStorage
+  localStorage.setItem('modoCornellAtivo', 'true');
+
+  // Salva a inteligência atual
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  localStorage.setItem('inteligenciaAtual', inteligencia);
+
+  // Salva o título do método para referência
+  localStorage.setItem('metodoAtivo', 'Cornell');
+
+  // Navega para a tela de notas
+  if (typeof mostrarTela === 'function') {
+    mostrarTela('notas');
+  }
+
+  // Dispara evento para ativar o modo Cornell
+  setTimeout(() => {
+    const notasSection = document.getElementById('notasSection');
+    if (notasSection) {
+      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Dispara evento para ativar o modo Cornell
+      window.dispatchEvent(new CustomEvent('ativarModoCornell', {
+        detail: { ativo: true }
+      }));
     }
-    
-    // Dispara evento para ativar o modo Cornell
-    setTimeout(() => {
-        const notasSection = document.getElementById('notasSection');
-        if (notasSection) {
-            notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
-            // Dispara evento para ativar o modo Cornell
-            window.dispatchEvent(new CustomEvent('ativarModoCornell', { 
-                detail: { ativo: true } 
-            }));
-        }
-    }, 500);
+  }, 500);
 }
 window.abrirCornell = abrirCornell;
 
@@ -1152,43 +1166,43 @@ window.abrirCornell = abrirCornell;
 
 // ===== CARREGAR NOTAS CORNELL (INTEGRADO) =====
 function carregarNotasCornell() {
-    let notas = [];
-    try {
-        const notasSalvas = localStorage.getItem('notas');
-        if (notasSalvas) {
-            notas = JSON.parse(notasSalvas);
-        }
-    } catch (e) {
-        notas = [];
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
     }
-    
-    // Filtra apenas notas do tipo Cornell
-    const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
-    renderizarNotasCornell(notasCornell);
+  } catch (e) {
+    notas = [];
+  }
+
+  // Filtra apenas notas do tipo Cornell
+  const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
+  renderizarNotasCornell(notasCornell);
 }
 window.carregarNotasCornell = carregarNotasCornell;
 
 // ===== RENDERIZAR NOTAS CORNELL (ESTILO ARQUIVOS) =====
 function renderizarNotasCornell(notas) {
-    const container = document.getElementById('cornellListaCards');
-    const total = document.getElementById('cornellTotal');
-    const emptyMessage = document.getElementById('cornellEmptyMessage');
-    
-    if (!container) return;
-    
-    if (total) {
-        total.textContent = notas.length;
-    }
-    
-    if (notas.length === 0) {
-        container.innerHTML = '';
-        if (emptyMessage) emptyMessage.style.display = 'block';
-        return;
-    }
-    
-    if (emptyMessage) emptyMessage.style.display = 'none';
-    
-    container.innerHTML = notas.map((nota, index) => `
+  const container = document.getElementById('cornellListaCards');
+  const total = document.getElementById('cornellTotal');
+  const emptyMessage = document.getElementById('cornellEmptyMessage');
+
+  if (!container) return;
+
+  if (total) {
+    total.textContent = notas.length;
+  }
+
+  if (notas.length === 0) {
+    container.innerHTML = '';
+    if (emptyMessage) emptyMessage.style.display = 'block';
+    return;
+  }
+
+  if (emptyMessage) emptyMessage.style.display = 'none';
+
+  container.innerHTML = notas.map((nota, index) => `
         <div class="cornell-arquivo-card" style="
             background: #ffffff;
             border: 1px solid #e5e7eb;
@@ -1336,50 +1350,50 @@ window.renderizarNotasCornell = renderizarNotasCornell;
 // Salvar nota Cornell
 // ===== SALVAR NOTA CORNELL (INTEGRADO COM NOTAS) =====
 function salvarNotaCornell() {
-    const pergunta = document.getElementById('cornellPergunta');
-    const resposta = document.getElementById('cornellResposta');
-    
-    if (!pergunta || !resposta) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Erro!',
-            text: 'Campos não encontrados.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        return;
+  const pergunta = document.getElementById('cornellPergunta');
+  const resposta = document.getElementById('cornellResposta');
+
+  if (!pergunta || !resposta) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Erro!',
+      text: 'Campos não encontrados.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const perguntaText = pergunta.value.trim();
+  const respostaText = resposta.value.trim();
+
+  if (!perguntaText || !respostaText) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos!',
+      text: 'Preencha tanto a pergunta quanto a resposta.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  // Busca as notas existentes
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
     }
-    
-    const perguntaText = pergunta.value.trim();
-    const respostaText = resposta.value.trim();
-    
-    if (!perguntaText || !respostaText) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos incompletos!',
-            text: 'Preencha tanto a pergunta quanto a resposta.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        return;
-    }
-    
-    // Busca as notas existentes
-    let notas = [];
-    try {
-        const notasSalvas = localStorage.getItem('notas');
-        if (notasSalvas) {
-            notas = JSON.parse(notasSalvas);
-        }
-    } catch (e) {
-        notas = [];
-    }
-    
-    // Cria a nota no formato Cornell
-    const novaNota = {
-        id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        titulo: `📝 Cornell: ${perguntaText.substring(0, 40)}${perguntaText.length > 40 ? '...' : ''}`,
-        texto: `
+  } catch (e) {
+    notas = [];
+  }
+
+  // Cria a nota no formato Cornell
+  const novaNota = {
+    id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    titulo: `📝 Cornell: ${perguntaText.substring(0, 40)}${perguntaText.length > 40 ? '...' : ''}`,
+    texto: `
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
     <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
         <strong style="color: #dc3545;">❓ Pergunta:</strong>
@@ -1394,197 +1408,197 @@ function salvarNotaCornell() {
     <i class="bi bi-tag"></i> Método Cornell
 </div>
         `,
-        cor: '#ffffff',
-        corTexto: '#000000',
-        checklist: [],
-        anexos: [],
-        favorito: false,
-        dataCriacao: new Date().toLocaleString('pt-BR'),
-        tipo: 'cornell',
-        pergunta: perguntaText,
-        resposta: respostaText
-    };
-    
-    // Adiciona a nota
-    notas.unshift(novaNota);
-    localStorage.setItem('notas', JSON.stringify(notas));
-    
-    // Limpa os campos
-    pergunta.value = '';
-    resposta.value = '';
-    
-    // Re-renderiza as notas
-    if (typeof renderNotas === 'function') {
-        renderNotas();
-    }
-    
-    // Re-renderiza o Cornell
-    carregarNotasCornell();
-    
-    // Feedback
-    const btn = document.querySelector('.cornell-botoes button:first-child');
-    if (btn) {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado!';
-        btn.style.background = '#28a745';
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = 'var(--cor-primaria)';
-        }, 1500);
-    }
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Anotação salva!',
-        text: 'A nota foi adicionada à sua lista de notas.',
-        timer: 1500,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-    });
-    
-    // Abre a seção de notas para mostrar a nota criada
+    cor: '#ffffff',
+    corTexto: '#000000',
+    checklist: [],
+    anexos: [],
+    favorito: false,
+    dataCriacao: new Date().toLocaleString('pt-BR'),
+    tipo: 'cornell',
+    pergunta: perguntaText,
+    resposta: respostaText
+  };
+
+  // Adiciona a nota
+  notas.unshift(novaNota);
+  localStorage.setItem('notas', JSON.stringify(notas));
+
+  // Limpa os campos
+  pergunta.value = '';
+  resposta.value = '';
+
+  // Re-renderiza as notas
+  if (typeof renderNotas === 'function') {
+    renderNotas();
+  }
+
+  // Re-renderiza o Cornell
+  carregarNotasCornell();
+
+  // Feedback
+  const btn = document.querySelector('.cornell-botoes button:first-child');
+  if (btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado!';
+    btn.style.background = '#28a745';
     setTimeout(() => {
-        const notasSection = document.getElementById('notasSection');
-        if (notasSection) {
-            notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        // Abre a aba de notas se estiver em outro lugar
-        if (typeof mostrarTela === 'function') {
-            mostrarTela('notas');
-        }
-    }, 500);
+      btn.innerHTML = originalText;
+      btn.style.background = 'var(--cor-primaria)';
+    }, 1500);
+  }
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Anotação salva!',
+    text: 'A nota foi adicionada à sua lista de notas.',
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+
+  // Abre a seção de notas para mostrar a nota criada
+  setTimeout(() => {
+    const notasSection = document.getElementById('notasSection');
+    if (notasSection) {
+      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    // Abre a aba de notas se estiver em outro lugar
+    if (typeof mostrarTela === 'function') {
+      mostrarTela('notas');
+    }
+  }, 500);
 }
 window.salvarNotaCornell = salvarNotaCornell;
 
 // ===== EXCLUIR NOTA CORNELL (INTEGRADO) =====
 function excluirNotaCornell(id) {
-    let notas = [];
-    try {
-        const notasSalvas = localStorage.getItem('notas');
-        if (notasSalvas) {
-            notas = JSON.parse(notasSalvas);
-        }
-    } catch (e) {
-        notas = [];
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
     }
-    
-    const notaIndex = notas.findIndex(n => n.id === id);
-    if (notaIndex === -1) return;
-    
-    Swal.fire({
-        title: 'Excluir anotação?',
-        text: 'Essa ação não pode ser desfeita!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sim, excluir',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#dc3545'
-    }).then(result => {
-        if (result.isConfirmed) {
-            notas.splice(notaIndex, 1);
-            localStorage.setItem('notas', JSON.stringify(notas));
-            
-            // Re-renderiza tudo
-            if (typeof renderNotas === 'function') {
-                renderNotas();
-            }
-            carregarNotasCornell();
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Anotação excluída!',
-                timer: 1200,
-                showConfirmButton: false,
-                position: 'top-end',
-                toast: true
-            });
-        }
-    });
+  } catch (e) {
+    notas = [];
+  }
+
+  const notaIndex = notas.findIndex(n => n.id === id);
+  if (notaIndex === -1) return;
+
+  Swal.fire({
+    title: 'Excluir anotação?',
+    text: 'Essa ação não pode ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#dc3545'
+  }).then(result => {
+    if (result.isConfirmed) {
+      notas.splice(notaIndex, 1);
+      localStorage.setItem('notas', JSON.stringify(notas));
+
+      // Re-renderiza tudo
+      if (typeof renderNotas === 'function') {
+        renderNotas();
+      }
+      carregarNotasCornell();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Anotação excluída!',
+        timer: 1200,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+  });
 }
 window.excluirNotaCornell = excluirNotaCornell;
 
 
 // ===== ABRIR NOTA CORNELL PARA EDIÇÃO =====
 function abrirNotaCornellParaEdicao(id) {
-    let notas = [];
-    try {
-        const notasSalvas = localStorage.getItem('notas');
-        if (notasSalvas) {
-            notas = JSON.parse(notasSalvas);
-        }
-    } catch (e) {
-        notas = [];
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
     }
-    
-    const nota = notas.find(n => n.id === id);
-    if (!nota) return;
-    
-    // Abre a seção de notas
-    if (typeof mostrarTela === 'function') {
-        mostrarTela('notas');
+  } catch (e) {
+    notas = [];
+  }
+
+  const nota = notas.find(n => n.id === id);
+  if (!nota) return;
+
+  // Abre a seção de notas
+  if (typeof mostrarTela === 'function') {
+    mostrarTela('notas');
+  }
+
+  // Tenta abrir a nota no modal de edição
+  setTimeout(() => {
+    // Procura a nota no DOM e clica no botão editar
+    const cardNota = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+    if (cardNota) {
+      const btnEditar = cardNota.querySelector('.btn-editar');
+      if (btnEditar) {
+        btnEditar.click();
+      }
+    } else {
+      // Se não encontrar, recarrega as notas e tenta novamente
+      if (typeof renderNotas === 'function') {
+        renderNotas();
+        setTimeout(() => {
+          const cardNota2 = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+          if (cardNota2) {
+            const btnEditar2 = cardNota2.querySelector('.btn-editar');
+            if (btnEditar2) {
+              btnEditar2.click();
+            }
+          }
+        }, 300);
+      }
     }
-    
-    // Tenta abrir a nota no modal de edição
-    setTimeout(() => {
-        // Procura a nota no DOM e clica no botão editar
-        const cardNota = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
-        if (cardNota) {
-            const btnEditar = cardNota.querySelector('.btn-editar');
-            if (btnEditar) {
-                btnEditar.click();
-            }
-        } else {
-            // Se não encontrar, recarrega as notas e tenta novamente
-            if (typeof renderNotas === 'function') {
-                renderNotas();
-                setTimeout(() => {
-                    const cardNota2 = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
-                    if (cardNota2) {
-                        const btnEditar2 = cardNota2.querySelector('.btn-editar');
-                        if (btnEditar2) {
-                            btnEditar2.click();
-                        }
-                    }
-                }, 300);
-            }
-        }
-    }, 300);
-    
-    Swal.fire({
-        icon: 'info',
-        title: 'Abrindo nota...',
-        text: 'Você será redirecionado para editar a nota.',
-        timer: 1000,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-    });
+  }, 300);
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Abrindo nota...',
+    text: 'Você será redirecionado para editar a nota.',
+    timer: 1000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
 window.abrirNotaCornellParaEdicao = abrirNotaCornellParaEdicao;
 
 // Editar nota Cornell
 function editarNotaCornell(index) {
-    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-    const chave = `notasCornell_${inteligencia}`;
-    let notas = [];
-    
-    try {
-        const salvo = localStorage.getItem(chave);
-        if (salvo) {
-            notas = JSON.parse(salvo);
-        }
-    } catch (e) {
-        notas = [];
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  const chave = `notasCornell_${inteligencia}`;
+  let notas = [];
+
+  try {
+    const salvo = localStorage.getItem(chave);
+    if (salvo) {
+      notas = JSON.parse(salvo);
     }
-    
-    if (index < 0 || index >= notas.length) return;
-    
-    const nota = notas[index];
-    
-    Swal.fire({
-        title: 'Editar Anotação Cornell',
-        html: `
+  } catch (e) {
+    notas = [];
+  }
+
+  if (index < 0 || index >= notas.length) return;
+
+  const nota = notas[index];
+
+  Swal.fire({
+    title: 'Editar Anotação Cornell',
+    html: `
             <div style="text-align: left; max-width: 500px; margin: 0 auto;">
                 <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #dc3545;">
                     <i class="bi bi-question-circle"></i> Pergunta:
@@ -1597,78 +1611,78 @@ function editarNotaCornell(index) {
                 <textarea id="editCornellResposta" class="swal2-textarea" rows="3" style="border-color: #28a745;">${nota.resposta.replace(/"/g, '&quot;')}</textarea>
             </div>
         `,
-        confirmButtonText: 'Salvar',
-        cancelButtonText: 'Cancelar',
-        showCancelButton: true,
-        confirmButtonColor: 'var(--cor-primaria)',
-        preConfirm: () => {
-            const pergunta = document.getElementById('editCornellPergunta').value.trim();
-            const resposta = document.getElementById('editCornellResposta').value.trim();
-            
-            if (!pergunta || !resposta) {
-                Swal.showValidationMessage('Preencha ambos os campos!');
-                return false;
-            }
-            
-            return { pergunta, resposta };
-        }
-    }).then(result => {
-        if (result.isConfirmed && result.value) {
-            notas[index].pergunta = result.value.pergunta;
-            notas[index].resposta = result.value.resposta;
-            notas[index].data = new Date().toLocaleDateString('pt-BR');
-            
-            localStorage.setItem(chave, JSON.stringify(notas));
-            renderizarNotasCornell(notas);
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Anotação atualizada!',
-                timer: 1200,
-                showConfirmButton: false,
-                position: 'top-end',
-                toast: true
-            });
-        }
-    });
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    showCancelButton: true,
+    confirmButtonColor: 'var(--cor-primaria)',
+    preConfirm: () => {
+      const pergunta = document.getElementById('editCornellPergunta').value.trim();
+      const resposta = document.getElementById('editCornellResposta').value.trim();
+
+      if (!pergunta || !resposta) {
+        Swal.showValidationMessage('Preencha ambos os campos!');
+        return false;
+      }
+
+      return { pergunta, resposta };
+    }
+  }).then(result => {
+    if (result.isConfirmed && result.value) {
+      notas[index].pergunta = result.value.pergunta;
+      notas[index].resposta = result.value.resposta;
+      notas[index].data = new Date().toLocaleDateString('pt-BR');
+
+      localStorage.setItem(chave, JSON.stringify(notas));
+      renderizarNotasCornell(notas);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Anotação atualizada!',
+        timer: 1200,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+  });
 }
 window.editarNotaCornell = editarNotaCornell;
 
 // Ativar modo revisão (oculta as respostas)
 function ativarModoRevisaoCornell() {
-    const cards = document.querySelectorAll('.cornell-card');
-    const isAtivo = document.querySelector('.modo-revisao-ativo');
-    
-    if (isAtivo) {
-        // Desativar
-        cards.forEach(card => {
-            card.style.filter = 'none';
-            const resposta = card.querySelector('.cornell-card .coluna-direita p');
-            if (resposta) resposta.style.display = 'block';
-        });
-        document.querySelector('.modo-revisao-ativo')?.remove();
-        
-        Swal.fire({
-            icon: 'info',
-            title: 'Modo revisão desativado',
-            timer: 1000,
-            showConfirmButton: false,
-            position: 'top-end',
-            toast: true
-        });
-        return;
-    }
-    
-    // Ativar
+  const cards = document.querySelectorAll('.cornell-card');
+  const isAtivo = document.querySelector('.modo-revisao-ativo');
+
+  if (isAtivo) {
+    // Desativar
     cards.forEach(card => {
-        const pergunta = card.querySelector('.cornell-card .coluna-esquerda p');
-        const resposta = card.querySelector('.cornell-card .coluna-direita p');
-        
-        if (pergunta && resposta) {
-            // Cria um botão para revelar
-            const btnRevelar = document.createElement('button');
-            btnRevelar.innerHTML = '<i class="bi bi-eye"></i> Ver Resposta';
-            btnRevelar.style.cssText = `
+      card.style.filter = 'none';
+      const resposta = card.querySelector('.cornell-card .coluna-direita p');
+      if (resposta) resposta.style.display = 'block';
+    });
+    document.querySelector('.modo-revisao-ativo')?.remove();
+
+    Swal.fire({
+      icon: 'info',
+      title: 'Modo revisão desativado',
+      timer: 1000,
+      showConfirmButton: false,
+      position: 'top-end',
+      toast: true
+    });
+    return;
+  }
+
+  // Ativar
+  cards.forEach(card => {
+    const pergunta = card.querySelector('.cornell-card .coluna-esquerda p');
+    const resposta = card.querySelector('.cornell-card .coluna-direita p');
+
+    if (pergunta && resposta) {
+      // Cria um botão para revelar
+      const btnRevelar = document.createElement('button');
+      btnRevelar.innerHTML = '<i class="bi bi-eye"></i> Ver Resposta';
+      btnRevelar.style.cssText = `
                 background: var(--cor-primaria);
                 color: white;
                 border: none;
@@ -1678,11 +1692,11 @@ function ativarModoRevisaoCornell() {
                 font-size: 12px;
                 margin-top: 8px;
             `;
-            btnRevelar.onclick = function(e) {
-                e.stopPropagation();
-                Swal.fire({
-                    title: '📝 Pergunta',
-                    html: `
+      btnRevelar.onclick = function (e) {
+        e.stopPropagation();
+        Swal.fire({
+          title: '📝 Pergunta',
+          html: `
                         <div style="text-align: left; padding: 10px;">
                             <p><strong>Pergunta:</strong></p>
                             <p style="background: #f8f9fa; padding: 10px; border-radius: 8px;">${pergunta.textContent}</p>
@@ -1690,128 +1704,128 @@ function ativarModoRevisaoCornell() {
                             <p style="background: #e8f5e9; padding: 10px; border-radius: 8px;">${resposta.textContent}</p>
                         </div>
                     `,
-                    icon: 'info',
-                    confirmButtonColor: 'var(--cor-primaria)',
-                    confirmButtonText: 'Entendi!'
-                });
-            };
-            
-            // Oculta a resposta e adiciona o botão
-            resposta.style.display = 'none';
-            const container = resposta.parentElement;
-            const existingBtn = container.querySelector('.btn-revelar-resposta-cornell');
-            if (existingBtn) existingBtn.remove();
-            btnRevelar.className = 'btn-revelar-resposta-cornell';
-            container.appendChild(btnRevelar);
-        }
-        
-        card.style.filter = 'blur(2px)';
-        card.style.transition = 'filter 0.3s';
-    });
-    
-    // Adiciona indicador
-    const btnRevisao = document.querySelector('.cornell-botoes button:nth-child(2)');
-    if (btnRevisao) {
-        btnRevisao.innerHTML = '<i class="bi bi-eye-slash"></i> Desativar Revisão';
-        btnRevisao.classList.add('modo-revisao-ativo');
+          icon: 'info',
+          confirmButtonColor: 'var(--cor-primaria)',
+          confirmButtonText: 'Entendi!'
+        });
+      };
+
+      // Oculta a resposta e adiciona o botão
+      resposta.style.display = 'none';
+      const container = resposta.parentElement;
+      const existingBtn = container.querySelector('.btn-revelar-resposta-cornell');
+      if (existingBtn) existingBtn.remove();
+      btnRevelar.className = 'btn-revelar-resposta-cornell';
+      container.appendChild(btnRevelar);
     }
-    
-    Swal.fire({
-        icon: 'info',
-        title: 'Modo revisão ativado!',
-        text: 'As respostas estão ocultas. Clique em "Ver Resposta" para conferir.',
-        timer: 2000,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-    });
+
+    card.style.filter = 'blur(2px)';
+    card.style.transition = 'filter 0.3s';
+  });
+
+  // Adiciona indicador
+  const btnRevisao = document.querySelector('.cornell-botoes button:nth-child(2)');
+  if (btnRevisao) {
+    btnRevisao.innerHTML = '<i class="bi bi-eye-slash"></i> Desativar Revisão';
+    btnRevisao.classList.add('modo-revisao-ativo');
+  }
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Modo revisão ativado!',
+    text: 'As respostas estão ocultas. Clique em "Ver Resposta" para conferir.',
+    timer: 2000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
 window.ativarModoRevisaoCornell = ativarModoRevisaoCornell;
 
 // Limpar campos
 function limparCamposCornell() {
-    const pergunta = document.getElementById('cornellPergunta');
-    const resposta = document.getElementById('cornellResposta');
-    
-    if (pergunta) pergunta.value = '';
-    if (resposta) resposta.value = '';
-    
-    Swal.fire({
-        icon: 'info',
-        title: 'Campos limpos!',
-        timer: 800,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-    });
+  const pergunta = document.getElementById('cornellPergunta');
+  const resposta = document.getElementById('cornellResposta');
+
+  if (pergunta) pergunta.value = '';
+  if (resposta) resposta.value = '';
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Campos limpos!',
+    timer: 800,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
 window.limparCamposCornell = limparCamposCornell;
 
 // Fechar modo Cornell
 function fecharModoCornell() {
-    const container = document.getElementById('cornellContainer');
-    if (container) {
-        container.style.display = 'none';
-    }
-    localStorage.removeItem('modoCornellAtivo');
-    
-    Swal.fire({
-        icon: 'info',
-        title: 'Modo Cornell fechado',
-        timer: 1000,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-    });
+  const container = document.getElementById('cornellContainer');
+  if (container) {
+    container.style.display = 'none';
+  }
+  localStorage.removeItem('modoCornellAtivo');
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Modo Cornell fechado',
+    timer: 1000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
 window.fecharModoCornell = fecharModoCornell;
 
 // Exportar notas Cornell
 function exportarCornell() {
-    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-    const chave = `notasCornell_${inteligencia}`;
-    let notas = [];
-    
-    try {
-        const salvo = localStorage.getItem(chave);
-        if (salvo) {
-            notas = JSON.parse(salvo);
-        }
-    } catch (e) {
-        notas = [];
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  const chave = `notasCornell_${inteligencia}`;
+  let notas = [];
+
+  try {
+    const salvo = localStorage.getItem(chave);
+    if (salvo) {
+      notas = JSON.parse(salvo);
     }
-    
-    if (notas.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Nenhuma anotação!',
-            text: 'Adicione algumas anotações antes de exportar.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        return;
-    }
-    
-    const dataStr = JSON.stringify(notas, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cornell_${inteligencia}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
+  } catch (e) {
+    notas = [];
+  }
+
+  if (notas.length === 0) {
     Swal.fire({
-        icon: 'success',
-        title: 'Exportado!',
-        text: 'Arquivo salvo com sucesso!',
-        timer: 1500,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
+      icon: 'warning',
+      title: 'Nenhuma anotação!',
+      text: 'Adicione algumas anotações antes de exportar.',
+      timer: 2000,
+      showConfirmButton: false
     });
+    return;
+  }
+
+  const dataStr = JSON.stringify(notas, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cornell_${inteligencia}_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Exportado!',
+    text: 'Arquivo salvo com sucesso!',
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
 }
 window.exportarCornell = exportarCornell;
 
@@ -2686,53 +2700,53 @@ document.addEventListener("DOMContentLoaded", () => {
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
 
   // ===== SALVAR NOTA CORNELL =====
-function salvarNotaCornell() {
+  function salvarNotaCornell() {
     const titulo = document.getElementById('cornellTitulo');
     const pergunta = document.getElementById('cornellPergunta');
     const resposta = document.getElementById('cornellResposta');
-    
+
     if (!pergunta || !resposta) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Erro!',
-            text: 'Campos não encontrados.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        return;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Erro!',
+        text: 'Campos não encontrados.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      return;
     }
-    
+
     const tituloText = titulo ? titulo.value.trim() : 'Anotação Cornell';
     const perguntaText = pergunta.value.trim();
     const respostaText = resposta.value.trim();
-    
+
     if (!perguntaText || !respostaText) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos incompletos!',
-            text: 'Preencha tanto a pergunta quanto a resposta.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        return;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos!',
+        text: 'Preencha tanto a pergunta quanto a resposta.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      return;
     }
-    
+
     // Busca as notas existentes
     let notas = [];
     try {
-        const notasSalvas = localStorage.getItem('notas');
-        if (notasSalvas) {
-            notas = JSON.parse(notasSalvas);
-        }
+      const notasSalvas = localStorage.getItem('notas');
+      if (notasSalvas) {
+        notas = JSON.parse(notasSalvas);
+      }
     } catch (e) {
-        notas = [];
+      notas = [];
     }
-    
+
     // Cria a nota no formato Cornell
     const novaNota = {
-        id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        titulo: tituloText,
-        texto: `
+      id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+      titulo: tituloText,
+      texto: `
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
     <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
         <strong style="color: #dc3545;">❓ Pergunta:</strong>
@@ -2747,57 +2761,57 @@ function salvarNotaCornell() {
     <i class="bi bi-tag"></i> Método Cornell
 </div>
         `,
-        cor: '#ffffff',
-        corTexto: '#000000',
-        checklist: [],
-        anexos: [],
-        favorito: false,
-        dataCriacao: new Date().toLocaleString('pt-BR'),
-        tipo: 'cornell',
-        pergunta: perguntaText,
-        resposta: respostaText
+      cor: '#ffffff',
+      corTexto: '#000000',
+      checklist: [],
+      anexos: [],
+      favorito: false,
+      dataCriacao: new Date().toLocaleString('pt-BR'),
+      tipo: 'cornell',
+      pergunta: perguntaText,
+      resposta: respostaText
     };
-    
+
     // Adiciona a nota
     notas.unshift(novaNota);
     localStorage.setItem('notas', JSON.stringify(notas));
-    
+
     // Limpa os campos
     if (titulo) titulo.value = '';
     pergunta.value = '';
     resposta.value = '';
     document.getElementById('contadorPergunta').textContent = '0';
     document.getElementById('contadorResposta').textContent = '0';
-    
+
     // Re-renderiza
     carregarNotasCornell();
     if (typeof renderNotas === 'function') {
-        renderNotas();
+      renderNotas();
     }
-    
+
     // Feedback
     const btn = document.querySelector('.cornell-botoes button:first-child');
     if (btn) {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
-        btn.style.background = '#28a745';
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = 'var(--cor-primaria)';
-        }, 1500);
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check-circle"></i> Salvo!';
+      btn.style.background = '#28a745';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = 'var(--cor-primaria)';
+      }, 1500);
     }
-    
+
     Swal.fire({
-        icon: 'success',
-        title: 'Anotação salva!',
-        text: `"${tituloText}" foi adicionado aos seus arquivos.`,
-        timer: 1500,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
+      icon: 'success',
+      title: 'Anotação salva!',
+      text: `"${tituloText}" foi adicionado aos seus arquivos.`,
+      timer: 1500,
+      showConfirmButton: false,
+      position: 'top-end',
+      toast: true
     });
-}
-window.salvarNotaCornell = salvarNotaCornell;
+  }
+  window.salvarNotaCornell = salvarNotaCornell;
 
   function renderNotas() {
     notasContainer.innerHTML = "";
@@ -3341,20 +3355,20 @@ window.salvarNotaCornell = salvarNotaCornell;
       processarImagens(files);
     });
   }
-    
-   // ===== LISTENER PARA ATIVAR MODO CORNELL =====
-window.addEventListener('ativarModoCornell', function(e) {
+
+  // ===== LISTENER PARA ATIVAR MODO CORNELL =====
+  window.addEventListener('ativarModoCornell', function (e) {
     console.log('Evento ativarModoCornell recebido!', e.detail);
     const notasSection = document.getElementById('notasSection');
     if (!notasSection) return;
-    
+
     // Remove container antigo se existir
     const oldContainer = document.getElementById('cornellContainer');
     if (oldContainer) oldContainer.remove();
-    
+
     // Pega a inteligência atual para personalizar
     const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-    
+
     // Cria o container Cornell
     const cornellContainer = document.createElement('div');
     cornellContainer.id = 'cornellContainer';
@@ -3367,7 +3381,7 @@ window.addEventListener('ativarModoCornell', function(e) {
         overflow: hidden;
         border: 1px solid #e5e7eb;
     `;
-    
+
     cornellContainer.innerHTML = `
         <!-- Header -->
         <div class="cornell-header" style="
@@ -3389,7 +3403,7 @@ window.addEventListener('ativarModoCornell', function(e) {
                         color: #ffffff;
                         font-weight: 400;
                     ">${inteligencia === 'logico' ? '🧮 Lógico' :
-                      inteligencia === 'intrapessoal' ? '🧠 Intrapessoal' : '🌌 Espacial'}</span>
+        inteligencia === 'intrapessoal' ? '🧠 Intrapessoal' : '🌌 Espacial'}</span>
                 </h3>
                 <small style="
                     display: block; 
@@ -3398,8 +3412,8 @@ window.addEventListener('ativarModoCornell', function(e) {
                     font-size: 13px;
                 ">
                     ${inteligencia === 'logico' ? 'Organize fórmulas e equações' :
-                      inteligencia === 'intrapessoal' ? 'Organize reflexões pessoais' :
-                      'Organize conceitos visuais'}
+        inteligencia === 'intrapessoal' ? 'Organize reflexões pessoais' :
+          'Organize conceitos visuais'}
                 </small>
             </div>
             <button onclick="fecharModoCornell()" style="
@@ -3499,8 +3513,8 @@ window.addEventListener('ativarModoCornell', function(e) {
                         background: #fafafa;
                         line-height: 1.6;
                     " placeholder="${inteligencia === 'logico' ? 'Ex: Qual a fórmula de Bhaskara?\nComo calcular a área de um círculo?' :
-                                  inteligencia === 'intrapessoal' ? 'Ex: Como me sinto em relação a este tema?\nO que aprendi sobre mim?' :
-                                  'Ex: Como visualizo este conceito?\nQue diagramas posso criar?'}"
+        inteligencia === 'intrapessoal' ? 'Ex: Como me sinto em relação a este tema?\nO que aprendi sobre mim?' :
+          'Ex: Como visualizo este conceito?\nQue diagramas posso criar?'}"
                     onfocus="this.style.borderColor='#dc3545'; this.style.background='#ffffff'" 
                     onblur="this.style.borderColor='#f0f0f0'; this.style.background='#fafafa'"></textarea>
                     <div style="
@@ -3668,36 +3682,36 @@ window.addEventListener('ativarModoCornell', function(e) {
             </div>
         </div>
     `;
-    
+
     // Insere o container após o título das notas
     const notasHeader = notasSection.querySelector('.notas-header') || notasSection.querySelector('h1');
     if (notasHeader) {
-        notasHeader.after(cornellContainer);
+      notasHeader.after(cornellContainer);
     } else {
-        notasSection.prepend(cornellContainer);
+      notasSection.prepend(cornellContainer);
     }
-    
+
     // Contadores de caracteres
     const perguntaTextarea = document.getElementById('cornellPergunta');
     const respostaTextarea = document.getElementById('cornellResposta');
     const contPergunta = document.getElementById('contadorPergunta');
     const contResposta = document.getElementById('contadorResposta');
-    
+
     if (perguntaTextarea && contPergunta) {
-        perguntaTextarea.addEventListener('input', function() {
-            contPergunta.textContent = this.value.length;
-        });
+      perguntaTextarea.addEventListener('input', function () {
+        contPergunta.textContent = this.value.length;
+      });
     }
-    
+
     if (respostaTextarea && contResposta) {
-        respostaTextarea.addEventListener('input', function() {
-            contResposta.textContent = this.value.length;
-        });
+      respostaTextarea.addEventListener('input', function () {
+        contResposta.textContent = this.value.length;
+      });
     }
-    
+
     // Carrega as anotações Cornell
     carregarNotasCornell();
-});
+  });
 });
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
@@ -8120,6 +8134,642 @@ window.addEventListener("beforeunload", () => {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
   }
 });
+
+// =============================================
+// ===== MAPA MENTAL - VERSÃO FINAL ===========
+// =============================================
+
+let mapaMentalNos = [];
+let mapaMentalConexoes = [];
+let mapaMentalIdCounter = 0;
+let mapaMentalNoArrastando = null;
+let mapaMentalConectando = null;
+let mapaMentalOffsetX = 0;
+let mapaMentalOffsetY = 0;
+let mapaMentalCanvas = null;
+let mapaMentalCtx = null;
+let mapaMentalHistorico = [];
+let mapasMentaisSalvos = JSON.parse(localStorage.getItem('mapasMentais') || '[]');
+let mapaMentalZoom = 1;
+let mapaMentalZoomMin = 0.1;
+let mapaMentalZoomMax = 5;
+let mapaMentalPanning = false;
+let mapaMentalPanStartX = 0;
+let mapaMentalPanStartY = 0;
+let mapaMentalArrastandoFundo = false;
+
+// ===== TOAST =====
+function mostrarToast(mensagem, cor = '#22c55e') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: ${cor}; color: white; padding: 12px 20px; border-radius: 10px;
+    font-weight: 600; font-size: 0.9rem; z-index: 9999999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: slideDown 0.3s ease;
+  `;
+  toast.innerHTML = mensagem;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// ===== HISTÓRICO (CTRL+Z) =====
+function salvarEstadoHistorico() {
+  mapaMentalHistorico.push({
+    nos: JSON.parse(JSON.stringify(mapaMentalNos)),
+    conexoes: JSON.parse(JSON.stringify(mapaMentalConexoes))
+  });
+  if (mapaMentalHistorico.length > 50) mapaMentalHistorico.shift();
+}
+
+function desfazerUltimaAcao() {
+  if (mapaMentalHistorico.length === 0) return;
+  const estado = mapaMentalHistorico.pop();
+  mapaMentalNos = estado.nos;
+  mapaMentalConexoes = estado.conexoes;
+  document.getElementById('mapaMentalNosContainer').innerHTML = '';
+  mapaMentalNos.forEach(no => renderizarNo(no));
+  desenharConexoes();
+  mostrarToast('↩️ Ação desfeita!', '#6b7280');
+}
+
+// ===== ZOOM =====
+function aplicarZoom(fator) {
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (!container) return;
+  
+  const novoZoom = Math.max(mapaMentalZoomMin, Math.min(mapaMentalZoomMax, mapaMentalZoom * fator));
+  if (novoZoom === mapaMentalZoom) return;
+  
+  mapaMentalZoom = novoZoom;
+  container.style.transform = `scale(${mapaMentalZoom})`;
+  container.style.transformOrigin = '0 0';
+  
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = Math.round(mapaMentalZoom * 100) + '%';
+  
+  desenharConexoes();
+}
+
+function zoomIn() { aplicarZoom(1.2); }
+function zoomOut() { aplicarZoom(0.8); }
+
+function resetZoom() {
+  mapaMentalZoom = 1;
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (container) {
+    container.style.transform = 'scale(1)';
+    container.style.transformOrigin = '0 0';
+  }
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = '100%';
+  desenharConexoes();
+}
+
+function atualizarIndicadorZoom() {
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = Math.round(mapaMentalZoom * 100) + '%';
+}
+
+// ===== EVENTOS DE ZOOM E PAN =====
+function inicializarEventosZoomPan() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  if (!container) return;
+  
+  // Zoom com roda do mouse
+  container.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    aplicarZoom(e.deltaY < 0 ? 1.1 : 0.9);
+  }, { passive: false });
+  
+  // Pan - arrastar o fundo com botão esquerdo
+  container.addEventListener('mousedown', function(e) {
+    if (e.target === container || e.target.id === 'mapaMentalNosContainer' || e.target === document.getElementById('mapaMentalCanvas')) {
+      mapaMentalArrastandoFundo = true;
+      mapaMentalPanStartX = e.clientX;
+      mapaMentalPanStartY = e.clientY;
+      container.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
+  });
+  
+  document.addEventListener('mousemove', function(e) {
+    if (!mapaMentalArrastandoFundo) return;
+    
+    const dx = e.clientX - mapaMentalPanStartX;
+    const dy = e.clientY - mapaMentalPanStartY;
+    mapaMentalPanStartX = e.clientX;
+    mapaMentalPanStartY = e.clientY;
+    
+    mapaMentalNos.forEach(no => {
+      no.x += dx / mapaMentalZoom;
+      no.y += dy / mapaMentalZoom;
+      const div = document.getElementById(`mapa-no-${no.id}`);
+      if (div) {
+        div.style.left = no.x + 'px';
+        div.style.top = no.y + 'px';
+      }
+    });
+    desenharConexoes();
+  });
+  
+  document.addEventListener('mouseup', function() {
+    mapaMentalArrastandoFundo = false;
+    container.style.cursor = 'crosshair';
+  });
+  
+  // Pan alternativo - botão do meio ou direito
+  container.addEventListener('mousedown', function(e) {
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      mapaMentalPanning = true;
+      mapaMentalPanStartX = e.clientX;
+      mapaMentalPanStartY = e.clientY;
+      container.style.cursor = 'grabbing';
+    }
+  });
+  
+  document.addEventListener('mousemove', function(e) {
+    if (!mapaMentalPanning) return;
+    const dx = e.clientX - mapaMentalPanStartX;
+    const dy = e.clientY - mapaMentalPanStartY;
+    mapaMentalPanStartX = e.clientX;
+    mapaMentalPanStartY = e.clientY;
+    
+    mapaMentalNos.forEach(no => {
+      no.x += dx / mapaMentalZoom;
+      no.y += dy / mapaMentalZoom;
+      const div = document.getElementById(`mapa-no-${no.id}`);
+      if (div) {
+        div.style.left = no.x + 'px';
+        div.style.top = no.y + 'px';
+      }
+    });
+    desenharConexoes();
+  });
+  
+  document.addEventListener('mouseup', function() {
+    mapaMentalPanning = false;
+    container.style.cursor = 'crosshair';
+  });
+  
+  // Ctrl+Z
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      const modalAberto = document.getElementById('mapaMentalModalOverlay');
+      if (modalAberto && modalAberto.style.display === 'flex') {
+        e.preventDefault();
+        desfazerUltimaAcao();
+      }
+    }
+  });
+  
+  // Previne menu de contexto
+  container.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+}
+
+// ===== ABRIR MODAL =====
+function abrirMapaMental() {
+  console.log('🗺️ Abrindo Mapa Mental');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+  
+  const modal = document.getElementById('mapaMentalModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      inicializarMapaMental();
+      renderizarMapasSalvos();
+    }, 100);
+  }
+}
+
+// ===== INICIALIZAR =====
+function inicializarMapaMental() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const canvas = document.getElementById('mapaMentalCanvas');
+  if (!container || !canvas) return;
+  
+  setTimeout(() => {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }, 200);
+  
+  mapaMentalCanvas = canvas;
+  mapaMentalCtx = canvas.getContext('2d');
+  mapaMentalZoom = 1;
+  mapaMentalNos = [];
+  mapaMentalConexoes = [];
+  mapaMentalHistorico = [];
+  
+  const nosContainer = document.getElementById('mapaMentalNosContainer');
+  if (nosContainer) {
+    nosContainer.innerHTML = '';
+    nosContainer.style.transform = 'scale(1)';
+    nosContainer.style.transformOrigin = '0 0';
+  }
+  
+  const tituloInput = document.getElementById('mapaMentalTitulo');
+  if (tituloInput) tituloInput.value = '';
+  
+  atualizarIndicadorZoom();
+  inicializarEventosZoomPan();
+  
+  container.onclick = function(e) {
+    const rect = container.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / mapaMentalZoom;
+    const y = (e.clientY - rect.top) / mapaMentalZoom;
+    
+    if (e.target === container || e.target === canvas || e.target.id === 'mapaMentalNosContainer') {
+      adicionarNo(x, y);
+    }
+  };
+}
+
+// ===== ADICIONAR NÓ =====
+function adicionarNo(x, y, texto = '', cor = null, isCentral = false) {
+  salvarEstadoHistorico();
+  const corNo = cor || document.getElementById('mapaMentalCorNo').value;
+  
+  const no = {
+    id: mapaMentalIdCounter++,
+    x: x || 300,
+    y: y || 300,
+    titulo: texto || 'Novo tópico',
+    anotacoes: '',
+    cor: corNo,
+    isCentral: isCentral,
+    negrito: false,
+    italico: false,
+    alinhamento: 'center'
+  };
+  
+  mapaMentalNos.push(no);
+  renderizarNo(no);
+  
+  if (isCentral) {
+    const tituloInput = document.getElementById('mapaMentalTitulo');
+    if (tituloInput && !tituloInput.value) tituloInput.value = no.titulo;
+  }
+  return no;
+}
+
+// ===== ADICIONAR NÓ CENTRAL =====
+function adicionarNoCentral() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const tituloInput = document.getElementById('mapaMentalTitulo');
+  
+  mapaMentalNos = mapaMentalNos.filter(no => !no.isCentral);
+  document.getElementById('mapaMentalNosContainer').innerHTML = '';
+  mapaMentalNos.forEach(no => renderizarNo(no));
+  
+  const x = (container.offsetWidth / 2 / mapaMentalZoom) - 60;
+  const y = (container.offsetHeight / 2 / mapaMentalZoom) - 30;
+  
+  const no = adicionarNo(x, y, tituloInput.value || 'Tema Central', '#9f042c', true);
+  if (tituloInput) tituloInput.value = no.titulo;
+  setTimeout(() => editarNo(no.id), 300);
+}
+
+// ===== RENDERIZAR NÓ =====
+function renderizarNo(no) {
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (!container) return;
+  
+  const div = document.createElement('div');
+  div.className = `mapa-mental-no ${no.isCentral ? 'central' : ''}`;
+  div.id = `mapa-no-${no.id}`;
+  div.style.left = no.x + 'px';
+  div.style.top = no.y + 'px';
+  div.style.background = no.cor;
+  div.style.color = 'white';
+  div.style.zIndex = 10;
+  
+  div.innerHTML = `
+    <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">
+      ${no.titulo}
+    </div>
+    ${no.anotacoes ? `<div style="font-size: 0.7rem; opacity: 0.8; margin-top: 5px;">${no.anotacoes}</div>` : ''}
+  `;
+  
+  const btnEditar = document.createElement('button');
+  btnEditar.innerHTML = '✏️';
+  btnEditar.style.cssText = 'position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;background:#3b82f6;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.7rem;z-index:20;';
+  btnEditar.onclick = function(e) { e.stopPropagation(); editarNo(no.id); };
+  div.appendChild(btnEditar);
+  
+  const btnDeletar = document.createElement('button');
+  btnDeletar.innerHTML = '×';
+  btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:24px;height:24px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.9rem;font-weight:bold;z-index:20;';
+  btnDeletar.onclick = function(e) { e.stopPropagation(); deletarNo(no.id); };
+  div.appendChild(btnDeletar);
+  
+  div.onmouseenter = function() { btnEditar.style.display='flex'; btnDeletar.style.display='flex'; };
+  div.onmouseleave = function() { btnEditar.style.display='none'; btnDeletar.style.display='none'; };
+  div.onmousedown = function(e) { if (e.target !== btnEditar && e.target !== btnDeletar) iniciarArrastarNo(e, no.id); };
+  div.ondblclick = function(e) { e.preventDefault(); e.stopPropagation(); editarNo(no.id); };
+  div.onclick = function(e) { e.stopPropagation(); if (mapaMentalNoArrastando === null) selecionarNoParaConectar(no.id, div); };
+  
+  container.appendChild(div);
+}
+
+// ===== EDITAR NÓ =====
+function editarNo(id) {
+  const no = mapaMentalNos.find(n => n.id === id);
+  if (!no) return;
+  salvarEstadoHistorico();
+  
+  const modal = document.createElement('div');
+  modal.id = 'modalEdicaoNo';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  
+  modal.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:30px;width:100%;max-width:450px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <h3 style="text-align:center;margin-bottom:20px;color:#374151;">✏️ Editar Tópico</h3>
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Título:</label>
+      <input type="text" id="inputEditarTitulo" value="${no.titulo}" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;font-size:0.95rem;">
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Anotações:</label>
+      <textarea id="inputEditarAnotacoes" rows="3" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;font-size:0.85rem;">${no.anotacoes || ''}</textarea>
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Cor:</label>
+      <input type="color" id="inputEditarCor" value="${no.cor}" style="width:100%;height:40px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;cursor:pointer;">
+      
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <button onclick="toggleNegritoModal()" id="btnModalNegrito" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-weight:700;"><b>B</b></button>
+        <button onclick="toggleItalicoModal()" id="btnModalItalico" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-style:italic;"><i>I</i></button>
+        <button onclick="toggleAlinhamentoModal()" id="btnModalAlinhamento" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-size:0.8rem;">${no.alinhamento === 'center' ? 'Centro' : no.alinhamento === 'left' ? 'Esquerda' : 'Direita'}</button>
+      </div>
+      
+      <div style="display:flex;gap:10px;">
+        <button onclick="fecharModalEdicaoNo()" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:12px;background:white;color:#6b7280;font-weight:600;cursor:pointer;">Cancelar</button>
+        <button onclick="confirmarEdicaoNo(${id})" style="flex:1;padding:12px;border:none;border-radius:12px;background:${no.cor};color:white;font-weight:600;cursor:pointer;">Salvar</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  setTimeout(() => { const input = document.getElementById('inputEditarTitulo'); if (input) { input.focus(); input.select(); } }, 100);
+}
+
+// ===== TOGGLES =====
+function obterIdNoEmEdicao() {
+  const modal = document.getElementById('modalEdicaoNo');
+  if (!modal) return null;
+  const btnSalvar = modal.querySelector('button[onclick*="confirmarEdicaoNo"]');
+  if (btnSalvar) {
+    const match = btnSalvar.getAttribute('onclick').match(/confirmarEdicaoNo\((\d+)\)/);
+    if (match) return parseInt(match[1]);
+  }
+  return null;
+}
+
+function toggleNegritoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.negrito = !no.negrito;
+}
+
+function toggleItalicoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.italico = !no.italico;
+}
+
+function toggleAlinhamentoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.alinhamento = no.alinhamento === 'center' ? 'left' : no.alinhamento === 'left' ? 'right' : 'center';
+}
+
+// ===== CONFIRMAR EDIÇÃO =====
+function confirmarEdicaoNo(id) {
+  const titulo = document.getElementById('inputEditarTitulo').value.trim();
+  const anotacoes = document.getElementById('inputEditarAnotacoes').value.trim();
+  const cor = document.getElementById('inputEditarCor').value;
+  
+  if (!titulo) return;
+  
+  const no = mapaMentalNos.find(n => n.id === id);
+  if (no) {
+    no.titulo = titulo;
+    no.anotacoes = anotacoes;
+    no.cor = cor;
+    
+    const div = document.getElementById(`mapa-no-${id}`);
+    if (div) {
+      div.style.background = cor;
+      div.innerHTML = `
+        <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">${titulo}</div>
+        ${anotacoes ? `<div style="font-size:0.7rem;opacity:0.8;margin-top:5px;">${anotacoes}</div>` : ''}
+      `;
+    }
+    if (no.isCentral) { const ti = document.getElementById('mapaMentalTitulo'); if (ti) ti.value = titulo; }
+    desenharConexoes();
+  }
+  fecharModalEdicaoNo();
+  mostrarToast('✅ Tópico atualizado!', '#22c55e');
+}
+
+// ===== FECHAR MODAL EDIÇÃO =====
+function fecharModalEdicaoNo() {
+  const modal = document.getElementById('modalEdicaoNo');
+  if (modal) modal.remove();
+}
+
+// ===== DELETAR NÓ =====
+function deletarNo(id) {
+  salvarEstadoHistorico();
+  mapaMentalNos = mapaMentalNos.filter(no => no.id !== id);
+  mapaMentalConexoes = mapaMentalConexoes.filter(con => con.de !== id && con.para !== id);
+  const div = document.getElementById(`mapa-no-${id}`);
+  if (div) div.remove();
+  desenharConexoes();
+}
+
+// ===== ARRASTAR NÓ =====
+function iniciarArrastarNo(e, id) {
+  const div = document.getElementById(`mapa-no-${id}`);
+  if (!div) return;
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const rect = container.getBoundingClientRect();
+  mapaMentalNoArrastando = id;
+  mapaMentalOffsetX = e.clientX - rect.left - div.offsetLeft;
+  mapaMentalOffsetY = e.clientY - rect.top - div.offsetTop;
+  div.classList.add('dragging');
+  
+  document.onmousemove = function(e) {
+    if (mapaMentalNoArrastando === null) return;
+    const x = (e.clientX - rect.left - mapaMentalOffsetX) / mapaMentalZoom;
+    const y = (e.clientY - rect.top - mapaMentalOffsetY) / mapaMentalZoom;
+    const no = mapaMentalNos.find(n => n.id === mapaMentalNoArrastando);
+    if (no) {
+      no.x = x;
+      no.y = y;
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      requestAnimationFrame(desenharConexoes);
+    }
+  };
+  
+  document.onmouseup = function() {
+    const div = document.getElementById(`mapa-no-${mapaMentalNoArrastando}`);
+    if (div) div.classList.remove('dragging');
+    mapaMentalNoArrastando = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    desenharConexoes();
+  };
+}
+
+// ===== CONECTAR NÓS =====
+function selecionarNoParaConectar(id, div) {
+  salvarEstadoHistorico();
+  document.querySelectorAll('.mapa-mental-no.selecionado').forEach(el => el.classList.remove('selecionado'));
+  
+  if (mapaMentalConectando === null) {
+    mapaMentalConectando = id;
+    div.classList.add('selecionado');
+    mostrarToast('🔗 Clique em outro nó para conectar!', '#3b82f6');
+  } else if (mapaMentalConectando === id) {
+    mapaMentalConectando = null;
+    div.classList.remove('selecionado');
+  } else {
+    const existe = mapaMentalConexoes.some(con => (con.de === mapaMentalConectando && con.para === id) || (con.de === id && con.para === mapaMentalConectando));
+    if (!existe) {
+      mapaMentalConexoes.push({ de: mapaMentalConectando, para: id });
+      mostrarToast('✅ Conectado!', '#22c55e');
+    }
+    mapaMentalConectando = null;
+    desenharConexoes();
+  }
+}
+
+// ===== DESENHAR CONEXÕES =====
+function desenharConexoes() {
+  if (!mapaMentalCanvas || !mapaMentalCtx) return;
+  const ctx = mapaMentalCtx;
+  ctx.clearRect(0, 0, mapaMentalCanvas.width, mapaMentalCanvas.height);
+  
+  mapaMentalConexoes.forEach(conexao => {
+    const de = mapaMentalNos.find(n => n.id === conexao.de);
+    const para = mapaMentalNos.find(n => n.id === conexao.para);
+    if (!de || !para) return;
+    
+    const x1 = de.x * mapaMentalZoom;
+    const y1 = de.y * mapaMentalZoom;
+    const x2 = para.x * mapaMentalZoom;
+    const y2 = para.y * mapaMentalZoom;
+    
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    const midX = (x1 + x2) / 2;
+    ctx.bezierCurveTo(midX, y1, midX, y2, x2, y2);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+// ===== SALVAR / GALERIA =====
+function salvarMapaMental() {
+  const titulo = document.getElementById('mapaMentalTitulo').value.trim();
+  if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
+  if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
+  
+  const mapa = {
+    id: Date.now(),
+    titulo: titulo,
+    data: new Date().toISOString(),
+    nos: mapaMentalNos.map(no => ({...no})),
+    conexoes: mapaMentalConexoes
+  };
+  
+  mapasMentaisSalvos.push(mapa);
+  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
+  renderizarMapasSalvos();
+  mostrarToast('✅ Mapa salvo!', '#22c55e');
+}
+
+function renderizarMapasSalvos() {
+  const container = document.getElementById('listaMapasSalvos');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (mapasMentaisSalvos.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum mapa salvo.</p>';
+    return;
+  }
+  
+  [...mapasMentaisSalvos].reverse().forEach(mapa => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    div.innerHTML = `
+      <i class="bi bi-diagram-3" style="color:var(--cor-primaria);"></i>
+      <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${mapa.nos.length} tópicos</small></div>
+      <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+    `;
+    div.onclick = () => abrirMapaSalvo(mapa.id);
+    container.appendChild(div);
+  });
+}
+
+function abrirMapaSalvo(id) {
+  const mapa = mapasMentaisSalvos.find(m => m.id === id);
+  if (!mapa) return;
+  abrirMapaMental();
+  setTimeout(() => {
+    document.getElementById('mapaMentalTitulo').value = mapa.titulo;
+    mapaMentalNos = [];
+    mapaMentalConexoes = [];
+    document.getElementById('mapaMentalNosContainer').innerHTML = '';
+    mapa.nos.forEach(no => { mapaMentalNos.push(no); renderizarNo(no); });
+    mapaMentalConexoes = mapa.conexoes || [];
+    desenharConexoes();
+  }, 300);
+}
+
+function excluirMapaSalvo(id) {
+  mapasMentaisSalvos = mapasMentaisSalvos.filter(m => m.id !== id);
+  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
+  renderizarMapasSalvos();
+  mostrarToast('🗑️ Mapa excluído!', '#ef4444');
+}
+
+// ===== LIMPAR / FECHAR =====
+function limparMapa() {
+  salvarEstadoHistorico();
+  inicializarMapaMental();
+  mostrarToast('🗑️ Mapa limpo!', '#ef4444');
+}
+
+function fecharMapaMental() {
+  const modal = document.getElementById('mapaMentalModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== EXPORTAR =====
+window.abrirMapaMental = abrirMapaMental;
+window.fecharMapaMental = fecharMapaMental;
+window.adicionarNoCentral = adicionarNoCentral;
+window.limparMapa = limparMapa;
+window.salvarMapaMental = salvarMapaMental;
+window.abrirMapaSalvo = abrirMapaSalvo;
+window.excluirMapaSalvo = excluirMapaSalvo;
+window.editarNo = editarNo;
+window.confirmarEdicaoNo = confirmarEdicaoNo;
+window.fecharModalEdicaoNo = fecharModalEdicaoNo;
+window.toggleNegritoModal = toggleNegritoModal;
+window.toggleItalicoModal = toggleItalicoModal;
+window.toggleAlinhamentoModal = toggleAlinhamentoModal;
+window.desfazerUltimaAcao = desfazerUltimaAcao;
+window.zoomIn = zoomIn;
+window.zoomOut = zoomOut;
+window.resetZoom = resetZoom;
+window.mostrarToast = mostrarToast;
+
 // ===== GRAVADOR DE ÁUDIO (Feynman + Podcast) - VERSÃO MODAL =====
 
 let mediaRecorder = null;
@@ -8219,7 +8869,7 @@ function limparCamposGravador() {
   const tempoGravacao = document.getElementById('tempoGravacao');
   const audioGravadoArea = document.getElementById('audioGravadoArea');
   const nomeGravacao = document.getElementById('nomeGravacao'); // ⬅️ NOVO
-  
+
   if (checkPalavrasSimples) checkPalavrasSimples.checked = false;
   if (checkAnalogias) checkAnalogias.checked = false;
   if (checkLacunas) checkLacunas.checked = false;
@@ -8228,7 +8878,7 @@ function limparCamposGravador() {
   if (tempoGravacao) tempoGravacao.textContent = '00:00';
   if (audioGravadoArea) audioGravadoArea.style.display = 'none';
   if (nomeGravacao) nomeGravacao.value = ''; // ⬅️ NOVO
-  
+
   audioUrl = null;
   segundosGravacao = 0;
 }
@@ -8362,10 +9012,10 @@ function salvarGravacao() {
     });
     return;
   }
-  
+
   const modoAtivo = localStorage.getItem('modoGravadorAtivo') || 'feynman';
   const nomeGravacao = document.getElementById('nomeGravacao').value.trim();
-  
+
   const gravacao = {
     id: Date.now(),
     data: new Date().toISOString(),
@@ -8379,15 +9029,15 @@ function salvarGravacao() {
     anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
     duracao: segundosGravacao
   };
-  
+
   gravacoesSalvas.push(gravacao);
   localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-  
+
   renderizarGravacoes();
-  
+
   // Limpar campos
   limparCamposGravador();
-  
+
   Swal.fire({
     icon: 'success',
     title: 'Gravação salva!',
@@ -8400,38 +9050,38 @@ function salvarGravacao() {
 function renderizarGravacoes() {
   const container = document.getElementById('listaGravacoes');
   if (!container) return;
-  
+
   container.innerHTML = '';
-  
+
   if (gravacoesSalvas.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma gravação ainda.</p>';
     return;
   }
-  
+
   const ordenadas = [...gravacoesSalvas].reverse();
-  
+
   ordenadas.forEach(grav => {
     const data = new Date(grav.data);
     const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
+
     const modoIcone = grav.modo === 'podcast' ? '🎙️' : '📝';
     const modoNome = grav.modo === 'podcast' ? 'Podcast' : 'Feynman';
     const nomeExibicao = grav.nome || 'Gravação sem nome';
-    
+
     // Formata a duração
     const minutos = Math.floor(grav.duracao / 60);
     const segundos = grav.duracao % 60;
     const duracaoFormatada = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    
+
     const div = document.createElement('div');
     div.className = 'gravacao-item';
-    
+
     const checkboxes = [];
     if (grav.checkPalavrasSimples) checkboxes.push('✅ Palavras simples');
     if (grav.checkAnalogias) checkboxes.push('✅ Analogias');
     if (grav.checkLacunas) checkboxes.push('✅ Lacunas');
     if (grav.checkSimplificado) checkboxes.push('✅ Simplificado');
-    
+
     div.innerHTML = `
       <div class="gravacao-info">
         <div style="flex: 1;">
@@ -8463,7 +9113,7 @@ function renderizarGravacoes() {
         </div>
       ` : ''}
     `;
-    
+
     container.appendChild(div);
   });
 }
@@ -8695,10 +9345,10 @@ console.log('✅ Correção dos métodos aplicada!');
 // ===== FUNÇÃO PARA EDITAR GRAVAÇÃO =====
 function editarGravacao(id) {
   console.log('✏️ Editando gravação:', id);
-  
+
   const gravacao = gravacoesSalvas.find(g => g.id === id);
   if (!gravacao) return;
-  
+
   Swal.fire({
     title: 'Editar Gravação',
     html: `
@@ -8755,12 +9405,12 @@ function editarGravacao(id) {
       const checkAnalogias = document.getElementById('swalCheckAnalogias').checked;
       const checkLacunas = document.getElementById('swalCheckLacunas').checked;
       const checkSimplificado = document.getElementById('swalCheckSimplificado').checked;
-      
+
       if (!nome) {
         Swal.showValidationMessage('Dê um nome para a gravação!');
         return false;
       }
-      
+
       return {
         nome: nome,
         anotacoes: anotacoes,
@@ -8779,13 +9429,13 @@ function editarGravacao(id) {
       gravacao.checkAnalogias = result.value.checkAnalogias;
       gravacao.checkLacunas = result.value.checkLacunas;
       gravacao.checkSimplificado = result.value.checkSimplificado;
-      
+
       // Salva no localStorage
       localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-      
+
       // Re-renderiza a lista
       renderizarGravacoes();
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Atualizada!',
@@ -8796,3 +9446,198 @@ function editarGravacao(id) {
     }
   });
 }
+
+// =============================================
+// ===== CORREÇÃO DO BOTÃO DO MAPA MENTAL =====
+// =============================================
+console.log('🔄 Aplicando correção do botão Mapa Mental...');
+
+// Salva a referência da função original
+const verDetalhesMetodoOriginalFinal = window.verDetalhesMetodo;
+
+// Redefine a função
+window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
+  console.log('🔍 [CORRIGIDO] Abrindo método:', tipoInteligencia, metodoId);
+  
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  if (!metodosData) return;
+  
+  const metodo = metodosData.metodos.find(m => m.id === metodoId);
+  if (!metodo) return;
+  
+  console.log('📌 [CORRIGIDO] Método encontrado:', metodo.titulo);
+  
+  // Preenche o modal
+  const modalTitulo = document.getElementById("modalMetodoTitulo");
+  const modalTempo = document.getElementById("modalMetodoTempo");
+  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
+  const passosList = document.getElementById("modalMetodoPassos");
+  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
+  const beneficiosList = document.getElementById("modalMetodoBeneficios");
+  const modalDica = document.getElementById("modalMetodoDica");
+  const footer = document.getElementById("modalMetodoFooter");
+  
+  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
+  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
+  
+  if (modalDificuldade) {
+    modalDificuldade.textContent = metodo.dificuldade;
+    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+  }
+  
+  if (passosList) {
+    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
+  }
+  
+  if (beneficiosList && beneficiosContainer) {
+    if (metodo.beneficios && metodo.beneficios.length > 0) {
+      beneficiosContainer.style.display = "block";
+      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+    } else {
+      beneficiosContainer.style.display = "none";
+    }
+  }
+  
+  if (modalDica) {
+    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+  }
+  
+  if (footer) {
+    footer.innerHTML = "";
+    
+    console.log('🔘 [CORRIGIDO] Criando botão para:', metodo.titulo);
+    
+    // ===== VERIFICAÇÕES EM ORDEM =====
+    
+    // MAPA MENTAL (VERIFICAR PRIMEIRO!)
+    if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
+      console.log('✅ [CORRIGIDO] Botão de Mapa Mental');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
+      btn.onclick = function() {
+        console.log('🗺️ [CORRIGIDO] Clique em Mapa Mental');
+        window.fecharMetodoModal();
+        window.abrirMapaMental();
+      };
+      footer.appendChild(btn);
+    }
+    // PODCAST
+    else if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
+      console.log('✅ [CORRIGIDO] Botão de Podcast');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+        window.abrirGravadorPodcast();
+      };
+      footer.appendChild(btn);
+    }
+    // FEYNMAN
+    else if (metodo.titulo.includes("Feynman") || metodo.titulo.includes("feynman")) {
+      console.log('✅ [CORRIGIDO] Botão de Feynman');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+        window.abrirGravadorFeynman();
+      };
+      footer.appendChild(btn);
+    }
+    // POMODORO
+    else if (metodo.titulo.includes("Pomodoro") || metodo.titulo.includes("pomodoro")) {
+      console.log('✅ [CORRIGIDO] Botão de Pomodoro');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+        if (typeof mostrarTela === 'function') {
+          mostrarTela('relogio');
+        }
+        setTimeout(() => {
+          const cardPomodoro = document.getElementById('cardPomodoro');
+          if (cardPomodoro) {
+            cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardPomodoro.classList.add('destaque-pomodoro');
+            setTimeout(() => cardPomodoro.classList.remove('destaque-pomodoro'), 3000);
+          }
+        }, 500);
+      };
+      footer.appendChild(btn);
+    }
+    // TESTE PRÁTICO
+    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") || 
+             metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
+      console.log('✅ [CORRIGIDO] Botão de Teste Prático - Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+      };
+      footer.appendChild(btn);
+    }
+    // MNEMÔNICA
+    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") || 
+             metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
+      console.log('✅ [CORRIGIDO] Botão de Mnemônica - Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+      };
+      footer.appendChild(btn);
+    }
+    // FLASHCARDS
+    else if (metodo.titulo.includes("Flashcards") || metodo.titulo.includes("flashcards")) {
+      console.log('✅ [CORRIGIDO] Botão de Flashcards');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
+      btn.onclick = function() {
+        window.irParaRevisao("flashcards", metodo.titulo);
+      };
+      footer.appendChild(btn);
+    }
+    // MÉTODOS QUE VÃO PARA REVISÃO
+    else if (metodo.irParaRevisao) {
+      console.log('✅ [CORRIGIDO] Botão de Revisão');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
+      btn.onclick = function() {
+        window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
+      };
+      footer.appendChild(btn);
+    }
+    // MÉTODOS SEM REDIRECIONAMENTO
+    else {
+      console.log('✅ [CORRIGIDO] Botão Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = window.fecharMetodoModal;
+      footer.appendChild(btn);
+    }
+  }
+  
+  const modalOverlay = document.getElementById("metodoModalOverlay");
+  if (modalOverlay) {
+    modalOverlay.style.display = "flex";
+  }
+};
+
+console.log('✅ Correção do Mapa Mental aplicada com sucesso!');
