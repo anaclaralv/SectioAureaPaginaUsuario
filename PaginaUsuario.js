@@ -847,988 +847,6 @@ function irParaRevisao(tipoRevisao, metodoTitulo) {
 window.irParaRevisao = irParaRevisao;
 
 
-function verDetalhesMetodo(tipoInteligencia, metodoId) {
-  console.log('🔍 Abrindo método:', tipoInteligencia, metodoId);
-
-  const metodosData = metodosPorInteligencia[tipoInteligencia];
-  if (!metodosData) return;
-
-  const metodo = metodosData.metodos.find(m => m.id === metodoId);
-  if (!metodo) return;
-
-  console.log('📌 Método:', metodo.titulo);
-
-  const modalTitulo = document.getElementById("modalMetodoTitulo");
-  const modalTempo = document.getElementById("modalMetodoTempo");
-  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
-  const passosList = document.getElementById("modalMetodoPassos");
-  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
-  const beneficiosList = document.getElementById("modalMetodoBeneficios");
-  const modalDica = document.getElementById("modalMetodoDica");
-  const footer = document.getElementById("modalMetodoFooter");
-
-  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
-  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-
-  if (modalDificuldade) {
-    modalDificuldade.textContent = metodo.dificuldade;
-    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
-  }
-
-  if (passosList) {
-    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
-  }
-
-  if (beneficiosList && beneficiosContainer) {
-    if (metodo.beneficios && metodo.beneficios.length > 0) {
-      beneficiosContainer.style.display = "block";
-      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
-    } else {
-      beneficiosContainer.style.display = "none";
-    }
-  }
-
-  if (modalDica) {
-    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
-  }
-
-  if (footer) {
-    footer.innerHTML = "";
-
-    console.log('🔘 Criando botão para:', metodo.titulo);
-
-    // ===== CASO: GRAVAÇÃO DE PODCAST =====
-    if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
-      console.log('✅ Botão de Podcast');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
-      btn.onclick = function () {
-        console.log('🎙️ Clique em Gravar Podcast');
-        window.fecharMetodoModal();
-        window.abrirGravadorPodcast();
-      };
-      footer.appendChild(btn);
-    }
-    // ===== CASO: TÉCNICA FEYNMAN =====
-    else if (metodo.titulo.includes("Feynman") || metodo.titulo.includes("feynman")) {
-      console.log('✅ Botão de Feynman');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
-      btn.onclick = function () {
-        console.log('📝 Clique em Feynman');
-        window.fecharMetodoModal();
-        window.abrirGravadorFeynman();
-      };
-      footer.appendChild(btn);
-    }
-    // ===== CASO: POMODORO =====
-    else if (metodo.titulo.includes("Pomodoro") || metodo.titulo.includes("pomodoro")) {
-      console.log('✅ Botão de Pomodoro');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
-      btn.onclick = function () {
-        window.fecharMetodoModal();
-        if (typeof mostrarTela === 'function') {
-          mostrarTela('relogio');
-        }
-        setTimeout(() => {
-          const cardPomodoro = document.getElementById('cardPomodoro');
-          if (cardPomodoro) {
-            cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            cardPomodoro.classList.add('destaque-pomodoro');
-            setTimeout(() => cardPomodoro.classList.remove('destaque-pomodoro'), 3000);
-          }
-        }, 500);
-      };
-      footer.appendChild(btn);
-    }
-
-    // ===== CASO: MAPA MENTAL =====
-    else if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
-      console.log('✅ Botão de Mapa Mental');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
-      btn.onclick = function () {
-        window.fecharMetodoModal();
-        window.abrirMapaMental();
-      };
-      footer.appendChild(btn);
-    }
-
-    // ===== CASO: TESTE PRÁTICO =====
-    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") ||
-      metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
-      console.log('✅ Botão de Teste Prático - Entendi');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function () {
-        window.fecharMetodoModal();
-      };
-      footer.appendChild(btn);
-    }
-    // ===== CASO: MNEMÔNICA =====
-    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") ||
-      metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
-      console.log('✅ Botão de Mnemônica - Entendi');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function () {
-        window.fecharMetodoModal();
-      };
-      footer.appendChild(btn);
-    }
-    // ===== CASO: FLASHCARDS =====
-    else if (metodo.titulo.includes("Flashcards") || metodo.titulo.includes("flashcards")) {
-      console.log('✅ Botão de Flashcards');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = function () {
-        window.irParaRevisao("flashcards", metodo.titulo);
-      };
-      footer.appendChild(btn);
-    }
-    // ===== MÉTODOS QUE VÃO PARA REVISÃO =====
-    else if (metodo.irParaRevisao) {
-      console.log('✅ Botão de Revisão');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = function () {
-        window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
-      };
-      footer.appendChild(btn);
-    }
-    // ===== MÉTODOS SEM REDIRECIONAMENTO =====
-    else {
-      console.log('✅ Botão Entendi');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = window.fecharMetodoModal;
-      footer.appendChild(btn);
-    }
-  }
-
-  const modalOverlay = document.getElementById("metodoModalOverlay");
-  if (modalOverlay) {
-    modalOverlay.style.display = "flex";
-  }
-}
-window.verDetalhesMetodo = verDetalhesMetodo;
-
-function verDetalhesMetodo(tipoInteligencia, metodoId) {
-  const metodosData = metodosPorInteligencia[tipoInteligencia];
-  if (!metodosData) return;
-
-  const metodo = metodosData.metodos.find(m => m.id === metodoId);
-  if (!metodo) return;
-
-  const modalTitulo = document.getElementById("modalMetodoTitulo");
-  const modalTempo = document.getElementById("modalMetodoTempo");
-  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
-  const passosList = document.getElementById("modalMetodoPassos");
-  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
-  const beneficiosList = document.getElementById("modalMetodoBeneficios");
-  const modalDica = document.getElementById("modalMetodoDica");
-  const footer = document.getElementById("modalMetodoFooter");
-
-  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
-  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-
-  if (modalDificuldade) {
-    modalDificuldade.textContent = metodo.dificuldade;
-    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
-  }
-
-  if (passosList) {
-    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
-  }
-
-  if (beneficiosList && beneficiosContainer) {
-    if (metodo.beneficios && metodo.beneficios.length > 0) {
-      beneficiosContainer.style.display = "block";
-      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
-    } else {
-      beneficiosContainer.style.display = "none";
-    }
-  }
-
-  if (modalDica) {
-    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
-  }
-
-  if (footer) {
-    footer.innerHTML = "";
-
-    // ===== VERIFICAÇÃO DO CORNELL (ADICIONAR AQUI) =====
-    if (metodo.titulo === "Metodo Cornell" || metodo.titulo === "Método Cornell" || metodo.titulo.includes("Cornell")) {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
-      btn.onclick = function () {
-        console.log('Botão Cornell clicado!');
-        if (typeof window.abrirCornell === 'function') {
-          window.abrirCornell();
-        } else {
-          console.error('Função abrirCornell não encontrada!');
-        }
-      };
-      footer.appendChild(btn);
-    }
-    // ===== FIM DA VERIFICAÇÃO DO CORNELL =====
-
-    else if (metodo.titulo === "Flashcards") {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
-      footer.appendChild(btn);
-    } else if (metodo.irParaRevisao) {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
-      footer.appendChild(btn);
-    } else {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = window.fecharMetodoModal;
-      footer.appendChild(btn);
-    }
-  }
-
-  const modalOverlay = document.getElementById("metodoModalOverlay");
-  if (modalOverlay) {
-    modalOverlay.style.display = "flex";
-  }
-}
-window.verDetalhesMetodo = verDetalhesMetodo;
-
-// ===== FUNÇÃO PARA ABRIR O CORNELL (NOTAS) =====
-function abrirCornell() {
-  console.log('Abrindo Cornell...');
-
-  // Fecha o modal
-  fecharMetodoModal();
-
-  // Salva o modo no localStorage
-  localStorage.setItem('modoCornellAtivo', 'true');
-
-  // Salva a inteligência atual
-  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-  localStorage.setItem('inteligenciaAtual', inteligencia);
-
-  // Salva o título do método para referência
-  localStorage.setItem('metodoAtivo', 'Cornell');
-
-  // Navega para a tela de notas
-  if (typeof mostrarTela === 'function') {
-    mostrarTela('notas');
-  }
-
-  // Dispara evento para ativar o modo Cornell
-  setTimeout(() => {
-    const notasSection = document.getElementById('notasSection');
-    if (notasSection) {
-      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // Dispara evento para ativar o modo Cornell
-      window.dispatchEvent(new CustomEvent('ativarModoCornell', {
-        detail: { ativo: true }
-      }));
-    }
-  }, 500);
-}
-window.abrirCornell = abrirCornell;
-
-// ===== FUNÇÕES DO CORNELL =====
-
-// ===== CARREGAR NOTAS CORNELL (INTEGRADO) =====
-function carregarNotasCornell() {
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  // Filtra apenas notas do tipo Cornell
-  const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
-  renderizarNotasCornell(notasCornell);
-}
-window.carregarNotasCornell = carregarNotasCornell;
-
-// ===== RENDERIZAR NOTAS CORNELL (ESTILO ARQUIVOS) =====
-function renderizarNotasCornell(notas) {
-  const container = document.getElementById('cornellListaCards');
-  const total = document.getElementById('cornellTotal');
-  const emptyMessage = document.getElementById('cornellEmptyMessage');
-
-  if (!container) return;
-
-  if (total) {
-    total.textContent = notas.length;
-  }
-
-  if (notas.length === 0) {
-    container.innerHTML = '';
-    if (emptyMessage) emptyMessage.style.display = 'block';
-    return;
-  }
-
-  if (emptyMessage) emptyMessage.style.display = 'none';
-
-  container.innerHTML = notas.map((nota, index) => `
-        <div class="cornell-arquivo-card" style="
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 14px 16px;
-            transition: all 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            position: relative;
-            cursor: pointer;
-        " onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; this.style.borderColor='var(--cor-primaria)'" 
-           onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'; this.style.borderColor='#e5e7eb'">
-            
-            <!-- Cabeçalho do arquivo -->
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 8px;
-            ">
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    flex: 1;
-                    min-width: 0;
-                ">
-                    <i class="bi bi-file-earmark-text" style="color: var(--cor-primaria); font-size: 18px;"></i>
-                    <span style="
-                        font-weight: 600;
-                        color: #1f2937;
-                        font-size: 14px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    ">${nota.titulo || 'Sem título'}</span>
-                </div>
-                <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                    <button onclick="event.stopPropagation(); abrirNotaCornellParaEdicao('${nota.id}')" style="
-                        background: none;
-                        border: none;
-                        color: #6c757d;
-                        cursor: pointer;
-                        padding: 4px 6px;
-                        border-radius: 4px;
-                        font-size: 14px;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.background='#f0f0f0'; this.style.color='#374151'" 
-                       onmouseout="this.style.background='transparent'; this.style.color='#6c757d'" 
-                       title="Editar">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); excluirNotaCornell('${nota.id}')" style="
-                        background: none;
-                        border: none;
-                        color: #dc3545;
-                        cursor: pointer;
-                        padding: 4px 6px;
-                        border-radius: 4px;
-                        font-size: 14px;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.background='#fef2f2'" 
-                       onmouseout="this.style.background='transparent'" 
-                       title="Excluir">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Prévia do conteúdo -->
-            <div style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                font-size: 13px;
-                color: #4b5563;
-                background: #f8f9fa;
-                padding: 10px 12px;
-                border-radius: 6px;
-                margin-top: 4px;
-            ">
-                <div style="
-                    border-right: 2px solid #e5e7eb;
-                    padding-right: 10px;
-                ">
-                    <span style="
-                        font-size: 10px;
-                        color: #dc3545;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        display: block;
-                        margin-bottom: 2px;
-                    ">❓ Pergunta</span>
-                    <span style="
-                        display: block;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        font-size: 12px;
-                    ">${nota.pergunta || '—'}</span>
-                </div>
-                <div>
-                    <span style="
-                        font-size: 10px;
-                        color: #28a745;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        display: block;
-                        margin-bottom: 2px;
-                    ">💡 Resposta</span>
-                    <span style="
-                        display: block;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        font-size: 12px;
-                    ">${nota.resposta || '—'}</span>
-                </div>
-            </div>
-            
-            <!-- Rodapé -->
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 8px;
-            ">
-                <span style="font-size: 11px; color: #999;">
-                    <i class="bi bi-clock"></i> ${nota.dataCriacao || new Date().toLocaleDateString('pt-BR')}
-                </span>
-                <span style="
-                    font-size: 10px;
-                    background: #e5e7eb;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    color: #6b7280;
-                ">
-                    <i class="bi bi-tag"></i> Cornell
-                </span>
-            </div>
-        </div>
-    `).join('');
-}
-window.renderizarNotasCornell = renderizarNotasCornell;
-
-// Salvar nota Cornell
-// ===== SALVAR NOTA CORNELL (INTEGRADO COM NOTAS) =====
-function salvarNotaCornell() {
-  const pergunta = document.getElementById('cornellPergunta');
-  const resposta = document.getElementById('cornellResposta');
-
-  if (!pergunta || !resposta) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Erro!',
-      text: 'Campos não encontrados.',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    return;
-  }
-
-  const perguntaText = pergunta.value.trim();
-  const respostaText = resposta.value.trim();
-
-  if (!perguntaText || !respostaText) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Campos incompletos!',
-      text: 'Preencha tanto a pergunta quanto a resposta.',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    return;
-  }
-
-  // Busca as notas existentes
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  // Cria a nota no formato Cornell
-  const novaNota = {
-    id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-    titulo: `📝 Cornell: ${perguntaText.substring(0, 40)}${perguntaText.length > 40 ? '...' : ''}`,
-    texto: `
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-    <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
-        <strong style="color: #dc3545;">❓ Pergunta:</strong>
-        <p style="margin-top: 8px; color: #dc3545;">${perguntaText}</p>
-    </div>
-    <div>
-        <strong style="color: #28a745;">💡 Resposta:</strong>
-        <p style="margin-top: 8px; color: #28a745;">${respostaText}</p>
-    </div>
-</div>
-<div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 12px; color: #666;">
-    <i class="bi bi-tag"></i> Método Cornell
-</div>
-        `,
-    cor: '#ffffff',
-    corTexto: '#000000',
-    checklist: [],
-    anexos: [],
-    favorito: false,
-    dataCriacao: new Date().toLocaleString('pt-BR'),
-    tipo: 'cornell',
-    pergunta: perguntaText,
-    resposta: respostaText
-  };
-
-  // Adiciona a nota
-  notas.unshift(novaNota);
-  localStorage.setItem('notas', JSON.stringify(notas));
-
-  // Limpa os campos
-  pergunta.value = '';
-  resposta.value = '';
-
-  // Re-renderiza as notas
-  if (typeof renderNotas === 'function') {
-    renderNotas();
-  }
-
-  // Re-renderiza o Cornell
-  carregarNotasCornell();
-
-  // Feedback
-  const btn = document.querySelector('.cornell-botoes button:first-child');
-  if (btn) {
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado!';
-    btn.style.background = '#28a745';
-    setTimeout(() => {
-      btn.innerHTML = originalText;
-      btn.style.background = 'var(--cor-primaria)';
-    }, 1500);
-  }
-
-  Swal.fire({
-    icon: 'success',
-    title: 'Anotação salva!',
-    text: 'A nota foi adicionada à sua lista de notas.',
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-
-  // Abre a seção de notas para mostrar a nota criada
-  setTimeout(() => {
-    const notasSection = document.getElementById('notasSection');
-    if (notasSection) {
-      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    // Abre a aba de notas se estiver em outro lugar
-    if (typeof mostrarTela === 'function') {
-      mostrarTela('notas');
-    }
-  }, 500);
-}
-window.salvarNotaCornell = salvarNotaCornell;
-
-// ===== EXCLUIR NOTA CORNELL (INTEGRADO) =====
-function excluirNotaCornell(id) {
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  const notaIndex = notas.findIndex(n => n.id === id);
-  if (notaIndex === -1) return;
-
-  Swal.fire({
-    title: 'Excluir anotação?',
-    text: 'Essa ação não pode ser desfeita!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Sim, excluir',
-    cancelButtonText: 'Cancelar',
-    confirmButtonColor: '#dc3545'
-  }).then(result => {
-    if (result.isConfirmed) {
-      notas.splice(notaIndex, 1);
-      localStorage.setItem('notas', JSON.stringify(notas));
-
-      // Re-renderiza tudo
-      if (typeof renderNotas === 'function') {
-        renderNotas();
-      }
-      carregarNotasCornell();
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Anotação excluída!',
-        timer: 1200,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      });
-    }
-  });
-}
-window.excluirNotaCornell = excluirNotaCornell;
-
-
-// ===== ABRIR NOTA CORNELL PARA EDIÇÃO =====
-function abrirNotaCornellParaEdicao(id) {
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  const nota = notas.find(n => n.id === id);
-  if (!nota) return;
-
-  // Abre a seção de notas
-  if (typeof mostrarTela === 'function') {
-    mostrarTela('notas');
-  }
-
-  // Tenta abrir a nota no modal de edição
-  setTimeout(() => {
-    // Procura a nota no DOM e clica no botão editar
-    const cardNota = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
-    if (cardNota) {
-      const btnEditar = cardNota.querySelector('.btn-editar');
-      if (btnEditar) {
-        btnEditar.click();
-      }
-    } else {
-      // Se não encontrar, recarrega as notas e tenta novamente
-      if (typeof renderNotas === 'function') {
-        renderNotas();
-        setTimeout(() => {
-          const cardNota2 = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
-          if (cardNota2) {
-            const btnEditar2 = cardNota2.querySelector('.btn-editar');
-            if (btnEditar2) {
-              btnEditar2.click();
-            }
-          }
-        }, 300);
-      }
-    }
-  }, 300);
-
-  Swal.fire({
-    icon: 'info',
-    title: 'Abrindo nota...',
-    text: 'Você será redirecionado para editar a nota.',
-    timer: 1000,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-window.abrirNotaCornellParaEdicao = abrirNotaCornellParaEdicao;
-
-// Editar nota Cornell
-function editarNotaCornell(index) {
-  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-  const chave = `notasCornell_${inteligencia}`;
-  let notas = [];
-
-  try {
-    const salvo = localStorage.getItem(chave);
-    if (salvo) {
-      notas = JSON.parse(salvo);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  if (index < 0 || index >= notas.length) return;
-
-  const nota = notas[index];
-
-  Swal.fire({
-    title: 'Editar Anotação Cornell',
-    html: `
-            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #dc3545;">
-                    <i class="bi bi-question-circle"></i> Pergunta:
-                </label>
-                <textarea id="editCornellPergunta" class="swal2-textarea" rows="2" style="border-color: #dc3545;">${nota.pergunta.replace(/"/g, '&quot;')}</textarea>
-                
-                <label style="display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; color: #28a745;">
-                    <i class="bi bi-lightbulb"></i> Resposta:
-                </label>
-                <textarea id="editCornellResposta" class="swal2-textarea" rows="3" style="border-color: #28a745;">${nota.resposta.replace(/"/g, '&quot;')}</textarea>
-            </div>
-        `,
-    confirmButtonText: 'Salvar',
-    cancelButtonText: 'Cancelar',
-    showCancelButton: true,
-    confirmButtonColor: 'var(--cor-primaria)',
-    preConfirm: () => {
-      const pergunta = document.getElementById('editCornellPergunta').value.trim();
-      const resposta = document.getElementById('editCornellResposta').value.trim();
-
-      if (!pergunta || !resposta) {
-        Swal.showValidationMessage('Preencha ambos os campos!');
-        return false;
-      }
-
-      return { pergunta, resposta };
-    }
-  }).then(result => {
-    if (result.isConfirmed && result.value) {
-      notas[index].pergunta = result.value.pergunta;
-      notas[index].resposta = result.value.resposta;
-      notas[index].data = new Date().toLocaleDateString('pt-BR');
-
-      localStorage.setItem(chave, JSON.stringify(notas));
-      renderizarNotasCornell(notas);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Anotação atualizada!',
-        timer: 1200,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      });
-    }
-  });
-}
-window.editarNotaCornell = editarNotaCornell;
-
-// Ativar modo revisão (oculta as respostas)
-function ativarModoRevisaoCornell() {
-  const cards = document.querySelectorAll('.cornell-card');
-  const isAtivo = document.querySelector('.modo-revisao-ativo');
-
-  if (isAtivo) {
-    // Desativar
-    cards.forEach(card => {
-      card.style.filter = 'none';
-      const resposta = card.querySelector('.cornell-card .coluna-direita p');
-      if (resposta) resposta.style.display = 'block';
-    });
-    document.querySelector('.modo-revisao-ativo')?.remove();
-
-    Swal.fire({
-      icon: 'info',
-      title: 'Modo revisão desativado',
-      timer: 1000,
-      showConfirmButton: false,
-      position: 'top-end',
-      toast: true
-    });
-    return;
-  }
-
-  // Ativar
-  cards.forEach(card => {
-    const pergunta = card.querySelector('.cornell-card .coluna-esquerda p');
-    const resposta = card.querySelector('.cornell-card .coluna-direita p');
-
-    if (pergunta && resposta) {
-      // Cria um botão para revelar
-      const btnRevelar = document.createElement('button');
-      btnRevelar.innerHTML = '<i class="bi bi-eye"></i> Ver Resposta';
-      btnRevelar.style.cssText = `
-                background: var(--cor-primaria);
-                color: white;
-                border: none;
-                padding: 4px 12px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 12px;
-                margin-top: 8px;
-            `;
-      btnRevelar.onclick = function (e) {
-        e.stopPropagation();
-        Swal.fire({
-          title: '📝 Pergunta',
-          html: `
-                        <div style="text-align: left; padding: 10px;">
-                            <p><strong>Pergunta:</strong></p>
-                            <p style="background: #f8f9fa; padding: 10px; border-radius: 8px;">${pergunta.textContent}</p>
-                            <p><strong>💡 Resposta:</strong></p>
-                            <p style="background: #e8f5e9; padding: 10px; border-radius: 8px;">${resposta.textContent}</p>
-                        </div>
-                    `,
-          icon: 'info',
-          confirmButtonColor: 'var(--cor-primaria)',
-          confirmButtonText: 'Entendi!'
-        });
-      };
-
-      // Oculta a resposta e adiciona o botão
-      resposta.style.display = 'none';
-      const container = resposta.parentElement;
-      const existingBtn = container.querySelector('.btn-revelar-resposta-cornell');
-      if (existingBtn) existingBtn.remove();
-      btnRevelar.className = 'btn-revelar-resposta-cornell';
-      container.appendChild(btnRevelar);
-    }
-
-    card.style.filter = 'blur(2px)';
-    card.style.transition = 'filter 0.3s';
-  });
-
-  // Adiciona indicador
-  const btnRevisao = document.querySelector('.cornell-botoes button:nth-child(2)');
-  if (btnRevisao) {
-    btnRevisao.innerHTML = '<i class="bi bi-eye-slash"></i> Desativar Revisão';
-    btnRevisao.classList.add('modo-revisao-ativo');
-  }
-
-  Swal.fire({
-    icon: 'info',
-    title: 'Modo revisão ativado!',
-    text: 'As respostas estão ocultas. Clique em "Ver Resposta" para conferir.',
-    timer: 2000,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-window.ativarModoRevisaoCornell = ativarModoRevisaoCornell;
-
-// Limpar campos
-function limparCamposCornell() {
-  const pergunta = document.getElementById('cornellPergunta');
-  const resposta = document.getElementById('cornellResposta');
-
-  if (pergunta) pergunta.value = '';
-  if (resposta) resposta.value = '';
-
-  Swal.fire({
-    icon: 'info',
-    title: 'Campos limpos!',
-    timer: 800,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-window.limparCamposCornell = limparCamposCornell;
-
-// Fechar modo Cornell
-function fecharModoCornell() {
-  const container = document.getElementById('cornellContainer');
-  if (container) {
-    container.style.display = 'none';
-  }
-  localStorage.removeItem('modoCornellAtivo');
-
-  Swal.fire({
-    icon: 'info',
-    title: 'Modo Cornell fechado',
-    timer: 1000,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-window.fecharModoCornell = fecharModoCornell;
-
-// Exportar notas Cornell
-function exportarCornell() {
-  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-  const chave = `notasCornell_${inteligencia}`;
-  let notas = [];
-
-  try {
-    const salvo = localStorage.getItem(chave);
-    if (salvo) {
-      notas = JSON.parse(salvo);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  if (notas.length === 0) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Nenhuma anotação!',
-      text: 'Adicione algumas anotações antes de exportar.',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    return;
-  }
-
-  const dataStr = JSON.stringify(notas, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cornell_${inteligencia}_${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  Swal.fire({
-    icon: 'success',
-    title: 'Exportado!',
-    text: 'Arquivo salvo com sucesso!',
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-window.exportarCornell = exportarCornell;
-
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
   if (typeof anexosTemp !== 'undefined') {
@@ -8135,6 +7153,712 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
+
+// ===== FUNÇÃO PARA ABRIR O CORNELL (NOTAS) =====
+function abrirCornell() {
+  console.log('Abrindo Cornell...');
+
+  // Fecha o modal
+  fecharMetodoModal();
+
+  // Salva o modo no localStorage
+  localStorage.setItem('modoCornellAtivo', 'true');
+
+  // Salva a inteligência atual
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  localStorage.setItem('inteligenciaAtual', inteligencia);
+
+  // Salva o título do método para referência
+  localStorage.setItem('metodoAtivo', 'Cornell');
+
+  // Navega para a tela de notas
+  if (typeof mostrarTela === 'function') {
+    mostrarTela('notas');
+  }
+
+  // Dispara evento para ativar o modo Cornell
+  setTimeout(() => {
+    const notasSection = document.getElementById('notasSection');
+    if (notasSection) {
+      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Dispara evento para ativar o modo Cornell
+      window.dispatchEvent(new CustomEvent('ativarModoCornell', {
+        detail: { ativo: true }
+      }));
+    }
+  }, 500);
+}
+window.abrirCornell = abrirCornell;
+
+// ===== FUNÇÕES DO CORNELL =====
+
+// ===== CARREGAR NOTAS CORNELL (INTEGRADO) =====
+function carregarNotasCornell() {
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  // Filtra apenas notas do tipo Cornell
+  const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
+  renderizarNotasCornell(notasCornell);
+}
+window.carregarNotasCornell = carregarNotasCornell;
+
+// ===== RENDERIZAR NOTAS CORNELL (ESTILO ARQUIVOS) =====
+function renderizarNotasCornell(notas) {
+  const container = document.getElementById('cornellListaCards');
+  const total = document.getElementById('cornellTotal');
+  const emptyMessage = document.getElementById('cornellEmptyMessage');
+
+  if (!container) return;
+
+  if (total) {
+    total.textContent = notas.length;
+  }
+
+  if (notas.length === 0) {
+    container.innerHTML = '';
+    if (emptyMessage) emptyMessage.style.display = 'block';
+    return;
+  }
+
+  if (emptyMessage) emptyMessage.style.display = 'none';
+
+  container.innerHTML = notas.map((nota, index) => `
+        <div class="cornell-arquivo-card" style="
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            position: relative;
+            cursor: pointer;
+        " onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; this.style.borderColor='var(--cor-primaria)'" 
+           onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'; this.style.borderColor='#e5e7eb'">
+            
+            <!-- Cabeçalho do arquivo -->
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 8px;
+            ">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex: 1;
+                    min-width: 0;
+                ">
+                    <i class="bi bi-file-earmark-text" style="color: var(--cor-primaria); font-size: 18px;"></i>
+                    <span style="
+                        font-weight: 600;
+                        color: #1f2937;
+                        font-size: 14px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    ">${nota.titulo || 'Sem título'}</span>
+                </div>
+                <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                    <button onclick="event.stopPropagation(); abrirNotaCornellParaEdicao('${nota.id}')" style="
+                        background: none;
+                        border: none;
+                        color: #6c757d;
+                        cursor: pointer;
+                        padding: 4px 6px;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        transition: all 0.3s;
+                    " onmouseover="this.style.background='#f0f0f0'; this.style.color='#374151'" 
+                       onmouseout="this.style.background='transparent'; this.style.color='#6c757d'" 
+                       title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); excluirNotaCornell('${nota.id}')" style="
+                        background: none;
+                        border: none;
+                        color: #dc3545;
+                        cursor: pointer;
+                        padding: 4px 6px;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        transition: all 0.3s;
+                    " onmouseover="this.style.background='#fef2f2'" 
+                       onmouseout="this.style.background='transparent'" 
+                       title="Excluir">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Prévia do conteúdo -->
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                font-size: 13px;
+                color: #4b5563;
+                background: #f8f9fa;
+                padding: 10px 12px;
+                border-radius: 6px;
+                margin-top: 4px;
+            ">
+                <div style="
+                    border-right: 2px solid #e5e7eb;
+                    padding-right: 10px;
+                ">
+                    <span style="
+                        font-size: 10px;
+                        color: #dc3545;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        display: block;
+                        margin-bottom: 2px;
+                    ">❓ Pergunta</span>
+                    <span style="
+                        display: block;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-size: 12px;
+                    ">${nota.pergunta || '—'}</span>
+                </div>
+                <div>
+                    <span style="
+                        font-size: 10px;
+                        color: #28a745;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        display: block;
+                        margin-bottom: 2px;
+                    ">💡 Resposta</span>
+                    <span style="
+                        display: block;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-size: 12px;
+                    ">${nota.resposta || '—'}</span>
+                </div>
+            </div>
+            
+            <!-- Rodapé -->
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+            ">
+                <span style="font-size: 11px; color: #999;">
+                    <i class="bi bi-clock"></i> ${nota.dataCriacao || new Date().toLocaleDateString('pt-BR')}
+                </span>
+                <span style="
+                    font-size: 10px;
+                    background: #e5e7eb;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    color: #6b7280;
+                ">
+                    <i class="bi bi-tag"></i> Cornell
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+window.renderizarNotasCornell = renderizarNotasCornell;
+
+// Salvar nota Cornell
+// ===== SALVAR NOTA CORNELL (INTEGRADO COM NOTAS) =====
+function salvarNotaCornell() {
+  const pergunta = document.getElementById('cornellPergunta');
+  const resposta = document.getElementById('cornellResposta');
+
+  if (!pergunta || !resposta) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Erro!',
+      text: 'Campos não encontrados.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const perguntaText = pergunta.value.trim();
+  const respostaText = resposta.value.trim();
+
+  if (!perguntaText || !respostaText) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos!',
+      text: 'Preencha tanto a pergunta quanto a resposta.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  // Busca as notas existentes
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  // Cria a nota no formato Cornell
+  const novaNota = {
+    id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    titulo: `📝 Cornell: ${perguntaText.substring(0, 40)}${perguntaText.length > 40 ? '...' : ''}`,
+    texto: `
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <div style="border-right: 2px solid #dc3545; padding-right: 15px;">
+        <strong style="color: #dc3545;">❓ Pergunta:</strong>
+        <p style="margin-top: 8px; color: #dc3545;">${perguntaText}</p>
+    </div>
+    <div>
+        <strong style="color: #28a745;">💡 Resposta:</strong>
+        <p style="margin-top: 8px; color: #28a745;">${respostaText}</p>
+    </div>
+</div>
+<div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 12px; color: #666;">
+    <i class="bi bi-tag"></i> Método Cornell
+</div>
+        `,
+    cor: '#ffffff',
+    corTexto: '#000000',
+    checklist: [],
+    anexos: [],
+    favorito: false,
+    dataCriacao: new Date().toLocaleString('pt-BR'),
+    tipo: 'cornell',
+    pergunta: perguntaText,
+    resposta: respostaText
+  };
+
+  // Adiciona a nota
+  notas.unshift(novaNota);
+  localStorage.setItem('notas', JSON.stringify(notas));
+
+  // Limpa os campos
+  pergunta.value = '';
+  resposta.value = '';
+
+  // Re-renderiza as notas
+  if (typeof renderNotas === 'function') {
+    renderNotas();
+  }
+
+  // Re-renderiza o Cornell
+  carregarNotasCornell();
+
+  // Feedback
+  const btn = document.querySelector('.cornell-botoes button:first-child');
+  if (btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado!';
+    btn.style.background = '#28a745';
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      btn.style.background = 'var(--cor-primaria)';
+    }, 1500);
+  }
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Anotação salva!',
+    text: 'A nota foi adicionada à sua lista de notas.',
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+
+  // Abre a seção de notas para mostrar a nota criada
+  setTimeout(() => {
+    const notasSection = document.getElementById('notasSection');
+    if (notasSection) {
+      notasSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    // Abre a aba de notas se estiver em outro lugar
+    if (typeof mostrarTela === 'function') {
+      mostrarTela('notas');
+    }
+  }, 500);
+}
+window.salvarNotaCornell = salvarNotaCornell;
+
+// ===== EXCLUIR NOTA CORNELL (INTEGRADO) =====
+function excluirNotaCornell(id) {
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  const notaIndex = notas.findIndex(n => n.id === id);
+  if (notaIndex === -1) return;
+
+  Swal.fire({
+    title: 'Excluir anotação?',
+    text: 'Essa ação não pode ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#dc3545'
+  }).then(result => {
+    if (result.isConfirmed) {
+      notas.splice(notaIndex, 1);
+      localStorage.setItem('notas', JSON.stringify(notas));
+
+      // Re-renderiza tudo
+      if (typeof renderNotas === 'function') {
+        renderNotas();
+      }
+      carregarNotasCornell();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Anotação excluída!',
+        timer: 1200,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+  });
+}
+window.excluirNotaCornell = excluirNotaCornell;
+
+
+// ===== ABRIR NOTA CORNELL PARA EDIÇÃO =====
+function abrirNotaCornellParaEdicao(id) {
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  const nota = notas.find(n => n.id === id);
+  if (!nota) return;
+
+  // Abre a seção de notas
+  if (typeof mostrarTela === 'function') {
+    mostrarTela('notas');
+  }
+
+  // Tenta abrir a nota no modal de edição
+  setTimeout(() => {
+    // Procura a nota no DOM e clica no botão editar
+    const cardNota = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+    if (cardNota) {
+      const btnEditar = cardNota.querySelector('.btn-editar');
+      if (btnEditar) {
+        btnEditar.click();
+      }
+    } else {
+      // Se não encontrar, recarrega as notas e tenta novamente
+      if (typeof renderNotas === 'function') {
+        renderNotas();
+        setTimeout(() => {
+          const cardNota2 = document.querySelector(`.card-nota[data-nota-id="${id}"]`);
+          if (cardNota2) {
+            const btnEditar2 = cardNota2.querySelector('.btn-editar');
+            if (btnEditar2) {
+              btnEditar2.click();
+            }
+          }
+        }, 300);
+      }
+    }
+  }, 300);
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Abrindo nota...',
+    text: 'Você será redirecionado para editar a nota.',
+    timer: 1000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+window.abrirNotaCornellParaEdicao = abrirNotaCornellParaEdicao;
+
+// Editar nota Cornell
+function editarNotaCornell(index) {
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  const chave = `notasCornell_${inteligencia}`;
+  let notas = [];
+
+  try {
+    const salvo = localStorage.getItem(chave);
+    if (salvo) {
+      notas = JSON.parse(salvo);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  if (index < 0 || index >= notas.length) return;
+
+  const nota = notas[index];
+
+  Swal.fire({
+    title: 'Editar Anotação Cornell',
+    html: `
+            <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #dc3545;">
+                    <i class="bi bi-question-circle"></i> Pergunta:
+                </label>
+                <textarea id="editCornellPergunta" class="swal2-textarea" rows="2" style="border-color: #dc3545;">${nota.pergunta.replace(/"/g, '&quot;')}</textarea>
+                
+                <label style="display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; color: #28a745;">
+                    <i class="bi bi-lightbulb"></i> Resposta:
+                </label>
+                <textarea id="editCornellResposta" class="swal2-textarea" rows="3" style="border-color: #28a745;">${nota.resposta.replace(/"/g, '&quot;')}</textarea>
+            </div>
+        `,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    showCancelButton: true,
+    confirmButtonColor: 'var(--cor-primaria)',
+    preConfirm: () => {
+      const pergunta = document.getElementById('editCornellPergunta').value.trim();
+      const resposta = document.getElementById('editCornellResposta').value.trim();
+
+      if (!pergunta || !resposta) {
+        Swal.showValidationMessage('Preencha ambos os campos!');
+        return false;
+      }
+
+      return { pergunta, resposta };
+    }
+  }).then(result => {
+    if (result.isConfirmed && result.value) {
+      notas[index].pergunta = result.value.pergunta;
+      notas[index].resposta = result.value.resposta;
+      notas[index].data = new Date().toLocaleDateString('pt-BR');
+
+      localStorage.setItem(chave, JSON.stringify(notas));
+      renderizarNotasCornell(notas);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Anotação atualizada!',
+        timer: 1200,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      });
+    }
+  });
+}
+window.editarNotaCornell = editarNotaCornell;
+
+// Ativar modo revisão (oculta as respostas)
+function ativarModoRevisaoCornell() {
+  const cards = document.querySelectorAll('.cornell-card');
+  const isAtivo = document.querySelector('.modo-revisao-ativo');
+
+  if (isAtivo) {
+    // Desativar
+    cards.forEach(card => {
+      card.style.filter = 'none';
+      const resposta = card.querySelector('.cornell-card .coluna-direita p');
+      if (resposta) resposta.style.display = 'block';
+    });
+    document.querySelector('.modo-revisao-ativo')?.remove();
+
+    Swal.fire({
+      icon: 'info',
+      title: 'Modo revisão desativado',
+      timer: 1000,
+      showConfirmButton: false,
+      position: 'top-end',
+      toast: true
+    });
+    return;
+  }
+
+  // Ativar
+  cards.forEach(card => {
+    const pergunta = card.querySelector('.cornell-card .coluna-esquerda p');
+    const resposta = card.querySelector('.cornell-card .coluna-direita p');
+
+    if (pergunta && resposta) {
+      // Cria um botão para revelar
+      const btnRevelar = document.createElement('button');
+      btnRevelar.innerHTML = '<i class="bi bi-eye"></i> Ver Resposta';
+      btnRevelar.style.cssText = `
+                background: var(--cor-primaria);
+                color: white;
+                border: none;
+                padding: 4px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin-top: 8px;
+            `;
+      btnRevelar.onclick = function (e) {
+        e.stopPropagation();
+        Swal.fire({
+          title: '📝 Pergunta',
+          html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <p><strong>Pergunta:</strong></p>
+                            <p style="background: #f8f9fa; padding: 10px; border-radius: 8px;">${pergunta.textContent}</p>
+                            <p><strong>💡 Resposta:</strong></p>
+                            <p style="background: #e8f5e9; padding: 10px; border-radius: 8px;">${resposta.textContent}</p>
+                        </div>
+                    `,
+          icon: 'info',
+          confirmButtonColor: 'var(--cor-primaria)',
+          confirmButtonText: 'Entendi!'
+        });
+      };
+
+      // Oculta a resposta e adiciona o botão
+      resposta.style.display = 'none';
+      const container = resposta.parentElement;
+      const existingBtn = container.querySelector('.btn-revelar-resposta-cornell');
+      if (existingBtn) existingBtn.remove();
+      btnRevelar.className = 'btn-revelar-resposta-cornell';
+      container.appendChild(btnRevelar);
+    }
+
+    card.style.filter = 'blur(2px)';
+    card.style.transition = 'filter 0.3s';
+  });
+
+  // Adiciona indicador
+  const btnRevisao = document.querySelector('.cornell-botoes button:nth-child(2)');
+  if (btnRevisao) {
+    btnRevisao.innerHTML = '<i class="bi bi-eye-slash"></i> Desativar Revisão';
+    btnRevisao.classList.add('modo-revisao-ativo');
+  }
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Modo revisão ativado!',
+    text: 'As respostas estão ocultas. Clique em "Ver Resposta" para conferir.',
+    timer: 2000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+window.ativarModoRevisaoCornell = ativarModoRevisaoCornell;
+
+// Limpar campos
+function limparCamposCornell() {
+  const pergunta = document.getElementById('cornellPergunta');
+  const resposta = document.getElementById('cornellResposta');
+
+  if (pergunta) pergunta.value = '';
+  if (resposta) resposta.value = '';
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Campos limpos!',
+    timer: 800,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+window.limparCamposCornell = limparCamposCornell;
+
+// Fechar modo Cornell
+function fecharModoCornell() {
+  const container = document.getElementById('cornellContainer');
+  if (container) {
+    container.style.display = 'none';
+  }
+  localStorage.removeItem('modoCornellAtivo');
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Modo Cornell fechado',
+    timer: 1000,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+window.fecharModoCornell = fecharModoCornell;
+
+// Exportar notas Cornell
+function exportarCornell() {
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  const chave = `notasCornell_${inteligencia}`;
+  let notas = [];
+
+  try {
+    const salvo = localStorage.getItem(chave);
+    if (salvo) {
+      notas = JSON.parse(salvo);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  if (notas.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Nenhuma anotação!',
+      text: 'Adicione algumas anotações antes de exportar.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const dataStr = JSON.stringify(notas, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cornell_${inteligencia}_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Exportado!',
+    text: 'Arquivo salvo com sucesso!',
+    timer: 1500,
+    showConfirmButton: false,
+    position: 'top-end',
+    toast: true
+  });
+}
+window.exportarCornell = exportarCornell;
+
+
 // =============================================
 // ===== MAPA MENTAL - VERSÃO FINAL ===========
 // =============================================
@@ -8196,17 +7920,17 @@ function desfazerUltimaAcao() {
 function aplicarZoom(fator) {
   const container = document.getElementById('mapaMentalNosContainer');
   if (!container) return;
-  
+
   const novoZoom = Math.max(mapaMentalZoomMin, Math.min(mapaMentalZoomMax, mapaMentalZoom * fator));
   if (novoZoom === mapaMentalZoom) return;
-  
+
   mapaMentalZoom = novoZoom;
   container.style.transform = `scale(${mapaMentalZoom})`;
   container.style.transformOrigin = '0 0';
-  
+
   const indicador = document.getElementById('mapaMentalZoomIndicador');
   if (indicador) indicador.textContent = Math.round(mapaMentalZoom * 100) + '%';
-  
+
   desenharConexoes();
 }
 
@@ -8234,15 +7958,15 @@ function atualizarIndicadorZoom() {
 function inicializarEventosZoomPan() {
   const container = document.getElementById('mapaMentalCanvasContainer');
   if (!container) return;
-  
+
   // Zoom com roda do mouse
-  container.addEventListener('wheel', function(e) {
+  container.addEventListener('wheel', function (e) {
     e.preventDefault();
     aplicarZoom(e.deltaY < 0 ? 1.1 : 0.9);
   }, { passive: false });
-  
+
   // Pan - arrastar o fundo com botão esquerdo
-  container.addEventListener('mousedown', function(e) {
+  container.addEventListener('mousedown', function (e) {
     if (e.target === container || e.target.id === 'mapaMentalNosContainer' || e.target === document.getElementById('mapaMentalCanvas')) {
       mapaMentalArrastandoFundo = true;
       mapaMentalPanStartX = e.clientX;
@@ -8251,15 +7975,15 @@ function inicializarEventosZoomPan() {
       e.preventDefault();
     }
   });
-  
-  document.addEventListener('mousemove', function(e) {
+
+  document.addEventListener('mousemove', function (e) {
     if (!mapaMentalArrastandoFundo) return;
-    
+
     const dx = e.clientX - mapaMentalPanStartX;
     const dy = e.clientY - mapaMentalPanStartY;
     mapaMentalPanStartX = e.clientX;
     mapaMentalPanStartY = e.clientY;
-    
+
     mapaMentalNos.forEach(no => {
       no.x += dx / mapaMentalZoom;
       no.y += dy / mapaMentalZoom;
@@ -8271,14 +7995,14 @@ function inicializarEventosZoomPan() {
     });
     desenharConexoes();
   });
-  
-  document.addEventListener('mouseup', function() {
+
+  document.addEventListener('mouseup', function () {
     mapaMentalArrastandoFundo = false;
     container.style.cursor = 'crosshair';
   });
-  
+
   // Pan alternativo - botão do meio ou direito
-  container.addEventListener('mousedown', function(e) {
+  container.addEventListener('mousedown', function (e) {
     if (e.button === 1 || e.button === 2) {
       e.preventDefault();
       mapaMentalPanning = true;
@@ -8287,14 +8011,14 @@ function inicializarEventosZoomPan() {
       container.style.cursor = 'grabbing';
     }
   });
-  
-  document.addEventListener('mousemove', function(e) {
+
+  document.addEventListener('mousemove', function (e) {
     if (!mapaMentalPanning) return;
     const dx = e.clientX - mapaMentalPanStartX;
     const dy = e.clientY - mapaMentalPanStartY;
     mapaMentalPanStartX = e.clientX;
     mapaMentalPanStartY = e.clientY;
-    
+
     mapaMentalNos.forEach(no => {
       no.x += dx / mapaMentalZoom;
       no.y += dy / mapaMentalZoom;
@@ -8306,14 +8030,14 @@ function inicializarEventosZoomPan() {
     });
     desenharConexoes();
   });
-  
-  document.addEventListener('mouseup', function() {
+
+  document.addEventListener('mouseup', function () {
     mapaMentalPanning = false;
     container.style.cursor = 'crosshair';
   });
-  
+
   // Ctrl+Z
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       const modalAberto = document.getElementById('mapaMentalModalOverlay');
       if (modalAberto && modalAberto.style.display === 'flex') {
@@ -8322,16 +8046,16 @@ function inicializarEventosZoomPan() {
       }
     }
   });
-  
+
   // Previne menu de contexto
-  container.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  container.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 }
 
 // ===== ABRIR MODAL =====
 function abrirMapaMental() {
   console.log('🗺️ Abrindo Mapa Mental');
   if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
-  
+
   const modal = document.getElementById('mapaMentalModalOverlay');
   if (modal) {
     modal.style.display = 'flex';
@@ -8347,37 +8071,37 @@ function inicializarMapaMental() {
   const container = document.getElementById('mapaMentalCanvasContainer');
   const canvas = document.getElementById('mapaMentalCanvas');
   if (!container || !canvas) return;
-  
+
   setTimeout(() => {
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
   }, 200);
-  
+
   mapaMentalCanvas = canvas;
   mapaMentalCtx = canvas.getContext('2d');
   mapaMentalZoom = 1;
   mapaMentalNos = [];
   mapaMentalConexoes = [];
   mapaMentalHistorico = [];
-  
+
   const nosContainer = document.getElementById('mapaMentalNosContainer');
   if (nosContainer) {
     nosContainer.innerHTML = '';
     nosContainer.style.transform = 'scale(1)';
     nosContainer.style.transformOrigin = '0 0';
   }
-  
+
   const tituloInput = document.getElementById('mapaMentalTitulo');
   if (tituloInput) tituloInput.value = '';
-  
+
   atualizarIndicadorZoom();
   inicializarEventosZoomPan();
-  
-  container.onclick = function(e) {
+
+  container.onclick = function (e) {
     const rect = container.getBoundingClientRect();
     const x = (e.clientX - rect.left) / mapaMentalZoom;
     const y = (e.clientY - rect.top) / mapaMentalZoom;
-    
+
     if (e.target === container || e.target === canvas || e.target.id === 'mapaMentalNosContainer') {
       adicionarNo(x, y);
     }
@@ -8388,7 +8112,7 @@ function inicializarMapaMental() {
 function adicionarNo(x, y, texto = '', cor = null, isCentral = false) {
   salvarEstadoHistorico();
   const corNo = cor || document.getElementById('mapaMentalCorNo').value;
-  
+
   const no = {
     id: mapaMentalIdCounter++,
     x: x || 300,
@@ -8401,10 +8125,10 @@ function adicionarNo(x, y, texto = '', cor = null, isCentral = false) {
     italico: false,
     alinhamento: 'center'
   };
-  
+
   mapaMentalNos.push(no);
   renderizarNo(no);
-  
+
   if (isCentral) {
     const tituloInput = document.getElementById('mapaMentalTitulo');
     if (tituloInput && !tituloInput.value) tituloInput.value = no.titulo;
@@ -8416,14 +8140,14 @@ function adicionarNo(x, y, texto = '', cor = null, isCentral = false) {
 function adicionarNoCentral() {
   const container = document.getElementById('mapaMentalCanvasContainer');
   const tituloInput = document.getElementById('mapaMentalTitulo');
-  
+
   mapaMentalNos = mapaMentalNos.filter(no => !no.isCentral);
   document.getElementById('mapaMentalNosContainer').innerHTML = '';
   mapaMentalNos.forEach(no => renderizarNo(no));
-  
+
   const x = (container.offsetWidth / 2 / mapaMentalZoom) - 60;
   const y = (container.offsetHeight / 2 / mapaMentalZoom) - 30;
-  
+
   const no = adicionarNo(x, y, tituloInput.value || 'Tema Central', '#9f042c', true);
   if (tituloInput) tituloInput.value = no.titulo;
   setTimeout(() => editarNo(no.id), 300);
@@ -8433,7 +8157,7 @@ function adicionarNoCentral() {
 function renderizarNo(no) {
   const container = document.getElementById('mapaMentalNosContainer');
   if (!container) return;
-  
+
   const div = document.createElement('div');
   div.className = `mapa-mental-no ${no.isCentral ? 'central' : ''}`;
   div.id = `mapa-no-${no.id}`;
@@ -8442,32 +8166,32 @@ function renderizarNo(no) {
   div.style.background = no.cor;
   div.style.color = 'white';
   div.style.zIndex = 10;
-  
+
   div.innerHTML = `
     <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">
       ${no.titulo}
     </div>
     ${no.anotacoes ? `<div style="font-size: 0.7rem; opacity: 0.8; margin-top: 5px;">${no.anotacoes}</div>` : ''}
   `;
-  
+
   const btnEditar = document.createElement('button');
   btnEditar.innerHTML = '✏️';
   btnEditar.style.cssText = 'position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;background:#3b82f6;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.7rem;z-index:20;';
-  btnEditar.onclick = function(e) { e.stopPropagation(); editarNo(no.id); };
+  btnEditar.onclick = function (e) { e.stopPropagation(); editarNo(no.id); };
   div.appendChild(btnEditar);
-  
+
   const btnDeletar = document.createElement('button');
   btnDeletar.innerHTML = '×';
   btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:24px;height:24px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.9rem;font-weight:bold;z-index:20;';
-  btnDeletar.onclick = function(e) { e.stopPropagation(); deletarNo(no.id); };
+  btnDeletar.onclick = function (e) { e.stopPropagation(); deletarNo(no.id); };
   div.appendChild(btnDeletar);
-  
-  div.onmouseenter = function() { btnEditar.style.display='flex'; btnDeletar.style.display='flex'; };
-  div.onmouseleave = function() { btnEditar.style.display='none'; btnDeletar.style.display='none'; };
-  div.onmousedown = function(e) { if (e.target !== btnEditar && e.target !== btnDeletar) iniciarArrastarNo(e, no.id); };
-  div.ondblclick = function(e) { e.preventDefault(); e.stopPropagation(); editarNo(no.id); };
-  div.onclick = function(e) { e.stopPropagation(); if (mapaMentalNoArrastando === null) selecionarNoParaConectar(no.id, div); };
-  
+
+  div.onmouseenter = function () { btnEditar.style.display = 'flex'; btnDeletar.style.display = 'flex'; };
+  div.onmouseleave = function () { btnEditar.style.display = 'none'; btnDeletar.style.display = 'none'; };
+  div.onmousedown = function (e) { if (e.target !== btnEditar && e.target !== btnDeletar) iniciarArrastarNo(e, no.id); };
+  div.ondblclick = function (e) { e.preventDefault(); e.stopPropagation(); editarNo(no.id); };
+  div.onclick = function (e) { e.stopPropagation(); if (mapaMentalNoArrastando === null) selecionarNoParaConectar(no.id, div); };
+
   container.appendChild(div);
 }
 
@@ -8476,11 +8200,11 @@ function editarNo(id) {
   const no = mapaMentalNos.find(n => n.id === id);
   if (!no) return;
   salvarEstadoHistorico();
-  
+
   const modal = document.createElement('div');
   modal.id = 'modalEdicaoNo';
   modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  
+
   modal.innerHTML = `
     <div style="background:white;border-radius:20px;padding:30px;width:100%;max-width:450px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
       <h3 style="text-align:center;margin-bottom:20px;color:#374151;">✏️ Editar Tópico</h3>
@@ -8506,7 +8230,7 @@ function editarNo(id) {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
   setTimeout(() => { const input = document.getElementById('inputEditarTitulo'); if (input) { input.focus(); input.select(); } }, 100);
 }
@@ -8543,15 +8267,15 @@ function confirmarEdicaoNo(id) {
   const titulo = document.getElementById('inputEditarTitulo').value.trim();
   const anotacoes = document.getElementById('inputEditarAnotacoes').value.trim();
   const cor = document.getElementById('inputEditarCor').value;
-  
+
   if (!titulo) return;
-  
+
   const no = mapaMentalNos.find(n => n.id === id);
   if (no) {
     no.titulo = titulo;
     no.anotacoes = anotacoes;
     no.cor = cor;
-    
+
     const div = document.getElementById(`mapa-no-${id}`);
     if (div) {
       div.style.background = cor;
@@ -8589,15 +8313,15 @@ function iniciarArrastarNo(e, id) {
   if (!div) return;
   e.preventDefault();
   e.stopPropagation();
-  
+
   const container = document.getElementById('mapaMentalCanvasContainer');
   const rect = container.getBoundingClientRect();
   mapaMentalNoArrastando = id;
   mapaMentalOffsetX = e.clientX - rect.left - div.offsetLeft;
   mapaMentalOffsetY = e.clientY - rect.top - div.offsetTop;
   div.classList.add('dragging');
-  
-  document.onmousemove = function(e) {
+
+  document.onmousemove = function (e) {
     if (mapaMentalNoArrastando === null) return;
     const x = (e.clientX - rect.left - mapaMentalOffsetX) / mapaMentalZoom;
     const y = (e.clientY - rect.top - mapaMentalOffsetY) / mapaMentalZoom;
@@ -8610,8 +8334,8 @@ function iniciarArrastarNo(e, id) {
       requestAnimationFrame(desenharConexoes);
     }
   };
-  
-  document.onmouseup = function() {
+
+  document.onmouseup = function () {
     const div = document.getElementById(`mapa-no-${mapaMentalNoArrastando}`);
     if (div) div.classList.remove('dragging');
     mapaMentalNoArrastando = null;
@@ -8625,7 +8349,7 @@ function iniciarArrastarNo(e, id) {
 function selecionarNoParaConectar(id, div) {
   salvarEstadoHistorico();
   document.querySelectorAll('.mapa-mental-no.selecionado').forEach(el => el.classList.remove('selecionado'));
-  
+
   if (mapaMentalConectando === null) {
     mapaMentalConectando = id;
     div.classList.add('selecionado');
@@ -8649,17 +8373,17 @@ function desenharConexoes() {
   if (!mapaMentalCanvas || !mapaMentalCtx) return;
   const ctx = mapaMentalCtx;
   ctx.clearRect(0, 0, mapaMentalCanvas.width, mapaMentalCanvas.height);
-  
+
   mapaMentalConexoes.forEach(conexao => {
     const de = mapaMentalNos.find(n => n.id === conexao.de);
     const para = mapaMentalNos.find(n => n.id === conexao.para);
     if (!de || !para) return;
-    
+
     const x1 = de.x * mapaMentalZoom;
     const y1 = de.y * mapaMentalZoom;
     const x2 = para.x * mapaMentalZoom;
     const y2 = para.y * mapaMentalZoom;
-    
+
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     const midX = (x1 + x2) / 2;
@@ -8677,15 +8401,15 @@ function salvarMapaMental() {
   const titulo = document.getElementById('mapaMentalTitulo').value.trim();
   if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
   if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
-  
+
   const mapa = {
     id: Date.now(),
     titulo: titulo,
     data: new Date().toISOString(),
-    nos: mapaMentalNos.map(no => ({...no})),
+    nos: mapaMentalNos.map(no => ({ ...no })),
     conexoes: mapaMentalConexoes
   };
-  
+
   mapasMentaisSalvos.push(mapa);
   localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
   renderizarMapasSalvos();
@@ -8696,12 +8420,12 @@ function renderizarMapasSalvos() {
   const container = document.getElementById('listaMapasSalvos');
   if (!container) return;
   container.innerHTML = '';
-  
+
   if (mapasMentaisSalvos.length === 0) {
     container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum mapa salvo.</p>';
     return;
   }
-  
+
   [...mapasMentaisSalvos].reverse().forEach(mapa => {
     const div = document.createElement('div');
     div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
@@ -9448,16 +9172,435 @@ function editarGravacao(id) {
 }
 
 // =============================================
-// ===== CORREÇÃO DO BOTÃO DO MAPA MENTAL =====
+// ===== BIBLIOTECA DE VÍDEOS =================
 // =============================================
-console.log('🔄 Aplicando correção do botão Mapa Mental...');
 
-// Salva a referência da função original
-const verDetalhesMetodoOriginalFinal = window.verDetalhesMetodo;
+let bibliotecaVideos = JSON.parse(localStorage.getItem('bibliotecaVideos') || '[]');
 
-// Redefine a função
+// ===== ABRIR BIBLIOTECA =====
+function abrirBibliotecaVideos() {
+  console.log('🎬 Abrindo Biblioteca de Vídeos');
+  
+  if (typeof fecharMetodoModal === 'function') {
+    fecharMetodoModal();
+  }
+  
+  const modal = document.getElementById('bibliotecaVideosModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    popularFiltroMateriasVideos();
+    renderizarBibliotecaVideos();
+  }
+}
+
+// ===== FECHAR BIBLIOTECA =====
+function fecharBibliotecaVideos() {
+  const modal = document.getElementById('bibliotecaVideosModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== ABRIR MODAL ADICIONAR =====
+function abrirModalAdicionarVideo() {
+  const modal = document.getElementById('modalAdicionarVideoOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    popularSelectMateriasVideos();
+    
+    // Limpa campos
+    document.getElementById('videoTitulo').value = '';
+    document.getElementById('videoUrl').value = '';
+    document.getElementById('videoTema').value = '';
+    document.getElementById('videoAnotacoes').value = '';
+    document.getElementById('videoThumbnailPreview').style.display = 'none';
+    document.getElementById('novaMateriaVideo').value = '';
+    document.getElementById('campoNovaMateriaVideo').style.display = 'none';
+    document.getElementById('videoMateria').value = '';
+  }
+}
+
+// ===== FECHAR MODAL ADICIONAR =====
+function fecharModalAdicionarVideo() {
+  const modal = document.getElementById('modalAdicionarVideoOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== POPULAR FILTRO =====
+function popularFiltroMateriasVideos() {
+  const select = document.getElementById('filtroMateriaVideos');
+  if (!select) return;
+  const materiasUnicas = [...new Set(bibliotecaVideos.map(v => v.materia).filter(Boolean))];
+  select.innerHTML = '<option value="todas">Todas as matérias</option>';
+  materiasUnicas.forEach(materia => {
+    select.innerHTML += `<option value="${materia}">${materia}</option>`;
+  });
+}
+
+// ===== POPULAR SELECT DE MATÉRIAS (ADICIONAR) =====
+function popularSelectMateriasVideos() {
+  const select = document.getElementById('videoMateria');
+  if (!select) return;
+  
+  // Pega matérias do sistema
+  const materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
+  
+  select.innerHTML = '<option value="">Selecione uma matéria</option>';
+  
+  materiasSistema.forEach(materia => {
+    select.innerHTML += `<option value="${materia.nome}">${materia.nome}</option>`;
+  });
+  
+  // Adiciona opção "Nova matéria"
+  select.innerHTML += '<option value="__nova__">➕ Nova matéria...</option>';
+  
+  // Evento para mostrar campo de nova matéria
+  select.onchange = function() {
+    const campoNovaMateria = document.getElementById('campoNovaMateriaVideo');
+    
+    if (select.value === '__nova__') {
+      if (campoNovaMateria) {
+        campoNovaMateria.style.display = 'block';
+      }
+    } else {
+      if (campoNovaMateria) {
+        campoNovaMateria.style.display = 'none';
+      }
+    }
+  };
+}
+// ===== EXTRAIR ID YOUTUBE =====
+function extrairYouTubeId(url) {
+  if (!url) return null;
+  const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+// ===== CARREGAR THUMBNAIL =====
+function carregarThumbnailPreview() {
+  const url = document.getElementById('videoUrl').value;
+  const videoId = extrairYouTubeId(url);
+  if (videoId) {
+    const preview = document.getElementById('videoThumbnailPreview');
+    const img = document.getElementById('videoThumbnailImg');
+    img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    preview.style.display = 'block';
+  }
+}
+
+// ===== SALVAR VÍDEO =====
+function salvarVideo() {
+  let materia = document.getElementById('videoMateria').value;
+  const titulo = document.getElementById('videoTitulo').value.trim();
+  const url = document.getElementById('videoUrl').value.trim();
+  const tema = document.getElementById('videoTema').value.trim();
+  const anotacoes = document.getElementById('videoAnotacoes').value.trim();
+  
+  // Verifica se é nova matéria
+  if (materia === '__nova__') {
+    const novaMateriaNome = document.getElementById('novaMateriaVideo').value.trim();
+    
+    if (!novaMateriaNome) {
+      mostrarToast('⚠️ Digite o nome da nova matéria!', '#f59e0b');
+      return;
+    }
+    
+    materia = novaMateriaNome;
+    
+    // Salva a nova matéria no sistema
+    salvarNovaMateriaNoSistema(novaMateriaNome);
+  }
+  
+  if (!materia) { mostrarToast('⚠️ Selecione a matéria!', '#f59e0b'); return; }
+  if (!titulo) { mostrarToast('⚠️ Digite o título!', '#f59e0b'); return; }
+  if (!url || !extrairYouTubeId(url)) { mostrarToast('⚠️ Link inválido!', '#ef4444'); return; }
+  
+  const videoId = extrairYouTubeId(url);
+  
+  const video = {
+    id: Date.now(),
+    materia: materia,
+    titulo: titulo,
+    url: url,
+    videoId: videoId,
+    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+    tema: tema || 'Geral',
+    anotacoes: anotacoes,
+    assistido: false,
+    nota: 0,
+    dataAdicionado: new Date().toISOString()
+  };
+  
+  bibliotecaVideos.push(video);
+  localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+  
+  fecharModalAdicionarVideo();
+  popularFiltroMateriasVideos();
+  renderizarBibliotecaVideos();
+  mostrarToast('✅ Vídeo adicionado!', '#22c55e');
+}
+
+// ===== SALVAR NOVA MATÉRIA NO SISTEMA =====
+function salvarNovaMateriaNoSistema(nomeMateria) {
+  // Pega matérias existentes
+  let materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
+  
+  // Verifica se já existe
+  const materiaExiste = materiasSistema.some(m => m.nome.toLowerCase() === nomeMateria.toLowerCase());
+  
+  if (!materiaExiste) {
+    // Cria nova matéria
+    const novaMateria = {
+      id: Date.now().toString(),
+      nome: nomeMateria,
+      cor: '#' + Math.floor(Math.random()*16777215).toString(16) // cor aleatória
+    };
+    
+    materiasSistema.push(novaMateria);
+    localStorage.setItem('materias', JSON.stringify(materiasSistema));
+    
+    console.log('✅ Nova matéria salva:', novaMateria);
+    
+    // Tenta salvar no backend se possível
+    if (typeof apiFetch === 'function') {
+      apiFetch('materias', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: nomeMateria,
+          cor: novaMateria.cor
+        })
+      }).then(response => {
+        if (response.ok) {
+          console.log('✅ Matéria salva no backend!');
+        }
+      }).catch(err => {
+        console.log('ℹ️ Matéria salva apenas localmente (sem backend)');
+      });
+    }
+  }
+}
+
+// ===== RENDERIZAR =====
+function renderizarBibliotecaVideos() {
+  const container = document.getElementById('listaVideosEstudo');
+  if (!container) return;
+  
+  const filtroMateria = document.getElementById('filtroMateriaVideos')?.value || 'todas';
+  const filtroStatus = document.getElementById('filtroStatusVideos')?.value || 'todos';
+  const busca = document.getElementById('buscaVideos')?.value.toLowerCase() || '';
+  
+  let videosFiltrados = [...bibliotecaVideos];
+  
+  if (filtroMateria !== 'todas') {
+    videosFiltrados = videosFiltrados.filter(v => v.materia === filtroMateria);
+  }
+  if (filtroStatus === 'assistidos') {
+    videosFiltrados = videosFiltrados.filter(v => v.assistido);
+  } else if (filtroStatus === 'nao_assistidos') {
+    videosFiltrados = videosFiltrados.filter(v => !v.assistido);
+  }
+  if (busca) {
+    videosFiltrados = videosFiltrados.filter(v => 
+      v.titulo.toLowerCase().includes(busca) || 
+      v.tema.toLowerCase().includes(busca) ||
+      v.anotacoes.toLowerCase().includes(busca)
+    );
+  }
+  
+  container.innerHTML = '';
+  
+  if (videosFiltrados.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #9ca3af;">
+        <i class="bi bi-collection-play" style="font-size: 3rem; display: block; margin-bottom: 15px;"></i>
+        <p>Nenhum vídeo encontrado.</p>
+        <p style="font-size: 0.8rem;">Clique em "Adicionar Vídeo" para começar!</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const grupos = {};
+  videosFiltrados.forEach(video => {
+    if (!grupos[video.materia]) grupos[video.materia] = [];
+    grupos[video.materia].push(video);
+  });
+  
+  Object.keys(grupos).forEach(materia => {
+    const grupoDiv = document.createElement('div');
+    grupoDiv.style.marginBottom = '30px';
+    grupoDiv.innerHTML = `
+      <h3 style="color: #374151; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-book" style="color: var(--cor-primaria);"></i>
+        ${materia}
+        <span style="font-size: 0.7rem; color: #9ca3af; font-weight: normal;">(${grupos[materia].length} vídeos)</span>
+      </h3>
+    `;
+    
+    const videosGrid = document.createElement('div');
+    videosGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;';
+    
+    grupos[materia].forEach(video => {
+      videosGrid.appendChild(criarCardVideo(video));
+    });
+    
+    grupoDiv.appendChild(videosGrid);
+    container.appendChild(grupoDiv);
+  });
+}
+
+// ===== CARD DO VÍDEO =====
+function criarCardVideo(video) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: 0.2s; cursor: pointer;';
+  card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)'; };
+  card.onmouseout = () => { card.style.transform = 'translateY(0)'; card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)'; };
+  
+  const estrelas = '⭐'.repeat(video.nota) + '☆'.repeat(5 - video.nota);
+  
+  card.innerHTML = `
+    <div style="position: relative;">
+      <img src="${video.thumbnail}" alt="${video.titulo}" style="width: 100%; height: 160px; object-fit: cover; cursor: pointer;" onclick="abrirVideoEstudo('${video.url}')">
+      ${video.assistido ? `<div style="position: absolute; top: 10px; right: 10px; background: #22c55e; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">✓ Assistido</div>` : ''}
+      <div style="position: absolute; top: 10px; left: 10px; background: #3b82f6; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">${video.tema}</div>
+    </div>
+    <div style="padding: 15px;">
+      <h4 style="margin: 0 0 8px; font-size: 0.9rem; color: #374151; cursor: pointer;" onclick="abrirVideoEstudo('${video.url}')">${video.titulo}</h4>
+      <div style="font-size: 0.8rem; color: #f59e0b; margin-bottom: 8px;">${estrelas}</div>
+      ${video.anotacoes ? `<p style="font-size: 0.75rem; color: #6b7280; margin: 0 0 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${video.anotacoes}</p>` : ''}
+      <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+        <button onclick="event.stopPropagation(); abrirVideoEstudo('${video.url}')" style="flex: 1; padding: 8px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+          <i class="bi bi-play-fill"></i> Assistir
+        </button>
+        <button onclick="event.stopPropagation(); alternarAssistido(${video.id})" style="padding: 8px; background: ${video.assistido ? '#22c55e' : '#f3f4f6'}; color: ${video.assistido ? 'white' : '#6b7280'}; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">✓</button>
+        <button onclick="event.stopPropagation(); editarVideo(${video.id})" style="padding: 8px; background: #e0f2fe; color: #0284c7; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">✏️</button>
+        <button onclick="event.stopPropagation(); avaliarVideo(${video.id})" style="padding: 8px; background: #fef3c7; color: #d97706; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">⭐</button>
+        <button onclick="event.stopPropagation(); excluirVideo(${video.id})" style="padding: 8px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">🗑</button>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
+
+// ===== AÇÕES =====
+function abrirVideoEstudo(url) { window.open(url, '_blank'); }
+
+function alternarAssistido(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (video) {
+    video.assistido = !video.assistido;
+    localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+    renderizarBibliotecaVideos();
+    mostrarToast(video.assistido ? '✅ Marcado como assistido!' : '↩️ Desmarcado!', video.assistido ? '#22c55e' : '#6b7280');
+  }
+}
+
+function avaliarVideo(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (!video) return;
+  
+  Swal.fire({
+    title: 'Avaliar vídeo',
+    text: `Como você avalia "${video.titulo}"?`,
+    input: 'range',
+    inputAttributes: { min: '1', max: '5', step: '1' },
+    inputValue: video.nota || 3,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#f59e0b'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      video.nota = parseInt(result.value);
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      renderizarBibliotecaVideos();
+      mostrarToast(`${'⭐'.repeat(video.nota)} Avaliação salva!`, '#f59e0b');
+    }
+  });
+}
+
+function editarVideo(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (!video) return;
+  
+  Swal.fire({
+    title: 'Editar Vídeo',
+    html: `
+      <div style="text-align: left;">
+        <label style="font-weight: 600; font-size: 0.85rem;">Título:</label>
+        <input id="swalVideoTitulo" class="swal2-input" value="${video.titulo}">
+        <label style="font-weight: 600; font-size: 0.85rem; margin-top: 10px;">Tema:</label>
+        <input id="swalVideoTema" class="swal2-input" value="${video.tema}">
+        <label style="font-weight: 600; font-size: 0.85rem; margin-top: 10px;">Anotações:</label>
+        <textarea id="swalVideoAnotacoes" class="swal2-textarea" rows="4">${video.anotacoes || ''}</textarea>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    preConfirm: () => {
+      const titulo = document.getElementById('swalVideoTitulo').value.trim();
+      const tema = document.getElementById('swalVideoTema').value.trim();
+      const anotacoes = document.getElementById('swalVideoAnotacoes').value.trim();
+      if (!titulo) { Swal.showValidationMessage('Digite um título!'); return false; }
+      return { titulo, tema, anotacoes };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      video.titulo = result.value.titulo;
+      video.tema = result.value.tema;
+      video.anotacoes = result.value.anotacoes;
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      renderizarBibliotecaVideos();
+      mostrarToast('✅ Vídeo atualizado!', '#22c55e');
+    }
+  });
+}
+
+function excluirVideo(id) {
+  Swal.fire({
+    title: 'Excluir vídeo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      bibliotecaVideos = bibliotecaVideos.filter(v => v.id !== id);
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      popularFiltroMateriasVideos();
+      renderizarBibliotecaVideos();
+      mostrarToast('🗑️ Vídeo excluído!', '#ef4444');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.abrirBibliotecaVideos = abrirBibliotecaVideos;
+window.fecharBibliotecaVideos = fecharBibliotecaVideos;
+window.abrirModalAdicionarVideo = abrirModalAdicionarVideo;
+window.fecharModalAdicionarVideo = fecharModalAdicionarVideo;
+window.carregarThumbnailPreview = carregarThumbnailPreview;
+window.salvarVideo = salvarVideo;
+window.renderizarBibliotecaVideos = renderizarBibliotecaVideos;
+window.abrirVideoEstudo = abrirVideoEstudo;
+window.alternarAssistido = alternarAssistido;
+window.avaliarVideo = avaliarVideo;
+window.editarVideo = editarVideo;
+window.excluirVideo = excluirVideo;
+
+// =============================================
+// ===== FUNÇÃO verDetalhesMetodo FINAL ========
+// =============================================
+
 window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
-  console.log('🔍 [CORRIGIDO] Abrindo método:', tipoInteligencia, metodoId);
+  console.log('🔍 [FINAL] Abrindo método:', tipoInteligencia, metodoId);
   
   const metodosData = metodosPorInteligencia[tipoInteligencia];
   if (!metodosData) return;
@@ -9465,9 +9608,8 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
   const metodo = metodosData.metodos.find(m => m.id === metodoId);
   if (!metodo) return;
   
-  console.log('📌 [CORRIGIDO] Método encontrado:', metodo.titulo);
+  console.log('📌 [FINAL] Método:', metodo.titulo);
   
-  // Preenche o modal
   const modalTitulo = document.getElementById("modalMetodoTitulo");
   const modalTempo = document.getElementById("modalMetodoTempo");
   const modalDificuldade = document.getElementById("modalMetodoDificuldade");
@@ -9505,62 +9647,38 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
   if (footer) {
     footer.innerHTML = "";
     
-    console.log('🔘 [CORRIGIDO] Criando botão para:', metodo.titulo);
+    console.log('🔘 [FINAL] Botão para:', metodo.titulo);
     
-    // ===== VERIFICAÇÕES EM ORDEM =====
-    
-    // MAPA MENTAL (VERIFICAR PRIMEIRO!)
-    if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
-      console.log('✅ [CORRIGIDO] Botão de Mapa Mental');
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
-      btn.onclick = function() {
-        console.log('🗺️ [CORRIGIDO] Clique em Mapa Mental');
-        window.fecharMetodoModal();
-        window.abrirMapaMental();
-      };
-      footer.appendChild(btn);
-    }
-    // PODCAST
-    else if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
-      console.log('✅ [CORRIGIDO] Botão de Podcast');
+    // 1. PODCAST
+    if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
+      console.log('✅ Podcast');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
-      btn.onclick = function() {
-        window.fecharMetodoModal();
-        window.abrirGravadorPodcast();
-      };
+      btn.onclick = function() { window.fecharMetodoModal(); window.abrirGravadorPodcast(); };
       footer.appendChild(btn);
     }
-    // FEYNMAN
+    // 2. FEYNMAN
     else if (metodo.titulo.includes("Feynman") || metodo.titulo.includes("feynman")) {
-      console.log('✅ [CORRIGIDO] Botão de Feynman');
+      console.log('✅ Feynman');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
-      btn.onclick = function() {
-        window.fecharMetodoModal();
-        window.abrirGravadorFeynman();
-      };
+      btn.onclick = function() { window.fecharMetodoModal(); window.abrirGravadorFeynman(); };
       footer.appendChild(btn);
     }
-    // POMODORO
+    // 3. POMODORO
     else if (metodo.titulo.includes("Pomodoro") || metodo.titulo.includes("pomodoro")) {
-      console.log('✅ [CORRIGIDO] Botão de Pomodoro');
+      console.log('✅ Pomodoro');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
       btn.onclick = function() {
         window.fecharMetodoModal();
-        if (typeof mostrarTela === 'function') {
-          mostrarTela('relogio');
-        }
+        if (typeof mostrarTela === 'function') mostrarTela('relogio');
         setTimeout(() => {
           const cardPomodoro = document.getElementById('cardPomodoro');
           if (cardPomodoro) {
@@ -9572,59 +9690,85 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       };
       footer.appendChild(btn);
     }
-    // TESTE PRÁTICO
-    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") || 
+    // 4. MAPA MENTAL
+    else if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
+      console.log('✅ Mapa Mental');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
+      btn.onclick = function() { window.fecharMetodoModal(); window.abrirMapaMental(); };
+      footer.appendChild(btn);
+    }
+    // 5. ESTUDO COM VÍDEOS
+    else if (metodo.titulo.includes("Vídeos") || metodo.titulo.includes("Videos") ||
+             metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
+      console.log('✅ Biblioteca de Vídeos');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-collection-play"></i> Minha Biblioteca de Vídeos`;
+      btn.onclick = function() { window.fecharMetodoModal(); window.abrirBibliotecaVideos(); };
+      footer.appendChild(btn);
+    }
+    // 6. CORNELL
+    else if (metodo.titulo.includes("Cornell") || metodo.titulo.includes("cornell")) {
+      console.log('✅ Cornell');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
+      btn.onclick = function() {
+        window.fecharMetodoModal();
+        if (typeof window.abrirCornell === 'function') window.abrirCornell();
+      };
+      footer.appendChild(btn);
+    }
+    // 7. TESTE PRÁTICO
+    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") ||
              metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
-      console.log('✅ [CORRIGIDO] Botão de Teste Prático - Entendi');
+      console.log('✅ Teste Prático - Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function() {
-        window.fecharMetodoModal();
-      };
+      btn.onclick = function() { window.fecharMetodoModal(); };
       footer.appendChild(btn);
     }
-    // MNEMÔNICA
-    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") || 
+    // 8. MNEMÔNICA
+    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") ||
              metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
-      console.log('✅ [CORRIGIDO] Botão de Mnemônica - Entendi');
+      console.log('✅ Mnemônica - Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function() {
-        window.fecharMetodoModal();
-      };
+      btn.onclick = function() { window.fecharMetodoModal(); };
       footer.appendChild(btn);
     }
-    // FLASHCARDS
+    // 9. FLASHCARDS
     else if (metodo.titulo.includes("Flashcards") || metodo.titulo.includes("flashcards")) {
-      console.log('✅ [CORRIGIDO] Botão de Flashcards');
+      console.log('✅ Flashcards');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = function() {
-        window.irParaRevisao("flashcards", metodo.titulo);
-      };
+      btn.onclick = function() { window.irParaRevisao("flashcards", metodo.titulo); };
       footer.appendChild(btn);
     }
-    // MÉTODOS QUE VÃO PARA REVISÃO
+    // 10. REVISÃO
     else if (metodo.irParaRevisao) {
-      console.log('✅ [CORRIGIDO] Botão de Revisão');
+      console.log('✅ Revisão');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = function() {
-        window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
-      };
+      btn.onclick = function() { window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo); };
       footer.appendChild(btn);
     }
-    // MÉTODOS SEM REDIRECIONAMENTO
+    // 11. ENTENDI
     else {
-      console.log('✅ [CORRIGIDO] Botão Entendi');
+      console.log('✅ Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
@@ -9640,4 +9784,29 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
   }
 };
 
-console.log('✅ Correção do Mapa Mental aplicada com sucesso!');
+console.log('✅ Função verDetalhesMetodo FINAL carregada!');
+
+// ===== FORÇAR RENDERIZAÇÃO DOS MÉTODOS =====
+console.log('🔄 Forçando renderização dos métodos...');
+
+// Verifica se a função existe
+if (typeof window.renderizarMetodosEstudo === 'function') {
+  console.log('✅ Função renderizarMetodosEstudo encontrada');
+  
+  // Chama após 1 segundo
+  setTimeout(() => {
+    window.renderizarMetodosEstudo();
+    console.log('✅ Renderização forçada executada');
+  }, 1000);
+} else {
+  console.error('❌ Função renderizarMetodosEstudo NÃO encontrada!');
+}
+
+// Verifica se o container existe
+const containerCheck = document.getElementById('listaMetodosRecomendados');
+if (containerCheck) {
+  console.log('✅ Container de métodos encontrado');
+  console.log('📌 Número de cards:', containerCheck.children.length);
+} else {
+  console.error('❌ Container de métodos NÃO encontrado!');
+}
