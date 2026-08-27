@@ -5460,3 +5460,7 @@ canvas {
     padding: 8px 15px !important;
   }
 }
+/* SweetAlert deve ficar acima de tudo */
+.swal2-container {
+  z-index: 999999 !important;
+}
