@@ -914,45 +914,47 @@
     <section id="revisaoSection" style="display:none;">
 
       <!-- CABEÇALHO SIMPLES -->
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-  <h1>Revisão Inteligente</h1>
-  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-    <button class="btn-add-materia-revisao" onclick="abrirModalNovaMateria()">
-  <i class="bi bi-plus-circle"></i> Nova Matéria
-</button>
-    <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-      <i class="bi bi-plus-lg"></i> Novo Flashcard
-    </button>
-  </div>
-</div>
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+        <h1>Revisão Inteligente</h1>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn-add-materia-revisao" onclick="abrirModalNovaMateria()">
+            <i class="bi bi-plus-circle"></i> Nova Matéria
+          </button>
+          <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+            <i class="bi bi-plus-lg"></i> Novo Flashcard
+          </button>
+        </div>
+      </div>
 
-<!-- MODAL NOVA MATÉRIA -->
-<div class="modal fade" id="modalNovaMateriaRevisao" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header" style="background: var(--cor-primaria); color: white;">
-        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nova Matéria</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-bold"><i class="bi bi-book"></i> Nome da Matéria</label>
-          <input type="text" id="novaMateriaRevisaoNome" class="form-control" placeholder="Ex: Biologia, Química...">
+      <!-- MODAL NOVA MATÉRIA -->
+      <div class="modal fade" id="modalNovaMateriaRevisao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header" style="background: var(--cor-primaria); color: white;">
+              <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nova Matéria</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-book"></i> Nome da Matéria</label>
+                <input type="text" id="novaMateriaRevisaoNome" class="form-control"
+                  placeholder="Ex: Biologia, Química...">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-palette"></i> Cor</label>
+                <input type="color" id="novaMateriaRevisaoCor" class="form-control form-control-color" value="#9f042c">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="salvarNovaMateriaRevisao()">
+                <i class="bi bi-save"></i> Salvar Matéria
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-bold"><i class="bi bi-palette"></i> Cor</label>
-          <input type="color" id="novaMateriaRevisaoCor" class="form-control form-control-color" value="#9f042c">
-        </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-danger" onclick="salvarNovaMateriaRevisao()">
-          <i class="bi bi-save"></i> Salvar Matéria
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 
       <!-- AVISO DE PROVA (mantido e melhorado) -->
       <div id="avisoProva" class="aviso-prova" style="display: none;">
@@ -1132,16 +1134,6 @@
             </select>
           </div>
 
-          <!-- Tema (opcional) -->
-          <div class="mb-4">
-            <label class="form-label fw-bold">
-              <i class="bi bi-folder"></i> Tema específico (opcional):
-            </label>
-            <select id="simuladoTema" class="form-select">
-              <option value="todos">Todos os temas</option>
-            </select>
-          </div>
-
           <!-- Número de questões -->
           <div class="mb-4">
             <label class="form-label fw-bold">
@@ -1256,9 +1248,9 @@
             </button>
 
             <div id="botoesResposta" class="botoes-resposta" style="display: none;">
-              <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
-              <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
-              <button class="btn-facil" onclick="responderFlashcard('facil')">🚀 Muito Fácil!</button>
+              <button class="btn-errei" onclick="responderContexto('errei')">❌ Errei</button>
+              <button class="btn-acertei" onclick="responderContexto('acertei')">✅ Acertei</button>
+              <button class="btn-facil" onclick="responderContexto('facil')">🚀 Muito Fácil!</button>
             </div>
           </div>
 
@@ -1280,7 +1272,17 @@
                 <p style="font-size: 0.8rem;">Taxa de Acerto</p>
               </div>
             </div>
-            <button class="btn btn-success mt-3" onclick="fecharModoFoco()">Voltar</button>
+
+            <!-- ADICIONE ESTES BOTÕES -->
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+              <button class="btn btn-success" onclick="fecharModoFoco()" style="padding: 10px 20px;">
+                <i class="bi bi-check-circle"></i> Voltar
+              </button>
+              <button class="btn btn-primary" onclick="reiniciarSimulado()"
+                style="padding: 10px 20px; background: #3b82f6; border: none;">
+                <i class="bi bi-arrow-repeat"></i> Fazer Outro Simulado
+              </button>
+            </div>
           </div>
 
           <div class="foco-progresso">

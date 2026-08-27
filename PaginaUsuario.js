@@ -776,7 +776,7 @@ window.fecharMetodoModal = fecharMetodoModal;
 
 function irParaRevisao(tipoRevisao, metodoTitulo) {
   console.log('🔄 [REVISÃO] Indo para revisão:', tipoRevisao, metodoTitulo);
-  
+
   localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
   localStorage.setItem('metodoSelecionado', metodoTitulo);
 
@@ -9481,14 +9481,84 @@ function finalizarRevisao() {
 
 // ===== FECHAR MODO FOCO =====
 function fecharModoFoco() {
+  console.log('🚪 [FOCO] Fechando modo foco...');
+  
+  // Limpar timer do simulado
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+  
+  // Limpar timer da revisão normal
+  if (window.timerRevisao) {
+    clearInterval(window.timerRevisao);
+    window.timerRevisao = null;
+  }
+  
   const container = document.getElementById('modoFocoContainer');
   if (container) {
     container.style.display = 'none';
     container.style.visibility = 'hidden';
     container.style.opacity = '0';
   }
+  
   document.body.style.overflow = 'auto';
+  
+  // RESETAR O ESTADO DO SIMULADO
+  simuladoAtual = {
+    cards: [],
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: 60,
+    timer: null,
+    tempoRestante: 0,
+    modo: 'treino',
+    respondido: false
+  };
+  
+  // Resetar revisão normal também
+  revisoesEmAndamento = [];
+  indiceAtualFoco = 0;
+  
+  console.log('✅ [FOCO] Modo foco fechado e estado resetado');
 }
+function reiniciarSimulado() {
+  console.log('🔄 [SIMULADO] Reiniciando simulado...');
+  
+  // Resetar estado
+  simuladoAtual = {
+    cards: [],
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: 60,
+    timer: null,
+    tempoRestante: 0,
+    modo: 'treino',
+    respondido: false
+  };
+  
+  // Esconder resultado
+  document.getElementById('simuladoResultado').style.display = 'none';
+  
+  // Mostrar pergunta novamente
+  document.getElementById('focoPergunta').style.display = 'block';
+  
+  // Esconder modo foco
+  document.getElementById('modoFocoContainer').style.display = 'none';
+  
+  // Voltar para a aba de simulado
+  trocarAbaRevisao('simulado');
+  
+  // Recarregar opções
+  carregarOpcoesSimulado();
+  
+  console.log('✅ [SIMULADO] Pronto para novo simulado!');
+}
+
+// Exportar
+window.reiniciarSimulado = reiniciarSimulado;
 
 // ===== EDITAR FLASHCARD =====
 function editarFlashcard(id) {
@@ -9668,12 +9738,12 @@ let simuladoAtual = {
   tempoPorQuestao: 60,
   timer: null,
   tempoRestante: 0,
-  modo: 'treino'
+  modo: 'treino',
+  respondido: false
 };
 
 function carregarOpcoesSimulado() {
   const selectMateria = document.getElementById('simuladoMateria');
-  const selectTema = document.getElementById('simuladoTema');
 
   if (selectMateria) {
     selectMateria.innerHTML = '<option value="todas">Todas as matérias</option>';
@@ -9690,31 +9760,43 @@ function selecionarNumQuestoes(btn) {
 }
 
 function iniciarSimulado() {
+  console.log('🎯 [SIMULADO] Iniciando simulado...');
+  
+  // Limpar timer anterior se existir
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+  
   const materia = document.getElementById('simuladoMateria').value;
-  const tema = document.getElementById('simuladoTema').value;
+  // REMOVA ESTA LINHA - não existe mais o select de tema
+  // const tema = document.getElementById('simuladoTema').value;
+  
   const numBtn = document.querySelector('[data-num].active');
   const numQuestoes = numBtn ? numBtn.dataset.num : '10';
   const tempo = parseInt(document.getElementById('simuladoTempo').value);
   const modo = document.getElementById('modoTreino').checked ? 'treino' : 'prova';
-
+  
+  console.log('📊 Config:', { materia, numQuestoes, tempo, modo });
+  
   let cardsSimulado = [...flashcards];
-
+  
   if (materia !== 'todas') {
     cardsSimulado = cardsSimulado.filter(f => f.materiaNome === materia);
   }
-
-  if (tema !== 'todos') {
-    cardsSimulado = cardsSimulado.filter(f => f.tema === tema);
-  }
-
+  
+  console.log('📚 Cards após filtro:', cardsSimulado.length);
+  
   // Embaralhar
   cardsSimulado = cardsSimulado.sort(() => Math.random() - 0.5);
-
+  
   // Limitar número
   if (numQuestoes !== 'todas') {
     cardsSimulado = cardsSimulado.slice(0, parseInt(numQuestoes));
   }
-
+  
+  console.log('📝 Cards selecionados:', cardsSimulado.length);
+  
   if (cardsSimulado.length === 0) {
     Swal.fire({
       icon: 'warning',
@@ -9723,7 +9805,7 @@ function iniciarSimulado() {
     });
     return;
   }
-
+  
   simuladoAtual = {
     cards: cardsSimulado,
     indice: 0,
@@ -9732,13 +9814,22 @@ function iniciarSimulado() {
     tempoPorQuestao: tempo,
     timer: null,
     tempoRestante: tempo,
-    modo: modo
+    modo: modo,
+    respondido: false
   };
-
+  
+  // Esconder resultado anterior
+  document.getElementById('simuladoResultado').style.display = 'none';
+  document.getElementById('focoPergunta').style.display = 'block';
+  document.getElementById('simuladoTimer').style.display = 'none';
+  
   mostrarCardSimulado();
 }
 
+
 function mostrarCardSimulado() {
+  console.log('📝 [SIMULADO] Mostrando questão:', simuladoAtual.indice + 1);
+  
   if (simuladoAtual.indice >= simuladoAtual.cards.length) {
     finalizarSimulado();
     return;
@@ -9749,14 +9840,32 @@ function mostrarCardSimulado() {
   document.getElementById('focoMateria').textContent = card.materiaNome;
   document.getElementById('focoTema').textContent = '📂 ' + card.tema;
   document.getElementById('focoPergunta').textContent = card.pergunta;
+  
+  // MOSTRAR A RESPOSTA CORRETA (escondida)
+  document.getElementById('focoResposta').innerHTML = card.resposta;
   document.getElementById('focoResposta').style.display = 'none';
+  
+  // MOSTRAR BOTÃO "MOSTRAR RESPOSTA"
   document.getElementById('btnMostrarResposta').style.display = 'block';
-  document.getElementById('botoesResposta').style.display = 'none';
-
+  
+  // RESETAR OS BOTÕES DE RESPOSTA
+  const botoesResposta = document.getElementById('botoesResposta');
+  botoesResposta.innerHTML = `
+    <button class="btn-errei" onclick="responderSimulado('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderSimulado('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
+  `;
+  botoesResposta.style.display = 'none';
+  
+  // RESETAR FLAG DE RESPONDIDO
+  simuladoAtual.respondido = false;
+  
   // Mostrar timer se houver limite
   if (simuladoAtual.tempoPorQuestao > 0) {
     document.getElementById('simuladoTimer').style.display = 'block';
     iniciarTimerSimulado();
+  } else {
+    document.getElementById('simuladoTimer').style.display = 'none';
   }
 
   document.getElementById('focoContador').textContent =
@@ -9766,23 +9875,49 @@ function mostrarCardSimulado() {
     ((simuladoAtual.indice / simuladoAtual.cards.length) * 100) + '%';
 
   document.getElementById('modoFocoContainer').style.display = 'flex';
+  
+  console.log('✅ [SIMULADO] Questão mostrada, respondido =', simuladoAtual.respondido);
 }
 
+
 function iniciarTimerSimulado() {
-  clearInterval(simuladoAtual.timer);
+   // Limpar timer anterior
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+  }
   simuladoAtual.tempoRestante = simuladoAtual.tempoPorQuestao;
-
   atualizarTimerSimulado();
-
+  
   simuladoAtual.timer = setInterval(() => {
     simuladoAtual.tempoRestante--;
     atualizarTimerSimulado();
-
+    
     if (simuladoAtual.tempoRestante <= 0) {
       clearInterval(simuladoAtual.timer);
-      // Tempo esgotado, conta como erro
-      if (simuladoAtual.modo === 'treino') {
-        responderSimulado('errei');
+      simuladoAtual.timer = null;
+      
+      // Tempo esgotado, conta como erro automaticamente
+      if (!simuladoAtual.respondido) {
+        simuladoAtual.respondido = true;
+        
+        // Mostrar resposta correta
+        document.getElementById('focoResposta').style.display = 'block';
+        document.getElementById('btnMostrarResposta').style.display = 'none';
+        
+        // Contar como erro
+        simuladoAtual.erros++;
+        const card = simuladoAtual.cards[simuladoAtual.indice];
+        const original = flashcards.find(f => f.id === card.id);
+        if (original) {
+          original.nivel = 0;
+          original.erros = (original.erros || 0) + 1;
+        }
+        salvarFlashcards();
+        
+        // Mostrar botão para próxima
+        setTimeout(() => {
+          proximaQuestaoSimulado();
+        }, 2000); // Espera 2 segundos para o usuário ver a resposta
       }
     }
   }, 1000);
@@ -9795,52 +9930,136 @@ function atualizarTimerSimulado() {
     `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
 }
 
-function responderSimulado(resultado) {
-  clearInterval(simuladoAtual.timer);
 
+
+function responderSimulado(resultado) {
+  console.log('🎯 [SIMULADO] Resposta:', resultado);
+  
+  // Verificar se já respondeu
+  if (simuladoAtual.respondido) {
+    console.log('⚠️ Já respondeu esta questão!');
+    return;
+  }
+  
+  // Marcar como respondido
+  simuladoAtual.respondido = true;
+  
+  // LIMPAR O TIMER IMEDIATAMENTE
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+  
   const card = simuladoAtual.cards[simuladoAtual.indice];
   const original = flashcards.find(f => f.id === card.id);
-
+  
+  // MOSTRAR A RESPOSTA
+  document.getElementById('focoResposta').style.display = 'block';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  
+  // VARIÁVEIS PARA FEEDBACK
+  let feedbackMsg = '';
+  let feedbackCor = '';
+  
   if (resultado === 'acertei') {
     simuladoAtual.acertos++;
+    feedbackMsg = '✅ Acertou!';
+    feedbackCor = '#22c55e';
     if (original) {
       original.nivel = Math.min((original.nivel || 0) + 1, 4);
       original.acertos = (original.acertos || 0) + 1;
     }
   } else if (resultado === 'errei') {
     simuladoAtual.erros++;
+    feedbackMsg = '❌ Errou!';
+    feedbackCor = '#ef4444';
     if (original) {
       original.nivel = 0;
       original.erros = (original.erros || 0) + 1;
     }
+  } else if (resultado === 'facil') {
+    simuladoAtual.acertos++;
+    feedbackMsg = '🚀 Muito Fácil!';
+    feedbackCor = '#3b82f6';
+    if (original) {
+      original.nivel = Math.min((original.nivel || 0) + 2, 4);
+      original.acertos = (original.acertos || 0) + 1;
+    }
   }
-
+  
   salvarFlashcards();
-  simuladoAtual.indice++;
+  
+  // Mostrar feedback visual
+  mostrarToast(feedbackMsg, feedbackCor);
+  
+  // Substituir botões por botão "Próxima" COM CLASSE ESPECÍFICA
+  const botoesContainer = document.getElementById('botoesResposta');
+  botoesContainer.innerHTML = `
+    <button class="btn-proxima-questao" onclick="proximaQuestaoSimulado()" 
+            style="background: #3b82f6; color: white; border: none; padding: 15px 30px; 
+                   border-radius: 50px; font-weight: 700; cursor: pointer; width: 100%;
+                   font-size: 1.1rem; transition: all 0.3s; letter-spacing: 1px;
+                   text-transform: uppercase;">
+      ➡️ Próxima Questão
+    </button>
+  `;
+  botoesContainer.style.display = 'block';
+  
+  console.log('✅ [SIMULADO] Resposta registrada:', feedbackMsg);
+}
 
+function proximaQuestaoSimulado() {
+  console.log('➡️ [SIMULADO] Indo para próxima questão...');
+  console.log('📊 Índice antes:', simuladoAtual.indice);
+  
+  // Limpar timer
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+  
+  simuladoAtual.indice++;
+  
+  console.log('📊 Índice depois:', simuladoAtual.indice);
+  console.log('📊 Total de cards:', simuladoAtual.cards.length);
+  
   if (simuladoAtual.indice >= simuladoAtual.cards.length) {
+    console.log('🏁 [SIMULADO] Finalizando...');
     finalizarSimulado();
   } else {
+    console.log('📝 [SIMULADO] Mostrando próxima questão...');
+    // Resetar respondido ANTES de mostrar
+    simuladoAtual.respondido = false;
     mostrarCardSimulado();
   }
 }
 
-function finalizarSimulado() {
-  clearInterval(simuladoAtual.timer);
+// Exportar
+window.proximaQuestaoSimulado = proximaQuestaoSimulado;
 
+
+function finalizarSimulado() {
+  console.log('🏁 [SIMULADO] Finalizando simulado...');
+  
+  // Limpar timer
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+  
   const total = simuladoAtual.acertos + simuladoAtual.erros;
   const taxa = total > 0 ? Math.round((simuladoAtual.acertos / total) * 100) : 0;
-
+  
   document.getElementById('simuladoAcertos').textContent = simuladoAtual.acertos;
   document.getElementById('simuladoErros').textContent = simuladoAtual.erros;
   document.getElementById('simuladoTaxa').textContent = taxa + '%';
-
+  
   document.getElementById('simuladoTimer').style.display = 'none';
   document.getElementById('focoPergunta').style.display = 'none';
   document.getElementById('btnMostrarResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'none';
   document.getElementById('simuladoResultado').style.display = 'block';
-
+  
   // Salvar no histórico
   const historicoSimulado = {
     data: new Date().toISOString(),
@@ -9850,10 +10069,46 @@ function finalizarSimulado() {
     taxa: taxa,
     total: total
   };
-
+  
   let historico = JSON.parse(localStorage.getItem('historicoSimulados') || '[]');
   historico.push(historicoSimulado);
   localStorage.setItem('historicoSimulados', JSON.stringify(historico));
+  
+  // RESETAR O ESTADO DO SIMULADO
+  setTimeout(() => {
+    simuladoAtual = {
+      cards: [],
+      indice: 0,
+      acertos: 0,
+      erros: 0,
+      tempoPorQuestao: 60,
+      timer: null,
+      tempoRestante: 0,
+      modo: 'treino',
+      respondido: false
+    };
+    console.log('✅ [SIMULADO] Estado resetado para novo simulado');
+  }, 500);
+}
+
+
+function mostrarRespostaFoco() {
+  console.log('👁️ [SIMULADO] Mostrando resposta...');
+  
+  // Mostrar a resposta
+  document.getElementById('focoResposta').style.display = 'block';
+  
+  // Esconder botão "Mostrar Resposta"
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  
+  // Mostrar botões de resposta
+  const botoesResposta = document.getElementById('botoesResposta');
+  botoesResposta.innerHTML = `
+    <button class="btn-errei" onclick="responderSimulado('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderSimulado('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
+  `;
+  botoesResposta.style.display = 'flex';
 }
 
 // ===== INICIALIZAÇÃO =====
@@ -10411,7 +10666,23 @@ function mostrarSecaoRevisao() {
   }
 }
 
+// ===== FUNÇÃO UNIVERSAL DE RESPOSTA =====
+function responderContexto(resultado) {
+  console.log('🎯 [RESPOSTA] Contexto:', simuladoAtual.cards.length > 0 ? 'simulado' : 'revisao');
+  
+  // Verifica se está em modo simulado
+  if (simuladoAtual && simuladoAtual.cards && simuladoAtual.cards.length > 0 && 
+      document.getElementById('simuladoTimer').style.display === 'block') {
+    // Está no simulado
+    responderSimulado(resultado);
+  } else {
+    // Está na revisão normal
+    responderFlashcard(resultado);
+  }
+}
+
 // ===== EXPORTAR =====
+window.responderContexto = responderContexto;
 window.abrirModalNovaMateria = abrirModalNovaMateria;
 window.salvarNovaMateriaRevisao = salvarNovaMateriaRevisao;
 window.mostrarSecaoRevisao = mostrarSecaoRevisao;
