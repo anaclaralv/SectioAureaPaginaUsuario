@@ -912,121 +912,316 @@
 
     <!-- ==================== REVISÃO INTELIGENTE ==================== -->
     <section id="revisaoSection" style="display:none;">
-      <!-- CABEÇALHO -->
-      <div class="revisao-header">
-        <h1>Revisão Inteligente</h1>
-        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-          <i class="bi bi-plus-lg"></i> Novo Flashcard
+
+      <!-- CABEÇALHO SIMPLES -->
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+  <h1>Revisão Inteligente</h1>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <button class="btn-add-materia-revisao" onclick="abrirModalNovaMateria()">
+  <i class="bi bi-plus-circle"></i> Nova Matéria
+</button>
+    <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+      <i class="bi bi-plus-lg"></i> Novo Flashcard
+    </button>
+  </div>
+</div>
+
+<!-- MODAL NOVA MATÉRIA -->
+<div class="modal fade" id="modalNovaMateriaRevisao" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background: var(--cor-primaria); color: white;">
+        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nova Matéria</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold"><i class="bi bi-book"></i> Nome da Matéria</label>
+          <input type="text" id="novaMateriaRevisaoNome" class="form-control" placeholder="Ex: Biologia, Química...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold"><i class="bi bi-palette"></i> Cor</label>
+          <input type="color" id="novaMateriaRevisaoCor" class="form-control form-control-color" value="#9f042c">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" onclick="salvarNovaMateriaRevisao()">
+          <i class="bi bi-save"></i> Salvar Matéria
         </button>
       </div>
+    </div>
+  </div>
+</div>
 
-      <!-- AVISO DE PROVA -->
+      <!-- AVISO DE PROVA (mantido e melhorado) -->
       <div id="avisoProva" class="aviso-prova" style="display: none;">
         <div class="aviso-conteudo">
           <i class="bi bi-calendar-exclamation"></i>
           <div>
-            <strong>Prova se aproximando!</strong>
+            <strong>📅 Prova se aproximando!</strong>
             <p id="textoAvisoProva"></p>
+            <small id="diasParaProva"></small>
           </div>
-          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
+          <button onclick="criarRevisaoPorProva()" class="btn-aviso">
+            <i class="bi bi-plus-circle"></i> Criar Revisão para Prova
+          </button>
+          <button onclick="fecharAviso('avisoProva')" class="btn-fechar-aviso">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
 
-      <!-- ESTATÍSTICAS FIXAS -->
-      <div class="revisao-stats-fixas">
-        <div class="stat-box">
-          <span>Hoje</span>
+      <!-- AVISO DE CARDS ATRASADOS -->
+      <div id="avisoCardsAtrasados" class="aviso-atrasados" style="display: none;">
+        <div class="aviso-conteudo">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <strong>⚠️ Cards atrasados!</strong>
+            <p id="detalhesAtrasados"></p>
+          </div>
+          <button onclick="irParaAbaRevisar()" class="btn-aviso">
+            <i class="bi bi-arrow-repeat"></i> Revisar Agora
+          </button>
+          <button onclick="fecharAviso('avisoCardsAtrasados')" class="btn-fechar-aviso">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD RÁPIDO -->
+      <div class="revisao-dashboard">
+        <div class="stat-box" style="border-left: 4px solid var(--cor-primaria);">
+          <span>📊 Para Hoje</span>
           <strong id="totalHoje">0</strong>
         </div>
-        <div class="stat-box">
-          <span>Atrasadas</span>
+        <div class="stat-box" style="border-left: 4px solid #ef4444;">
+          <span>⚠️ Atrasadas</span>
           <strong id="totalAtrasadas">0</strong>
         </div>
-        <div class="stat-box">
-          <span>Concluídas</span>
+        <div class="stat-box" style="border-left: 4px solid #22c55e;">
+          <span>✅ Concluídas</span>
           <strong id="totalConcluidas">0</strong>
         </div>
-        <div class="stat-box">
-          <span>Taxa Acerto</span>
+        <div class="stat-box" style="border-left: 4px solid #f59e0b;">
+          <span>🎯 Taxa Acerto</span>
           <strong id="taxaAcertoGeral">0%</strong>
         </div>
       </div>
 
-      <!-- REGRAS -->
-      <div class="revisao-regras">
-        💡 <strong>Acertei</strong> = próximo nível | <strong>Errei</strong> = revisar amanhã | <strong>Revisão
-          livre</strong> = revise quando quiser
+      <!-- ABAS PRINCIPAIS -->
+      <div class="revisao-abas" id="revisaoAbas">
+        <button class="aba-btn active" data-aba="meusCards" onclick="trocarAbaRevisao('meusCards')">
+          <i class="bi bi-collection"></i> Meus Cards
+        </button>
+        <button class="aba-btn" data-aba="revisar" onclick="trocarAbaRevisao('revisar')">
+          <i class="bi bi-arrow-repeat"></i> Revisar
+        </button>
+        <button class="aba-btn" data-aba="simulado" onclick="trocarAbaRevisao('simulado')" id="abaSimuladoBtn"
+          style="display:none;">
+          <i class="bi bi-pencil-square"></i> Simulado
+        </button>
+        <button class="aba-btn" data-aba="historico" onclick="trocarAbaRevisao('historico')">
+          <i class="bi bi-clock-history"></i> Histórico
+        </button>
       </div>
 
-      <!-- ABAS -->
-      <div class="revisao-abas">
-        <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
-        <button class="aba-btn" data-aba="revisar">Revisar</button>
-        <button class="aba-btn" data-aba="historico">Histórico</button>
-      </div>
-
-      <!-- FILTRO POR MATÉRIA -->
-      <div class="revisao-filtro">
-        <select id="filtroMateriaRevisao" class="filtro-materia-select">
-          <option value="todas">Todas as matérias</option>
-        </select>
-      </div>
-
-      <!-- CONTEÚDO ABA: MEUS CARDS -->
+      <!-- ==================== ABA: MEUS CARDS ==================== -->
       <div id="abaMeusCards" class="aba-conteudo">
+        <!-- Filtros -->
+        <div class="revisao-filtros">
+          <select id="filtroMateriaRevisao" class="filtro-materia-select" onchange="aplicarFiltrosCards()">
+            <option value="todas">📚 Todas as matérias</option>
+          </select>
+          <input type="text" id="buscaFlashcard" placeholder="🔍 Buscar card..." oninput="aplicarFiltrosCards()">
+        </div>
+
+        <!-- Lista de cards agrupados -->
         <div id="listaFlashcardsAgrupada"></div>
       </div>
 
-      <!-- CONTEÚDO ABA: REVISAR -->
-      <div id="abaRevisar" class="aba-conteudo" style="display: none;">
+      <!-- ==================== ABA: REVISAR ==================== -->
+      <div id="abaRevisar" class="aba-conteudo" style="display:none;">
+        <!-- Filtro de matéria para revisão -->
+        <div class="revisao-filtros" style="margin-bottom: 20px;">
+          <label style="font-weight: 600; color: #4b5563;">
+            <i class="bi bi-funnel"></i> Revisar:
+          </label>
+          <select id="filtroMateriaRevisaoModo" class="filtro-materia-select" onchange="atualizarContadoresRevisao()">
+            <option value="todas">Todas as matérias</option>
+          </select>
+        </div>
+
         <div class="revisar-centro" style="text-align: center; padding: 40px 20px;">
           <i class="bi bi-arrow-repeat"
             style="font-size: 3.5rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
           <p style="font-size: 1.1rem; color: #4b5563; margin-bottom: 10px;">
             Você tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.4rem;">0</strong> cards
-            pendentes
+            para revisar
           </p>
-          <p style="color: #6b7280; margin-bottom: 25px; font-size: 0.9rem;">
+          <p style="color: #6b7280; margin-bottom: 25px; font-size: 0.9rem;" id="textoProximaRevisao">
             Escolha o modo de revisão
           </p>
 
-          <!-- BOTÕES LADO A LADO -->
+          <!-- CARDS DE MODO -->
           <div
-            style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; max-width: 500px; margin: 0 auto;">
+            style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 0 auto;">
 
             <!-- REVISÃO INTELIGENTE -->
-            <div style="flex: 1; min-width: 200px; text-align: center;">
-              <button class="btn-revisao-modo" onclick="iniciarRevisao()">
-                <i class="bi bi-lightning-charge-fill"></i> Inteligente
+            <div class="modo-revisao-card"
+              style="flex: 1; min-width: 250px; max-width: 320px; background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid var(--cor-primaria); cursor: pointer; transition: 0.3s;"
+              onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'"
+              onclick="iniciarRevisao()">
+              <i class="bi bi-lightning-charge-fill" style="font-size: 2.5rem; color: var(--cor-primaria);"></i>
+              <h3 style="margin: 15px 0 10px; color: #374151;">🧠 Revisão Inteligente</h3>
+              <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 15px;">
+                Revisa apenas cards pendentes para hoje ou atrasados
+              </p>
+              <div style="background: #f0f9ff; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                <span style="font-size: 0.8rem; color: #0369a1;">
+                  <i class="bi bi-info-circle"></i>
+                  Cards serão reagendados baseado no seu desempenho
+                </span>
+              </div>
+              <button class="btn-revisao-modo" style="width: 100%;">
+                <i class="bi bi-play-fill"></i> Começar Inteligente
               </button>
-              <span class="info-tooltip" title="Revisa apenas cards pendentes para hoje ou atrasados.">
-                <i class="bi bi-question-circle"></i>
-              </span>
             </div>
 
             <!-- REVISÃO LIVRE -->
-            <div style="flex: 1; min-width: 200px; text-align: center;">
-              <button class="btn-revisao-modo btn-revisao-livre" onclick="iniciarRevisaoLivre()">
-                <i class="bi bi-shuffle"></i> Livre
+            <div class="modo-revisao-card"
+              style="flex: 1; min-width: 250px; max-width: 320px; background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; cursor: pointer; transition: 0.3s;"
+              onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'"
+              onclick="iniciarRevisaoLivre()">
+              <i class="bi bi-shuffle" style="font-size: 2.5rem; color: #6b7280;"></i>
+              <h3 style="margin: 15px 0 10px; color: #374151;">🎲 Revisão Livre</h3>
+              <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 15px;">
+                Revisa todos os cards, independente da data
+              </p>
+              <div style="background: #f9fafb; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                <span style="font-size: 0.8rem; color: #6b7280;">
+                  <i class="bi bi-info-circle"></i>
+                  Cards não serão reagendados
+                </span>
+              </div>
+              <button class="btn-revisao-modo btn-revisao-livre" style="width: 100%;">
+                <i class="bi bi-play-fill"></i> Começar Livre
               </button>
-              <span class="info-tooltip" title="Revisa todos os cards, independente da data.">
-                <i class="bi bi-question-circle"></i>
-              </span>
             </div>
 
           </div>
         </div>
       </div>
 
-      <!-- CONTEÚDO ABA: HISTÓRICO -->
-      <div id="abaHistorico" class="aba-conteudo" style="display: none;">
-        <div style="background: white; border-radius: 12px; padding: 20px;">
-          <h3 style="margin-bottom: 15px;"><i class="bi bi-clock-history"></i> Histórico de Revisões</h3>
+      <!-- ==================== ABA: SIMULADO (TESTE PRÁTICO) ==================== -->
+      <div id="abaSimulado" class="aba-conteudo" style="display:none;">
+        <div class="simulado-config"
+          style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+          <h3 style="text-align: center; color: #374151; margin-bottom: 25px;">
+            <i class="bi bi-pencil-square" style="color: var(--cor-primaria);"></i>
+            Configurar Simulado
+          </h3>
+
+          <!-- Matéria -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-book"></i> Matéria:
+            </label>
+            <select id="simuladoMateria" class="form-select">
+              <option value="todas">Todas as matérias</option>
+            </select>
+          </div>
+
+          <!-- Tema (opcional) -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-folder"></i> Tema específico (opcional):
+            </label>
+            <select id="simuladoTema" class="form-select">
+              <option value="todos">Todos os temas</option>
+            </select>
+          </div>
+
+          <!-- Número de questões -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-list-ol"></i> Número de questões:
+            </label>
+            <div class="btn-group w-100" role="group">
+              <button type="button" class="btn btn-outline-primary active" data-num="5"
+                onclick="selecionarNumQuestoes(this)">5</button>
+              <button type="button" class="btn btn-outline-primary" data-num="10"
+                onclick="selecionarNumQuestoes(this)">10</button>
+              <button type="button" class="btn btn-outline-primary" data-num="15"
+                onclick="selecionarNumQuestoes(this)">15</button>
+              <button type="button" class="btn btn-outline-primary" data-num="todas"
+                onclick="selecionarNumQuestoes(this)">Todas</button>
+            </div>
+          </div>
+
+          <!-- Tempo -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-clock"></i> Tempo por questão:
+            </label>
+            <select id="simuladoTempo" class="form-select">
+              <option value="30">30 segundos</option>
+              <option value="60" selected>1 minuto</option>
+              <option value="120">2 minutos</option>
+              <option value="0">Sem limite</option>
+            </select>
+          </div>
+
+          <!-- Modo -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-toggles"></i> Modo:
+            </label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="modoSimulado" id="modoTreino" checked>
+              <label class="form-check-label" for="modoTreino">
+                🎯 Treino (feedback imediato)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="modoSimulado" id="modoProva">
+              <label class="form-check-label" for="modoProva">
+                📝 Prova (feedback no final)
+              </label>
+            </div>
+          </div>
+
+          <!-- Botão iniciar -->
+          <button class="btn btn-primary w-100"
+            style="background: var(--cor-primaria); border: none; padding: 12px; font-weight: 600;"
+            onclick="iniciarSimulado()">
+            <i class="bi bi-play-fill"></i> Iniciar Simulado
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== ABA: HISTÓRICO ==================== -->
+      <div id="abaHistorico" class="aba-conteudo" style="display:none;">
+        <div style="background: white; border-radius: 16px; padding: 25px;">
+          <h3 style="margin-bottom: 20px;">
+            <i class="bi bi-clock-history" style="color: var(--cor-primaria);"></i>
+            Histórico de Revisões
+          </h3>
+
+          <!-- Gráfico de desempenho -->
+          <div style="margin-bottom: 30px;">
+            <h4 style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+              <i class="bi bi-graph-up"></i> Desempenho por Matéria
+            </h4>
+            <canvas id="graficoDesempenhoMaterias" height="200"></canvas>
+          </div>
+
+          <!-- Lista de revisões -->
           <div id="historicoRevisoes"></div>
         </div>
       </div>
 
-      <!-- MODO FOCO (REVISÃO) -->
+      <!-- MODO FOCO (REVISÃO) - Mantido e melhorado -->
       <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
         <div class="foco-card">
           <div class="foco-header">
@@ -1039,10 +1234,16 @@
             </button>
           </div>
 
+          <!-- Timer do simulado -->
+          <div id="simuladoTimer" style="display: none; text-align: center; margin: 10px 0;">
+            <span style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria);"
+              id="simuladoTempoRestante">00:00</span>
+          </div>
+
           <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
           <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
 
-          <!-- INFORMAÇÃO DO NÍVEL E SUGESTÃO -->
+          <!-- Informação do nível -->
           <div id="focoInfoNivel"
             style="display: none; background: #f8fafc; border-radius: 10px; padding: 10px; margin: 10px 0; font-size: 0.85rem;">
             <span id="focoNivelAtual">Nível: 0</span> |
@@ -1057,8 +1258,29 @@
             <div id="botoesResposta" class="botoes-resposta" style="display: none;">
               <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
               <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
-              <button class="btn-facil" onclick="responderFlashcard('facil')">Muito Fácil!</button>
+              <button class="btn-facil" onclick="responderFlashcard('facil')">🚀 Muito Fácil!</button>
             </div>
+          </div>
+
+          <!-- Resultado do simulado -->
+          <div id="simuladoResultado"
+            style="display: none; text-align: center; padding: 20px; background: #f0fdf4; border-radius: 10px; margin-top: 15px;">
+            <h3 style="color: #16a34a; margin-bottom: 10px;">🎉 Simulado Concluído!</h3>
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+              <div>
+                <strong id="simuladoAcertos">0</strong>
+                <p style="font-size: 0.8rem;">Acertos</p>
+              </div>
+              <div>
+                <strong id="simuladoErros">0</strong>
+                <p style="font-size: 0.8rem;">Erros</p>
+              </div>
+              <div>
+                <strong id="simuladoTaxa">0%</strong>
+                <p style="font-size: 0.8rem;">Taxa de Acerto</p>
+              </div>
+            </div>
+            <button class="btn btn-success mt-3" onclick="fecharModoFoco()">Voltar</button>
           </div>
 
           <div class="foco-progresso">
@@ -1112,6 +1334,7 @@
           </div>
         </div>
       </div>
+
     </section>
 
     <!-- ==================== MODAL DO MAPA MENTAL ==================== -->

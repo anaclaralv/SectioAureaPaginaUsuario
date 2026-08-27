@@ -358,56 +358,6 @@ async function salvarSessaoEstudoNoBackend(materiaId, segundos, descricao = "Ses
   }
 }
 
-async function carregarFlashcardsDoBackend() {
-  try {
-    const response = await apiFetch("flashcards");
-    if (response.ok) {
-      const data = await response.json();
-      flashcards = data.map(f => {
-        let parsedTema = {
-          tema: "Geral",
-          nivel: 0,
-          dataProxima: new Date().toISOString().split("T")[0],
-          acertos: 0,
-          erros: 0
-        };
-        const rawTema = decodeHtmlEntities(f.tema || "");
-        try {
-          if (rawTema && rawTema.trim().startsWith('{')) {
-            parsedTema = JSON.parse(rawTema);
-          } else if (rawTema) {
-            parsedTema.tema = rawTema;
-          }
-        } catch (e) {
-          console.error("Erro ao fazer parse do tema JSON:", e);
-          if (rawTema) parsedTema.tema = rawTema;
-        }
-
-        return {
-          id: Number(f.id_flash),
-          materiaId: Number(f.id_materia),
-          materiaNome: decodeHtmlEntities(f.nome_materia || "Sem matéria"),
-          tema: parsedTema.tema || "Geral",
-          pergunta: decodeHtmlEntities(f.pergunta || ""),
-          resposta: decodeHtmlEntities(f.resposta || ""),
-          nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
-          dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
-          acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
-          erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
-        };
-      });
-      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-      if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
-      if (typeof renderizarFlashcardsAgrupados === 'function') renderizarFlashcardsAgrupados();
-      if (typeof renderizarFlashcards === 'function') renderizarFlashcards();
-      if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
-      if (typeof atualizarMensagemRevisar === 'function') atualizarMensagemRevisar();
-    }
-  } catch (err) {
-    console.error("Erro ao carregar flashcards:", err);
-  }
-}
-
 let todasInteligencias = [];
 
 async function carregarInteligenciasDoBackend() {
@@ -825,6 +775,8 @@ function fecharMetodoModal() {
 window.fecharMetodoModal = fecharMetodoModal;
 
 function irParaRevisao(tipoRevisao, metodoTitulo) {
+  console.log('🔄 [REVISÃO] Indo para revisão:', tipoRevisao, metodoTitulo);
+  
   localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
   localStorage.setItem('metodoSelecionado', metodoTitulo);
 
@@ -833,6 +785,31 @@ function irParaRevisao(tipoRevisao, metodoTitulo) {
   if (typeof mostrarTela === 'function') {
     mostrarTela('revisao');
   }
+
+  // Inicializa a revisão (carrega matérias e flashcards)
+  initRevisao().then(() => {
+    // Se for simulado, abre a aba de simulado
+    if (tipoRevisao === 'simulado') {
+      setTimeout(() => {
+        // Mostrar a aba de simulado
+        document.getElementById('abaSimuladoBtn').style.display = 'block';
+        trocarAbaRevisao('simulado');
+        carregarOpcoesSimulado();
+      }, 300);
+    } else if (tipoRevisao === 'flashcards') {
+      // Abre a aba de cards
+      setTimeout(() => {
+        trocarAbaRevisao('meusCards');
+        abrirModalFlashcard();
+      }, 300);
+    } else {
+      // Abre a aba de revisar
+      setTimeout(() => {
+        trocarAbaRevisao('revisar');
+        atualizarContadoresRevisao();
+      }, 300);
+    }
+  });
 
   const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
   sidebarLinks.forEach(link => {
@@ -844,8 +821,8 @@ function irParaRevisao(tipoRevisao, metodoTitulo) {
     }
   });
 }
-window.irParaRevisao = irParaRevisao;
 
+window.irParaRevisao = irParaRevisao;
 
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
@@ -2828,7 +2805,6 @@ function atualizarTudo() {
   atualizarEventosTarefas();
 }
 
-// No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", async () => {
   // Carrega os dados do backend antes de renderizar
   await carregarPerfilUsuario();
@@ -2851,7 +2827,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   atualizarMateriaAgora();
   renderizarTarefas();
   initRevisao();
-  renderizarFlashcards();
   carregarMetas();
   closeSidebarOnLinkClick();
   aplicarBloqueiosPlano();
@@ -5056,7 +5031,9 @@ function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('overlay');
   if (!sidebar) return;
+
   sidebar.classList.toggle('show');
+
   if (overlay) {
     if (sidebar.classList.contains('show')) {
       overlay.classList.add('show');
@@ -5076,22 +5053,69 @@ function closeSidebar() {
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
+
+// ===== FECHAR SIDEBAR AO CLICAR EM LINKS =====
+function closeSidebarOnLinkClick() {
+  const links = document.querySelectorAll('#menuLateral .nav-link, .sidebar a, .sidebar button');
+
+  links.forEach(link => {
+    // Remove listener antigo para não duplicar
+    link.removeEventListener('click', handleSidebarLinkClick);
+    // Adiciona listener novo
+    link.addEventListener('click', handleSidebarLinkClick);
+  });
+}
+
+function handleSidebarLinkClick() {
+  if (window.innerWidth <= 768) {
+    closeSidebar();
+  }
+}
+
+// ===== EVENT DELEGATION (MAIS ROBUSTO) =====
+// Esta abordagem funciona mesmo se os links forem criados dinamicamente
+document.addEventListener('click', function (e) {
+  // Verifica se o clique foi em um link do menu lateral
+  const sidebarLink = e.target.closest('#menuLateral .nav-link, .sidebar .nav-link, .sidebar a');
+
+  if (sidebarLink && window.innerWidth <= 768) {
+    // Pequeno delay para garantir que a navegação aconteça
+    setTimeout(() => {
+      closeSidebar();
+    }, 100);
+  }
+});
+
+// ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', function () {
   const overlay = document.getElementById('overlay');
   if (overlay) {
     overlay.onclick = closeSidebar;
   }
-});
-function closeSidebarOnLinkClick() {
-  const links = document.querySelectorAll('#menuLateral .nav-link');
-  links.forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        closeSidebar();
-      }
+
+  // Chama a função para configurar os links
+  closeSidebarOnLinkClick();
+
+  // Usa MutationObserver para detectar novos links adicionados
+  const menuLateral = document.getElementById('menuLateral');
+  if (menuLateral) {
+    const observer = new MutationObserver(function () {
+      closeSidebarOnLinkClick();
     });
-  });
-}
+
+    observer.observe(menuLateral, {
+      childList: true,
+      subtree: true
+    });
+  }
+});
+
+// ===== EXPORTAR FUNÇÕES GLOBALMENTE =====
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+window.closeSidebarOnLinkClick = closeSidebarOnLinkClick;
+
+// ===== RESIZE =====
 window.addEventListener('resize', function () {
   if (window.innerWidth > 768) {
     closeSidebar();
@@ -5870,827 +5894,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   console.log('✅ Seção de Estatísticas inicializada');
 });
-/** ==================== REVISÃO INTELIGENTE ==================== */
-let flashcards = [];
-let revisoesEmAndamento = [];
-let indiceAtualFoco = 0;
-let filtroAtivo = "hoje";
-// ==================== CARREGAR DADOS ====================
-function carregarFlashcards() {
-  try {
-    const salvos = localStorage.getItem("flashcards_sistema");
-    if (salvos) {
-      flashcards = JSON.parse(salvos);
-    }
-  } catch (e) {
-    flashcards = [];
-  }
-  popularFiltroMaterias();  // ← NOVO
-  renderizarFlashcardsAgrupados();
-  atualizarEstatisticas();
-  verificarProvasProximas();
-}
-function salvarFlashcards() {
-  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-}
-// ==================== VERIFICAR PROVAS NO CALENDÁRIO ====================
-function verificarProvasProximas() {
-  if (!calendar) return;
-  const hoje = new Date();
-  const eventos = calendar.getEvents();
-  const provasProximas = [];
-  eventos.forEach(evento => {
-    if (evento.extendedProps?.tipo !== "prova") return;
-    const dataEvento = new Date(evento.start);
-    const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
-    if (diasRestantes <= 7 && diasRestantes > 0) {
-      provasProximas.push({
-        titulo: evento.title,
-        data: dataEvento,
-        dias: diasRestantes
-      });
-    }
-  });
-  if (provasProximas.length > 0) {
-    const avisoDiv = document.getElementById("avisoProva");
-    const textoAviso = document.getElementById("textoAvisoProva");
-    if (avisoDiv && textoAviso && provasProximas[0]) {
-      const prova = provasProximas[0];
-      textoAviso.innerHTML = `${prova.titulo} - Faltam ${prova.dias} dias!`;
-      avisoDiv.style.display = "block";
-      window.provaAtual = prova;
-    }
-  }
-}
-function criarRevisaoPorProva() {
-  if (window.provaAtual) {
-    abrirModalFlashcardComProva(window.provaAtual.titulo);
-  }
-}//REVISAO
-function configurarAbasRevisao() {
-  document.querySelectorAll('.aba-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const aba = btn.dataset.aba;
-      document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
-      document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
-      if (aba === 'revisar') {
-        atualizarMensagemRevisar();
-      }
-      renderizarFlashcardsAgrupados();
-    });
-  });
-}
-// NOVO: Atualizar mensagem da aba revisar
-function atualizarMensagemRevisar() {
-  const hojeData = new Date().toISOString().split('T')[0];
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let pendentes = flashcards.filter(f => f.dataProxima <= hojeData);
-  if (filtroMateria !== 'todas') {
-    pendentes = pendentes.filter(f => f.materiaNome === filtroMateria);
-  }
-  const countEl = document.getElementById('countPendentes');
-  if (countEl) {
-    countEl.textContent = pendentes.length;
-    if (pendentes.length === 0) {
-      countEl.style.color = '#22c55e'; // Verde - tudo revisado
-    } else if (pendentes.length > 10) {
-      countEl.style.color = '#ef4444'; // Vermelho - muitos atrasados
-    } else {
-      countEl.style.color = '#f59e0b'; // Laranja - quantidade normal
-    }
-  }
-}
-function configurarFiltroRevisao() {
-  const filtro = document.getElementById('filtroMateriaRevisao');
-  if (filtro) {
-    filtro.addEventListener('change', () => {
-      renderizarFlashcardsAgrupados();
-      atualizarMensagemRevisar();
-    });
-  }
-}
-function renderizarFlashcardsAgrupados() {
-  const container = document.getElementById('listaFlashcardsAgrupada');
-  if (!container) return;
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let cardsFiltrados = [...flashcards];
-  if (filtroMateria !== 'todas') {
-    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
-  }
 
-  if (cardsFiltrados.length === 0) {
-    container.innerHTML = '<p class="vazio">Nenhum flashcard encontrado!</p>';
-    return;
-  }
-  const porMateria = {};
-  cardsFiltrados.forEach(f => {
-    if (!porMateria[f.materiaNome]) {
-      porMateria[f.materiaNome] = { temas: {}, count: 0 };
-    }
-    if (!porMateria[f.materiaNome].temas[f.tema]) {
-      porMateria[f.materiaNome].temas[f.tema] = [];
-    }
-    porMateria[f.materiaNome].temas[f.tema].push(f);
-    porMateria[f.materiaNome].count++;
-  });
-  const ordenarCards = (cards) => {
-    const hojeData = hoje();
-    return cards.sort((a, b) => {
-      const aAtrasado = a.dataProxima < hojeData;
-      const bAtrasado = b.dataProxima < hojeData;
-      if (aAtrasado && !bAtrasado) return -1;
-      if (!aAtrasado && bAtrasado) return 1;
-      return a.dataProxima.localeCompare(b.dataProxima);
-    });
-  };
-  let html = '';
-  let index = 0;
-  for (const materia in porMateria) {
-    const materiaData = porMateria[materia];
-    const materiaId = `materia-${index}`;
-    html += `
-      <div class="materia-acordeon">
-        <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
-          <div class="materia-titulo">
-            <i class="bi bi-journal-bookmark-fill"></i>
-            <h3>${materia}</h3>
-            <span class="materia-badge-count">${materiaData.count}</span>
-          </div>
-          <span class="materia-seta" id="${materiaId}-seta">▶</span>
-        </div>
-        <div class="materia-conteudo" id="${materiaId}-conteudo">
-    `;
 
-    for (const tema in materiaData.temas) {
-      const cards = ordenarCards(materiaData.temas[tema]);
-      const temaCount = cards.length;
-
-      html += `
-        <div class="tema-grupo">
-          <div class="tema-header">
-            <i class="bi bi-folder2"></i>
-            <h4>${tema}</h4>
-            <span class="tema-badge-count">${temaCount}</span>
-          </div>
-      `;
-
-      cards.forEach(f => {
-        const isAtrasada = f.dataProxima < hoje();
-        const isHoje = f.dataProxima === hoje();
-        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
-
-        html += `
-          <div class="card-flashcard ${classeDestaque}">
-            <div class="card-pergunta">${f.pergunta}</div>
-            <div class="card-data">📅 ${formatarData(f.dataProxima)}</div>
-           <div class="card-acoes">
-  <button onclick="editarFlashcard(${f.id})" title="Editar">
-    <i class="bi bi-pencil"></i>
-  </button>
-  <button onclick="excluirFlashcard(${f.id})" title="Excluir">
-    <i class="bi bi-trash"></i>
-  </button>
-</div>
-          </div>
-        `;
-      });
-      html += `</div>`;
-    }
-    html += `
-        </div>
-      </div>
-    `;
-    index++;
-  }
-  container.innerHTML = html;
-}
-function toggleAcordeon(materiaId) {
-  const conteudo = document.getElementById(`${materiaId}-conteudo`);
-  const seta = document.getElementById(`${materiaId}-seta`);
-  if (conteudo.style.display === 'block') {
-    conteudo.style.display = 'none';
-    seta.classList.remove('aberto');
-    seta.textContent = '▶';
-  } else {
-    conteudo.style.display = 'block';
-    seta.classList.add('aberto');
-    seta.textContent = '▼';
-  }
-}
-function formatarData(dataStr) {
-  const data = new Date(dataStr);
-  return data.toLocaleDateString('pt-BR');
-}
-// ==================== MODAL E CRIAÇÃO ====================
-function abrirModalFlashcard() {
-  const select = document.getElementById("revisaoMateria");
-  if (select && materias) {
-    select.innerHTML = '<option value="">Selecione uma materia</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
-  }
-  document.getElementById("revisaoTema").value = "";
-  document.getElementById("revisaoPergunta").value = "";
-  document.getElementById("revisaoResposta").value = "";
-  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
-  modal.show();
-}
-function abrirModalFlashcardComProva(tituloProva) {
-  const select = document.getElementById("revisaoMateria");
-  if (select && materias) {
-    select.innerHTML = '<option value="">Selecione uma matéria</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
-  }
-  document.getElementById("revisaoTema").value = "Prova";
-  document.getElementById("revisaoPergunta").value = `Revisar conteúdo da prova: ${tituloProva}`;
-  document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
-  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
-  modal.show();
-}
-function salvarFlashcard() {
-  const materiaId = document.getElementById("revisaoMateria").value;
-  const tema = document.getElementById("revisaoTema").value.trim();
-  const pergunta = document.getElementById("revisaoPergunta").value.trim();
-  const resposta = document.getElementById("revisaoResposta").value.trim();
-  if (!materiaId) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atencao',
-      text: 'Selecione uma materia!',
-      confirmButtonColor: '#9f042c'
-    });
-    return;
-  }
-  if (!pergunta || !resposta) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atencao',
-      text: 'Preencha a pergunta e a resposta!',
-      confirmButtonColor: '#9f042c'
-    });
-    return;
-  }
-  const materia = materias.find(m => m.id == materiaId);
-  const temaJson = JSON.stringify({
-    tema: tema || "Geral",
-    nivel: 0,
-    dataProxima: new Date().toISOString().split("T")[0],
-    acertos: 0,
-    erros: 0
-  });
-
-  apiFetch("flashcards", {
-    method: "POST",
-    body: JSON.stringify({
-      id_materia: materiaId,
-      pergunta: pergunta,
-      resposta: resposta,
-      tema: temaJson
-    })
-  }).then(async res => {
-    if (res.ok) {
-      const respData = await res.json();
-      flashcards.push({
-        id: Number(respData.id_flash),
-        materiaId: Number(materiaId),
-        materiaNome: materia ? materia.nome : "Sem materia",
-        tema: tema || "Geral",
-        pergunta: pergunta,
-        resposta: resposta,
-        nivel: 0,
-        dataProxima: new Date().toISOString().split("T")[0],
-        acertos: 0,
-        erros: 0
-      });
-      salvarFlashcards();
-      popularFiltroMaterias();
-      renderizarFlashcardsAgrupados();
-      atualizarEstatisticas();
-      const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
-      if (modal) modal.hide();
-      Swal.fire({
-        icon: 'success',
-        title: 'Flashcard criado!',
-        text: 'Comece a revisar para fixar o conteudo.',
-        timer: 2000,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      });
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Erro!',
-        text: 'Não foi possível salvar o flashcard no servidor.',
-        confirmButtonColor: '#9f042c'
-      });
-    }
-  }).catch(err => {
-    console.error("Erro ao salvar flashcard:", err);
-  });
-}
-// ==================== RENDERIZAR LISTA ====================
-function hoje() {
-  return new Date().toISOString().split("T")[0];
-}
-function proximaRevisao(nivel, dificuldade) {
-  let dias = [1, 3, 7, 14, 30];
-  if (dificuldade === "facil") dias = [3, 7, 14, 30, 60];
-  if (dificuldade === "dificil") dias = [0.5, 1, 3, 7, 14];
-  const data = new Date();
-  data.setDate(data.getDate() + dias[nivel]);
-  return data.toISOString().split("T")[0];
-}
-function renderizarFlashcards() {
-  const container = document.getElementById("listaFlashcards");
-  if (!container) return;
-  let flashcardsFiltrados = [...flashcards];
-  const tipoFiltro = document.getElementById("filtroTipo")?.value;
-  if (tipoFiltro) {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.tipo === tipoFiltro);
-  }
-  if (filtroAtivo === "hoje") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima === hoje());
-  } else if (filtroAtivo === "atrasadas") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima < hoje());
-  } else if (filtroAtivo === "semana") {
-    const semanaQueVem = new Date();
-    semanaQueVem.setDate(semanaQueVem.getDate() + 7);
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
-  }
-  const materiaFiltro = document.getElementById("filtroMateria")?.value;
-  if (materiaFiltro && materiaFiltro !== "") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
-  }
-  const busca = document.getElementById("buscaRevisao")?.value.toLowerCase();
-  if (busca) {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f =>
-      f.pergunta.toLowerCase().includes(busca) ||
-      f.resposta.toLowerCase().includes(busca) ||
-      f.tema.toLowerCase().includes(busca)
-    );
-  }
-  flashcardsFiltrados.sort((a, b) => {
-    if (a.dataProxima < hoje() && b.dataProxima >= hoje()) return -1;
-    if (a.dataProxima >= hoje() && b.dataProxima < hoje()) return 1;
-    return a.dataProxima.localeCompare(b.dataProxima);
-  });
-  if (flashcardsFiltrados.length === 0) {
-    container.innerHTML = '<div class="empty-message">🎉 Nenhum flashcard encontrado!</div>';
-  } else {
-    container.innerHTML = flashcardsFiltrados.map(f => criarCardHTML(f)).join('');
-  }
-  atualizarEstatisticas();
-  adicionarEventosCards();
-}
-function criarCardHTML(flashcard) {
-  const isAtrasada = flashcard.dataProxima < hoje();
-  const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
-  const hojeDate = new Date();
-  const proximaDate = new Date(flashcard.dataProxima);
-  const diffTime = proximaDate - hojeDate;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  let mensagemRevisao = "";
-  if (isAtrasada) {
-    mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;"> Atrasada! Revise hoje!</span>`;
-  } else if (diffDays === 0) {
-    mensagemRevisao = `<span style="color: #22c55e; font-size: 0.7rem;"> Hoje! Revise agora!</span>`;
-  } else if (diffDays === 1) {
-    mensagemRevisao = `<span style="color: #f59e0b; font-size: 0.7rem;"> Amanhã</span>`;
-  } else {
-    mensagemRevisao = `<span style="color: #6b7280; font-size: 0.7rem;"> Próxima revisão em ${diffDays} dias</span>`;
-  }
-  return `
-    <div class="flashcard-item" data-id="${flashcard.id}">
-      <div class="flashcard-header">
-        <div class="flashcard-badges">
-          <span class="materia-badge">${flashcard.materiaNome}</span>
-          <span class="tema-badge"> ${flashcard.tema}</span>
-          <span class="data-badge ${isAtrasada ? 'atrasada' : ''}">
-            ${isAtrasada ? ' Atrasada' : ' ' + dataFormatada}
-          </span>
-        </div>
-      </div>
-      <div class="flashcard-pergunta">${flashcard.pergunta}</div>
-      <div class="flashcard-resposta">${flashcard.resposta}</div>
-      <div style="margin-top: 8px; font-size: 0.7rem;">
-        ${mensagemRevisao}
-      </div>
-      <div class="flashcard-acoes">
-        <button class="btn-editar-flashcard" onclick="editarFlashcard(${flashcard.id})">✏️ Editar</button>
-        <button class="btn-excluir-flashcard" onclick="excluirFlashcard(${flashcard.id})">🗑️ Excluir</button>
-      </div>
-    </div>
-  `;
-}
-function adicionarEventosCards() {
-  document.querySelectorAll('.flashcard-item').forEach(card => {
-    const pergunta = card.querySelector('.flashcard-pergunta');
-    const resposta = card.querySelector('.flashcard-resposta');
-    card.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (resposta.style.display === 'none' || !resposta.style.display) {
-        resposta.style.display = 'block';
-      } else {
-        resposta.style.display = 'none';
-      }
-    });
-  });
-}
-// ==================== ESTATÍSTICAS ====================
-function atualizarEstatisticas() {
-  const hojeData = hoje();
-  const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
-  const revisoesAtrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
-  const revisoesConcluidas = flashcards.filter(f => f.nivel > 0).length;
-  const totalAcertos = flashcards.reduce((sum, f) => sum + f.acertos, 0);
-  const totalRespostas = flashcards.reduce((sum, f) => sum + f.acertos + f.erros, 0);
-  const taxaAcerto = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
-  document.getElementById("totalHoje").textContent = revisoesHoje;
-  document.getElementById("totalAtrasadas").textContent = revisoesAtrasadas;
-  document.getElementById("totalConcluidas").textContent = revisoesConcluidas;
-  document.getElementById("taxaAcertoGeral").textContent = `${taxaAcerto}%`;
-}
-
-// ===== NOVAS FUNÇÕES PARA REVISÃO =====
-
-// Intervalos baseados no nível
-const intervalosRevisao = [1, 3, 7, 14, 30];
-
-// Função para iniciar revisão livre (todos os cards)
-function iniciarRevisaoLivre() {
-  if (flashcards.length === 0) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Nenhum card!',
-      text: 'Crie flashcards primeiro.',
-      timer: 1500,
-      showConfirmButton: false
-    });
-    return;
-  }
-
-  revisoesEmAndamento = [...flashcards];
-  indiceAtualFoco = 0;
-  mostrarCardFoco();
-}
-
-// Função atualizada para mostrar nível e sugestão
-function mostrarCardFoco() {
-  if (indiceAtualFoco >= revisoesEmAndamento.length) {
-    finalizarRevisao();
-    return;
-  }
-
-  const card = revisoesEmAndamento[indiceAtualFoco];
-
-  document.getElementById('focoMateria').textContent = card.materiaNome;
-  document.getElementById('focoTema').textContent = `📂 ${card.tema}`;
-  document.getElementById('focoPergunta').textContent = card.pergunta;
-  document.getElementById('focoResposta').innerHTML = card.resposta;
-  document.getElementById('focoResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'none';
-  document.getElementById('btnMostrarResposta').style.display = 'block';
-
-  // Mostrar nível atual e sugestão
-  const nivelAtual = card.nivel || 0;
-  const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
-  document.getElementById('focoNivelAtual').textContent = `Nível: ${nivelAtual}`;
-  document.getElementById('focoSugestao').textContent = `Sugestão: revise em ${proximoIntervalo} dia(s)`;
-  document.getElementById('focoInfoNivel').style.display = 'block';
-
-  const total = revisoesEmAndamento.length;
-  const atual = indiceAtualFoco + 1;
-  document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
-
-  const progresso = (atual / total) * 100;
-  document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
-
-  document.getElementById('modoFocoContainer').style.display = 'flex';
-}
-
-// Função atualizada para responder com 3 opções
-function responderFlashcard(resultado) {
-  const card = revisoesEmAndamento[indiceAtualFoco];
-  const flashcardOriginal = flashcards.find(f => f.id === card.id);
-
-  if (!flashcardOriginal) return;
-
-  let intervaloDias = 1;
-
-  if (resultado === 'acertei') {
-    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
-    flashcardOriginal.acertos++;
-    intervaloDias = intervalosRevisao[flashcardOriginal.nivel] || 1;
-  } else if (resultado === 'errei') {
-    flashcardOriginal.nivel = 0;
-    flashcardOriginal.erros++;
-    intervaloDias = 1;
-  } else if (resultado === 'facil') {
-    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 2, 4);
-    flashcardOriginal.acertos++;
-    intervaloDias = intervalosRevisao[flashcardOriginal.nivel] || 1;
-  }
-
-  // Define próxima data
-  const novaData = new Date();
-  novaData.setDate(novaData.getDate() + intervaloDias);
-  flashcardOriginal.dataProxima = novaData.toISOString().split('T')[0];
-
-  // Adiciona ao histórico
-  if (!flashcardOriginal.historico) {
-    flashcardOriginal.historico = [];
-  }
-  flashcardOriginal.historico.push({
-    data: new Date().toISOString(),
-    resultado: resultado,
-    intervalo: intervaloDias
-  });
-
-  salvarFlashcards();
-  atualizarEstatisticas();
-  indiceAtualFoco++;
-  mostrarCardFoco();
-}
-
-// Função para configurar as abas
-function configurarAbasRevisao() {
-  document.querySelectorAll('.aba-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const aba = btn.dataset.aba;
-      document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
-      document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
-      document.getElementById('abaHistorico').style.display = aba === 'historico' ? 'block' : 'none';
-
-      if (aba === 'revisar') {
-        atualizarMensagemRevisar();
-      } else if (aba === 'historico') {
-        renderizarHistorico();
-      }
-
-      renderizarFlashcardsAgrupados();
-    });
-  });
-}
-
-// Função para renderizar histórico
-function renderizarHistorico() {
-  const container = document.getElementById('historicoRevisoes');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  let todasRevisoes = [];
-
-  flashcards.forEach(f => {
-    if (f.historico && f.historico.length > 0) {
-      f.historico.forEach(h => {
-        todasRevisoes.push({
-          ...h,
-          pergunta: f.pergunta,
-          materia: f.materiaNome,
-          tema: f.tema
-        });
-      });
-    }
-  });
-
-  // Ordena por data mais recente
-  todasRevisoes.sort((a, b) => new Date(b.data) - new Date(a.data));
-
-  if (todasRevisoes.length === 0) {
-    container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma revisão realizada ainda.</p>';
-    return;
-  }
-
-  // Mostra as últimas 20 revisões
-  const recentes = todasRevisoes.slice(0, 20);
-
-  recentes.forEach(rev => {
-    const data = new Date(rev.data);
-    const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    const icone = rev.resultado === 'acertei' ? '✅' : rev.resultado === 'facil' ? '🚀' : '❌';
-    const cor = rev.resultado === 'acertei' ? '#22c55e' : rev.resultado === 'facil' ? '#8b5cf6' : '#ef4444';
-
-    const div = document.createElement('div');
-    div.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      border-bottom: 1px solid #f1f5f9;
-      gap: 10px;
-    `;
-
-    div.innerHTML = `
-      <div style="flex: 1;">
-        <div style="font-weight: 600; font-size: 0.9rem;">${rev.pergunta}</div>
-        <div style="font-size: 0.75rem; color: #6b7280;">${rev.materia} | ${rev.tema} | ${dataFormatada}</div>
-      </div>
-      <div style="text-align: right;">
-        <span style="font-size: 1.2rem;">${icone}</span>
-        <div style="font-size: 0.7rem; color: ${cor};">+${rev.intervalo} dia(s)</div>
-      </div>
-    `;
-
-    container.appendChild(div);
-  });
-}
-
-// Atualize a inicialização
-function initRevisao() {
-  adicionarModalFlashcardHTML();
-  carregarFlashcards();
-  configurarAbasRevisao();
-}
-
-// ==================== MODO FOCO ====================
-function iniciarRevisao() {
-  const hojeData = new Date().toISOString().split('T')[0];
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
-  if (filtroMateria !== 'todas') {
-    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
-  }
-  if (cardsPendentes.length === 0) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Nada para revisar!',
-      text: filtroMateria !== 'todas' ?
-        'Não há cards pendentes para esta matéria.' :
-        'Todos os cards foram revisados! Volte quando houver novos.',
-      confirmButtonColor: '#9f042c',
-      confirmButtonText: 'Entendi'
-    });
-    return;
-  }
-  revisoesEmAndamento = cardsPendentes.sort(() => Math.random() - 0.5);
-  indiceAtualFoco = 0;
-  mostrarCardFoco();
-  Swal.fire({
-    icon: 'success',
-    title: 'Boa revisão!',
-    text: `${cardsPendentes.length} card(s) para revisar.`,
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-
-function popularFiltroMaterias() {
-  const select = document.getElementById('filtroMateriaRevisao');
-  if (!select) return;
-  select.innerHTML = '<option value="todas">Todas as matérias</option>';
-  if (materias) {
-    const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
-    nomesOrdenados.forEach(materia => {
-      select.innerHTML += `<option value="${materia}">${materia}</option>`;
-    });
-  }
-}
-function mostrarRespostaFoco() {
-  document.getElementById('focoResposta').style.display = 'block';
-  document.getElementById('btnMostrarResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'flex';
-}
-
-function finalizarRevisao() {
-  document.getElementById("modoFocoContainer").style.display = "none";
-  renderizarFlashcardsAgrupados();
-  atualizarMensagemRevisar();
-  Swal.fire({
-    icon: 'success',
-    title: '🎉 Revisão concluída!',
-    text: 'Parabéns! Você revisou tudo por hoje.',
-    timer: 2000,
-    showConfirmButton: false
-  });
-}
-function fecharModoFoco() {
-  document.getElementById("modoFocoContainer").style.display = "none";
-}
-// ==================== EDITAR E EXCLUIR ====================
-function editarFlashcard(id) {
-  const flashcard = flashcards.find(f => f.id == id);
-  if (!flashcard) return;
-
-  Swal.fire({
-    title: 'Editar Flashcard',
-    html: `
-      <input id="editPergunta" class="swal2-input" value="${flashcard.pergunta.replace(/"/g, '&quot;')}">
-      <textarea id="editResposta" class="swal2-textarea" rows="3">${flashcard.resposta.replace(/"/g, '&quot;')}</textarea>
-      <input id="editTema" class="swal2-input" value="${flashcard.tema}">
-    `,
-    confirmButtonText: 'Salvar',
-    showCancelButton: true,
-    preConfirm: () => {
-      const pergunta = document.getElementById('editPergunta').value;
-      const resposta = document.getElementById('editResposta').value;
-      const tema = document.getElementById('editTema').value;
-
-      if (!pergunta || !resposta) {
-        Swal.showValidationMessage('Preencha todos os campos!');
-        return false;
-      }
-      return { pergunta, resposta, tema };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const { pergunta, resposta, tema } = result.value;
-
-      apiFetch(`flashcards/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          pergunta: pergunta,
-          resposta: resposta,
-          tema: JSON.stringify({
-            tema: tema || "Geral",
-            nivel: flashcard.nivel,
-            dataProxima: flashcard.dataProxima,
-            acertos: flashcard.acertos,
-            erros: flashcard.erros
-          })
-        })
-      }).then(res => {
-        if (res.ok) {
-          flashcard.pergunta = pergunta;
-          flashcard.resposta = resposta;
-          flashcard.tema = tema || "Geral";
-          salvarFlashcards();
-          renderizarFlashcardsAgrupados();
-          atualizarEstatisticas();
-          Swal.fire('Atualizado!', '', 'success');
-        } else {
-          Swal.fire('Erro!', 'Não foi possível salvar as alterações no servidor.', 'error');
-        }
-      }).catch(err => {
-        console.error("Erro ao atualizar flashcard:", err);
-      });
-    }
-  });
-}
-function excluirFlashcard(id) {
-  Swal.fire({
-    title: 'Excluir flashcard?',
-    text: 'Essa ação não pode ser desfeita!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Sim, excluir',
-    cancelButtonText: 'Cancelar'
-  }).then(result => {
-    if (result.isConfirmed) {
-      apiFetch(`flashcards/${id}`, {
-        method: "DELETE"
-      }).then(res => {
-        if (res.ok) {
-          flashcards = flashcards.filter(f => f.id != id);
-          salvarFlashcards();
-          renderizarFlashcardsAgrupados();
-          atualizarEstatisticas();
-          Swal.fire('Excluído!', '', 'success');
-        } else {
-          Swal.fire('Erro!', 'Não foi possível excluir o flashcard no servidor.', 'error');
-        }
-      }).catch(err => {
-        console.error("Erro ao deletar flashcard:", err);
-      });
-    }
-  });
-}
-// ==================== FILTROS ====================
-function configurarFiltros() {
-  document.querySelectorAll('.filtro-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filtroAtivo = btn.dataset.filtro;
-      renderizarFlashcards();
-    });
-  });
-  document.getElementById("filtroMateria")?.addEventListener('change', () => renderizarFlashcards());
-  document.getElementById("buscaRevisao")?.addEventListener('input', () => renderizarFlashcards());
-}
-// ==================== INICIALIZAR ====================
-function initRevisao() {
-  adicionarModalFlashcardHTML();
-  carregarFlashcards();
-  configurarAbasRevisao();
-}
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initRevisao();
-  });
-}
 // ===== NOTIFICAÇÕES DE TAREFAS =====
 function verificarNotificacoesTarefas() {
   // Verifica se o navegador suporta notificações
@@ -6739,48 +5944,7 @@ function forcarAtualizacaoImediata() {
 
 setTimeout(forcarAtualizacaoImediata, 10);
 
-function adicionarModalFlashcardHTML() {
-  if (document.getElementById("modalRevisao")) {
-    return;
-  }
-  const modalHTML = `
-    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Novo Flashcard</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">Materia</label>
-              <select id="revisaoMateria" class="form-select">
-                <option value="">Selecione uma materia</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Tema</label>
-              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Pergunta</label>
-              <textarea id="revisaoPergunta" class="form-control" rows="2" placeholder="Digite a pergunta..."></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Resposta</label>
-              <textarea id="revisaoResposta" class="form-control" rows="3" placeholder="Digite a resposta..."></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
+
 // ===== PLANOS =====
 function verificarPlano() {
   const plano = localStorage.getItem("planoUsuario") || "gratuito";
@@ -9180,11 +8344,11 @@ let bibliotecaVideos = JSON.parse(localStorage.getItem('bibliotecaVideos') || '[
 // ===== ABRIR BIBLIOTECA =====
 function abrirBibliotecaVideos() {
   console.log('🎬 Abrindo Biblioteca de Vídeos');
-  
+
   if (typeof fecharMetodoModal === 'function') {
     fecharMetodoModal();
   }
-  
+
   const modal = document.getElementById('bibliotecaVideosModalOverlay');
   if (modal) {
     modal.style.display = 'flex';
@@ -9207,7 +8371,7 @@ function abrirModalAdicionarVideo() {
   if (modal) {
     modal.style.display = 'flex';
     popularSelectMateriasVideos();
-    
+
     // Limpa campos
     document.getElementById('videoTitulo').value = '';
     document.getElementById('videoUrl').value = '';
@@ -9243,23 +8407,23 @@ function popularFiltroMateriasVideos() {
 function popularSelectMateriasVideos() {
   const select = document.getElementById('videoMateria');
   if (!select) return;
-  
+
   // Pega matérias do sistema
   const materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
-  
+
   select.innerHTML = '<option value="">Selecione uma matéria</option>';
-  
+
   materiasSistema.forEach(materia => {
     select.innerHTML += `<option value="${materia.nome}">${materia.nome}</option>`;
   });
-  
+
   // Adiciona opção "Nova matéria"
   select.innerHTML += '<option value="__nova__">➕ Nova matéria...</option>';
-  
+
   // Evento para mostrar campo de nova matéria
-  select.onchange = function() {
+  select.onchange = function () {
     const campoNovaMateria = document.getElementById('campoNovaMateriaVideo');
-    
+
     if (select.value === '__nova__') {
       if (campoNovaMateria) {
         campoNovaMateria.style.display = 'block';
@@ -9298,28 +8462,28 @@ function salvarVideo() {
   const url = document.getElementById('videoUrl').value.trim();
   const tema = document.getElementById('videoTema').value.trim();
   const anotacoes = document.getElementById('videoAnotacoes').value.trim();
-  
+
   // Verifica se é nova matéria
   if (materia === '__nova__') {
     const novaMateriaNome = document.getElementById('novaMateriaVideo').value.trim();
-    
+
     if (!novaMateriaNome) {
       mostrarToast('⚠️ Digite o nome da nova matéria!', '#f59e0b');
       return;
     }
-    
+
     materia = novaMateriaNome;
-    
+
     // Salva a nova matéria no sistema
     salvarNovaMateriaNoSistema(novaMateriaNome);
   }
-  
+
   if (!materia) { mostrarToast('⚠️ Selecione a matéria!', '#f59e0b'); return; }
   if (!titulo) { mostrarToast('⚠️ Digite o título!', '#f59e0b'); return; }
   if (!url || !extrairYouTubeId(url)) { mostrarToast('⚠️ Link inválido!', '#ef4444'); return; }
-  
+
   const videoId = extrairYouTubeId(url);
-  
+
   const video = {
     id: Date.now(),
     materia: materia,
@@ -9333,10 +8497,10 @@ function salvarVideo() {
     nota: 0,
     dataAdicionado: new Date().toISOString()
   };
-  
+
   bibliotecaVideos.push(video);
   localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-  
+
   fecharModalAdicionarVideo();
   popularFiltroMateriasVideos();
   renderizarBibliotecaVideos();
@@ -9347,23 +8511,23 @@ function salvarVideo() {
 function salvarNovaMateriaNoSistema(nomeMateria) {
   // Pega matérias existentes
   let materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
-  
+
   // Verifica se já existe
   const materiaExiste = materiasSistema.some(m => m.nome.toLowerCase() === nomeMateria.toLowerCase());
-  
+
   if (!materiaExiste) {
     // Cria nova matéria
     const novaMateria = {
       id: Date.now().toString(),
       nome: nomeMateria,
-      cor: '#' + Math.floor(Math.random()*16777215).toString(16) // cor aleatória
+      cor: '#' + Math.floor(Math.random() * 16777215).toString(16) // cor aleatória
     };
-    
+
     materiasSistema.push(novaMateria);
     localStorage.setItem('materias', JSON.stringify(materiasSistema));
-    
+
     console.log('✅ Nova matéria salva:', novaMateria);
-    
+
     // Tenta salvar no backend se possível
     if (typeof apiFetch === 'function') {
       apiFetch('materias', {
@@ -9387,13 +8551,13 @@ function salvarNovaMateriaNoSistema(nomeMateria) {
 function renderizarBibliotecaVideos() {
   const container = document.getElementById('listaVideosEstudo');
   if (!container) return;
-  
+
   const filtroMateria = document.getElementById('filtroMateriaVideos')?.value || 'todas';
   const filtroStatus = document.getElementById('filtroStatusVideos')?.value || 'todos';
   const busca = document.getElementById('buscaVideos')?.value.toLowerCase() || '';
-  
+
   let videosFiltrados = [...bibliotecaVideos];
-  
+
   if (filtroMateria !== 'todas') {
     videosFiltrados = videosFiltrados.filter(v => v.materia === filtroMateria);
   }
@@ -9403,15 +8567,15 @@ function renderizarBibliotecaVideos() {
     videosFiltrados = videosFiltrados.filter(v => !v.assistido);
   }
   if (busca) {
-    videosFiltrados = videosFiltrados.filter(v => 
-      v.titulo.toLowerCase().includes(busca) || 
+    videosFiltrados = videosFiltrados.filter(v =>
+      v.titulo.toLowerCase().includes(busca) ||
       v.tema.toLowerCase().includes(busca) ||
       v.anotacoes.toLowerCase().includes(busca)
     );
   }
-  
+
   container.innerHTML = '';
-  
+
   if (videosFiltrados.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 40px; color: #9ca3af;">
@@ -9422,13 +8586,13 @@ function renderizarBibliotecaVideos() {
     `;
     return;
   }
-  
+
   const grupos = {};
   videosFiltrados.forEach(video => {
     if (!grupos[video.materia]) grupos[video.materia] = [];
     grupos[video.materia].push(video);
   });
-  
+
   Object.keys(grupos).forEach(materia => {
     const grupoDiv = document.createElement('div');
     grupoDiv.style.marginBottom = '30px';
@@ -9439,14 +8603,14 @@ function renderizarBibliotecaVideos() {
         <span style="font-size: 0.7rem; color: #9ca3af; font-weight: normal;">(${grupos[materia].length} vídeos)</span>
       </h3>
     `;
-    
+
     const videosGrid = document.createElement('div');
     videosGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;';
-    
+
     grupos[materia].forEach(video => {
       videosGrid.appendChild(criarCardVideo(video));
     });
-    
+
     grupoDiv.appendChild(videosGrid);
     container.appendChild(grupoDiv);
   });
@@ -9458,9 +8622,9 @@ function criarCardVideo(video) {
   card.style.cssText = 'background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: 0.2s; cursor: pointer;';
   card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)'; };
   card.onmouseout = () => { card.style.transform = 'translateY(0)'; card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)'; };
-  
+
   const estrelas = '⭐'.repeat(video.nota) + '☆'.repeat(5 - video.nota);
-  
+
   card.innerHTML = `
     <div style="position: relative;">
       <img src="${video.thumbnail}" alt="${video.titulo}" style="width: 100%; height: 160px; object-fit: cover; cursor: pointer;" onclick="abrirVideoEstudo('${video.url}')">
@@ -9482,7 +8646,7 @@ function criarCardVideo(video) {
       </div>
     </div>
   `;
-  
+
   return card;
 }
 
@@ -9502,7 +8666,7 @@ function alternarAssistido(id) {
 function avaliarVideo(id) {
   const video = bibliotecaVideos.find(v => v.id === id);
   if (!video) return;
-  
+
   Swal.fire({
     title: 'Avaliar vídeo',
     text: `Como você avalia "${video.titulo}"?`,
@@ -9526,7 +8690,7 @@ function avaliarVideo(id) {
 function editarVideo(id) {
   const video = bibliotecaVideos.find(v => v.id === id);
   if (!video) return;
-  
+
   Swal.fire({
     title: 'Editar Vídeo',
     html: `
@@ -9599,17 +8763,17 @@ window.excluirVideo = excluirVideo;
 // ===== FUNÇÃO verDetalhesMetodo FINAL ========
 // =============================================
 
-window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
+window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
   console.log('🔍 [FINAL] Abrindo método:', tipoInteligencia, metodoId);
-  
+
   const metodosData = metodosPorInteligencia[tipoInteligencia];
   if (!metodosData) return;
-  
+
   const metodo = metodosData.metodos.find(m => m.id === metodoId);
   if (!metodo) return;
-  
+
   console.log('📌 [FINAL] Método:', metodo.titulo);
-  
+
   const modalTitulo = document.getElementById("modalMetodoTitulo");
   const modalTempo = document.getElementById("modalMetodoTempo");
   const modalDificuldade = document.getElementById("modalMetodoDificuldade");
@@ -9618,19 +8782,19 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
   const beneficiosList = document.getElementById("modalMetodoBeneficios");
   const modalDica = document.getElementById("modalMetodoDica");
   const footer = document.getElementById("modalMetodoFooter");
-  
+
   if (modalTitulo) modalTitulo.textContent = metodo.titulo;
   if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-  
+
   if (modalDificuldade) {
     modalDificuldade.textContent = metodo.dificuldade;
     modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
   }
-  
+
   if (passosList) {
     passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
   }
-  
+
   if (beneficiosList && beneficiosContainer) {
     if (metodo.beneficios && metodo.beneficios.length > 0) {
       beneficiosContainer.style.display = "block";
@@ -9639,16 +8803,16 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       beneficiosContainer.style.display = "none";
     }
   }
-  
+
   if (modalDica) {
     modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
   }
-  
+
   if (footer) {
     footer.innerHTML = "";
-    
+
     console.log('🔘 [FINAL] Botão para:', metodo.titulo);
-    
+
     // 1. PODCAST
     if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
       console.log('✅ Podcast');
@@ -9656,7 +8820,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
-      btn.onclick = function() { window.fecharMetodoModal(); window.abrirGravadorPodcast(); };
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirGravadorPodcast(); };
       footer.appendChild(btn);
     }
     // 2. FEYNMAN
@@ -9666,7 +8830,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
-      btn.onclick = function() { window.fecharMetodoModal(); window.abrirGravadorFeynman(); };
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirGravadorFeynman(); };
       footer.appendChild(btn);
     }
     // 3. POMODORO
@@ -9676,7 +8840,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
-      btn.onclick = function() {
+      btn.onclick = function () {
         window.fecharMetodoModal();
         if (typeof mostrarTela === 'function') mostrarTela('relogio');
         setTimeout(() => {
@@ -9697,18 +8861,18 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
-      btn.onclick = function() { window.fecharMetodoModal(); window.abrirMapaMental(); };
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirMapaMental(); };
       footer.appendChild(btn);
     }
     // 5. ESTUDO COM VÍDEOS
     else if (metodo.titulo.includes("Vídeos") || metodo.titulo.includes("Videos") ||
-             metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
+      metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
       console.log('✅ Biblioteca de Vídeos');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-collection-play"></i> Minha Biblioteca de Vídeos`;
-      btn.onclick = function() { window.fecharMetodoModal(); window.abrirBibliotecaVideos(); };
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirBibliotecaVideos(); };
       footer.appendChild(btn);
     }
     // 6. CORNELL
@@ -9718,7 +8882,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
-      btn.onclick = function() {
+      btn.onclick = function () {
         window.fecharMetodoModal();
         if (typeof window.abrirCornell === 'function') window.abrirCornell();
       };
@@ -9726,24 +8890,26 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
     }
     // 7. TESTE PRÁTICO
     else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") ||
-             metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
-      console.log('✅ Teste Prático - Entendi');
+      metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
+      console.log('✅ Teste Prático - Ir para Simulado');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function() { window.fecharMetodoModal(); };
+      btn.innerHTML = `<i class="bi bi-pencil-square"></i> Ir para Simulado`;
+      btn.onclick = function () {
+        window.irParaRevisao("simulado", metodo.titulo);
+      };
       footer.appendChild(btn);
     }
     // 8. MNEMÔNICA
     else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") ||
-             metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
+      metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
       console.log('✅ Mnemônica - Entendi');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = function() { window.fecharMetodoModal(); };
+      btn.onclick = function () { window.fecharMetodoModal(); };
       footer.appendChild(btn);
     }
     // 9. FLASHCARDS
@@ -9753,7 +8919,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = function() { window.irParaRevisao("flashcards", metodo.titulo); };
+      btn.onclick = function () { window.irParaRevisao("flashcards", metodo.titulo); };
       footer.appendChild(btn);
     }
     // 10. REVISÃO
@@ -9763,7 +8929,7 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = function() { window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo); };
+      btn.onclick = function () { window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo); };
       footer.appendChild(btn);
     }
     // 11. ENTENDI
@@ -9776,8 +8942,8 @@ window.verDetalhesMetodo = function(tipoInteligencia, metodoId) {
       btn.onclick = window.fecharMetodoModal;
       footer.appendChild(btn);
     }
-  }
-  
+  } 3
+
   const modalOverlay = document.getElementById("metodoModalOverlay");
   if (modalOverlay) {
     modalOverlay.style.display = "flex";
@@ -9792,7 +8958,7 @@ console.log('🔄 Forçando renderização dos métodos...');
 // Verifica se a função existe
 if (typeof window.renderizarMetodosEstudo === 'function') {
   console.log('✅ Função renderizarMetodosEstudo encontrada');
-  
+
   // Chama após 1 segundo
   setTimeout(() => {
     window.renderizarMetodosEstudo();
@@ -9810,3 +8976,1442 @@ if (containerCheck) {
 } else {
   console.error('❌ Container de métodos NÃO encontrado!');
 }
+
+// =============================================
+// ===== REVISÃO INTELIGENTE - VERSÃO FINAL ====
+// =============================================
+
+let flashcards = [];
+let revisoesEmAndamento = [];
+let indiceAtualFoco = 0;
+
+const intervalosRevisao = [1, 3, 7, 14, 30];
+
+function hoje() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function formatarData(dataStr) {
+  if (!dataStr) return 'Sem data';
+  const data = new Date(dataStr + 'T12:00:00');
+  return data.toLocaleDateString('pt-BR');
+}
+
+// ===== SALVAR =====
+function salvarFlashcards() {
+  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+}
+// ===== CONFIGURAR ABAS =====
+function configurarAbasRevisao() {
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trocarAbaRevisao(btn.dataset.aba);
+    });
+  });
+}
+
+// ===== CARREGAR FLASHCARDS (compatibilidade) =====
+function carregarFlashcards() {
+  carregarFlashcardsDoBackend();
+}
+
+// ===== CARREGAR FLASHCARDS =====
+async function carregarFlashcardsDoBackend() {
+  try {
+    const response = await apiFetch("flashcards");
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        flashcards = data.map(f => {
+          let parsedTema = {
+            tema: "Geral",
+            nivel: 0,
+            dataProxima: new Date().toISOString().split("T")[0],
+            acertos: 0,
+            erros: 0
+          };
+
+          const rawTema = decodeHtmlEntities(f.tema || "");
+
+          try {
+            if (rawTema && rawTema.trim().startsWith('{')) {
+              parsedTema = JSON.parse(rawTema);
+            } else if (rawTema) {
+              parsedTema.tema = rawTema;
+            }
+          } catch (e) {
+            console.error("Erro ao fazer parse do tema JSON:", e);
+            if (rawTema) parsedTema.tema = rawTema;
+          }
+
+          return {
+            id: Number(f.id_flash),
+            materiaId: Number(f.id_materia),
+            materiaNome: decodeHtmlEntities(f.nome_materia || "Sem matéria"),
+            tema: parsedTema.tema || "Geral",
+            pergunta: decodeHtmlEntities(f.pergunta || ""),
+            resposta: decodeHtmlEntities(f.resposta || ""),
+            nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
+            dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
+            acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
+            erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
+          };
+        });
+
+        localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      } else {
+        // Backend vazio, usa localStorage
+        const salvos = localStorage.getItem('flashcards_sistema');
+        if (salvos) {
+          flashcards = JSON.parse(salvos);
+        }
+      }
+    } else {
+      // Backend com erro, usa localStorage
+      const salvos = localStorage.getItem('flashcards_sistema');
+      if (salvos) {
+        flashcards = JSON.parse(salvos);
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao carregar flashcards:", err);
+    // Fallback para localStorage
+    const salvos = localStorage.getItem('flashcards_sistema');
+    if (salvos) {
+      flashcards = JSON.parse(salvos);
+    }
+  }
+
+  // Renderiza tudo
+  if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+  if (typeof renderizarFlashcardsAgrupados === 'function') renderizarFlashcardsAgrupados();
+  if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+  if (typeof atualizarMensagemRevisar === 'function') atualizarMensagemRevisar();
+  if (typeof verificarCardsAtrasados === 'function') verificarCardsAtrasados();
+}
+
+// ===== VERIFICAR CARDS ATRASADOS =====
+function verificarCardsAtrasados() {
+  const hojeData = hoje();
+  const atrasados = flashcards.filter(f => f.dataProxima && f.dataProxima < hojeData);
+  const aviso = document.getElementById('avisoCardsAtrasados');
+
+  if (aviso) {
+    if (atrasados.length > 0) {
+      aviso.style.display = 'block';
+      const detalhes = document.getElementById('detalhesAtrasados');
+      if (detalhes) detalhes.textContent = atrasados.length + ' card(s) precisam de revisão!';
+    } else {
+      aviso.style.display = 'none';
+    }
+  }
+}
+
+// ===== VERIFICAR PROVAS =====
+function verificarProvasProximas() {
+  let eventos = [];
+  if (typeof calendar !== 'undefined' && calendar && typeof calendar.getEvents === 'function') {
+    eventos = calendar.getEvents();
+  }
+
+  const hojeDate = new Date();
+
+  eventos.forEach(evento => {
+    const tipo = evento.extendedProps?.tipo || '';
+    const titulo = evento.title || '';
+
+    if (tipo === 'prova' || titulo.toLowerCase().includes('prova')) {
+      const dataEvento = new Date(evento.start);
+      const dias = Math.ceil((dataEvento - hojeDate) / (1000 * 60 * 60 * 24));
+
+      if (dias <= 7 && dias > 0) {
+        const aviso = document.getElementById('avisoProva');
+        const texto = document.getElementById('textoAvisoProva');
+        if (aviso && texto) {
+          texto.innerHTML = titulo + ' - Faltam ' + dias + ' dias!';
+          aviso.style.display = 'block';
+          window.provaAtual = { titulo, dias };
+        }
+      }
+    }
+  });
+}
+
+// ===== FECHAR AVISO =====
+function fecharAviso(tipo) {
+  const aviso = document.getElementById(tipo);
+  if (aviso) {
+    aviso.style.display = 'none';
+    aviso.style.visibility = 'hidden';
+    aviso.style.height = '0';
+    aviso.style.padding = '0';
+    aviso.style.margin = '0';
+    aviso.style.overflow = 'hidden';
+  }
+  localStorage.setItem('aviso_' + tipo + '_fechado', 'true');
+}
+
+// ===== CRIAR REVISÃO POR PROVA =====
+function criarRevisaoPorProva() {
+  if (window.provaAtual) {
+    abrirModalFlashcardComProva(window.provaAtual.titulo);
+    const aviso = document.getElementById('avisoProva');
+    if (aviso) aviso.style.display = 'none';
+    localStorage.setItem('aviso_avisoProva_fechado', 'true');
+  }
+}
+
+// ===== IR PARA ABA REVISAR =====
+function irParaAbaRevisar() {
+  document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('[data-aba="revisar"]');
+  if (btn) btn.classList.add('active');
+
+  document.getElementById('abaMeusCards').style.display = 'none';
+  document.getElementById('abaRevisar').style.display = 'block';
+  document.getElementById('abaHistorico').style.display = 'none';
+
+  atualizarMensagemRevisar();
+
+  const aviso = document.getElementById('avisoCardsAtrasados');
+  if (aviso) aviso.style.display = 'none';
+  localStorage.setItem('aviso_avisoCardsAtrasados_fechado', 'true');
+}
+
+// ===== CONFIGURAR FILTRO =====
+function configurarFiltroRevisao() {
+  const filtro = document.getElementById('filtroMateriaRevisao');
+  if (filtro) {
+    filtro.addEventListener('change', () => {
+      renderizarFlashcardsAgrupados();
+      atualizarMensagemRevisar();
+    });
+  }
+}
+
+// ===== POPULAR FILTRO =====
+// ===== POPULAR FILTRO DE MATÉRIAS (APENAS BACKEND) =====
+async function popularFiltroMaterias() {
+  console.log('📚 [FILTRO] Carregando matérias para os filtros...');
+
+  // Garantir que materias está carregado
+  if (!materias || materias.length === 0) {
+    await carregarMateriasDoBackend();
+  }
+
+  const select = document.getElementById('filtroMateriaRevisao');
+  if (!select) return;
+
+  select.innerHTML = '<option value="todas">📚 Todas as matérias</option>';
+
+  if (materias && materias.length > 0) {
+    const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
+    nomesOrdenados.forEach(materia => {
+      if (materia && materia !== 'undefined') {
+        select.innerHTML += `<option value="${materia}">${materia}</option>`;
+      }
+    });
+  }
+
+  // Atualizar filtro do modo de revisão
+  const selectModo = document.getElementById('filtroMateriaRevisaoModo');
+  if (selectModo) {
+    selectModo.innerHTML = '<option value="todas">Todas as matérias</option>';
+
+    if (materias && materias.length > 0) {
+      const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
+      nomesOrdenados.forEach(materia => {
+        if (materia && materia !== 'undefined') {
+          selectModo.innerHTML += `<option value="${materia}">${materia}</option>`;
+        }
+      });
+    }
+  }
+}
+
+// ===== RENDERIZAR FLASHCARDS =====
+function renderizarFlashcardsAgrupados() {
+  const container = document.getElementById('listaFlashcardsAgrupada');
+  if (!container) return;
+
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+
+  let cardsFiltrados = [...flashcards];
+
+  if (filtroMateria !== 'todas') {
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  if (cardsFiltrados.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px;">Nenhum flashcard encontrado!</p>';
+    return;
+  }
+
+  const porMateria = {};
+  cardsFiltrados.forEach(f => {
+    if (!porMateria[f.materiaNome]) porMateria[f.materiaNome] = { temas: {}, count: 0 };
+    if (!porMateria[f.materiaNome].temas[f.tema]) porMateria[f.materiaNome].temas[f.tema] = [];
+    porMateria[f.materiaNome].temas[f.tema].push(f);
+    porMateria[f.materiaNome].count++;
+  });
+
+  let html = '';
+  let index = 0;
+
+  for (const materia in porMateria) {
+    const materiaData = porMateria[materia];
+    const materiaId = 'materia-' + index;
+
+    html += '<div class="materia-acordeon">' +
+      '<div class="materia-header" onclick="toggleAcordeon(\'' + materiaId + '\')">' +
+      '<div class="materia-titulo">' +
+      '<i class="bi bi-journal-bookmark-fill"></i>' +
+      '<h3>' + materia + '</h3>' +
+      '<span class="materia-badge-count">' + materiaData.count + '</span>' +
+      '</div>' +
+      '<span class="materia-seta" id="' + materiaId + '-seta">▶</span>' +
+      '</div>' +
+      '<div class="materia-conteudo" id="' + materiaId + '-conteudo" style="display:none;">';
+
+    for (const tema in materiaData.temas) {
+      const cards = materiaData.temas[tema];
+
+      html += '<div class="tema-grupo">' +
+        '<div class="tema-header">' +
+        '<i class="bi bi-folder2"></i>' +
+        '<h4>' + tema + '</h4>' +
+        '<span class="tema-badge-count">' + cards.length + '</span>' +
+        '</div>';
+
+      cards.forEach(f => {
+        const isAtrasada = f.dataProxima < hoje();
+        const isHoje = f.dataProxima === hoje();
+        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
+
+        html += '<div class="card-flashcard ' + classeDestaque + '">' +
+          '<div class="card-pergunta">' + f.pergunta + '</div>' +
+          '<div class="card-data">📅 ' + formatarData(f.dataProxima) + ' | Nível: ' + (f.nivel || 0) + '</div>' +
+          '<div class="card-acoes">' +
+          '<button onclick="editarFlashcard(' + f.id + ')"><i class="bi bi-pencil"></i></button>' +
+          '<button onclick="excluirFlashcard(' + f.id + ')"><i class="bi bi-trash"></i></button>' +
+          '</div>' +
+          '</div>';
+      });
+
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    index++;
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== TOGGLE ACORDEON =====
+function toggleAcordeon(materiaId) {
+  const conteudo = document.getElementById(materiaId + '-conteudo');
+  const seta = document.getElementById(materiaId + '-seta');
+  if (conteudo.style.display === 'block') {
+    conteudo.style.display = 'none';
+    seta.textContent = '▶';
+  } else {
+    conteudo.style.display = 'block';
+    seta.textContent = '▼';
+  }
+}
+
+// ===== ATUALIZAR ESTATÍSTICAS =====
+function atualizarEstatisticas() {
+  const hojeData = hoje();
+  const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
+  const atrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
+  const concluidas = flashcards.filter(f => f.nivel > 0).length;
+  const totalAcertos = flashcards.reduce((sum, f) => sum + (f.acertos || 0), 0);
+  const totalRespostas = flashcards.reduce((sum, f) => sum + (f.acertos || 0) + (f.erros || 0), 0);
+  const taxa = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
+
+  const elHoje = document.getElementById("totalHoje");
+  const elAtrasadas = document.getElementById("totalAtrasadas");
+  const elConcluidas = document.getElementById("totalConcluidas");
+  const elTaxa = document.getElementById("taxaAcertoGeral");
+
+  if (elHoje) elHoje.textContent = revisoesHoje;
+  if (elAtrasadas) elAtrasadas.textContent = atrasadas;
+  if (elConcluidas) elConcluidas.textContent = concluidas;
+  if (elTaxa) elTaxa.textContent = taxa + '%';
+}
+
+// ===== ABRIR MODAL FLASHCARD (APENAS BACKEND) =====
+async function abrirModalFlashcard() {
+  console.log('📝 [FLASHCARD] Abrindo modal...');
+
+  // Garantir que materias está carregado
+  if (!materias || materias.length === 0) {
+    await carregarMateriasDoBackend();
+  }
+
+  const select = document.getElementById("revisaoMateria");
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Selecione uma matéria</option>';
+
+  if (materias && materias.length > 0) {
+    materias.forEach(m => {
+      if (m && m.id && m.nome && m.nome !== 'undefined') {
+        select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+      }
+    });
+  }
+
+  document.getElementById("revisaoTema").value = "";
+  document.getElementById("revisaoPergunta").value = "";
+  document.getElementById("revisaoResposta").value = "";
+
+  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
+  modal.show();
+}
+
+// ===== ABRIR MODAL COM PROVA =====
+function abrirModalFlashcardComProva(tituloProva) {
+  abrirModalFlashcard();
+  document.getElementById("revisaoTema").value = "Prova";
+  document.getElementById("revisaoPergunta").value = 'Revisar conteúdo da prova: ' + tituloProva;
+  document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
+}
+
+// ===== SALVAR FLASHCARD =====
+function salvarFlashcard() {
+  const materiaId = document.getElementById("revisaoMateria").value;
+  const tema = document.getElementById("revisaoTema").value.trim();
+  const pergunta = document.getElementById("revisaoPergunta").value.trim();
+  const resposta = document.getElementById("revisaoResposta").value.trim();
+
+  if (!materiaId) { mostrarToast('⚠️ Selecione uma matéria!', '#f59e0b'); return; }
+  if (!pergunta || !resposta) { mostrarToast('⚠️ Preencha pergunta e resposta!', '#f59e0b'); return; }
+
+  const materia = materias.find(m => m.id == materiaId);
+
+  const novoCard = {
+    id: Date.now(),
+    materiaId: Number(materiaId),
+    materiaNome: materia ? materia.nome : "Sem matéria",
+    tema: tema || "Geral",
+    pergunta: pergunta,
+    resposta: resposta,
+    nivel: 0,
+    dataProxima: hoje(),
+    acertos: 0,
+    erros: 0
+  };
+
+  flashcards.push(novoCard);
+  salvarFlashcards();
+  popularFiltroMaterias();
+  renderizarFlashcardsAgrupados();
+  atualizarEstatisticas();
+
+  const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
+  if (modal) modal.hide();
+
+  Swal.fire({ icon: 'success', title: 'Flashcard criado!', timer: 1500, showConfirmButton: false });
+}
+
+// ===== MOSTRAR CARD FOCO =====
+function mostrarCardFoco() {
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+    return;
+  }
+
+  const card = revisoesEmAndamento[indiceAtualFoco];
+
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = '📂 ' + card.tema;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+  document.getElementById('focoResposta').innerHTML = card.resposta;
+  document.getElementById('focoResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+
+  const nivelAtual = card.nivel || 0;
+  const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
+  document.getElementById('focoNivelAtual').textContent = 'Nível: ' + nivelAtual;
+  document.getElementById('focoSugestao').textContent = 'Sugestão: revise em ' + proximoIntervalo + ' dia(s)';
+  document.getElementById('focoInfoNivel').style.display = 'block';
+
+  document.getElementById('focoContador').textContent = 'Card ' + (indiceAtualFoco + 1) + ' de ' + revisoesEmAndamento.length;
+  document.getElementById('focoProgressoBarra').style.width = (((indiceAtualFoco + 1) / revisoesEmAndamento.length) * 100) + '%';
+
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'flex';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+  }
+}
+
+// ===== MOSTRAR RESPOSTA =====
+function mostrarRespostaFoco() {
+  document.getElementById('focoResposta').style.display = 'block';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'flex';
+}
+
+// ===== FINALIZAR REVISÃO =====
+function finalizarRevisao() {
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'none';
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+  }
+  document.body.style.overflow = 'auto';
+
+  localStorage.setItem('aviso_avisoCardsAtrasados_fechado', 'true');
+
+  renderizarFlashcardsAgrupados();
+  atualizarMensagemRevisar();
+  verificarCardsAtrasados();
+
+  Swal.fire({ icon: 'success', title: '🎉 Revisão concluída!', timer: 1500, showConfirmButton: false });
+}
+
+// ===== FECHAR MODO FOCO =====
+function fecharModoFoco() {
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'none';
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+  }
+  document.body.style.overflow = 'auto';
+}
+
+// ===== EDITAR FLASHCARD =====
+function editarFlashcard(id) {
+  const flashcard = flashcards.find(f => f.id == id);
+  if (!flashcard) return;
+
+  Swal.fire({
+    title: 'Editar Flashcard',
+    html: '<input id="editPergunta" class="swal2-input" value="' + flashcard.pergunta.replace(/"/g, '&quot;') + '">' +
+      '<textarea id="editResposta" class="swal2-textarea" rows="3">' + flashcard.resposta.replace(/"/g, '&quot;') + '</textarea>' +
+      '<input id="editTema" class="swal2-input" value="' + flashcard.tema + '">',
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    preConfirm: () => {
+      const pergunta = document.getElementById('editPergunta').value;
+      const resposta = document.getElementById('editResposta').value;
+      const tema = document.getElementById('editTema').value;
+      if (!pergunta || !resposta) { Swal.showValidationMessage('Preencha todos!'); return false; }
+      return { pergunta, resposta, tema };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      flashcard.pergunta = result.value.pergunta;
+      flashcard.resposta = result.value.resposta;
+      flashcard.tema = result.value.tema || "Geral";
+      salvarFlashcards();
+      renderizarFlashcardsAgrupados();
+      Swal.fire('Atualizado!', '', 'success');
+    }
+  });
+}
+
+// ===== EXCLUIR FLASHCARD =====
+function excluirFlashcard(id) {
+  Swal.fire({
+    title: 'Excluir flashcard?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim',
+    cancelButtonText: 'Cancelar'
+  }).then(result => {
+    if (result.isConfirmed) {
+      flashcards = flashcards.filter(f => f.id != id);
+      salvarFlashcards();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
+      Swal.fire('Excluído!', '', 'success');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.iniciarRevisao = iniciarRevisao;
+window.iniciarRevisaoLivre = iniciarRevisaoLivre;
+window.mostrarRespostaFoco = mostrarRespostaFoco;
+window.responderFlashcard = responderFlashcard;
+window.fecharModoFoco = fecharModoFoco;
+window.abrirModalFlashcard = abrirModalFlashcard;
+window.salvarFlashcard = salvarFlashcard;
+window.editarFlashcard = editarFlashcard;
+window.excluirFlashcard = excluirFlashcard;
+window.toggleAcordeon = toggleAcordeon;
+window.irParaAbaRevisar = irParaAbaRevisar;
+window.criarRevisaoPorProva = criarRevisaoPorProva;
+window.fecharAviso = fecharAviso;
+window.configurarFiltroRevisao = configurarFiltroRevisao;
+window.renderizarFlashcardsAgrupados = renderizarFlashcardsAgrupados;
+window.salvarFlashcards = salvarFlashcards;
+window.atualizarEstatisticas = atualizarEstatisticas;
+
+console.log('✅ REVISÃO COMPLETA CARREGADA!');
+
+
+// ===== SALVAR NO BACKEND TAMBÉM =====
+function salvarFlashcardNoBackend(card) {
+  apiFetch("flashcards", {
+    method: "POST",
+    body: JSON.stringify({
+      id_materia: card.materiaId,
+      pergunta: card.pergunta,
+      resposta: card.resposta,
+      tema: JSON.stringify({
+        tema: card.tema,
+        nivel: card.nivel,
+        dataProxima: card.dataProxima,
+        acertos: card.acertos,
+        erros: card.erros
+      })
+    })
+  }).then(res => {
+    if (res.ok) {
+      console.log('✅ Card salvo no backend!');
+    }
+  }).catch(err => {
+    console.log('⚠️ Não salvou no backend, mas salvou localmente.');
+  });
+}
+
+// Exporta
+window.salvarFlashcardNoBackend = salvarFlashcardNoBackend;
+
+console.log('✅ INTEGRAÇÃO COM BACKEND PRONTA!');
+
+// ===== NOVAS FUNÇÕES PARA A REFORMA =====
+// Trocar de aba
+function trocarAbaRevisao(aba) {
+  document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-aba="${aba}"]`).classList.add('active');
+
+  document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
+  document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
+  document.getElementById('abaSimulado').style.display = aba === 'simulado' ? 'block' : 'none';
+  document.getElementById('abaHistorico').style.display = aba === 'historico' ? 'block' : 'none';
+
+  if (aba === 'revisar') {
+    atualizarContadoresRevisao();
+  } else if (aba === 'simulado') {
+    carregarOpcoesSimulado();
+  } else if (aba === 'historico') {
+    renderizarHistoricoCompleto();
+  }
+}
+
+// Verificar se usuário tem método Teste Prático
+function verificarAcessoSimulado() {
+  const inteligenciaAtual = localStorage.getItem('inteligenciaAtiva') || 'linguistica';
+  const metodosData = metodosPorInteligencia[inteligenciaAtual];
+
+  if (!metodosData) return false;
+
+  const temTestePratico = metodosData.metodos.some(m =>
+    m.titulo.includes("Teste Prático") || m.titulo.includes("Teste Pratico")
+  );
+
+  const abaSimuladoBtn = document.getElementById('abaSimuladoBtn');
+  if (abaSimuladoBtn) {
+    abaSimuladoBtn.style.display = temTestePratico ? 'block' : 'none';
+  }
+
+  return temTestePratico;
+}
+
+// Atualizar contadores de revisão
+function atualizarContadoresRevisao() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  const countEl = document.getElementById('countPendentes');
+  if (countEl) {
+    countEl.textContent = cardsPendentes.length;
+    countEl.style.color = cardsPendentes.length === 0 ? '#22c55e' : cardsPendentes.length > 10 ? '#ef4444' : '#f59e0b';
+  }
+
+  // Atualizar texto de próxima revisão
+  const textoProxima = document.getElementById('textoProximaRevisao');
+  if (textoProxima && cardsPendentes.length > 0) {
+    const proximaData = cardsPendentes[0].dataProxima;
+    if (proximaData < hojeData) {
+      textoProxima.textContent = '⚠️ Você tem cards atrasados!';
+    } else if (proximaData === hojeData) {
+      textoProxima.textContent = '📅 Revisão de hoje!';
+    }
+  }
+}
+
+// ===== SIMULADO (TESTE PRÁTICO) =====
+let simuladoAtual = {
+  cards: [],
+  indice: 0,
+  acertos: 0,
+  erros: 0,
+  tempoPorQuestao: 60,
+  timer: null,
+  tempoRestante: 0,
+  modo: 'treino'
+};
+
+function carregarOpcoesSimulado() {
+  const selectMateria = document.getElementById('simuladoMateria');
+  const selectTema = document.getElementById('simuladoTema');
+
+  if (selectMateria) {
+    selectMateria.innerHTML = '<option value="todas">Todas as matérias</option>';
+    const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))].sort();
+    materiasUnicas.forEach(m => {
+      selectMateria.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+  }
+}
+
+function selecionarNumQuestoes(btn) {
+  document.querySelectorAll('[data-num]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function iniciarSimulado() {
+  const materia = document.getElementById('simuladoMateria').value;
+  const tema = document.getElementById('simuladoTema').value;
+  const numBtn = document.querySelector('[data-num].active');
+  const numQuestoes = numBtn ? numBtn.dataset.num : '10';
+  const tempo = parseInt(document.getElementById('simuladoTempo').value);
+  const modo = document.getElementById('modoTreino').checked ? 'treino' : 'prova';
+
+  let cardsSimulado = [...flashcards];
+
+  if (materia !== 'todas') {
+    cardsSimulado = cardsSimulado.filter(f => f.materiaNome === materia);
+  }
+
+  if (tema !== 'todos') {
+    cardsSimulado = cardsSimulado.filter(f => f.tema === tema);
+  }
+
+  // Embaralhar
+  cardsSimulado = cardsSimulado.sort(() => Math.random() - 0.5);
+
+  // Limitar número
+  if (numQuestoes !== 'todas') {
+    cardsSimulado = cardsSimulado.slice(0, parseInt(numQuestoes));
+  }
+
+  if (cardsSimulado.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Sem cards!',
+      text: 'Crie flashcards primeiro para fazer o simulado.'
+    });
+    return;
+  }
+
+  simuladoAtual = {
+    cards: cardsSimulado,
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: tempo,
+    timer: null,
+    tempoRestante: tempo,
+    modo: modo
+  };
+
+  mostrarCardSimulado();
+}
+
+function mostrarCardSimulado() {
+  if (simuladoAtual.indice >= simuladoAtual.cards.length) {
+    finalizarSimulado();
+    return;
+  }
+
+  const card = simuladoAtual.cards[simuladoAtual.indice];
+
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = '📂 ' + card.tema;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+  document.getElementById('focoResposta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+  document.getElementById('botoesResposta').style.display = 'none';
+
+  // Mostrar timer se houver limite
+  if (simuladoAtual.tempoPorQuestao > 0) {
+    document.getElementById('simuladoTimer').style.display = 'block';
+    iniciarTimerSimulado();
+  }
+
+  document.getElementById('focoContador').textContent =
+    `Questão ${simuladoAtual.indice + 1} de ${simuladoAtual.cards.length}`;
+
+  document.getElementById('focoProgressoBarra').style.width =
+    ((simuladoAtual.indice / simuladoAtual.cards.length) * 100) + '%';
+
+  document.getElementById('modoFocoContainer').style.display = 'flex';
+}
+
+function iniciarTimerSimulado() {
+  clearInterval(simuladoAtual.timer);
+  simuladoAtual.tempoRestante = simuladoAtual.tempoPorQuestao;
+
+  atualizarTimerSimulado();
+
+  simuladoAtual.timer = setInterval(() => {
+    simuladoAtual.tempoRestante--;
+    atualizarTimerSimulado();
+
+    if (simuladoAtual.tempoRestante <= 0) {
+      clearInterval(simuladoAtual.timer);
+      // Tempo esgotado, conta como erro
+      if (simuladoAtual.modo === 'treino') {
+        responderSimulado('errei');
+      }
+    }
+  }, 1000);
+}
+
+function atualizarTimerSimulado() {
+  const minutos = Math.floor(simuladoAtual.tempoRestante / 60);
+  const segundos = simuladoAtual.tempoRestante % 60;
+  document.getElementById('simuladoTempoRestante').textContent =
+    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+}
+
+function responderSimulado(resultado) {
+  clearInterval(simuladoAtual.timer);
+
+  const card = simuladoAtual.cards[simuladoAtual.indice];
+  const original = flashcards.find(f => f.id === card.id);
+
+  if (resultado === 'acertei') {
+    simuladoAtual.acertos++;
+    if (original) {
+      original.nivel = Math.min((original.nivel || 0) + 1, 4);
+      original.acertos = (original.acertos || 0) + 1;
+    }
+  } else if (resultado === 'errei') {
+    simuladoAtual.erros++;
+    if (original) {
+      original.nivel = 0;
+      original.erros = (original.erros || 0) + 1;
+    }
+  }
+
+  salvarFlashcards();
+  simuladoAtual.indice++;
+
+  if (simuladoAtual.indice >= simuladoAtual.cards.length) {
+    finalizarSimulado();
+  } else {
+    mostrarCardSimulado();
+  }
+}
+
+function finalizarSimulado() {
+  clearInterval(simuladoAtual.timer);
+
+  const total = simuladoAtual.acertos + simuladoAtual.erros;
+  const taxa = total > 0 ? Math.round((simuladoAtual.acertos / total) * 100) : 0;
+
+  document.getElementById('simuladoAcertos').textContent = simuladoAtual.acertos;
+  document.getElementById('simuladoErros').textContent = simuladoAtual.erros;
+  document.getElementById('simuladoTaxa').textContent = taxa + '%';
+
+  document.getElementById('simuladoTimer').style.display = 'none';
+  document.getElementById('focoPergunta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('simuladoResultado').style.display = 'block';
+
+  // Salvar no histórico
+  const historicoSimulado = {
+    data: new Date().toISOString(),
+    materia: document.getElementById('simuladoMateria').value,
+    acertos: simuladoAtual.acertos,
+    erros: simuladoAtual.erros,
+    taxa: taxa,
+    total: total
+  };
+
+  let historico = JSON.parse(localStorage.getItem('historicoSimulados') || '[]');
+  historico.push(historicoSimulado);
+  localStorage.setItem('historicoSimulados', JSON.stringify(historico));
+}
+
+// ===== INICIALIZAÇÃO =====
+async function initRevisao() {
+  console.log('🚀 Inicializando sistema de revisão...');
+
+  // Carregar matérias primeiro (aguardar completar)
+  await carregarMateriasDoBackend();
+  console.log('✅ Matérias carregadas:', materias);
+
+  // Depois carregar flashcards
+  await carregarFlashcardsDoBackend();
+  console.log('✅ Flashcards carregados:', flashcards);
+
+  // Popular filtros
+  await popularFiltroMaterias();
+
+  // Renderizar cards
+  renderizarFlashcardsAgrupados();
+
+  // Atualizar estatísticas
+  atualizarEstatisticas();
+
+  // Configurar abas
+  configurarAbasRevisao();
+
+  // Verificações
+  verificarAcessoSimulado();
+  verificarProvasProximas();
+  verificarCardsAtrasados();
+
+  console.log('✅ Sistema de revisão inicializado com sucesso!');
+}
+
+// ===== RENDERIZAR HISTÓRICO COMPLETO =====
+function renderizarHistoricoCompleto() {
+  const container = document.getElementById('historicoRevisoes');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // Coletar todas as revisões
+  let todasRevisoes = [];
+  flashcards.forEach(f => {
+    if (f.historico) {
+      f.historico.forEach(h => {
+        todasRevisoes.push({
+          ...h,
+          pergunta: f.pergunta,
+          materia: f.materiaNome,
+          tema: f.tema
+        });
+      });
+    }
+  });
+
+  // Ordenar por data (mais recente primeiro)
+  todasRevisoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+  if (todasRevisoes.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Nenhuma revisão ainda.</p>';
+    return;
+  }
+
+  // Agrupar por data
+  const porData = {};
+  todasRevisoes.forEach(rev => {
+    const data = new Date(rev.data).toLocaleDateString('pt-BR');
+    if (!porData[data]) porData[data] = [];
+    porData[data].push(rev);
+  });
+
+  // Renderizar agrupado por data
+  for (const data in porData) {
+    const revisoes = porData[data];
+    const acertos = revisoes.filter(r => r.resultado === 'acertei' || r.resultado === 'facil').length;
+    const taxa = Math.round((acertos / revisoes.length) * 100);
+
+    let html = `
+      <div style="margin-bottom: 20px; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+        <div style="background: #f9fafb; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;">
+          <strong style="color: #374151;">
+            <i class="bi bi-calendar3"></i> ${data}
+          </strong>
+          <span style="font-size: 0.85rem; color: ${taxa >= 70 ? '#22c55e' : taxa >= 50 ? '#f59e0b' : '#ef4444'};">
+            ${acertos}/${revisoes.length} acertos (${taxa}%)
+          </span>
+        </div>
+        <div style="padding: 10px 15px;">
+    `;
+
+    revisoes.forEach(rev => {
+      const icone = rev.resultado === 'acertei' ? '✅' : rev.resultado === 'facil' ? '🚀' : '❌';
+      const cor = rev.resultado === 'acertei' ? '#22c55e' : rev.resultado === 'facil' ? '#3b82f6' : '#ef4444';
+
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+          <div style="flex: 1;">
+            <p style="margin: 0; font-size: 0.85rem; color: #374151;">${rev.pergunta.substring(0, 60)}...</p>
+            <small style="color: #9ca3af;">${rev.materia} | ${rev.tema}</small>
+          </div>
+          <span style="font-size: 1.2rem; margin-left: 10px;">${icone}</span>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    container.innerHTML += html;
+  }
+}
+// ===== APLICAR FILTROS NOS CARDS =====
+function aplicarFiltrosCards() {
+  const busca = document.getElementById('buscaFlashcard')?.value.toLowerCase() || '';
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+
+  let cardsFiltrados = [...flashcards];
+
+  // Filtrar por matéria
+  if (filtroMateria !== 'todas') {
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  // Filtrar por busca
+  if (busca) {
+    cardsFiltrados = cardsFiltrados.filter(f =>
+      f.pergunta.toLowerCase().includes(busca) ||
+      f.resposta.toLowerCase().includes(busca) ||
+      f.tema.toLowerCase().includes(busca)
+    );
+  }
+
+  const container = document.getElementById('listaFlashcardsAgrupada');
+  if (!container) return;
+
+  if (cardsFiltrados.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px;">Nenhum flashcard encontrado!</p>';
+    return;
+  }
+
+  // Agrupar por matéria
+  const porMateria = {};
+  cardsFiltrados.forEach(f => {
+    if (!porMateria[f.materiaNome]) porMateria[f.materiaNome] = { temas: {}, count: 0 };
+    if (!porMateria[f.materiaNome].temas[f.tema]) porMateria[f.materiaNome].temas[f.tema] = [];
+    porMateria[f.materiaNome].temas[f.tema].push(f);
+    porMateria[f.materiaNome].count++;
+  });
+
+  let html = '';
+  let index = 0;
+
+  for (const materia in porMateria) {
+    const materiaData = porMateria[materia];
+    const materiaId = 'materia-' + index;
+
+    html += `
+      <div class="materia-acordeon">
+        <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
+          <div class="materia-titulo">
+            <i class="bi bi-journal-bookmark-fill"></i>
+            <h3>${materia}</h3>
+            <span class="materia-badge-count">${materiaData.count}</span>
+          </div>
+          <span class="materia-seta" id="${materiaId}-seta">▶</span>
+        </div>
+        <div class="materia-conteudo" id="${materiaId}-conteudo" style="display:none;">
+    `;
+
+    for (const tema in materiaData.temas) {
+      const cards = materiaData.temas[tema];
+
+      html += `
+        <div class="tema-grupo">
+          <div class="tema-header">
+            <i class="bi bi-folder2"></i>
+            <h4>${tema}</h4>
+            <span class="tema-badge-count">${cards.length}</span>
+          </div>
+      `;
+
+      cards.forEach(f => {
+        const isAtrasada = f.dataProxima < hoje();
+        const isHoje = f.dataProxima === hoje();
+        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
+
+        html += `
+          <div class="card-flashcard ${classeDestaque}">
+            <div class="card-pergunta">${f.pergunta}</div>
+            <div class="card-data">📅 ${formatarData(f.dataProxima)} | Nível: ${f.nivel || 0}</div>
+            <div class="card-acoes">
+              <button onclick="editarFlashcard(${f.id})"><i class="bi bi-pencil"></i></button>
+              <button onclick="excluirFlashcard(${f.id})"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    index++;
+  }
+
+  container.innerHTML = html;
+}
+// ===== ATUALIZAR MENSAGEM (VERSÃO ATUALIZADA) =====
+function atualizarMensagemRevisar() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let pendentes = flashcards.filter(f => f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    pendentes = pendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  const countEl = document.getElementById('countPendentes');
+  if (countEl) {
+    countEl.textContent = pendentes.length;
+    countEl.style.color = pendentes.length === 0 ? '#22c55e' : pendentes.length > 10 ? '#ef4444' : '#f59e0b';
+  }
+
+  // Atualizar texto de próxima revisão
+  const textoProxima = document.getElementById('textoProximaRevisao');
+  if (textoProxima) {
+    if (pendentes.length === 0) {
+      textoProxima.textContent = '✨ Tudo revisado por hoje!';
+    } else {
+      const atrasados = pendentes.filter(f => f.dataProxima < hojeData).length;
+      if (atrasados > 0) {
+        textoProxima.textContent = `⚠️ ${atrasados} card(s) atrasado(s)!`;
+      } else {
+        textoProxima.textContent = '📅 Revisão de hoje!';
+      }
+    }
+  }
+}
+// ===== INICIAR REVISÃO (COM FILTRO) =====
+function iniciarRevisao() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  if (cardsPendentes.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nada para revisar!',
+      text: 'Todos os cards foram revisados!'
+    });
+    return;
+  }
+
+  revisoesEmAndamento = cardsPendentes.sort(() => Math.random() - 0.5);
+  indiceAtualFoco = 0;
+  mostrarCardFoco();
+}
+
+// ===== INICIAR REVISÃO LIVRE (COM FILTRO) =====
+function iniciarRevisaoLivre() {
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsLivres = [...flashcards];
+  if (filtroMateria !== 'todas') {
+    cardsLivres = cardsLivres.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  revisoesEmAndamento = cardsLivres;
+  indiceAtualFoco = 0;
+
+  if (revisoesEmAndamento.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nenhum card!',
+      text: 'Crie flashcards primeiro.'
+    });
+    return;
+  }
+
+  mostrarCardFoco();
+}
+// ===== RESPONDER FLASHCARD (COM AVISO DE PRÓXIMA REVISÃO) =====
+function responderFlashcard(resultado) {
+  const card = revisoesEmAndamento[indiceAtualFoco];
+  const original = flashcards.find(f => f.id === card.id);
+  if (!original) return;
+
+  let dias = 1;
+
+  if (resultado === 'acertei') {
+    original.nivel = Math.min((original.nivel || 0) + 1, 4);
+    original.acertos = (original.acertos || 0) + 1;
+    dias = intervalosRevisao[original.nivel] || 1;
+  } else if (resultado === 'errei') {
+    original.nivel = 0;
+    original.erros = (original.erros || 0) + 1;
+    dias = 1;
+  } else if (resultado === 'facil') {
+    original.nivel = Math.min((original.nivel || 0) + 2, 4);
+    original.acertos = (original.acertos || 0) + 1;
+    dias = intervalosRevisao[original.nivel] || 1;
+  }
+
+  const novaData = new Date();
+  novaData.setDate(novaData.getDate() + dias);
+  original.dataProxima = novaData.toISOString().split('T')[0];
+
+  if (!original.historico) original.historico = [];
+  original.historico.push({
+    data: new Date().toISOString(),
+    resultado: resultado,
+    intervalo: dias
+  });
+
+  salvarFlashcards();
+  atualizarEstatisticas();
+
+  // Mostrar aviso de próxima revisão (apenas na revisão inteligente)
+  if (resultado === 'acertei' || resultado === 'facil') {
+    const proximaData = formatarData(original.dataProxima);
+    mostrarToast(`📅 Revise novamente em ${dias} dia(s) - ${proximaData}`, '#22c55e');
+  } else {
+    mostrarToast('🔄 Revise amanhã para fixar melhor!', '#f59e0b');
+  }
+
+  indiceAtualFoco++;
+
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+  } else {
+    mostrarCardFoco();
+  }
+}
+// ===== MOSTRAR TOAST =====
+function mostrarToast(mensagem, cor = '#22c55e') {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'info',
+    title: mensagem,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true,
+    background: '#fff',
+    customClass: {
+      popup: 'colored-toast'
+    }
+  });
+}
+
+// ===== EXPORTAR NOVAS FUNÇÕES =====
+window.trocarAbaRevisao = trocarAbaRevisao;
+window.verificarAcessoSimulado = verificarAcessoSimulado;
+window.atualizarContadoresRevisao = atualizarContadoresRevisao;
+window.carregarOpcoesSimulado = carregarOpcoesSimulado;
+window.selecionarNumQuestoes = selecionarNumQuestoes;
+window.iniciarSimulado = iniciarSimulado;
+window.responderSimulado = responderSimulado;
+window.finalizarSimulado = finalizarSimulado;
+window.renderizarHistoricoCompleto = renderizarHistoricoCompleto;
+window.aplicarFiltrosCards = aplicarFiltrosCards;
+window.mostrarToast = mostrarToast;
+
+
+// ===== ABRIR MODAL NOVA MATÉRIA =====
+function abrirModalNovaMateria() {
+  console.log('📚 [ABRIR] Abrindo modal de nova matéria...');
+
+  // Fecha o modal de flashcard se estiver aberto
+  const modalFlashcard = document.getElementById('modalRevisao');
+  if (modalFlashcard) {
+    const modalFlashcardInstance = bootstrap.Modal.getInstance(modalFlashcard);
+    if (modalFlashcardInstance) modalFlashcardInstance.hide();
+  }
+
+  // Limpa os campos usando os IDs CORRETOS do HTML
+  const nomeInput = document.getElementById('novaMateriaRevisaoNome');
+  const corInput = document.getElementById('novaMateriaRevisaoCor');
+
+  if (nomeInput) nomeInput.value = '';
+  if (corInput) corInput.value = '#9f042c';
+
+  // Abre o modal de nova matéria usando o ID CORRETO
+  const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+  if (modalNovaMateria) {
+    const modalInstance = new bootstrap.Modal(modalNovaMateria);
+    modalInstance.show();
+    console.log('✅ Modal de nova matéria aberto!');
+  } else {
+    console.error('❌ Modal modalNovaMateriaRevisao não encontrado!');
+  }
+}
+
+// ===== SALVAR NOVA MATÉRIA =====
+async function salvarNovaMateriaRevisao() {
+  console.log('💾 [SALVAR] Salvando nova matéria...');
+
+  // Usando os IDs CORRETOS do HTML
+  const nomeInput = document.getElementById('novaMateriaRevisaoNome');
+  const corInput = document.getElementById('novaMateriaRevisaoCor');
+
+  if (!nomeInput || !corInput) {
+    console.error('❌ Campos não encontrados!');
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Campos não encontrados!'
+    });
+    return;
+  }
+
+  const nome = nomeInput.value.trim();
+  const cor = corInput.value;
+
+  if (!nome) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Digite um nome!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    nomeInput.focus();
+    return;
+  }
+
+  // Verifica se já existe
+  if (materias && materias.some(m => m.nome.toLowerCase() === nome.toLowerCase())) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Matéria já existe!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  try {
+    // Tentar salvar no backend
+    let novaMateria = null;
+
+    if (typeof apiFetch === 'function') {
+      const response = await apiFetch('materias', {
+        method: 'POST',
+        body: JSON.stringify({ nome: nome, cor: cor })
+      });
+
+      if (response.ok) {
+        novaMateria = await response.json();
+        console.log('✅ Matéria salva no backend:', novaMateria);
+      }
+    }
+
+    // Se não salvou no backend, cria localmente
+    if (!novaMateria) {
+      novaMateria = {
+        id: Date.now(),
+        nome: nome,
+        cor: cor
+      };
+      console.log('📦 Matéria criada localmente:', novaMateria);
+    }
+
+    // Adiciona na lista local
+    if (!materias) materias = [];
+    materias.push(novaMateria);
+
+    // Salva no localStorage como backup
+    localStorage.setItem('materias_sistema', JSON.stringify(materias));
+
+    // Fecha o modal usando o ID CORRETO
+    const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+    if (modalNovaMateria) {
+      const modalInstance = bootstrap.Modal.getInstance(modalNovaMateria);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    // Atualiza os filtros e listas
+    if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+    if (typeof renderMaterias === 'function') renderMaterias();
+
+    // Limpa os campos
+    nomeInput.value = '';
+    corInput.value = '#9f042c';
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Matéria criada!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+  } catch (err) {
+    console.error('❌ Erro ao criar matéria:', err);
+
+    // Fallback local
+    const novaMateria = {
+      id: Date.now(),
+      nome: nome,
+      cor: cor
+    };
+
+    if (!materias) materias = [];
+    materias.push(novaMateria);
+
+    localStorage.setItem('materias_sistema', JSON.stringify(materias));
+
+    // Fecha o modal
+    const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+    if (modalNovaMateria) {
+      const modalInstance = bootstrap.Modal.getInstance(modalNovaMateria);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    // Atualiza os filtros
+    if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+    if (typeof renderMaterias === 'function') renderMaterias();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Matéria criada!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+}
+// ===== INICIALIZAÇÃO DA REVISÃO =====
+// Chama initRevisao quando a página carregar
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('📄 Página carregada, iniciando sistema...');
+
+  // Inicia a revisão apenas se a seção estiver visível
+  const revisaoSection = document.getElementById('revisaoSection');
+  if (revisaoSection && revisaoSection.style.display !== 'none') {
+    initRevisao();
+  }
+});
+
+// Função para mostrar a seção de revisão (chame quando navegar para revisão)
+function mostrarSecaoRevisao() {
+  const revisaoSection = document.getElementById('revisaoSection');
+  if (revisaoSection) {
+    revisaoSection.style.display = 'block';
+    initRevisao(); // Inicializa a revisão
+  }
+}
+
+// ===== EXPORTAR =====
+window.abrirModalNovaMateria = abrirModalNovaMateria;
+window.salvarNovaMateriaRevisao = salvarNovaMateriaRevisao;
+window.mostrarSecaoRevisao = mostrarSecaoRevisao;
