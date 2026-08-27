@@ -7658,6 +7658,523 @@ window.zoomOut = zoomOut;
 window.resetZoom = resetZoom;
 window.mostrarToast = mostrarToast;
 
+// =============================================
+// ===== DIAGRAMA DE FLUXO - INDEPENDENTE =====
+// =============================================
+
+let diagramaFluxoNos = [];
+let diagramaFluxoConexoes = [];
+let diagramaFluxoIdCounter = 0;
+let diagramaFluxoNoArrastando = null;
+let diagramaFluxoConectando = null;
+let diagramaFluxoOffsetX = 0;
+let diagramaFluxoOffsetY = 0;
+let diagramaFluxoCanvas = null;
+let diagramaFluxoCtx = null;
+let diagramaFluxoHistorico = [];
+let diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
+
+// Cores automáticas por tipo
+const coresFluxo = {
+  inicio: '#22c55e',   // Verde
+  processo: '#3b82f6', // Azul
+  decisao: '#f59e0b',  // Amarelo
+  fim: '#ef4444'       // Vermelho
+};
+
+// ===== ABRIR DIAGRAMA DE FLUXO =====
+function abrirDiagramaFluxo() {
+  console.log('🔀 Abrindo Diagrama de Fluxo');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+  
+  const modal = document.getElementById('diagramaFluxoModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      inicializarDiagramaFluxo();
+      renderizarDiagramasSalvos();
+    }, 100);
+  }
+}
+
+// ===== FECHAR DIAGRAMA DE FLUXO =====
+function fecharDiagramaFluxo() {
+  const modal = document.getElementById('diagramaFluxoModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== INICIALIZAR =====
+function inicializarDiagramaFluxo() {
+  diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
+  
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const canvas = document.getElementById('diagramaFluxoCanvas');
+  if (!container || !canvas) return;
+  
+  setTimeout(() => {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }, 200);
+  
+  diagramaFluxoCanvas = canvas;
+  diagramaFluxoCtx = canvas.getContext('2d');
+  diagramaFluxoNos = [];
+  diagramaFluxoConexoes = [];
+  diagramaFluxoHistorico = [];
+  
+  const nosContainer = document.getElementById('diagramaFluxoNosContainer');
+  if (nosContainer) nosContainer.innerHTML = '';
+  
+  const tituloInput = document.getElementById('diagramaFluxoTitulo');
+  if (tituloInput) tituloInput.value = '';
+  
+  // Clique no canvas = adicionar processo
+  container.onclick = function (e) {
+    if (e.target === container || e.target === canvas || e.target.id === 'diagramaFluxoNosContainer') {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      adicionarNoFluxo('processo', x - 60, y - 25);
+    }
+  };
+}
+
+// ===== ADICIONAR NÓ =====
+function adicionarNoFluxo(tipo, x, y) {
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const rect = container.getBoundingClientRect();
+  
+  // Posição padrão: centro do canvas com leve deslocamento
+  const posX = x || (container.offsetWidth / 2) - 60 + (diagramaFluxoNos.length * 30);
+  const posY = y || (container.offsetHeight / 2) - 25 + (diagramaFluxoNos.length * 20);
+  
+  const nomesPadrao = {
+    inicio: 'Início',
+    processo: 'Novo passo',
+    decisao: 'Pergunta?',
+    fim: 'Fim'
+  };
+  
+  const no = {
+    id: diagramaFluxoIdCounter++,
+    x: posX,
+    y: posY,
+    titulo: nomesPadrao[tipo] || 'Passo',
+    tipo: tipo,
+    cor: coresFluxo[tipo] || '#3b82f6',
+    labelSim: 'Sim',
+    labelNao: 'Não'
+  };
+  
+  diagramaFluxoNos.push(no);
+  renderizarNoFluxo(no);
+  return no;
+}
+
+// ===== RENDERIZAR NÓ =====
+function renderizarNoFluxo(no) {
+  const container = document.getElementById('diagramaFluxoNosContainer');
+  if (!container) return;
+  
+  const div = document.createElement('div');
+  div.id = `fluxo-no-${no.id}`;
+  div.style.cssText = `
+    position: absolute;
+    left: ${no.x}px;
+    top: ${no.y}px;
+    background: ${no.cor};
+    color: white;
+    cursor: grab;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-align: center;
+    min-width: 80px;
+    max-width: 160px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10;
+    word-wrap: break-word;
+    transition: box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Formato baseado no tipo
+  if (no.tipo === 'inicio' || no.tipo === 'fim') {
+    div.style.borderRadius = '50%';
+    div.style.padding = '25px 30px';
+    div.style.minWidth = '100px';
+    div.style.minHeight = '60px';
+  } else if (no.tipo === 'decisao') {
+    div.style.borderRadius = '0';
+    div.style.transform = 'rotate(45deg)';
+    div.style.padding = '20px';
+    div.style.minWidth = '90px';
+    div.style.minHeight = '90px';
+  } else {
+    div.style.borderRadius = '10px';
+    div.style.padding = '15px 20px';
+  }
+  
+  // Conteúdo (rotacionar de volta se for losango)
+  const conteudo = document.createElement('span');
+  conteudo.textContent = no.titulo;
+  if (no.tipo === 'decisao') {
+    conteudo.style.transform = 'rotate(-45deg)';
+  }
+  div.appendChild(conteudo);
+  
+  // Botão deletar
+  const btnDeletar = document.createElement('button');
+  btnDeletar.innerHTML = '×';
+  btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;z-index:20;';
+  btnDeletar.onclick = function (e) { e.stopPropagation(); deletarNoFluxo(no.id); };
+  div.appendChild(btnDeletar);
+  
+  div.onmouseenter = function () { btnDeletar.style.display = 'flex'; div.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)'; };
+  div.onmouseleave = function () { btnDeletar.style.display = 'none'; div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; };
+  
+  // Eventos
+  div.onmousedown = function (e) { if (e.target !== btnDeletar) iniciarArrastarNoFluxo(e, no.id); };
+  div.ondblclick = function (e) { e.preventDefault(); e.stopPropagation(); editarNoFluxo(no.id); };
+  div.onclick = function (e) { e.stopPropagation(); selecionarNoParaConectarFluxo(no.id, div); };
+  
+  container.appendChild(div);
+}
+
+// ===== EDITAR NÓ =====
+function editarNoFluxo(id) {
+  const no = diagramaFluxoNos.find(n => n.id === id);
+  if (!no) return;
+  
+  const tipoLabel = {
+    inicio: 'Início',
+    processo: 'Processo',
+    decisao: 'Decisão',
+    fim: 'Fim'
+  };
+  
+  Swal.fire({
+    title: `Editar ${tipoLabel[no.tipo] || 'Nó'}`,
+    html: `
+      <label style="font-weight:600;display:block;margin-bottom:5px;text-align:left;">Título:</label>
+      <input id="editFluxoTitulo" class="swal2-input" value="${no.titulo}">
+      
+      <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Tipo:</label>
+      <select id="editFluxoTipo" class="swal2-input">
+        <option value="inicio" ${no.tipo === 'inicio' ? 'selected' : ''}>🟢 Início</option>
+        <option value="processo" ${no.tipo === 'processo' ? 'selected' : ''}>🔵 Processo</option>
+        <option value="decisao" ${no.tipo === 'decisao' ? 'selected' : ''}>🟡 Decisão</option>
+        <option value="fim" ${no.tipo === 'fim' ? 'selected' : ''}>🔴 Fim</option>
+      </select>
+      
+      ${no.tipo === 'decisao' ? `
+        <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Label "Sim":</label>
+        <input id="editFluxoLabelSim" class="swal2-input" value="${no.labelSim || 'Sim'}">
+        <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Label "Não":</label>
+        <input id="editFluxoLabelNao" class="swal2-input" value="${no.labelNao || 'Não'}">
+      ` : ''}
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: no.cor,
+    preConfirm: () => {
+      const titulo = document.getElementById('editFluxoTitulo').value.trim();
+      if (!titulo) {
+        Swal.showValidationMessage('Digite um título!');
+        return false;
+      }
+      return {
+        titulo: titulo,
+        tipo: document.getElementById('editFluxoTipo').value,
+        labelSim: document.getElementById('editFluxoLabelSim')?.value || 'Sim',
+        labelNao: document.getElementById('editFluxoLabelNao')?.value || 'Não'
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      no.titulo = result.value.titulo;
+      no.tipo = result.value.tipo;
+      no.labelSim = result.value.labelSim;
+      no.labelNao = result.value.labelNao;
+      no.cor = coresFluxo[no.tipo] || '#3b82f6';
+      
+      const div = document.getElementById(`fluxo-no-${no.id}`);
+      if (div) div.remove();
+      renderizarNoFluxo(no);
+      desenharConexoesFluxo();
+    }
+  });
+}
+
+// ===== DELETAR NÓ =====
+function deletarNoFluxo(id) {
+  diagramaFluxoNos = diagramaFluxoNos.filter(no => no.id !== id);
+  diagramaFluxoConexoes = diagramaFluxoConexoes.filter(con => con.de !== id && con.para !== id);
+  const div = document.getElementById(`fluxo-no-${id}`);
+  if (div) div.remove();
+  desenharConexoesFluxo();
+}
+
+// ===== ARRASTAR NÓ =====
+function iniciarArrastarNoFluxo(e, id) {
+  const div = document.getElementById(`fluxo-no-${id}`);
+  if (!div) return;
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const rect = container.getBoundingClientRect();
+  diagramaFluxoNoArrastando = id;
+  diagramaFluxoOffsetX = e.clientX - rect.left - div.offsetLeft;
+  diagramaFluxoOffsetY = e.clientY - rect.top - div.offsetTop;
+  div.style.cursor = 'grabbing';
+  
+  document.onmousemove = function (e) {
+    if (diagramaFluxoNoArrastando === null) return;
+    const x = e.clientX - rect.left - diagramaFluxoOffsetX;
+    const y = e.clientY - rect.top - diagramaFluxoOffsetY;
+    const no = diagramaFluxoNos.find(n => n.id === diagramaFluxoNoArrastando);
+    if (no) {
+      no.x = x;
+      no.y = y;
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      requestAnimationFrame(desenharConexoesFluxo);
+    }
+  };
+  
+  document.onmouseup = function () {
+    const div = document.getElementById(`fluxo-no-${diagramaFluxoNoArrastando}`);
+    if (div) div.style.cursor = 'grab';
+    diagramaFluxoNoArrastando = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    desenharConexoesFluxo();
+  };
+}
+
+// ===== CONECTAR NÓS (com label) =====
+function selecionarNoParaConectarFluxo(id, div) {
+  document.querySelectorAll('#diagramaFluxoNosContainer > div.selecionado').forEach(el => el.style.outline = 'none');
+  
+  if (diagramaFluxoConectando === null) {
+    diagramaFluxoConectando = id;
+    div.style.outline = '3px solid #3b82f6';
+    div.style.outlineOffset = '3px';
+    mostrarToast('🔗 Clique em outro nó para conectar!', '#3b82f6');
+  } else if (diagramaFluxoConectando === id) {
+    diagramaFluxoConectando = null;
+    div.style.outline = 'none';
+  } else {
+    const noOrigem = diagramaFluxoNos.find(n => n.id === diagramaFluxoConectando);
+    const noDestino = diagramaFluxoNos.find(n => n.id === id);
+    
+    // Perguntar label da seta
+    Swal.fire({
+      title: 'Label da seta',
+      text: `De "${noOrigem.titulo}" para "${noDestino.titulo}"`,
+      input: 'text',
+      inputValue: noOrigem.tipo === 'decisao' ? noOrigem.labelSim : '',
+      inputPlaceholder: 'Ex: Sim, Não, Próximo passo...',
+      showCancelButton: true,
+      confirmButtonText: 'Conectar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3b82f6'
+    }).then(result => {
+      if (result.isConfirmed) {
+        const existe = diagramaFluxoConexoes.some(con => con.de === diagramaFluxoConectando && con.para === id);
+        if (!existe) {
+          diagramaFluxoConexoes.push({
+            de: diagramaFluxoConectando,
+            para: id,
+            label: result.value || ''
+          });
+          mostrarToast('✅ Conectado!', '#22c55e');
+        }
+        diagramaFluxoConectando = null;
+        desenharConexoesFluxo();
+      }
+    });
+  }
+}
+
+// ===== DESENHAR CONEXÕES COM SETAS E LABELS =====
+function desenharConexoesFluxo() {
+  if (!diagramaFluxoCanvas || !diagramaFluxoCtx) return;
+  const ctx = diagramaFluxoCtx;
+  ctx.clearRect(0, 0, diagramaFluxoCanvas.width, diagramaFluxoCanvas.height);
+  
+  diagramaFluxoConexoes.forEach(conexao => {
+    const de = diagramaFluxoNos.find(n => n.id === conexao.de);
+    const para = diagramaFluxoNos.find(n => n.id === conexao.para);
+    if (!de || !para) return;
+    
+    const x1 = de.x + 60;
+    const y1 = de.y + 30;
+    const x2 = para.x + 60;
+    const y2 = para.y + 30;
+    
+    // Linha
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Seta
+    const angulo = Math.atan2(y2 - y1, x2 - x1);
+    const tamanhoSeta = 12;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - tamanhoSeta * Math.cos(angulo - Math.PI / 6), y2 - tamanhoSeta * Math.sin(angulo - Math.PI / 6));
+    ctx.lineTo(x2 - tamanhoSeta * Math.cos(angulo + Math.PI / 6), y2 - tamanhoSeta * Math.sin(angulo + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = '#232b36ff';
+    ctx.fill();
+    
+    // Label
+    if (conexao.label) {
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+      ctx.font = 'bold 11px Poppins, sans-serif';
+      ctx.fillStyle = '#1f2937';
+      ctx.textAlign = 'center';
+      
+      // Fundo branco para o label
+      const larguraTexto = ctx.measureText(conexao.label).width + 10;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(midX - larguraTexto / 2, midY - 12, larguraTexto, 18);
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(midX - larguraTexto / 2, midY - 12, larguraTexto, 18);
+      
+      // Texto
+      ctx.fillStyle = '#1f2937';
+      ctx.fillText(conexao.label, midX, midY + 1);
+    }
+  });
+}
+
+// ===== SALVAR DIAGRAMA =====
+function salvarDiagramaFluxo() {
+  const titulo = document.getElementById('diagramaFluxoTitulo').value.trim();
+  if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
+  if (diagramaFluxoNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
+  
+  const diagrama = {
+    id: Date.now(),
+    titulo: titulo,
+    data: new Date().toISOString(),
+    nos: diagramaFluxoNos.map(no => ({ ...no })),
+    conexoes: diagramaFluxoConexoes
+  };
+  
+  diagramasFluxoSalvos.push(diagrama);
+  localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
+  renderizarDiagramasSalvos();
+  mostrarToast('✅ Diagrama salvo!', '#22c55e');
+}
+
+// ===== RENDERIZAR DIAGRAMAS SALVOS =====
+function renderizarDiagramasSalvos() {
+  const container = document.getElementById('listaDiagramasFluxoSalvos');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (diagramasFluxoSalvos.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum diagrama salvo.</p>';
+    return;
+  }
+  
+  [...diagramasFluxoSalvos].reverse().forEach(diagrama => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    div.innerHTML = `
+      <i class="bi bi-arrow-right-circle" style="color:#3b82f6;"></i>
+      <div style="flex:1;">
+        <strong>${diagrama.titulo}</strong><br>
+        <small>${diagrama.nos.length} nós • ${diagrama.conexoes.length} conexões</small>
+      </div>
+      <button onclick="event.stopPropagation();abrirDiagramaSalvo(${diagrama.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirDiagramaSalvo(${diagrama.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+    `;
+    div.onclick = () => abrirDiagramaSalvo(diagrama.id);
+    container.appendChild(div);
+  });
+}
+
+// ===== ABRIR DIAGRAMA SALVO =====
+function abrirDiagramaSalvo(id) {
+  const diagrama = diagramasFluxoSalvos.find(d => d.id === id);
+  if (!diagrama) return;
+  
+  abrirDiagramaFluxo();
+  setTimeout(() => {
+    document.getElementById('diagramaFluxoTitulo').value = diagrama.titulo;
+    diagramaFluxoNos = [];
+    diagramaFluxoConexoes = [];
+    document.getElementById('diagramaFluxoNosContainer').innerHTML = '';
+    diagrama.nos.forEach(no => {
+      diagramaFluxoNos.push(no);
+      renderizarNoFluxo(no);
+    });
+    diagramaFluxoConexoes = diagrama.conexoes || [];
+    desenharConexoesFluxo();
+  }, 300);
+}
+
+// ===== EXCLUIR DIAGRAMA SALVO =====
+function excluirDiagramaSalvo(id) {
+  Swal.fire({
+    title: 'Excluir diagrama?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      diagramasFluxoSalvos = diagramasFluxoSalvos.filter(d => d.id !== id);
+      localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
+      renderizarDiagramasSalvos();
+      mostrarToast('🗑️ Excluído!', '#ef4444');
+    }
+  });
+}
+
+// ===== LIMPAR =====
+function limparDiagramaFluxo() {
+  Swal.fire({
+    title: 'Limpar tudo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, limpar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      inicializarDiagramaFluxo();
+      mostrarToast('🗑️ Limpo!', '#ef4444');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.abrirDiagramaFluxo = abrirDiagramaFluxo;
+window.fecharDiagramaFluxo = fecharDiagramaFluxo;
+window.adicionarNoFluxo = adicionarNoFluxo;
+window.editarNoFluxo = editarNoFluxo;
+window.deletarNoFluxo = deletarNoFluxo;
+window.limparDiagramaFluxo = limparDiagramaFluxo;
+window.salvarDiagramaFluxo = salvarDiagramaFluxo;
+window.abrirDiagramaSalvo = abrirDiagramaSalvo;
+window.excluirDiagramaSalvo = excluirDiagramaSalvo;
+
 // ===== GRAVADOR DE ÁUDIO (Feynman + Podcast) - VERSÃO MODAL =====
 
 let mediaRecorder = null;
@@ -8864,6 +9381,20 @@ window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
       btn.onclick = function () { window.fecharMetodoModal(); window.abrirMapaMental(); };
       footer.appendChild(btn);
     }
+    // DIAGRAMA DE FLUXOS
+else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes("diagrama de fluxos") ||
+         metodo.titulo.includes("Fluxos") || metodo.titulo.includes("fluxos")) {
+  console.log('✅ Diagrama de Fluxos');
+  const btn = document.createElement("button");
+  btn.className = "btn-aplicar";
+  btn.style.background = metodosData.cor;
+  btn.innerHTML = `<i class="bi bi-arrow-right-circle"></i> Criar Diagrama de Fluxo`;
+  btn.onclick = function () { 
+    window.fecharMetodoModal(); 
+    window.abrirDiagramaFluxo(); 
+  };
+  footer.appendChild(btn);
+}
     // 5. ESTUDO COM VÍDEOS
     else if (metodo.titulo.includes("Vídeos") || metodo.titulo.includes("Videos") ||
       metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
