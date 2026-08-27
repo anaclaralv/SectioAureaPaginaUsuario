@@ -8922,6 +8922,21 @@ window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
       btn.onclick = function () { window.irParaRevisao("flashcards", metodo.titulo); };
       footer.appendChild(btn);
     }
+    // LEITURA SAVORING  ← NOVO BLOCO ADICIONADO
+    else if (metodo.titulo.includes("Leitura Savoring") || 
+             metodo.titulo.includes("leitura savoring") ||
+             metodo.titulo.includes("Leitura") && metodo.titulo.includes("Savoring")) {
+      console.log('✅ Leitura Savoring');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-book"></i> Iniciar Leitura Savoring`;
+      btn.onclick = function () { 
+        window.fecharMetodoModal(); 
+        window.abrirLeituraSavoring(); 
+      };
+      footer.appendChild(btn);
+    }
     // 10. REVISÃO
     else if (metodo.irParaRevisao) {
       console.log('✅ Revisão');
@@ -8942,7 +8957,7 @@ window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
       btn.onclick = window.fecharMetodoModal;
       footer.appendChild(btn);
     }
-  } 3
+  } 
 
   const modalOverlay = document.getElementById("metodoModalOverlay");
   if (modalOverlay) {
@@ -10686,3 +10701,475 @@ window.responderContexto = responderContexto;
 window.abrirModalNovaMateria = abrirModalNovaMateria;
 window.salvarNovaMateriaRevisao = salvarNovaMateriaRevisao;
 window.mostrarSecaoRevisao = mostrarSecaoRevisao;
+
+// ===== LEITURA SAVORING =====
+let leituraSavoringAtual = {
+  titulo: '',
+  texto: '',
+  trechos: [],
+  trechoAtual: 0,
+  anotacoes: [],
+  timer: null,
+  tempoRestante: 0,
+  tempoPorTrecho: 2,
+  pausado: false
+};
+
+// Abrir modal
+function abrirLeituraSavoring() {
+  console.log('📖 [LEITURA] Abrindo Leitura Savoring...');
+  
+  // Resetar campos
+  document.getElementById('leituraTitulo').value = '';
+  document.getElementById('leituraTexto').value = '';
+  document.getElementById('leituraTempoTrecho').value = '2';
+  
+  // Mostrar passo 1
+  document.getElementById('leituraInicio').style.display = 'block';
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Mostrar modal
+  document.getElementById('leituraSavoringModalOverlay').style.display = 'flex';
+}
+
+// Fechar modal
+function fecharLeituraSavoring() {
+  console.log('📖 [LEITURA] Fechando Leitura Savoring...');
+  
+  // Limpar timer
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  document.getElementById('leituraSavoringModalOverlay').style.display = 'none';
+}
+
+// Iniciar leitura
+function iniciarLeituraSavoring() {
+  const titulo = document.getElementById('leituraTitulo').value.trim();
+  const texto = document.getElementById('leituraTexto').value.trim();
+  const tempoPorTrecho = parseInt(document.getElementById('leituraTempoTrecho').value);
+  
+  if (!titulo) {
+    Swal.fire({ icon: 'warning', title: 'Digite um título!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+  
+  if (!texto) {
+    Swal.fire({ icon: 'warning', title: 'Cole o texto para leitura!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+  
+  // Dividir texto em trechos (por parágrafos ou frases)
+  const trechos = dividirTextoEmTrechos(texto);
+  
+  leituraSavoringAtual = {
+    titulo: titulo,
+    texto: texto,
+    trechos: trechos,
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: tempoPorTrecho * 60,
+    tempoPorTrecho: tempoPorTrecho,
+    pausado: false
+  };
+  
+  // Mostrar modo leitura
+  document.getElementById('leituraInicio').style.display = 'none';
+  document.getElementById('leituraModo').style.display = 'block';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Mostrar primeiro trecho
+  mostrarTrechoLeitura();
+}
+
+// Dividir texto em trechos
+function dividirTextoEmTrechos(texto) {
+  // Divide por parágrafos primeiro
+  const paragrafos = texto.split('\n').filter(p => p.trim().length > 0);
+  
+  if (paragrafos.length <= 1) {
+    // Se só tem um parágrafo, divide por frases
+    const frases = texto.split(/(?<=[.!?])\s+/).filter(f => f.trim().length > 0);
+    
+    // Agrupa frases em trechos de ~3 frases
+    const trechos = [];
+    for (let i = 0; i < frases.length; i += 3) {
+      trechos.push(frases.slice(i, i + 3).join(' '));
+    }
+    return trechos.length > 0 ? trechos : [texto];
+  }
+  
+  return paragrafos;
+}
+
+// Mostrar trecho atual
+function mostrarTrechoLeitura() {
+  const { trechos, trechoAtual, titulo, tempoPorTrecho } = leituraSavoringAtual;
+  
+  if (trechoAtual >= trechos.length) {
+    mostrarResumoLeitura();
+    return;
+  }
+  
+  document.getElementById('leituraTituloAtual').textContent = titulo;
+  document.getElementById('leituraTrechoAtual').textContent = trechoAtual + 1;
+  document.getElementById('leituraTrechoTotal').textContent = trechos.length;
+  document.getElementById('leituraTrechoTexto').textContent = trechos[trechoAtual];
+  
+  // Iniciar timer
+  leituraSavoringAtual.tempoRestante = tempoPorTrecho * 60;
+  leituraSavoringAtual.pausado = false;
+  
+  document.getElementById('btnPausarLeitura').innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+  
+  iniciarTimerLeitura();
+}
+
+// Iniciar timer
+function iniciarTimerLeitura() {
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+  }
+  
+  leituraSavoringAtual.timer = setInterval(() => {
+    if (!leituraSavoringAtual.pausado) {
+      leituraSavoringAtual.tempoRestante--;
+      atualizarTimerLeitura();
+      
+      if (leituraSavoringAtual.tempoRestante <= 0) {
+        clearInterval(leituraSavoringAtual.timer);
+        leituraSavoringAtual.timer = null;
+        
+        // Tempo esgotado, ir para reflexão
+        Swal.fire({
+          icon: 'info',
+          title: 'Tempo esgotado!',
+          text: 'Hora de refletir sobre o que leu.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        setTimeout(() => {
+          mostrarReflexaoLeitura();
+        }, 2000);
+      }
+    }
+  }, 1000);
+}
+
+// Atualizar timer
+function atualizarTimerLeitura() {
+  const minutos = Math.floor(leituraSavoringAtual.tempoRestante / 60);
+  const segundos = leituraSavoringAtual.tempoRestante % 60;
+  document.getElementById('leituraTimer').textContent = 
+    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+}
+
+// Pausar leitura
+function pausarLeituraSavoring() {
+  leituraSavoringAtual.pausado = !leituraSavoringAtual.pausado;
+  
+  const btn = document.getElementById('btnPausarLeitura');
+  if (leituraSavoringAtual.pausado) {
+    btn.innerHTML = '<i class="bi bi-play-fill"></i> Continuar';
+    btn.style.background = '#22c55e';
+  } else {
+    btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+    btn.style.background = '#f59e0b';
+  }
+}
+
+// Próximo trecho
+function proximoTrechoLeitura() {
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  mostrarReflexaoLeitura();
+}
+
+// Mostrar reflexão
+function mostrarReflexaoLeitura() {
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'block';
+  document.getElementById('leituraAnotacao').value = '';
+  document.getElementById('leituraAnotacao').focus();
+}
+
+// Salvar reflexão
+function salvarReflexaoLeitura() {
+  const anotacao = document.getElementById('leituraAnotacao').value.trim();
+  const { trechos, trechoAtual } = leituraSavoringAtual;
+  
+  if (anotacao) {
+    leituraSavoringAtual.anotacoes.push({
+      trecho: trechoAtual + 1,
+      texto: anotacao,
+      data: new Date().toISOString()
+    });
+  }
+  
+  // Avançar para próximo trecho
+  leituraSavoringAtual.trechoAtual++;
+  
+  if (leituraSavoringAtual.trechoAtual >= trechos.length) {
+    mostrarResumoLeitura();
+  } else {
+    document.getElementById('leituraReflexao').style.display = 'none';
+    document.getElementById('leituraModo').style.display = 'block';
+    mostrarTrechoLeitura();
+  }
+}
+
+// Pular reflexão
+function pularReflexaoLeitura() {
+  const { trechos, trechoAtual } = leituraSavoringAtual;
+  
+  leituraSavoringAtual.trechoAtual++;
+  
+  if (leituraSavoringAtual.trechoAtual >= trechos.length) {
+    mostrarResumoLeitura();
+  } else {
+    document.getElementById('leituraReflexao').style.display = 'none';
+    document.getElementById('leituraModo').style.display = 'block';
+    mostrarTrechoLeitura();
+  }
+}
+
+// Mostrar resumo
+function mostrarResumoLeitura() {
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'block';
+  
+  const container = document.getElementById('leituraResumoAnotacoes');
+  
+  if (leituraSavoringAtual.anotacoes.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
+  } else {
+    container.innerHTML = leituraSavoringAtual.anotacoes.map(a => `
+      <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--cor-primaria);">
+        <strong style="color: #4b5563; font-size: 0.8rem;">Trecho ${a.trecho}:</strong>
+        <p style="margin: 5px 0 0; color: #374151; font-size: 0.9rem;">${a.texto}</p>
+      </div>
+    `).join('');
+  }
+  
+  // Salvar no histórico
+  salvarLeituraNoHistorico();
+}
+
+// Salvar leitura no histórico
+function salvarLeituraNoHistorico() {
+  const leitura = {
+    id: Date.now(),
+    titulo: leituraSavoringAtual.titulo,
+    data: new Date().toISOString(),
+    totalTrechos: leituraSavoringAtual.trechos.length,
+    anotacoes: leituraSavoringAtual.anotacoes
+  };
+  
+  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  historico.push(leitura);
+  localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+  
+  console.log('✅ [LEITURA] Leitura salva no histórico:', leitura);
+}
+
+// Exportar funções
+window.abrirLeituraSavoring = abrirLeituraSavoring;
+window.fecharLeituraSavoring = fecharLeituraSavoring;
+window.iniciarLeituraSavoring = iniciarLeituraSavoring;
+window.pausarLeituraSavoring = pausarLeituraSavoring;
+window.proximoTrechoLeitura = proximoTrechoLeitura;
+window.salvarReflexaoLeitura = salvarReflexaoLeitura;
+window.pularReflexaoLeitura = pularReflexaoLeitura;
+
+// ===== HISTÓRICO DE LEITURAS =====
+
+// Carregar histórico
+function carregarHistoricoLeituras() {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const count = document.getElementById('leituraHistoricoCount');
+  if (count) count.textContent = historico.length;
+  
+  return historico;
+}
+
+// Mostrar/esconder histórico
+function toggleHistoricoLeituras() {
+  const lista = document.getElementById('leituraHistoricoLista');
+  const seta = document.getElementById('leituraHistoricoSeta');
+  
+  if (lista.style.display === 'none') {
+    lista.style.display = 'block';
+    seta.style.transform = 'rotate(180deg)';
+    renderizarHistoricoLeituras();
+  } else {
+    lista.style.display = 'none';
+    seta.style.transform = 'rotate(0deg)';
+  }
+}
+
+// Renderizar histórico
+function renderizarHistoricoLeituras() {
+  const container = document.getElementById('leituraHistoricoLista');
+  if (!container) return;
+  
+  const historico = carregarHistoricoLeituras();
+  
+  if (historico.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; text-align: center; font-size: 0.8rem;">Nenhuma leitura salva ainda.</p>';
+    return;
+  }
+  
+  // Ordenar por data (mais recente primeiro)
+  historico.sort((a, b) => new Date(b.data) - new Date(a.data));
+  
+  container.innerHTML = historico.map(leitura => `
+    <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; cursor: pointer; transition: 0.2s;"
+         onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
+         onmouseout="this.style.boxShadow='none'"
+         onclick="verLeituraSalva(${leitura.id})">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <strong style="font-size: 0.85rem; color: #374151; display: block;">${leitura.titulo}</strong>
+          <small style="color: #9ca3af; font-size: 0.7rem;">
+            ${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s) • ${leitura.anotacoes.length} anotação(ões)
+          </small>
+        </div>
+        <button onclick="event.stopPropagation(); excluirLeituraSalva(${leitura.id})"
+                style="background: #fee2e2; color: #dc2626; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; font-size: 0.7rem;">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Ver leitura salva
+function verLeituraSalva(id) {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const leitura = historico.find(l => l.id === id);
+  
+  if (!leitura) return;
+  
+  let html = `
+    <div style="margin-bottom: 15px;">
+      <h4 style="color: #374151; margin-bottom: 5px;">${leitura.titulo}</h4>
+      <small style="color: #9ca3af;">${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s)</small>
+    </div>
+  `;
+  
+  if (leitura.anotacoes && leitura.anotacoes.length > 0) {
+    html += leitura.anotacoes.map(a => `
+      <div style="background: #f9fafb; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--cor-primaria);">
+        <strong style="color: #4b5563; font-size: 0.8rem;">Trecho ${a.trecho}:</strong>
+        <p style="margin: 5px 0 0; color: #374151; font-size: 0.85rem;">${a.texto}</p>
+      </div>
+    `).join('');
+  } else {
+    html += '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
+  }
+  
+  Swal.fire({
+    title: '📖 Leitura Salva',
+    html: html,
+    showConfirmButton: true,
+    confirmButtonText: 'Fechar',
+    confirmButtonColor: '#9f042c',
+    width: '600px'
+  });
+}
+
+// Excluir leitura salva
+function excluirLeituraSalva(id) {
+  Swal.fire({
+    title: 'Excluir leitura?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+      historico = historico.filter(l => l.id !== id);
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+      
+      renderizarHistoricoLeituras();
+      carregarHistoricoLeituras();
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Excluída!',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+// Atualizar a função salvarLeituraNoHistorico para incluir o texto
+function salvarLeituraNoHistorico() {
+  const leitura = {
+    id: Date.now(),
+    titulo: leituraSavoringAtual.titulo,
+    data: new Date().toISOString(),
+    totalTrechos: leituraSavoringAtual.trechos.length,
+    anotacoes: leituraSavoringAtual.anotacoes,
+    textoCompleto: leituraSavoringAtual.texto // Salvar o texto completo também
+  };
+  
+  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  historico.push(leitura);
+  localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+  
+  console.log('✅ [LEITURA] Leitura salva no histórico:', leitura);
+  
+  // Atualizar contador
+  carregarHistoricoLeituras();
+}
+
+// Atualizar a função abrirLeituraSavoring para carregar histórico
+function abrirLeituraSavoring() {
+  console.log('📖 [LEITURA] Abrindo Leitura Savoring...');
+  
+  // Resetar campos
+  document.getElementById('leituraTitulo').value = '';
+  document.getElementById('leituraTexto').value = '';
+  document.getElementById('leituraTempoTrecho').value = '2';
+  
+  // Mostrar passo 1
+  document.getElementById('leituraInicio').style.display = 'block';
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Resetar histórico
+  document.getElementById('leituraHistoricoLista').style.display = 'none';
+  document.getElementById('leituraHistoricoSeta').style.transform = 'rotate(0deg)';
+  carregarHistoricoLeituras();
+  
+  // Mostrar modal
+  document.getElementById('leituraSavoringModalOverlay').style.display = 'flex';
+}
+
+// Exportar funções
+window.toggleHistoricoLeituras = toggleHistoricoLeituras;
+window.renderizarHistoricoLeituras = renderizarHistoricoLeituras;
+window.verLeituraSalva = verLeituraSalva;
+window.excluirLeituraSalva = excluirLeituraSalva;
+window.carregarHistoricoLeituras = carregarHistoricoLeituras;
