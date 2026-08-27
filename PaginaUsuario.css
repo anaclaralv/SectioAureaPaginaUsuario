@@ -5464,3 +5464,13 @@ canvas {
 .swal2-container {
   z-index: 999999 !important;
 }
+
+/* ===== CAMPO DE TEXTO DA LEITURA SAVORING ===== */
+#leituraTexto {
+  white-space: pre-wrap !important;      /* Mantém quebras de linha */
+  overflow-wrap: break-word !important;  /* Quebra palavras longas */
+  word-wrap: break-word !important;      /* Compatibilidade */
+  word-break: break-word !important;     /* Força quebra */
+  line-height: 1.6 !important;           /* Espaçamento entre linhas */
+  resize: vertical !important;           /* Só redimensiona vertical */
+}
