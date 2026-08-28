@@ -5465,6 +5465,7 @@ canvas {
   z-index: 999999 !important;
 }
 
+
 /* ===== CAMPO DE TEXTO DA LEITURA SAVORING ===== */
 #leituraTexto {
   white-space: pre-wrap !important;      /* Mantém quebras de linha */
@@ -5473,4 +5474,127 @@ canvas {
   word-break: break-word !important;     /* Força quebra */
   line-height: 1.6 !important;           /* Espaçamento entre linhas */
   resize: vertical !important;           /* Só redimensiona vertical */
+}
+
+/* ===== MODAL GRUPOS DE ESTUDO - RESPONSIVO ===== */
+
+#gruposEstudoModalOverlay > div {
+  width: 95% !important;
+  max-width: 1100px !important;
+  height: 90vh !important;
+  max-height: 800px !important;
+  border-radius: 20px !important;
+}
+
+/* Cabeçalho do modal */
+#gruposEstudoModalOverlay .swal2-popup {
+  max-width: 85vw !important;
+}
+
+/* Em telas médias */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #gruposEstudoModalOverlay > div {
+    width: 90% !important;
+    height: 85vh !important;
+  }
+  
+  #gruposEstudoModalOverlay h2 {
+    font-size: 1.1rem !important;
+  }
+  
+  #gruposEstudoModalOverlay button {
+    font-size: 0.75rem !important;
+    padding: 8px 14px !important;
+  }
+}
+
+/* Em telas pequenas */
+@media (max-width: 768px) {
+  #gruposEstudoModalOverlay {
+    padding: 10px !important;
+  }
+  
+  #gruposEstudoModalOverlay > div {
+    width: 98% !important;
+    height: 90vh !important;
+    border-radius: 15px !important;
+  }
+  
+  /* Cabeçalho empilhado */
+  #gruposEstudoModalOverlay > div > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 15px !important;
+  }
+  
+  /* Botões do cabeçalho */
+  #gruposEstudoModalOverlay > div > div:first-child > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  
+  #gruposEstudoModalOverlay > div > div:first-child button {
+    flex: 1 !important;
+    min-width: 100px !important;
+    font-size: 0.7rem !important;
+    padding: 8px 10px !important;
+    white-space: normal !important;
+  }
+  
+  /* Conteúdo */
+  #gruposEstudoModalOverlay > div > div:nth-child(2) {
+    padding: 15px !important;
+  }
+  
+  /* Cards de grupo */
+  #gruposEstudoModalOverlay .card-grupo {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+  
+  /* Abas */
+  .aba-grupo-btn {
+    font-size: 0.7rem !important;
+    padding: 8px 10px !important;
+  }
+  
+  /* Detalhe do grupo */
+  #detalheGrupoEstudo {
+    padding: 10px !important;
+  }
+  
+  /* Botões de ação */
+  #detalheGrupoEstudo button {
+    font-size: 0.7rem !important;
+    padding: 8px 12px !important;
+    white-space: normal !important;
+  }
+}
+
+/* Celular muito pequeno */
+@media (max-width: 480px) {
+  #gruposEstudoModalOverlay > div {
+    height: 92vh !important;
+  }
+  
+  #gruposEstudoModalOverlay h2 {
+    font-size: 0.9rem !important;
+  }
+  
+  #gruposEstudoModalOverlay > div > div:first-child button {
+    font-size: 0.65rem !important;
+    padding: 6px 8px !important;
+  }
+  
+  .aba-grupo-btn {
+    font-size: 0.65rem !important;
+    padding: 6px 8px !important;
+  }
+  
+  .aba-grupo-btn i {
+    display: none !important; /* Esconde ícones em telas muito pequenas */
+  }
 }

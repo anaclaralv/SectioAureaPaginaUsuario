@@ -7686,7 +7686,7 @@ const coresFluxo = {
 function abrirDiagramaFluxo() {
   console.log('🔀 Abrindo Diagrama de Fluxo');
   if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
-  
+
   const modal = document.getElementById('diagramaFluxoModalOverlay');
   if (modal) {
     modal.style.display = 'flex';
@@ -7706,28 +7706,28 @@ function fecharDiagramaFluxo() {
 // ===== INICIALIZAR =====
 function inicializarDiagramaFluxo() {
   diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
-  
+
   const container = document.getElementById('diagramaFluxoCanvasContainer');
   const canvas = document.getElementById('diagramaFluxoCanvas');
   if (!container || !canvas) return;
-  
+
   setTimeout(() => {
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
   }, 200);
-  
+
   diagramaFluxoCanvas = canvas;
   diagramaFluxoCtx = canvas.getContext('2d');
   diagramaFluxoNos = [];
   diagramaFluxoConexoes = [];
   diagramaFluxoHistorico = [];
-  
+
   const nosContainer = document.getElementById('diagramaFluxoNosContainer');
   if (nosContainer) nosContainer.innerHTML = '';
-  
+
   const tituloInput = document.getElementById('diagramaFluxoTitulo');
   if (tituloInput) tituloInput.value = '';
-  
+
   // Clique no canvas = adicionar processo
   container.onclick = function (e) {
     if (e.target === container || e.target === canvas || e.target.id === 'diagramaFluxoNosContainer') {
@@ -7743,18 +7743,18 @@ function inicializarDiagramaFluxo() {
 function adicionarNoFluxo(tipo, x, y) {
   const container = document.getElementById('diagramaFluxoCanvasContainer');
   const rect = container.getBoundingClientRect();
-  
+
   // Posição padrão: centro do canvas com leve deslocamento
   const posX = x || (container.offsetWidth / 2) - 60 + (diagramaFluxoNos.length * 30);
   const posY = y || (container.offsetHeight / 2) - 25 + (diagramaFluxoNos.length * 20);
-  
+
   const nomesPadrao = {
     inicio: 'Início',
     processo: 'Novo passo',
     decisao: 'Pergunta?',
     fim: 'Fim'
   };
-  
+
   const no = {
     id: diagramaFluxoIdCounter++,
     x: posX,
@@ -7765,7 +7765,7 @@ function adicionarNoFluxo(tipo, x, y) {
     labelSim: 'Sim',
     labelNao: 'Não'
   };
-  
+
   diagramaFluxoNos.push(no);
   renderizarNoFluxo(no);
   return no;
@@ -7775,7 +7775,7 @@ function adicionarNoFluxo(tipo, x, y) {
 function renderizarNoFluxo(no) {
   const container = document.getElementById('diagramaFluxoNosContainer');
   if (!container) return;
-  
+
   const div = document.createElement('div');
   div.id = `fluxo-no-${no.id}`;
   div.style.cssText = `
@@ -7800,7 +7800,7 @@ function renderizarNoFluxo(no) {
     align-items: center;
     justify-content: center;
   `;
-  
+
   // Formato baseado no tipo
   if (no.tipo === 'inicio' || no.tipo === 'fim') {
     div.style.borderRadius = '50%';
@@ -7817,7 +7817,7 @@ function renderizarNoFluxo(no) {
     div.style.borderRadius = '10px';
     div.style.padding = '15px 20px';
   }
-  
+
   // Conteúdo (rotacionar de volta se for losango)
   const conteudo = document.createElement('span');
   conteudo.textContent = no.titulo;
@@ -7825,22 +7825,22 @@ function renderizarNoFluxo(no) {
     conteudo.style.transform = 'rotate(-45deg)';
   }
   div.appendChild(conteudo);
-  
+
   // Botão deletar
   const btnDeletar = document.createElement('button');
   btnDeletar.innerHTML = '×';
   btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;z-index:20;';
   btnDeletar.onclick = function (e) { e.stopPropagation(); deletarNoFluxo(no.id); };
   div.appendChild(btnDeletar);
-  
+
   div.onmouseenter = function () { btnDeletar.style.display = 'flex'; div.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)'; };
   div.onmouseleave = function () { btnDeletar.style.display = 'none'; div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; };
-  
+
   // Eventos
   div.onmousedown = function (e) { if (e.target !== btnDeletar) iniciarArrastarNoFluxo(e, no.id); };
   div.ondblclick = function (e) { e.preventDefault(); e.stopPropagation(); editarNoFluxo(no.id); };
   div.onclick = function (e) { e.stopPropagation(); selecionarNoParaConectarFluxo(no.id, div); };
-  
+
   container.appendChild(div);
 }
 
@@ -7848,14 +7848,14 @@ function renderizarNoFluxo(no) {
 function editarNoFluxo(id) {
   const no = diagramaFluxoNos.find(n => n.id === id);
   if (!no) return;
-  
+
   const tipoLabel = {
     inicio: 'Início',
     processo: 'Processo',
     decisao: 'Decisão',
     fim: 'Fim'
   };
-  
+
   Swal.fire({
     title: `Editar ${tipoLabel[no.tipo] || 'Nó'}`,
     html: `
@@ -7901,7 +7901,7 @@ function editarNoFluxo(id) {
       no.labelSim = result.value.labelSim;
       no.labelNao = result.value.labelNao;
       no.cor = coresFluxo[no.tipo] || '#3b82f6';
-      
+
       const div = document.getElementById(`fluxo-no-${no.id}`);
       if (div) div.remove();
       renderizarNoFluxo(no);
@@ -7925,14 +7925,14 @@ function iniciarArrastarNoFluxo(e, id) {
   if (!div) return;
   e.preventDefault();
   e.stopPropagation();
-  
+
   const container = document.getElementById('diagramaFluxoCanvasContainer');
   const rect = container.getBoundingClientRect();
   diagramaFluxoNoArrastando = id;
   diagramaFluxoOffsetX = e.clientX - rect.left - div.offsetLeft;
   diagramaFluxoOffsetY = e.clientY - rect.top - div.offsetTop;
   div.style.cursor = 'grabbing';
-  
+
   document.onmousemove = function (e) {
     if (diagramaFluxoNoArrastando === null) return;
     const x = e.clientX - rect.left - diagramaFluxoOffsetX;
@@ -7946,7 +7946,7 @@ function iniciarArrastarNoFluxo(e, id) {
       requestAnimationFrame(desenharConexoesFluxo);
     }
   };
-  
+
   document.onmouseup = function () {
     const div = document.getElementById(`fluxo-no-${diagramaFluxoNoArrastando}`);
     if (div) div.style.cursor = 'grab';
@@ -7960,7 +7960,7 @@ function iniciarArrastarNoFluxo(e, id) {
 // ===== CONECTAR NÓS (com label) =====
 function selecionarNoParaConectarFluxo(id, div) {
   document.querySelectorAll('#diagramaFluxoNosContainer > div.selecionado').forEach(el => el.style.outline = 'none');
-  
+
   if (diagramaFluxoConectando === null) {
     diagramaFluxoConectando = id;
     div.style.outline = '3px solid #3b82f6';
@@ -7972,7 +7972,7 @@ function selecionarNoParaConectarFluxo(id, div) {
   } else {
     const noOrigem = diagramaFluxoNos.find(n => n.id === diagramaFluxoConectando);
     const noDestino = diagramaFluxoNos.find(n => n.id === id);
-    
+
     // Perguntar label da seta
     Swal.fire({
       title: 'Label da seta',
@@ -8007,17 +8007,17 @@ function desenharConexoesFluxo() {
   if (!diagramaFluxoCanvas || !diagramaFluxoCtx) return;
   const ctx = diagramaFluxoCtx;
   ctx.clearRect(0, 0, diagramaFluxoCanvas.width, diagramaFluxoCanvas.height);
-  
+
   diagramaFluxoConexoes.forEach(conexao => {
     const de = diagramaFluxoNos.find(n => n.id === conexao.de);
     const para = diagramaFluxoNos.find(n => n.id === conexao.para);
     if (!de || !para) return;
-    
+
     const x1 = de.x + 60;
     const y1 = de.y + 30;
     const x2 = para.x + 60;
     const y2 = para.y + 30;
-    
+
     // Linha
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -8025,7 +8025,7 @@ function desenharConexoesFluxo() {
     ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Seta
     const angulo = Math.atan2(y2 - y1, x2 - x1);
     const tamanhoSeta = 12;
@@ -8036,7 +8036,7 @@ function desenharConexoesFluxo() {
     ctx.closePath();
     ctx.fillStyle = '#232b36ff';
     ctx.fill();
-    
+
     // Label
     if (conexao.label) {
       const midX = (x1 + x2) / 2;
@@ -8044,7 +8044,7 @@ function desenharConexoesFluxo() {
       ctx.font = 'bold 11px Poppins, sans-serif';
       ctx.fillStyle = '#1f2937';
       ctx.textAlign = 'center';
-      
+
       // Fundo branco para o label
       const larguraTexto = ctx.measureText(conexao.label).width + 10;
       ctx.fillStyle = 'white';
@@ -8052,7 +8052,7 @@ function desenharConexoesFluxo() {
       ctx.strokeStyle = '#e5e7eb';
       ctx.lineWidth = 1;
       ctx.strokeRect(midX - larguraTexto / 2, midY - 12, larguraTexto, 18);
-      
+
       // Texto
       ctx.fillStyle = '#1f2937';
       ctx.fillText(conexao.label, midX, midY + 1);
@@ -8065,7 +8065,7 @@ function salvarDiagramaFluxo() {
   const titulo = document.getElementById('diagramaFluxoTitulo').value.trim();
   if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
   if (diagramaFluxoNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
-  
+
   const diagrama = {
     id: Date.now(),
     titulo: titulo,
@@ -8073,7 +8073,7 @@ function salvarDiagramaFluxo() {
     nos: diagramaFluxoNos.map(no => ({ ...no })),
     conexoes: diagramaFluxoConexoes
   };
-  
+
   diagramasFluxoSalvos.push(diagrama);
   localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
   renderizarDiagramasSalvos();
@@ -8085,12 +8085,12 @@ function renderizarDiagramasSalvos() {
   const container = document.getElementById('listaDiagramasFluxoSalvos');
   if (!container) return;
   container.innerHTML = '';
-  
+
   if (diagramasFluxoSalvos.length === 0) {
     container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum diagrama salvo.</p>';
     return;
   }
-  
+
   [...diagramasFluxoSalvos].reverse().forEach(diagrama => {
     const div = document.createElement('div');
     div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
@@ -8112,7 +8112,7 @@ function renderizarDiagramasSalvos() {
 function abrirDiagramaSalvo(id) {
   const diagrama = diagramasFluxoSalvos.find(d => d.id === id);
   if (!diagrama) return;
-  
+
   abrirDiagramaFluxo();
   setTimeout(() => {
     document.getElementById('diagramaFluxoTitulo').value = diagrama.titulo;
@@ -9381,20 +9381,20 @@ window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
       btn.onclick = function () { window.fecharMetodoModal(); window.abrirMapaMental(); };
       footer.appendChild(btn);
     }
-    // DIAGRAMA DE FLUXOS
-else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes("diagrama de fluxos") ||
-         metodo.titulo.includes("Fluxos") || metodo.titulo.includes("fluxos")) {
-  console.log('✅ Diagrama de Fluxos');
-  const btn = document.createElement("button");
-  btn.className = "btn-aplicar";
-  btn.style.background = metodosData.cor;
-  btn.innerHTML = `<i class="bi bi-arrow-right-circle"></i> Criar Diagrama de Fluxo`;
-  btn.onclick = function () { 
-    window.fecharMetodoModal(); 
-    window.abrirDiagramaFluxo(); 
-  };
-  footer.appendChild(btn);
-}
+    // 4. DIAGRAMA DE FLUXOS
+    else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes("diagrama de fluxos") ||
+      metodo.titulo.includes("Fluxos") || metodo.titulo.includes("fluxos")) {
+      console.log('✅ Diagrama de Fluxos');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-right-circle"></i> Criar Diagrama de Fluxo`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirDiagramaFluxo();
+      };
+      footer.appendChild(btn);
+    }
     // 5. ESTUDO COM VÍDEOS
     else if (metodo.titulo.includes("Vídeos") || metodo.titulo.includes("Videos") ||
       metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
@@ -9453,22 +9453,22 @@ else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes(
       btn.onclick = function () { window.irParaRevisao("flashcards", metodo.titulo); };
       footer.appendChild(btn);
     }
-    // LEITURA SAVORING  ← NOVO BLOCO ADICIONADO
-    else if (metodo.titulo.includes("Leitura Savoring") || 
-             metodo.titulo.includes("leitura savoring") ||
-             metodo.titulo.includes("Leitura") && metodo.titulo.includes("Savoring")) {
+    // 10. LEITURA SAVORING
+    else if (metodo.titulo.includes("Leitura Savoring") ||
+      metodo.titulo.includes("leitura savoring") ||
+      metodo.titulo.includes("Leitura") && metodo.titulo.includes("Savoring")) {
       console.log('✅ Leitura Savoring');
       const btn = document.createElement("button");
       btn.className = "btn-aplicar";
       btn.style.background = metodosData.cor;
       btn.innerHTML = `<i class="bi bi-book"></i> Iniciar Leitura Savoring`;
-      btn.onclick = function () { 
-        window.fecharMetodoModal(); 
-        window.abrirLeituraSavoring(); 
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirLeituraSavoring();
       };
       footer.appendChild(btn);
     }
-    // 10. REVISÃO
+    // 11. REVISÃO
     else if (metodo.irParaRevisao) {
       console.log('✅ Revisão');
       const btn = document.createElement("button");
@@ -9478,7 +9478,21 @@ else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes(
       btn.onclick = function () { window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo); };
       footer.appendChild(btn);
     }
-    // 11. ENTENDI
+    // 12. GRUPO DE ESTUDO
+    else if (metodo.titulo.includes("Grupos de Estudo") || metodo.titulo.includes("grupos de estudo") ||
+      metodo.titulo.includes("Grupo de Estudo") || metodo.titulo.includes("grupo de estudo")) {
+      console.log('✅ Grupos de Estudo');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-people-fill"></i> Abrir Grupos de Estudo`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirGruposEstudo();
+      };
+      footer.appendChild(btn);
+    }
+    // 13. ENTENDI
     else {
       console.log('✅ Entendi');
       const btn = document.createElement("button");
@@ -9488,7 +9502,7 @@ else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes(
       btn.onclick = window.fecharMetodoModal;
       footer.appendChild(btn);
     }
-  } 
+  }
 
   const modalOverlay = document.getElementById("metodoModalOverlay");
   if (modalOverlay) {
@@ -10028,28 +10042,28 @@ function finalizarRevisao() {
 // ===== FECHAR MODO FOCO =====
 function fecharModoFoco() {
   console.log('🚪 [FOCO] Fechando modo foco...');
-  
+
   // Limpar timer do simulado
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
-  
+
   // Limpar timer da revisão normal
   if (window.timerRevisao) {
     clearInterval(window.timerRevisao);
     window.timerRevisao = null;
   }
-  
+
   const container = document.getElementById('modoFocoContainer');
   if (container) {
     container.style.display = 'none';
     container.style.visibility = 'hidden';
     container.style.opacity = '0';
   }
-  
+
   document.body.style.overflow = 'auto';
-  
+
   // RESETAR O ESTADO DO SIMULADO
   simuladoAtual = {
     cards: [],
@@ -10062,16 +10076,16 @@ function fecharModoFoco() {
     modo: 'treino',
     respondido: false
   };
-  
+
   // Resetar revisão normal também
   revisoesEmAndamento = [];
   indiceAtualFoco = 0;
-  
+
   console.log('✅ [FOCO] Modo foco fechado e estado resetado');
 }
 function reiniciarSimulado() {
   console.log('🔄 [SIMULADO] Reiniciando simulado...');
-  
+
   // Resetar estado
   simuladoAtual = {
     cards: [],
@@ -10084,22 +10098,22 @@ function reiniciarSimulado() {
     modo: 'treino',
     respondido: false
   };
-  
+
   // Esconder resultado
   document.getElementById('simuladoResultado').style.display = 'none';
-  
+
   // Mostrar pergunta novamente
   document.getElementById('focoPergunta').style.display = 'block';
-  
+
   // Esconder modo foco
   document.getElementById('modoFocoContainer').style.display = 'none';
-  
+
   // Voltar para a aba de simulado
   trocarAbaRevisao('simulado');
-  
+
   // Recarregar opções
   carregarOpcoesSimulado();
-  
+
   console.log('✅ [SIMULADO] Pronto para novo simulado!');
 }
 
@@ -10307,42 +10321,42 @@ function selecionarNumQuestoes(btn) {
 
 function iniciarSimulado() {
   console.log('🎯 [SIMULADO] Iniciando simulado...');
-  
+
   // Limpar timer anterior se existir
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
-  
+
   const materia = document.getElementById('simuladoMateria').value;
   // REMOVA ESTA LINHA - não existe mais o select de tema
   // const tema = document.getElementById('simuladoTema').value;
-  
+
   const numBtn = document.querySelector('[data-num].active');
   const numQuestoes = numBtn ? numBtn.dataset.num : '10';
   const tempo = parseInt(document.getElementById('simuladoTempo').value);
   const modo = document.getElementById('modoTreino').checked ? 'treino' : 'prova';
-  
+
   console.log('📊 Config:', { materia, numQuestoes, tempo, modo });
-  
+
   let cardsSimulado = [...flashcards];
-  
+
   if (materia !== 'todas') {
     cardsSimulado = cardsSimulado.filter(f => f.materiaNome === materia);
   }
-  
+
   console.log('📚 Cards após filtro:', cardsSimulado.length);
-  
+
   // Embaralhar
   cardsSimulado = cardsSimulado.sort(() => Math.random() - 0.5);
-  
+
   // Limitar número
   if (numQuestoes !== 'todas') {
     cardsSimulado = cardsSimulado.slice(0, parseInt(numQuestoes));
   }
-  
+
   console.log('📝 Cards selecionados:', cardsSimulado.length);
-  
+
   if (cardsSimulado.length === 0) {
     Swal.fire({
       icon: 'warning',
@@ -10351,7 +10365,7 @@ function iniciarSimulado() {
     });
     return;
   }
-  
+
   simuladoAtual = {
     cards: cardsSimulado,
     indice: 0,
@@ -10363,19 +10377,19 @@ function iniciarSimulado() {
     modo: modo,
     respondido: false
   };
-  
+
   // Esconder resultado anterior
   document.getElementById('simuladoResultado').style.display = 'none';
   document.getElementById('focoPergunta').style.display = 'block';
   document.getElementById('simuladoTimer').style.display = 'none';
-  
+
   mostrarCardSimulado();
 }
 
 
 function mostrarCardSimulado() {
   console.log('📝 [SIMULADO] Mostrando questão:', simuladoAtual.indice + 1);
-  
+
   if (simuladoAtual.indice >= simuladoAtual.cards.length) {
     finalizarSimulado();
     return;
@@ -10386,14 +10400,14 @@ function mostrarCardSimulado() {
   document.getElementById('focoMateria').textContent = card.materiaNome;
   document.getElementById('focoTema').textContent = '📂 ' + card.tema;
   document.getElementById('focoPergunta').textContent = card.pergunta;
-  
+
   // MOSTRAR A RESPOSTA CORRETA (escondida)
   document.getElementById('focoResposta').innerHTML = card.resposta;
   document.getElementById('focoResposta').style.display = 'none';
-  
+
   // MOSTRAR BOTÃO "MOSTRAR RESPOSTA"
   document.getElementById('btnMostrarResposta').style.display = 'block';
-  
+
   // RESETAR OS BOTÕES DE RESPOSTA
   const botoesResposta = document.getElementById('botoesResposta');
   botoesResposta.innerHTML = `
@@ -10402,10 +10416,10 @@ function mostrarCardSimulado() {
     <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
   `;
   botoesResposta.style.display = 'none';
-  
+
   // RESETAR FLAG DE RESPONDIDO
   simuladoAtual.respondido = false;
-  
+
   // Mostrar timer se houver limite
   if (simuladoAtual.tempoPorQuestao > 0) {
     document.getElementById('simuladoTimer').style.display = 'block';
@@ -10421,35 +10435,35 @@ function mostrarCardSimulado() {
     ((simuladoAtual.indice / simuladoAtual.cards.length) * 100) + '%';
 
   document.getElementById('modoFocoContainer').style.display = 'flex';
-  
+
   console.log('✅ [SIMULADO] Questão mostrada, respondido =', simuladoAtual.respondido);
 }
 
 
 function iniciarTimerSimulado() {
-   // Limpar timer anterior
+  // Limpar timer anterior
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
   }
   simuladoAtual.tempoRestante = simuladoAtual.tempoPorQuestao;
   atualizarTimerSimulado();
-  
+
   simuladoAtual.timer = setInterval(() => {
     simuladoAtual.tempoRestante--;
     atualizarTimerSimulado();
-    
+
     if (simuladoAtual.tempoRestante <= 0) {
       clearInterval(simuladoAtual.timer);
       simuladoAtual.timer = null;
-      
+
       // Tempo esgotado, conta como erro automaticamente
       if (!simuladoAtual.respondido) {
         simuladoAtual.respondido = true;
-        
+
         // Mostrar resposta correta
         document.getElementById('focoResposta').style.display = 'block';
         document.getElementById('btnMostrarResposta').style.display = 'none';
-        
+
         // Contar como erro
         simuladoAtual.erros++;
         const card = simuladoAtual.cards[simuladoAtual.indice];
@@ -10459,7 +10473,7 @@ function iniciarTimerSimulado() {
           original.erros = (original.erros || 0) + 1;
         }
         salvarFlashcards();
-        
+
         // Mostrar botão para próxima
         setTimeout(() => {
           proximaQuestaoSimulado();
@@ -10480,33 +10494,33 @@ function atualizarTimerSimulado() {
 
 function responderSimulado(resultado) {
   console.log('🎯 [SIMULADO] Resposta:', resultado);
-  
+
   // Verificar se já respondeu
   if (simuladoAtual.respondido) {
     console.log('⚠️ Já respondeu esta questão!');
     return;
   }
-  
+
   // Marcar como respondido
   simuladoAtual.respondido = true;
-  
+
   // LIMPAR O TIMER IMEDIATAMENTE
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
-  
+
   const card = simuladoAtual.cards[simuladoAtual.indice];
   const original = flashcards.find(f => f.id === card.id);
-  
+
   // MOSTRAR A RESPOSTA
   document.getElementById('focoResposta').style.display = 'block';
   document.getElementById('btnMostrarResposta').style.display = 'none';
-  
+
   // VARIÁVEIS PARA FEEDBACK
   let feedbackMsg = '';
   let feedbackCor = '';
-  
+
   if (resultado === 'acertei') {
     simuladoAtual.acertos++;
     feedbackMsg = '✅ Acertou!';
@@ -10532,12 +10546,12 @@ function responderSimulado(resultado) {
       original.acertos = (original.acertos || 0) + 1;
     }
   }
-  
+
   salvarFlashcards();
-  
+
   // Mostrar feedback visual
   mostrarToast(feedbackMsg, feedbackCor);
-  
+
   // Substituir botões por botão "Próxima" COM CLASSE ESPECÍFICA
   const botoesContainer = document.getElementById('botoesResposta');
   botoesContainer.innerHTML = `
@@ -10550,25 +10564,25 @@ function responderSimulado(resultado) {
     </button>
   `;
   botoesContainer.style.display = 'block';
-  
+
   console.log('✅ [SIMULADO] Resposta registrada:', feedbackMsg);
 }
 
 function proximaQuestaoSimulado() {
   console.log('➡️ [SIMULADO] Indo para próxima questão...');
   console.log('📊 Índice antes:', simuladoAtual.indice);
-  
+
   // Limpar timer
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
-  
+
   simuladoAtual.indice++;
-  
+
   console.log('📊 Índice depois:', simuladoAtual.indice);
   console.log('📊 Total de cards:', simuladoAtual.cards.length);
-  
+
   if (simuladoAtual.indice >= simuladoAtual.cards.length) {
     console.log('🏁 [SIMULADO] Finalizando...');
     finalizarSimulado();
@@ -10586,26 +10600,26 @@ window.proximaQuestaoSimulado = proximaQuestaoSimulado;
 
 function finalizarSimulado() {
   console.log('🏁 [SIMULADO] Finalizando simulado...');
-  
+
   // Limpar timer
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
-  
+
   const total = simuladoAtual.acertos + simuladoAtual.erros;
   const taxa = total > 0 ? Math.round((simuladoAtual.acertos / total) * 100) : 0;
-  
+
   document.getElementById('simuladoAcertos').textContent = simuladoAtual.acertos;
   document.getElementById('simuladoErros').textContent = simuladoAtual.erros;
   document.getElementById('simuladoTaxa').textContent = taxa + '%';
-  
+
   document.getElementById('simuladoTimer').style.display = 'none';
   document.getElementById('focoPergunta').style.display = 'none';
   document.getElementById('btnMostrarResposta').style.display = 'none';
   document.getElementById('botoesResposta').style.display = 'none';
   document.getElementById('simuladoResultado').style.display = 'block';
-  
+
   // Salvar no histórico
   const historicoSimulado = {
     data: new Date().toISOString(),
@@ -10615,11 +10629,11 @@ function finalizarSimulado() {
     taxa: taxa,
     total: total
   };
-  
+
   let historico = JSON.parse(localStorage.getItem('historicoSimulados') || '[]');
   historico.push(historicoSimulado);
   localStorage.setItem('historicoSimulados', JSON.stringify(historico));
-  
+
   // RESETAR O ESTADO DO SIMULADO
   setTimeout(() => {
     simuladoAtual = {
@@ -10640,13 +10654,13 @@ function finalizarSimulado() {
 
 function mostrarRespostaFoco() {
   console.log('👁️ [SIMULADO] Mostrando resposta...');
-  
+
   // Mostrar a resposta
   document.getElementById('focoResposta').style.display = 'block';
-  
+
   // Esconder botão "Mostrar Resposta"
   document.getElementById('btnMostrarResposta').style.display = 'none';
-  
+
   // Mostrar botões de resposta
   const botoesResposta = document.getElementById('botoesResposta');
   botoesResposta.innerHTML = `
@@ -11215,10 +11229,10 @@ function mostrarSecaoRevisao() {
 // ===== FUNÇÃO UNIVERSAL DE RESPOSTA =====
 function responderContexto(resultado) {
   console.log('🎯 [RESPOSTA] Contexto:', simuladoAtual.cards.length > 0 ? 'simulado' : 'revisao');
-  
+
   // Verifica se está em modo simulado
-  if (simuladoAtual && simuladoAtual.cards && simuladoAtual.cards.length > 0 && 
-      document.getElementById('simuladoTimer').style.display === 'block') {
+  if (simuladoAtual && simuladoAtual.cards && simuladoAtual.cards.length > 0 &&
+    document.getElementById('simuladoTimer').style.display === 'block') {
     // Está no simulado
     responderSimulado(resultado);
   } else {
@@ -11233,7 +11247,10 @@ window.abrirModalNovaMateria = abrirModalNovaMateria;
 window.salvarNovaMateriaRevisao = salvarNovaMateriaRevisao;
 window.mostrarSecaoRevisao = mostrarSecaoRevisao;
 
-// ===== LEITURA SAVORING =====
+// =============================================
+// ===== LEITURA SAVORING - VERSÃO FINAL =====
+// =============================================
+
 let leituraSavoringAtual = {
   titulo: '',
   texto: '',
@@ -11243,10 +11260,12 @@ let leituraSavoringAtual = {
   timer: null,
   tempoRestante: 0,
   tempoPorTrecho: 2,
-  pausado: false
+  pausado: false,
+  leituraSalva: false,
+  idLeituraSalva: null
 };
 
-// Abrir modal
+// ===== ABRIR MODAL =====
 function abrirLeituraSavoring() {
   console.log('📖 [LEITURA] Abrindo Leitura Savoring...');
   
@@ -11255,21 +11274,42 @@ function abrirLeituraSavoring() {
   document.getElementById('leituraTexto').value = '';
   document.getElementById('leituraTempoTrecho').value = '2';
   
+  // Resetar estado
+  leituraSavoringAtual = {
+    titulo: '',
+    texto: '',
+    trechos: [],
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: 0,
+    tempoPorTrecho: 2,
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
+  };
+  
   // Mostrar passo 1
   document.getElementById('leituraInicio').style.display = 'block';
   document.getElementById('leituraModo').style.display = 'none';
   document.getElementById('leituraReflexao').style.display = 'none';
   document.getElementById('leituraResumo').style.display = 'none';
   
+  // Resetar histórico
+  const listaHistorico = document.getElementById('leituraHistoricoLista');
+  if (listaHistorico) listaHistorico.style.display = 'none';
+  const setaHistorico = document.getElementById('leituraHistoricoSeta');
+  if (setaHistorico) setaHistorico.style.transform = 'rotate(0deg)';
+  carregarHistoricoLeituras();
+  
   // Mostrar modal
   document.getElementById('leituraSavoringModalOverlay').style.display = 'flex';
 }
 
-// Fechar modal
+// ===== FECHAR MODAL =====
 function fecharLeituraSavoring() {
   console.log('📖 [LEITURA] Fechando Leitura Savoring...');
   
-  // Limpar timer
   if (leituraSavoringAtual.timer) {
     clearInterval(leituraSavoringAtual.timer);
     leituraSavoringAtual.timer = null;
@@ -11278,11 +11318,13 @@ function fecharLeituraSavoring() {
   document.getElementById('leituraSavoringModalOverlay').style.display = 'none';
 }
 
-// Iniciar leitura
+// ===== INICIAR LEITURA =====
 function iniciarLeituraSavoring() {
   const titulo = document.getElementById('leituraTitulo').value.trim();
   const texto = document.getElementById('leituraTexto').value.trim();
   const tempoPorTrecho = parseInt(document.getElementById('leituraTempoTrecho').value);
+  
+  console.log('⏱️ Tempo selecionado:', tempoPorTrecho, 'minutos');
   
   if (!titulo) {
     Swal.fire({ icon: 'warning', title: 'Digite um título!', timer: 1500, showConfirmButton: false });
@@ -11294,7 +11336,6 @@ function iniciarLeituraSavoring() {
     return;
   }
   
-  // Dividir texto em trechos (por parágrafos ou frases)
   const trechos = dividirTextoEmTrechos(texto);
   
   leituraSavoringAtual = {
@@ -11304,9 +11345,11 @@ function iniciarLeituraSavoring() {
     trechoAtual: 0,
     anotacoes: [],
     timer: null,
-    tempoRestante: tempoPorTrecho * 60,
+    tempoRestante: tempoPorTrecho * 60, // ← USA O VALOR CORRETO
     tempoPorTrecho: tempoPorTrecho,
-    pausado: false
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
   };
   
   // Mostrar modo leitura
@@ -11319,27 +11362,7 @@ function iniciarLeituraSavoring() {
   mostrarTrechoLeitura();
 }
 
-// Dividir texto em trechos
-function dividirTextoEmTrechos(texto) {
-  // Divide por parágrafos primeiro
-  const paragrafos = texto.split('\n').filter(p => p.trim().length > 0);
-  
-  if (paragrafos.length <= 1) {
-    // Se só tem um parágrafo, divide por frases
-    const frases = texto.split(/(?<=[.!?])\s+/).filter(f => f.trim().length > 0);
-    
-    // Agrupa frases em trechos de ~3 frases
-    const trechos = [];
-    for (let i = 0; i < frases.length; i += 3) {
-      trechos.push(frases.slice(i, i + 3).join(' '));
-    }
-    return trechos.length > 0 ? trechos : [texto];
-  }
-  
-  return paragrafos;
-}
-
-// Mostrar trecho atual
+// ===== MOSTRAR TRECHO ATUAL (CORRIGIDO) =====
 function mostrarTrechoLeitura() {
   const { trechos, trechoAtual, titulo, tempoPorTrecho } = leituraSavoringAtual;
   
@@ -11353,20 +11376,31 @@ function mostrarTrechoLeitura() {
   document.getElementById('leituraTrechoTotal').textContent = trechos.length;
   document.getElementById('leituraTrechoTexto').textContent = trechos[trechoAtual];
   
-  // Iniciar timer
-  leituraSavoringAtual.tempoRestante = tempoPorTrecho * 60;
+  // USAR O VALOR CORRETO DE tempoPorTrecho
+  leituraSavoringAtual.tempoRestante = leituraSavoringAtual.tempoPorTrecho * 60;
   leituraSavoringAtual.pausado = false;
   
+  console.log('⏱️ Timer iniciado com:', leituraSavoringAtual.tempoPorTrecho, 'minutos =', leituraSavoringAtual.tempoRestante, 'segundos');
+  
+  // ATUALIZAR O DISPLAY DO TIMER IMEDIATAMENTE
+  atualizarTimerLeitura();
+  
   document.getElementById('btnPausarLeitura').innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+  document.getElementById('btnPausarLeitura').style.background = '#f59e0b';
   
   iniciarTimerLeitura();
 }
 
-// Iniciar timer
+// ===== INICIAR TIMER (CORRIGIDO) =====
 function iniciarTimerLeitura() {
+  // LIMPAR TIMER ANTERIOR
   if (leituraSavoringAtual.timer) {
     clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
   }
+  
+  // ATUALIZAR DISPLAY ANTES DE INICIAR
+  atualizarTimerLeitura();
   
   leituraSavoringAtual.timer = setInterval(() => {
     if (!leituraSavoringAtual.pausado) {
@@ -11377,7 +11411,6 @@ function iniciarTimerLeitura() {
         clearInterval(leituraSavoringAtual.timer);
         leituraSavoringAtual.timer = null;
         
-        // Tempo esgotado, ir para reflexão
         Swal.fire({
           icon: 'info',
           title: 'Tempo esgotado!',
@@ -11394,15 +11427,34 @@ function iniciarTimerLeitura() {
   }, 1000);
 }
 
-// Atualizar timer
+// ===== ATUALIZAR TIMER (CORRIGIDO) =====
 function atualizarTimerLeitura() {
   const minutos = Math.floor(leituraSavoringAtual.tempoRestante / 60);
   const segundos = leituraSavoringAtual.tempoRestante % 60;
-  document.getElementById('leituraTimer').textContent = 
-    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+  const display = document.getElementById('leituraTimer');
+  
+  if (display) {
+    display.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+  }
 }
 
-// Pausar leitura
+// ===== DIVIDIR TEXTO EM TRECHOS =====
+function dividirTextoEmTrechos(texto) {
+  const paragrafos = texto.split('\n').filter(p => p.trim().length > 0);
+  
+  if (paragrafos.length <= 1) {
+    const frases = texto.split(/(?<=[.!?])\s+/).filter(f => f.trim().length > 0);
+    const trechos = [];
+    for (let i = 0; i < frases.length; i += 3) {
+      trechos.push(frases.slice(i, i + 3).join(' '));
+    }
+    return trechos.length > 0 ? trechos : [texto];
+  }
+  
+  return paragrafos;
+}
+
+// ===== PAUSAR LEITURA =====
 function pausarLeituraSavoring() {
   leituraSavoringAtual.pausado = !leituraSavoringAtual.pausado;
   
@@ -11416,7 +11468,7 @@ function pausarLeituraSavoring() {
   }
 }
 
-// Próximo trecho
+// ===== PRÓXIMO TRECHO =====
 function proximoTrechoLeitura() {
   if (leituraSavoringAtual.timer) {
     clearInterval(leituraSavoringAtual.timer);
@@ -11426,7 +11478,7 @@ function proximoTrechoLeitura() {
   mostrarReflexaoLeitura();
 }
 
-// Mostrar reflexão
+// ===== MOSTRAR REFLEXÃO =====
 function mostrarReflexaoLeitura() {
   document.getElementById('leituraModo').style.display = 'none';
   document.getElementById('leituraReflexao').style.display = 'block';
@@ -11434,20 +11486,20 @@ function mostrarReflexaoLeitura() {
   document.getElementById('leituraAnotacao').focus();
 }
 
-// Salvar reflexão
+// ===== SALVAR REFLEXÃO =====
 function salvarReflexaoLeitura() {
   const anotacao = document.getElementById('leituraAnotacao').value.trim();
   const { trechos, trechoAtual } = leituraSavoringAtual;
   
   if (anotacao) {
     leituraSavoringAtual.anotacoes.push({
+      id: Date.now(),
       trecho: trechoAtual + 1,
       texto: anotacao,
       data: new Date().toISOString()
     });
   }
   
-  // Avançar para próximo trecho
   leituraSavoringAtual.trechoAtual++;
   
   if (leituraSavoringAtual.trechoAtual >= trechos.length) {
@@ -11459,13 +11511,11 @@ function salvarReflexaoLeitura() {
   }
 }
 
-// Pular reflexão
+// ===== PULAR REFLEXÃO =====
 function pularReflexaoLeitura() {
-  const { trechos, trechoAtual } = leituraSavoringAtual;
-  
   leituraSavoringAtual.trechoAtual++;
   
-  if (leituraSavoringAtual.trechoAtual >= trechos.length) {
+  if (leituraSavoringAtual.trechoAtual >= leituraSavoringAtual.trechos.length) {
     mostrarResumoLeitura();
   } else {
     document.getElementById('leituraReflexao').style.display = 'none';
@@ -11474,7 +11524,7 @@ function pularReflexaoLeitura() {
   }
 }
 
-// Mostrar resumo
+// ===== MOSTRAR RESUMO (NÃO FECHA) =====
 function mostrarResumoLeitura() {
   if (leituraSavoringAtual.timer) {
     clearInterval(leituraSavoringAtual.timer);
@@ -11485,61 +11535,274 @@ function mostrarResumoLeitura() {
   document.getElementById('leituraReflexao').style.display = 'none';
   document.getElementById('leituraResumo').style.display = 'block';
   
+  renderizarResumoAnotacoes();
+  
+  // Salvar no histórico APENAS UMA VEZ
+  if (!leituraSavoringAtual.leituraSalva) {
+    salvarLeituraNoHistorico();
+    leituraSavoringAtual.leituraSalva = true;
+  }
+}
+
+// ===== RENDERIZAR RESUMO COM ANOTAÇÕES (COM TEXTO DO TRECHO) =====
+function renderizarResumoAnotacoes() {
   const container = document.getElementById('leituraResumoAnotacoes');
   
   if (leituraSavoringAtual.anotacoes.length === 0) {
     container.innerHTML = '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
   } else {
-    container.innerHTML = leituraSavoringAtual.anotacoes.map(a => `
-      <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--cor-primaria);">
-        <strong style="color: #4b5563; font-size: 0.8rem;">Trecho ${a.trecho}:</strong>
-        <p style="margin: 5px 0 0; color: #374151; font-size: 0.9rem;">${a.texto}</p>
-      </div>
-    `).join('');
+    container.innerHTML = leituraSavoringAtual.anotacoes.map((a, index) => {
+      // Buscar o texto do trecho correspondente
+      const textoTrecho = leituraSavoringAtual.trechos[a.trecho - 1] || 'Texto não disponível';
+      
+      return `
+        <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--cor-primaria);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <strong style="color: #4b5563; font-size: 0.8rem;">📖 Trecho ${a.trecho}:</strong>
+            <div style="display: flex; gap: 5px;">
+              <button onclick="editarAnotacaoLeitura(${index})" 
+                      style="background: #e0f2fe; color: #0284c7; border: none; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+                <i class="bi bi-pencil"></i> Editar
+              </button>
+              <button onclick="excluirAnotacaoLeitura(${index})" 
+                      style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- TEXTO DO TRECHO -->
+          <div style="background: white; border-radius: 8px; padding: 10px; margin: 10px 0; font-size: 0.8rem; color: #6b7280; border: 1px solid #e5e7eb; max-height: 80px; overflow-y: auto;">
+            ${textoTrecho}
+          </div>
+          
+          <!-- ANOTAÇÃO -->
+          <div style="background: #f0fdf4; border-radius: 8px; padding: 10px; border: 1px solid #bbf7d0;">
+            <strong style="color: #16a34a; font-size: 0.75rem;">✏️ Minha anotação:</strong>
+            <p style="margin: 5px 0 0; color: #374151; font-size: 0.9rem;">${a.texto}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
-  
-  // Salvar no histórico
-  salvarLeituraNoHistorico();
 }
 
-// Salvar leitura no histórico
+// ===== SALVAR NO HISTÓRICO (COM TEXTO DOS TRECHOS) =====
 function salvarLeituraNoHistorico() {
   const leitura = {
     id: Date.now(),
     titulo: leituraSavoringAtual.titulo,
     data: new Date().toISOString(),
     totalTrechos: leituraSavoringAtual.trechos.length,
-    anotacoes: leituraSavoringAtual.anotacoes
+    trechos: leituraSavoringAtual.trechos.map((texto, index) => ({
+      numero: index + 1,
+      texto: texto
+    })),
+    anotacoes: JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes)),
+    textoCompleto: leituraSavoringAtual.texto
   };
+  
+  leituraSavoringAtual.idLeituraSalva = leitura.id;
   
   let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
   historico.push(leitura);
   localStorage.setItem('historicoLeituras', JSON.stringify(historico));
   
-  console.log('✅ [LEITURA] Leitura salva no histórico:', leitura);
+  console.log('✅ [LEITURA] Salva:', leitura);
+  carregarHistoricoLeituras();
+  
+  mostrarToast('✅ Leitura salva com sucesso!', '#22c55e');
 }
 
-// Exportar funções
-window.abrirLeituraSavoring = abrirLeituraSavoring;
-window.fecharLeituraSavoring = fecharLeituraSavoring;
-window.iniciarLeituraSavoring = iniciarLeituraSavoring;
-window.pausarLeituraSavoring = pausarLeituraSavoring;
-window.proximoTrechoLeitura = proximoTrechoLeitura;
-window.salvarReflexaoLeitura = salvarReflexaoLeitura;
-window.pularReflexaoLeitura = pularReflexaoLeitura;
+// ===== RENDERIZAR LEITURA SALVA (COM TEXTO DO TRECHO) =====
+function renderizarLeituraSalva(leitura) {
+  let html = `
+    <div style="margin-bottom: 20px; text-align: center;">
+      <h4 style="color: #374151; margin-bottom: 5px;">${leitura.titulo}</h4>
+      <small style="color: #9ca3af;">${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s)</small>
+    </div>
+  `;
+  
+  if (leitura.anotacoes && leitura.anotacoes.length > 0) {
+    html += leitura.anotacoes.map((a, index) => {
+      // Encontrar o texto do trecho correspondente
+      const trechoInfo = leitura.trechos ? leitura.trechos.find(t => t.numero === a.trecho) : null;
+      const textoTrecho = trechoInfo ? trechoInfo.texto : 'Texto do trecho não disponível';
+      
+      return `
+        <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--cor-primaria);">
+          <!-- CABEÇALHO COM NÚMERO DO TRECHO E BOTÃO EDITAR -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #4b5563; font-size: 0.85rem;">
+              📖 Trecho ${a.trecho}
+            </strong>
+            <button onclick="editarAnotacaoDoHistorico(${leitura.id}, ${index})" 
+                    style="background: #e0f2fe; color: #0284c7; border: none; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+              <i class="bi bi-pencil"></i> Editar
+            </button>
+          </div>
+          
+          <!-- TEXTO DO TRECHO -->
+          <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.8rem; color: #6b7280; border: 1px solid #e5e7eb; max-height: 100px; overflow-y: auto;">
+            ${textoTrecho}
+          </div>
+          
+          <!-- ANOTAÇÃO DO USUÁRIO -->
+          <div style="background: #f0fdf4; border-radius: 8px; padding: 10px; border: 1px solid #bbf7d0;">
+            <strong style="color: #16a34a; font-size: 0.75rem;">✏️ Minha anotação:</strong>
+            <p style="margin: 5px 0 0; color: #374151; font-size: 0.85rem;">${a.texto}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    html += '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
+  }
+  
+  Swal.fire({
+    title: '📖 Leitura Salva',
+    html: html,
+    showConfirmButton: true,
+    confirmButtonText: 'Fechar',
+    confirmButtonColor: '#9f042c',
+    width: '650px',
+    customClass: {
+      htmlContainer: 'swal-texto-trecho'
+    }
+  });
+}
 
-// ===== HISTÓRICO DE LEITURAS =====
+// ===== EDITAR ANOTAÇÃO DO HISTÓRICO (MOSTRANDO O TRECHO) =====
+function editarAnotacaoDoHistorico(leituraId, anotacaoIndex) {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const leitura = historico.find(l => l.id === leituraId);
+  
+  if (!leitura || !leitura.anotacoes[anotacaoIndex]) return;
+  
+  const anotacao = leitura.anotacoes[anotacaoIndex];
+  
+  // Encontrar o texto do trecho
+  const trechoInfo = leitura.trechos ? leitura.trechos.find(t => t.numero === anotacao.trecho) : null;
+  const textoTrecho = trechoInfo ? trechoInfo.texto : '';
+  
+  Swal.fire({
+    title: `✏️ Editar - Trecho ${anotacao.trecho}`,
+    html: `
+      <div style="text-align: left; margin-bottom: 15px;">
+        <strong style="color: #4b5563; font-size: 0.8rem;">📖 Texto do trecho:</strong>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; margin-top: 5px; max-height: 100px; overflow-y: auto; font-size: 0.8rem; color: #6b7280;">
+          ${textoTrecho || 'Texto não disponível'}
+        </div>
+      </div>
+      
+      <div style="text-align: left;">
+        <strong style="color: #16a34a; font-size: 0.8rem;">✏️ Sua anotação:</strong>
+      </div>
+    `,
+    input: 'textarea',
+    inputValue: anotacao.texto,
+    inputPlaceholder: 'Edite sua reflexão...',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    width: '600px',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'A anotação não pode ficar vazia!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      leitura.anotacoes[anotacaoIndex].texto = result.value.trim();
+      leitura.anotacoes[anotacaoIndex].data = new Date().toISOString();
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+      
+      renderizarLeituraSalva(leitura);
+      renderizarHistoricoLeituras();
+      
+      mostrarToast('✅ Anotação atualizada!', '#22c55e');
+    }
+  });
+}
 
-// Carregar histórico
+// ===== ATUALIZAR NO HISTÓRICO =====
+function atualizarLeituraNoHistorico() {
+  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  
+  if (leituraSavoringAtual.idLeituraSalva) {
+    const index = historico.findIndex(l => l.id === leituraSavoringAtual.idLeituraSalva);
+    if (index !== -1) {
+      historico[index].anotacoes = JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes));
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+    }
+  }
+}
+
+// ===== EDITAR ANOTAÇÃO (DO RESUMO) =====
+function editarAnotacaoLeitura(index) {
+  const anotacao = leituraSavoringAtual.anotacoes[index];
+  if (!anotacao) return;
+  
+  Swal.fire({
+    title: `✏️ Editar Anotação - Trecho ${anotacao.trecho}`,
+    input: 'textarea',
+    inputValue: anotacao.texto,
+    inputPlaceholder: 'Edite sua reflexão...',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'A anotação não pode ficar vazia!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      leituraSavoringAtual.anotacoes[index].texto = result.value.trim();
+      leituraSavoringAtual.anotacoes[index].data = new Date().toISOString();
+      
+      atualizarLeituraNoHistorico();
+      renderizarResumoAnotacoes();
+      
+      mostrarToast('✅ Anotação atualizada!', '#22c55e');
+    }
+  });
+}
+
+// ===== EXCLUIR ANOTAÇÃO =====
+function excluirAnotacaoLeitura(index) {
+  Swal.fire({
+    title: 'Excluir anotação?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      leituraSavoringAtual.anotacoes.splice(index, 1);
+      atualizarLeituraNoHistorico();
+      renderizarResumoAnotacoes();
+      mostrarToast('🗑️ Anotação excluída!', '#ef4444');
+    }
+  });
+}
+
+// ===== CARREGAR HISTÓRICO =====
 function carregarHistoricoLeituras() {
   const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
   const count = document.getElementById('leituraHistoricoCount');
   if (count) count.textContent = historico.length;
-  
   return historico;
 }
 
-// Mostrar/esconder histórico
+// ===== TOGGLE HISTÓRICO =====
 function toggleHistoricoLeituras() {
   const lista = document.getElementById('leituraHistoricoLista');
   const seta = document.getElementById('leituraHistoricoSeta');
@@ -11554,7 +11817,7 @@ function toggleHistoricoLeituras() {
   }
 }
 
-// Renderizar histórico
+// ===== RENDERIZAR HISTÓRICO =====
 function renderizarHistoricoLeituras() {
   const container = document.getElementById('leituraHistoricoLista');
   if (!container) return;
@@ -11566,7 +11829,6 @@ function renderizarHistoricoLeituras() {
     return;
   }
   
-  // Ordenar por data (mais recente primeiro)
   historico.sort((a, b) => new Date(b.data) - new Date(a.data));
   
   container.innerHTML = historico.map(leitura => `
@@ -11590,42 +11852,17 @@ function renderizarHistoricoLeituras() {
   `).join('');
 }
 
-// Ver leitura salva
+// ===== VER LEITURA SALVA (COM EDIÇÃO) =====
 function verLeituraSalva(id) {
   const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
   const leitura = historico.find(l => l.id === id);
   
   if (!leitura) return;
   
-  let html = `
-    <div style="margin-bottom: 15px;">
-      <h4 style="color: #374151; margin-bottom: 5px;">${leitura.titulo}</h4>
-      <small style="color: #9ca3af;">${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s)</small>
-    </div>
-  `;
-  
-  if (leitura.anotacoes && leitura.anotacoes.length > 0) {
-    html += leitura.anotacoes.map(a => `
-      <div style="background: #f9fafb; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 4px solid var(--cor-primaria);">
-        <strong style="color: #4b5563; font-size: 0.8rem;">Trecho ${a.trecho}:</strong>
-        <p style="margin: 5px 0 0; color: #374151; font-size: 0.85rem;">${a.texto}</p>
-      </div>
-    `).join('');
-  } else {
-    html += '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
-  }
-  
-  Swal.fire({
-    title: '📖 Leitura Salva',
-    html: html,
-    showConfirmButton: true,
-    confirmButtonText: 'Fechar',
-    confirmButtonColor: '#9f042c',
-    width: '600px'
-  });
+  renderizarLeituraSalva(leitura);
 }
 
-// Excluir leitura salva
+// ===== EXCLUIR LEITURA SALVA =====
 function excluirLeituraSalva(id) {
   Swal.fire({
     title: 'Excluir leitura?',
@@ -11652,55 +11889,758 @@ function excluirLeituraSalva(id) {
     }
   });
 }
-
-// Atualizar a função salvarLeituraNoHistorico para incluir o texto
-function salvarLeituraNoHistorico() {
-  const leitura = {
-    id: Date.now(),
-    titulo: leituraSavoringAtual.titulo,
-    data: new Date().toISOString(),
-    totalTrechos: leituraSavoringAtual.trechos.length,
-    anotacoes: leituraSavoringAtual.anotacoes,
-    textoCompleto: leituraSavoringAtual.texto // Salvar o texto completo também
-  };
+// ===== NOVA LEITURA (VOLTA AO INÍCIO SEM FECHAR) =====
+function novaLeituraSavoring() {
+  console.log('📖 [LEITURA] Iniciando nova leitura...');
   
-  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  historico.push(leitura);
-  localStorage.setItem('historicoLeituras', JSON.stringify(historico));
-  
-  console.log('✅ [LEITURA] Leitura salva no histórico:', leitura);
-  
-  // Atualizar contador
-  carregarHistoricoLeituras();
-}
-
-// Atualizar a função abrirLeituraSavoring para carregar histórico
-function abrirLeituraSavoring() {
-  console.log('📖 [LEITURA] Abrindo Leitura Savoring...');
+  // Limpar timer
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
   
   // Resetar campos
   document.getElementById('leituraTitulo').value = '';
   document.getElementById('leituraTexto').value = '';
   document.getElementById('leituraTempoTrecho').value = '2';
   
-  // Mostrar passo 1
+  // Resetar estado
+  leituraSavoringAtual = {
+    titulo: '',
+    texto: '',
+    trechos: [],
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: 0,
+    tempoPorTrecho: 2,
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
+  };
+  
+  // Mostrar passo 1 (início)
   document.getElementById('leituraInicio').style.display = 'block';
   document.getElementById('leituraModo').style.display = 'none';
   document.getElementById('leituraReflexao').style.display = 'none';
   document.getElementById('leituraResumo').style.display = 'none';
   
-  // Resetar histórico
-  document.getElementById('leituraHistoricoLista').style.display = 'none';
-  document.getElementById('leituraHistoricoSeta').style.transform = 'rotate(0deg)';
+  // Atualizar histórico
   carregarHistoricoLeituras();
+  renderizarHistoricoLeituras();
   
-  // Mostrar modal
-  document.getElementById('leituraSavoringModalOverlay').style.display = 'flex';
+  // Focar no campo de título
+  setTimeout(() => {
+    document.getElementById('leituraTitulo').focus();
+  }, 300);
+  
+  mostrarToast('📖 Pronto para nova leitura!', '#3b82f6');
 }
 
-// Exportar funções
+// ===== EXPORTAR =====
+window.novaLeituraSavoring = novaLeituraSavoring;
+
+// ===== EXPORTAR TODAS AS FUNÇÕES =====
+window.abrirLeituraSavoring = abrirLeituraSavoring;
+window.fecharLeituraSavoring = fecharLeituraSavoring;
+window.iniciarLeituraSavoring = iniciarLeituraSavoring;
+window.pausarLeituraSavoring = pausarLeituraSavoring;
+window.proximoTrechoLeitura = proximoTrechoLeitura;
+window.salvarReflexaoLeitura = salvarReflexaoLeitura;
+window.pularReflexaoLeitura = pularReflexaoLeitura;
+window.editarAnotacaoLeitura = editarAnotacaoLeitura;
+window.excluirAnotacaoLeitura = excluirAnotacaoLeitura;
+window.editarAnotacaoDoHistorico = editarAnotacaoDoHistorico;
 window.toggleHistoricoLeituras = toggleHistoricoLeituras;
 window.renderizarHistoricoLeituras = renderizarHistoricoLeituras;
 window.verLeituraSalva = verLeituraSalva;
 window.excluirLeituraSalva = excluirLeituraSalva;
 window.carregarHistoricoLeituras = carregarHistoricoLeituras;
+window.mostrarResumoLeitura = mostrarResumoLeitura;
+// =============================================
+// ===== GRUPOS DE ESTUDO - COMPLETO ==========
+// =============================================
+
+let gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
+let grupoAtual = null;
+
+// ===== ABRIR MODAL =====
+function abrirGruposEstudo() {
+  console.log('👥 Abrindo Grupos de Estudo');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+
+  const modal = document.getElementById('gruposEstudoModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderizarListaGrupos();
+  }
+}
+
+// ===== FECHAR MODAL =====
+function fecharGruposEstudo() {
+  const modal = document.getElementById('gruposEstudoModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== RENDERIZAR LISTA DE GRUPOS =====
+function renderizarListaGrupos() {
+  const container = document.getElementById('listaGruposEstudo');
+  if (!container) return;
+
+  gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
+
+  document.getElementById('detalheGrupoEstudo').style.display = 'none';
+  container.style.display = 'block';
+
+  if (gruposEstudo.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 50px 20px;">
+        <i class="bi bi-people" style="font-size: 4rem; color: #d1d5db;"></i>
+        <h3 style="color: #6b7280; margin: 15px 0;">Nenhum grupo criado</h3>
+        <p style="color: #9ca3af; margin-bottom: 20px;">Crie um grupo ou entre com um código de convite</p>
+        <button onclick="abrirCriarGrupo()" style="background: var(--cor-primaria); color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-plus-lg"></i> Criar Grupo
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = gruposEstudo.map(grupo => `
+    <div style="background: white; border: 2px solid #e5e7eb; border-radius: 15px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.3s;"
+         onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)'; this.style.borderColor='var(--cor-primaria)'"
+         onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb'"
+         onclick="abrirDetalheGrupo(${grupo.id})">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="margin: 0; color: #1f2937;">${grupo.nome}</h3>
+          <small style="color: #9ca3af;">Código: <strong>${grupo.codigo}</strong></small>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+            <i class="bi bi-people"></i> ${grupo.membros.length} membro(s)
+          </span>
+          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+            <i class="bi bi-chat-dots"></i> ${grupo.duvidas ? grupo.duvidas.length : 0} dúvida(s)
+          </span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== CRIAR GRUPO =====
+function abrirCriarGrupo() {
+  Swal.fire({
+    title: '👥 Criar Grupo de Estudo',
+    html: `
+      <input id="inputNomeGrupo" class="swal2-input" placeholder="Nome do grupo" style="margin-bottom: 10px;">
+      <input id="inputMateriaGrupo" class="swal2-input" placeholder="Matéria principal (opcional)">
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Criar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const nome = document.getElementById('inputNomeGrupo').value.trim();
+      if (!nome) {
+        Swal.showValidationMessage('Digite um nome!');
+        return false;
+      }
+      return {
+        nome: nome,
+        materia: document.getElementById('inputMateriaGrupo').value.trim()
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const codigo = gerarCodigoGrupo();
+      const novoGrupo = {
+        id: Date.now(),
+        nome: result.value.nome,
+        materia: result.value.materia || 'Geral',
+        codigo: codigo,
+        linkMeet: '',
+        membros: [{ nome: 'Você (Criador)', email: '', papel: 'Líder' }],
+        temas: [],
+        duvidas: [],
+        reunioes: [],
+        notas: '',
+        flashcardsCompartilhados: [],
+        dataCriacao: new Date().toISOString()
+      };
+
+      gruposEstudo.push(novoGrupo);
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Grupo criado!',
+        html: `
+          <p>Código do grupo: <strong style="font-size: 1.5rem;">${codigo}</strong></p>
+          <p>Compartilhe este código com seus amigos!</p>
+          <button onclick="copiarCodigo('${codigo}')" class="swal2-confirm swal2-styled" style="background: #3b82f6;">
+            <i class="bi bi-clipboard"></i> Copiar Código
+          </button>
+        `,
+        confirmButtonText: 'OK'
+      });
+
+      renderizarListaGrupos();
+    }
+  });
+}
+
+// ===== ENTRAR COM CÓDIGO =====
+function abrirEntrarGrupo() {
+  Swal.fire({
+    title: '🔑 Entrar no Grupo',
+    input: 'text',
+    inputPlaceholder: 'Digite o código do grupo',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-in-right"></i> Entrar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#6b7280',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'Digite o código!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const codigo = result.value.trim().toUpperCase();
+      const grupo = gruposEstudo.find(g => g.codigo === codigo);
+
+      if (!grupo) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Grupo não encontrado!',
+          text: 'Verifique o código e tente novamente.'
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'Digite seu nome',
+        input: 'text',
+        inputPlaceholder: 'Seu nome',
+        showCancelButton: true,
+        confirmButtonText: 'Entrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        preConfirm: (nome) => {
+          if (!nome || !nome.trim()) {
+            Swal.showValidationMessage('Digite seu nome!');
+            return false;
+          }
+          return nome;
+        }
+      }).then(res => {
+        if (res.isConfirmed) {
+          grupo.membros.push({ nome: res.value, email: '', papel: 'Membro' });
+          localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+          Swal.fire({
+            icon: 'success',
+            title: `Bem-vindo ao ${grupo.nome}!`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+          renderizarListaGrupos();
+        }
+      });
+    }
+  });
+}
+
+// ===== GERAR CÓDIGO =====
+function gerarCodigoGrupo() {
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let codigo = '';
+  for (let i = 0; i < 6; i++) {
+    codigo += letras[Math.floor(Math.random() * letras.length)];
+  }
+  return codigo;
+}
+
+// ===== COPIAR CÓDIGO =====
+function copiarCodigo(codigo) {
+  navigator.clipboard.writeText(codigo).then(() => {
+    mostrarToast('📋 Código copiado!', '#22c55e');
+  });
+}
+
+// ===== ABRIR DETALHE DO GRUPO =====
+function abrirDetalheGrupo(id) {
+  const grupo = gruposEstudo.find(g => g.id === id);
+  if (!grupo) return;
+
+  grupoAtual = grupo;
+
+  document.getElementById('listaGruposEstudo').style.display = 'none';
+  const detalhe = document.getElementById('detalheGrupoEstudo');
+  detalhe.style.display = 'block';
+
+  renderizarDetalheGrupo(grupo);
+}
+
+// ===== RENDERIZAR DETALHE DO GRUPO =====
+function renderizarDetalheGrupo(grupo) {
+  const container = document.getElementById('detalheGrupoEstudo');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <button onclick="voltarListaGrupos()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 0.9rem;">
+          <i class="bi bi-arrow-left"></i> Voltar
+        </button>
+        <h2 style="margin: 5px 0 0; color: #1f2937;">${grupo.nome}</h2>
+        <small style="color: #9ca3af;">📚 ${grupo.materia} | Código: <strong>${grupo.codigo}</strong></small>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button onclick="iniciarChamadaVideo(${grupo.id})"
+          style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-camera-video"></i> Chamada de Vídeo
+        </button>
+        <button onclick="copiarCodigo('${grupo.codigo}')"
+          style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-clipboard"></i> Copiar Código
+        </button>
+      </div>
+    </div>
+
+    <!-- ABAS DO GRUPO -->
+    <div style="display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto;">
+      <button onclick="trocarAbaGrupo('membros')" class="aba-grupo-btn active" id="abaMembros"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: var(--cor-primaria); border-bottom: 3px solid var(--cor-primaria); white-space: nowrap;">
+        <i class="bi bi-people"></i> Membros (${grupo.membros.length})
+      </button>
+      <button onclick="trocarAbaGrupo('temas')" class="aba-grupo-btn" id="abaTemas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-journal-bookmark"></i> Temas
+      </button>
+      <button onclick="trocarAbaGrupo('duvidas')" class="aba-grupo-btn" id="abaDuvidas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-question-circle"></i> Dúvidas (${grupo.duvidas ? grupo.duvidas.length : 0})
+      </button>
+      <button onclick="trocarAbaGrupo('notas')" class="aba-grupo-btn" id="abaNotas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-journal-text"></i> Notas
+      </button>
+      <button onclick="trocarAbaGrupo('reunioes')" class="aba-grupo-btn" id="abaReunioes"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-calendar-event"></i> Reuniões
+      </button>
+      <button onclick="trocarAbaGrupo('flashcards')" class="aba-grupo-btn" id="abaFlashcards"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-collection"></i> Flashcards
+      </button>
+    </div>
+
+    <div id="conteudoAbaGrupo">
+      ${renderizarAbaMembros(grupo)}
+    </div>
+  `;
+}
+
+// ===== TROCAR ABA =====
+function trocarAbaGrupo(aba) {
+  document.querySelectorAll('.aba-grupo-btn').forEach(btn => {
+    btn.style.color = '#6b7280';
+    btn.style.borderBottom = 'none';
+  });
+
+  const btnAtivo = document.getElementById('aba' + aba.charAt(0).toUpperCase() + aba.slice(1));
+  if (btnAtivo) {
+    btnAtivo.style.color = 'var(--cor-primaria)';
+    btnAtivo.style.borderBottom = '3px solid var(--cor-primaria)';
+  }
+
+  const grupo = grupoAtual;
+  if (!grupo) return;
+
+  const conteudo = document.getElementById('conteudoAbaGrupo');
+
+  switch (aba) {
+    case 'membros':
+      conteudo.innerHTML = renderizarAbaMembros(grupo);
+      break;
+    case 'temas':
+      conteudo.innerHTML = renderizarAbaTemas(grupo);
+      break;
+    case 'duvidas':
+      conteudo.innerHTML = renderizarAbaDuvidas(grupo);
+      break;
+    case 'notas':
+      conteudo.innerHTML = renderizarAbaNotas(grupo);
+      break;
+    case 'reunioes':
+      conteudo.innerHTML = renderizarAbaReunioes(grupo);
+      break;
+    case 'flashcards':
+      conteudo.innerHTML = renderizarAbaFlashcards(grupo);
+      break;
+  }
+}
+
+// ===== ABA MEMBROS =====
+function renderizarAbaMembros(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Membros do Grupo</h3>
+      <button onclick="adicionarMembro(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Adicionar
+      </button>
+    </div>
+    ${grupo.membros.map((m, i) => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: ${i === 0 ? '#9f042c' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            ${m.nome.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <strong>${m.nome}</strong>
+            <br><small style="color: #9ca3af;">${m.papel || 'Membro'}</small>
+          </div>
+        </div>
+        ${i !== 0 ? `<button onclick="removerMembro(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
+      </div>
+    `).join('')}
+  `;
+}
+
+// ===== ABA TEMAS =====
+function renderizarAbaTemas(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Divisão de Temas</h3>
+      <button onclick="adicionarTema(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Adicionar Tema
+      </button>
+    </div>
+    ${grupo.temas && grupo.temas.length > 0 ? grupo.temas.map((tema, i) => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
+        <div>
+          <strong>${tema.titulo}</strong>
+          <br><small style="color: #9ca3af;">Responsável: ${tema.responsavel || 'Não definido'}</small>
+        </div>
+        <button onclick="removerTema(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhum tema definido ainda.</p>'}
+  `;
+}
+
+// ===== ABA DÚVIDAS =====
+function renderizarAbaDuvidas(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Quadro de Dúvidas</h3>
+      <button onclick="adicionarDuvida(${grupo.id})"
+        style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Nova Dúvida
+      </button>
+    </div>
+    ${grupo.duvidas && grupo.duvidas.length > 0 ? grupo.duvidas.map((d, i) => `
+      <div style="padding: 15px; background: ${d.resposta ? '#f0fdf4' : '#fef3c7'}; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${d.resposta ? '#22c55e' : '#f59e0b'};">
+        <strong>${d.pergunta}</strong>
+        <br><small style="color: #9ca3af;">Por: ${d.autor}</small>
+        ${d.resposta ? `<br><span style="color: #16a34a;">✅ Respondido: ${d.resposta}</span>` : ''}
+        ${!d.resposta ? `<br><button onclick="responderDuvida(${grupo.id}, ${i})" style="margin-top: 8px; background: #22c55e; color: white; border: none; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8rem;">Responder</button>` : ''}
+        <button onclick="removerDuvida(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer; float: right;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhuma dúvida ainda.</p>'}
+  `;
+}
+
+// ===== ABA NOTAS =====
+function renderizarAbaNotas(grupo) {
+  return `
+    <h3 style="margin-bottom: 15px;">Notas do Grupo</h3>
+    <textarea id="notasGrupoTexto" rows="8" style="width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; resize: vertical; font-family: 'Poppins', sans-serif;">${grupo.notas || ''}</textarea>
+    <button onclick="salvarNotasGrupo(${grupo.id})"
+      style="margin-top: 10px; background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 600;">
+      <i class="bi bi-save"></i> Salvar Notas
+    </button>
+  `;
+}
+
+// ===== ABA REUNIÕES =====
+function renderizarAbaReunioes(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Reuniões</h3>
+      <button onclick="agendarReuniao(${grupo.id})"
+        style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-calendar-plus"></i> Agendar
+      </button>
+    </div>
+    ${grupo.reunioes && grupo.reunioes.length > 0 ? grupo.reunioes.map((r, i) => `
+      <div style="padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>${r.titulo}</strong>
+          <br><small style="color: #9ca3af;">${new Date(r.data).toLocaleDateString('pt-BR')} às ${r.hora}</small>
+        </div>
+        <button onclick="removerReuniao(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhuma reunião agendada.</p>'}
+  `;
+}
+
+// ===== ABA FLASHCARDS =====
+function renderizarAbaFlashcards(grupo) {
+  return `
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+      <button onclick="exportarFlashcardsGrupo(${grupo.id})"
+        style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-download"></i> Exportar Flashcards
+      </button>
+      <button onclick="importarFlashcardsGrupo(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-upload"></i> Importar Flashcards
+      </button>
+    </div>
+    <h4>Flashcards Compartilhados (${grupo.flashcardsCompartilhados ? grupo.flashcardsCompartilhados.length : 0})</h4>
+    ${grupo.flashcardsCompartilhados && grupo.flashcardsCompartilhados.length > 0 ?
+      grupo.flashcardsCompartilhados.map(f => `
+        <div style="padding: 10px; background: #f9fafb; border-radius: 8px; margin-bottom: 5px;">
+          <strong>${f.pergunta}</strong> → ${f.resposta}
+        </div>
+      `).join('') :
+      '<p style="color: #9ca3af;">Nenhum flashcard compartilhado.</p>'}
+  `;
+}
+
+// ===== AÇÕES DO GRUPO =====
+function iniciarChamadaVideo(id) {
+  const grupo = gruposEstudo.find(g => g.id === id);
+  if (!grupo) return;
+
+  Swal.fire({
+    title: '📹 Chamada de Vídeo',
+    text: 'Deseja abrir o Google Meet?',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-camera-video"></i> Abrir Meet',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      // Registrar reunião
+      grupo.reunioes.push({
+        titulo: `Chamada - ${grupo.nome}`,
+        data: new Date().toISOString(),
+        hora: new Date().toLocaleTimeString('pt-BR')
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+
+      // Abrir Google Meet
+      window.open('https://meet.google.com/new', '_blank');
+
+      mostrarToast('📹 Abrindo Google Meet...', '#22c55e');
+    }
+  });
+}
+
+function adicionarMembro(id) {
+  Swal.fire({
+    title: 'Adicionar Membro',
+    input: 'text',
+    inputPlaceholder: 'Nome do membro',
+    showCancelButton: true,
+    confirmButtonText: 'Adicionar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      grupo.membros.push({ nome: result.value.trim(), email: '', papel: 'Membro' });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Membro adicionado!', '#22c55e');
+    }
+  });
+}
+
+function adicionarTema(id) {
+  Swal.fire({
+    title: 'Adicionar Tema',
+    html: `
+      <input id="inputTemaTitulo" class="swal2-input" placeholder="Tema (ex: Citologia)">
+      <input id="inputTemaResponsavel" class="swal2-input" placeholder="Responsável (nome)">
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Adicionar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    preConfirm: () => {
+      const titulo = document.getElementById('inputTemaTitulo').value.trim();
+      if (!titulo) {
+        Swal.showValidationMessage('Digite o tema!');
+        return false;
+      }
+      return {
+        titulo: titulo,
+        responsavel: document.getElementById('inputTemaResponsavel').value.trim()
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.temas) grupo.temas = [];
+      grupo.temas.push(result.value);
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Tema adicionado!', '#22c55e');
+    }
+  });
+}
+
+function adicionarDuvida(id) {
+  Swal.fire({
+    title: 'Nova Dúvida',
+    input: 'text',
+    inputPlaceholder: 'Digite sua dúvida...',
+    showCancelButton: true,
+    confirmButtonText: 'Perguntar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#f59e0b',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) return 'Digite sua dúvida!';
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.duvidas) grupo.duvidas = [];
+      grupo.duvidas.push({
+        pergunta: result.value.trim(),
+        autor: 'Você',
+        resposta: ''
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Dúvida enviada!', '#f59e0b');
+    }
+  });
+}
+
+function responderDuvida(id, index) {
+  Swal.fire({
+    title: 'Responder Dúvida',
+    input: 'text',
+    inputPlaceholder: 'Digite a resposta...',
+    showCancelButton: true,
+    confirmButtonText: 'Responder',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      grupo.duvidas[index].resposta = result.value.trim();
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Dúvida respondida!', '#22c55e');
+    }
+  });
+}
+
+function agendarReuniao(id) {
+  Swal.fire({
+    title: 'Agendar Reunião',
+    html: `
+      <input id="inputReuniaoTitulo" class="swal2-input" placeholder="Título da reunião">
+      <input id="inputReuniaoData" type="date" class="swal2-input">
+      <input id="inputReuniaoHora" type="time" class="swal2-input">
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Agendar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.reunioes) grupo.reunioes = [];
+      grupo.reunioes.push({
+        titulo: document.getElementById('inputReuniaoTitulo').value || 'Reunião',
+        data: document.getElementById('inputReuniaoData').value,
+        hora: document.getElementById('inputReuniaoHora').value
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Reunião agendada!', '#3b82f6');
+    }
+  });
+}
+
+function salvarNotasGrupo(id) {
+  const notas = document.getElementById('notasGrupoTexto').value;
+  const grupo = gruposEstudo.find(g => g.id === id);
+  grupo.notas = notas;
+  localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+  mostrarToast('✅ Notas salvas!', '#22c55e');
+}
+
+function exportarFlashcardsGrupo(id) {
+  if (flashcards.length === 0) {
+    alertAviso('Sem flashcards', 'Crie flashcards primeiro!');
+    return;
+  }
+  const data = JSON.stringify(flashcards);
+  navigator.clipboard.writeText(data).then(() => {
+    mostrarToast('📋 Flashcards copiados!', '#3b82f6');
+  });
+}
+
+function importarFlashcardsGrupo(id) {
+  Swal.fire({
+    title: 'Importar Flashcards',
+    input: 'textarea',
+    inputPlaceholder: 'Cole os flashcards aqui (JSON)...',
+    showCancelButton: true,
+    confirmButtonText: 'Importar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      try {
+        const cardsImportados = JSON.parse(result.value);
+        const grupo = gruposEstudo.find(g => g.id === id);
+        if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
+        grupo.flashcardsCompartilhados = grupo.flashcardsCompartilhados.concat(cardsImportados);
+        localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+        renderizarDetalheGrupo(grupo);
+        mostrarToast('✅ Flashcards importados!', '#22c55e');
+      } catch (e) {
+        alertErro('Erro', 'JSON inválido!');
+      }
+    }
+  });
+}
+
+function voltarListaGrupos() {
+  renderizarListaGrupos();
+}
+
+// ===== EXPORTAR =====
+window.abrirGruposEstudo = abrirGruposEstudo;
+window.fecharGruposEstudo = fecharGruposEstudo;
+window.abrirCriarGrupo = abrirCriarGrupo;
+window.abrirEntrarGrupo = abrirEntrarGrupo;
+window.copiarCodigo = copiarCodigo;
+window.abrirDetalheGrupo = abrirDetalheGrupo;
+window.trocarAbaGrupo = trocarAbaGrupo;
+window.iniciarChamadaVideo = iniciarChamadaVideo;
+window.adicionarMembro = adicionarMembro;
+window.adicionarTema = adicionarTema;
+window.adicionarDuvida = adicionarDuvida;
+window.responderDuvida = responderDuvida;
+window.agendarReuniao = agendarReuniao;
+window.salvarNotasGrupo = salvarNotasGrupo;
+window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
+window.importarFlashcardsGrupo = importarFlashcardsGrupo;
+window.voltarListaGrupos = voltarListaGrupos;
