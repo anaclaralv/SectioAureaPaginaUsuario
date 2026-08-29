@@ -518,8 +518,56 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 
-// Abre o tutorial automaticamente (só na primeira vez)
+// Abre o tutorial automaticamente (só na primeira vez) ou verifica se já realizou o teste
 document.addEventListener('DOMContentLoaded', function() {
+  const token = localStorage.getItem('token');
+  
+  if (token) {
+    apiFetch("perfil")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro ao buscar perfil do servidor');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.tipo_dom && data.tipo_dom.trim() !== '') {
+          // Já realizou o teste
+          bloquearTeste();
+        } else {
+          iniciarTeste();
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao verificar status do teste:', err);
+        // Fallback local caso o servidor falhe ou esteja offline
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.tipo_dom && user.tipo_dom.trim() !== '') {
+          bloquearTeste();
+        } else {
+          iniciarTeste();
+        }
+      });
+  } else {
+    // Visitante (não logado), inicia normalmente
+    iniciarTeste();
+  }
+});
+
+function bloquearTeste() {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Teste já realizado!',
+    text: 'Você já realizou o teste de inteligência e não pode refazê-lo.',
+    confirmButtonColor: '#000000',
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  }).then(() => {
+    window.location.href = 'PaginaUsuario.html';
+  });
+}
+
+function iniciarTeste() {
   const tutorialVisto = localStorage.getItem('tutorialVisto');
   
   if (!tutorialVisto) {
@@ -538,5 +586,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Também inicia o teste
   mostrarEtapa();
-});
+}
+
 // Opcional: Botão "Revisar tutorial" na navbar ou rodapé

@@ -73,6 +73,15 @@ class UsuarioController {
             return;
         }
         
+        // Impedir que o teste seja refeito caso tipo_dom já esteja definido no banco de dados
+        if (isset($data->tipo_dom) || isset($data->clas_inteli)) {
+            if (!empty($this->usuario->tipo_dom) && $this->usuario->tipo_dom !== '') {
+                http_response_code(400);
+                echo json_encode(["message" => "Você já realizou o teste de inteligência e não pode refazê-lo."]);
+                return;
+            }
+        }
+        
         $this->usuario->nome = $data->nome ?? $this->usuario->nome;
         $this->usuario->email = $data->email ?? $this->usuario->email;
         $this->usuario->plano = $data->plano ?? $this->usuario->plano;
