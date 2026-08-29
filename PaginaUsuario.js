@@ -6371,7 +6371,6 @@ function abrirNotaCornell(id) {
     Swal.fire({
       title: nota.titulo || 'Nota Cornell',
       html: nota.texto,
-      icon: 'info',
       confirmButtonText: 'Fechar',
       confirmButtonColor: 'var(--cor-primaria)',
       width: '700px',
