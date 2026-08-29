@@ -5,7 +5,7 @@ if (typeof apiFetch === 'undefined') {
     : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -19,6 +19,8 @@ if (typeof apiFetch === 'undefined') {
     };
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = 'ProjetoIntegrador.html';
@@ -466,7 +468,8 @@ function mostrarResultado() {
     tresDominantes[letra] = valor;
   });
 
-  if (localStorage.getItem("token")) {
+  const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+  if (token) {
     apiFetch("perfil", {
       method: "PUT",
       body: JSON.stringify({
@@ -476,10 +479,11 @@ function mostrarResultado() {
     }).then(response => {
       if (response.ok) {
         console.log("Resultado de inteligência salvo no backend.");
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
+        const user = JSON.parse(storage.getItem("user") || "{}");
         user.tipo_dom = tipoFinal;
         user.clas_inteli = tresDominantes;
-        localStorage.setItem("user", JSON.stringify(user));
+        storage.setItem("user", JSON.stringify(user));
       }
     }).catch(err => console.error("Erro ao salvar inteligência:", err));
   }
@@ -559,7 +563,7 @@ toggleBtn.addEventListener('click', () => {
 
 // Abre o tutorial automaticamente (só na primeira vez) ou verifica se já realizou o teste
 document.addEventListener('DOMContentLoaded', function() {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   
   if (token) {
     apiFetch("perfil")
@@ -580,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(err => {
         console.error('Erro ao verificar status do teste:', err);
         // Fallback local caso o servidor falhe ou esteja offline
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
         if (user.tipo_dom && user.tipo_dom.trim() !== '') {
           bloquearTeste();
         } else {

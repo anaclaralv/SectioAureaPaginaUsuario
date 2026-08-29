@@ -5,7 +5,7 @@ if (typeof apiFetch === 'undefined') {
     : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -19,6 +19,8 @@ if (typeof apiFetch === 'undefined') {
     };
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = 'ProjetoIntegrador.html';
@@ -57,7 +59,7 @@ if (typeof normalizarInteligencia === 'undefined') {
   };
 }
 
-if (!localStorage.getItem("token")) {
+if (!sessionStorage.getItem("token") && !localStorage.getItem("token")) {
   window.location.href = "ProjetoIntegrador.html";
 }
 
@@ -72,20 +74,21 @@ async function carregarPerfilUsuario() {
       if (sidebarNome) sidebarNome.textContent = data.nome;
       if (sidebarEmail) sidebarEmail.textContent = data.email;
       const previewFoto = document.getElementById('previewFoto');
+      const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
       if (data.foto) {
         if (sidebarFoto) sidebarFoto.src = data.foto;
         if (previewFoto) previewFoto.src = data.foto;
-        localStorage.setItem("userFoto", data.foto);
+        storage.setItem("userFoto", data.foto);
       } else {
         const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         if (sidebarFoto) sidebarFoto.src = defaultAvatar;
         if (previewFoto) previewFoto.src = defaultAvatar;
-        localStorage.removeItem("userFoto");
+        storage.removeItem("userFoto");
       }
       if (data.plano) {
-        localStorage.setItem("planoUsuario", data.plano.toLowerCase());
+        storage.setItem("planoUsuario", data.plano.toLowerCase());
       }
-      localStorage.setItem("user", JSON.stringify(data));
+      storage.setItem("user", JSON.stringify(data));
 
       if (data.tipo_dom) {
         aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
@@ -2371,7 +2374,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   atualizarTudo();
 
-  const fotoSalva = localStorage.getItem("userFoto");
+  const fotoSalva = sessionStorage.getItem("userFoto") || localStorage.getItem("userFoto");
   const sidebarFoto = document.getElementById('sidebarFoto');
   const previewFoto = document.getElementById('previewFoto');
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
@@ -2509,14 +2512,15 @@ async function salvarConfiguracao() {
       if (sidebarEmail) sidebarEmail.textContent = novoEmail;
       if (foto && sidebarFoto) sidebarFoto.src = foto;
 
-      localStorage.setItem("userName", novoNome);
-      if (foto) localStorage.setItem("userFoto", foto);
+      const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
+      storage.setItem("userName", novoNome);
+      if (foto) storage.setItem("userFoto", foto);
 
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const user = JSON.parse(storage.getItem("user") || "{}");
       user.nome = novoNome;
       user.email = novoEmail;
       user.foto = foto;
-      localStorage.setItem("user", JSON.stringify(user));
+      storage.setItem("user", JSON.stringify(user));
 
       Swal.fire({
         icon: 'success',
@@ -8128,11 +8132,11 @@ if (typeof metodosPorInteligencia === 'undefined') {
 window.renderizarMetodosEstudo = function () {
   console.log('🎨 Renderizando métodos de estudo...');
 
-  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
+  let tipoInteligencia = sessionStorage.getItem('inteligenciaUsuario') || localStorage.getItem('inteligenciaUsuario');
   console.log('📌 Inteligência salva:', tipoInteligencia);
 
   if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
     if (user.tipo_dom) {
       tipoInteligencia = normalizarInteligencia(user.tipo_dom);
       console.log('📌 Inteligência do usuário:', tipoInteligencia);

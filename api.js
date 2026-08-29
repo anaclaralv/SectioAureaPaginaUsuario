@@ -3,7 +3,7 @@ const API_BASE_URL = (window.location.origin && window.location.origin !== 'null
     : 'http://localhost/SectioAureaPaginaUsuario/api';
 
 async function apiFetch(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -18,6 +18,8 @@ async function apiFetch(endpoint, options = {}) {
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
         // Token inválido ou expirado
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         if (!window.location.pathname.endsWith('ProjetoIntegrador.html')) {

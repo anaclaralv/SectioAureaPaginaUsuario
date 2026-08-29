@@ -8,7 +8,7 @@ if (typeof apiFetch === 'undefined') {
     : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -22,6 +22,8 @@ if (typeof apiFetch === 'undefined') {
     };
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = 'ProjetoIntegrador.html';
@@ -290,8 +292,8 @@ if (cadastroForm) {
         });
         if (loginResp.ok) {
           const loginData = await loginResp.json();
-          localStorage.setItem("token", loginData.token);
-          localStorage.setItem("user", JSON.stringify(loginData.user));
+          sessionStorage.setItem("token", loginData.token);
+          sessionStorage.setItem("user", JSON.stringify(loginData.user));
           
           const modalCadastroEl = document.getElementById("cadastro");
           const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
@@ -349,11 +351,24 @@ if (loginForm) {
 
       if (response.ok) {
         mostrarSucesso("Login realizado com sucesso!");
+        
+        sessionStorage.removeItem("userFoto");
+        sessionStorage.removeItem("inteligenciaUsuario");
+        sessionStorage.removeItem("corPrimaria");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        
         localStorage.removeItem("userFoto");
         localStorage.removeItem("inteligenciaUsuario");
         localStorage.removeItem("corPrimaria");
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        const lembrar = document.getElementById("loginLembrar")?.checked;
+        const storage = lembrar ? localStorage : sessionStorage;
+
+        storage.setItem("token", data.token);
+        storage.setItem("user", JSON.stringify(data.user));
 
         const modalLoginEl = document.getElementById("loginModal");
         const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
@@ -362,9 +377,9 @@ if (loginForm) {
         modalLoginEl.addEventListener("hidden.bs.modal", function () {
           if (data.user.tipo_dom) {
             const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
-            localStorage.setItem("inteligenciaUsuario", tipoSlug);
+            storage.setItem("inteligenciaUsuario", tipoSlug);
             if (data.user.cor_dominante) {
-              localStorage.setItem("corPrimaria", data.user.cor_dominante);
+              storage.setItem("corPrimaria", data.user.cor_dominante);
             }
             window.location.href = "PaginaUsuario.html";
           } else {
