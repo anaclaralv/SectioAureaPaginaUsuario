@@ -28,11 +28,17 @@ class GrupoEstudoController {
         
         $grupos = [];
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['membros'] = json_decode($row['membros']);
-            $row['temas'] = json_decode($row['temas']);
-            $row['duvidas'] = json_decode($row['duvidas']);
-            $row['reunioes'] = json_decode($row['reunioes']);
-            $row['flashcards_compartilhados'] = json_decode($row['flashcards_compartilhados']);
+            $row['membros'] = json_decode($row['membros']) ?? [];
+            $row['temas'] = json_decode($row['temas']) ?? [];
+            $row['duvidas'] = json_decode($row['duvidas']) ?? [];
+            $row['reunioes'] = json_decode($row['reunioes']) ?? [];
+            $row['flashcards_compartilhados'] = json_decode($row['flashcards_compartilhados']) ?? [];
+            
+            // Aliases para camelCase do frontend
+            $row['linkMeet'] = $row['link_meet'] ?? '';
+            $row['dataCriacao'] = $row['data_criacao'] ?? '';
+            $row['flashcardsCompartilhados'] = $row['flashcards_compartilhados'];
+            
             array_push($grupos, $row);
         }
         
@@ -48,6 +54,12 @@ class GrupoEstudoController {
         }
         
         if($found) {
+            $membros = json_decode($this->grupo->membros) ?? [];
+            $temas = json_decode($this->grupo->temas) ?? [];
+            $duvidas = json_decode($this->grupo->duvidas) ?? [];
+            $reunioes = json_decode($this->grupo->reunioes) ?? [];
+            $flashcards = json_decode($this->grupo->flashcards_compartilhados) ?? [];
+            
             echo json_encode([
                 "id_grupo" => $this->grupo->id_grupo,
                 "id_usuario" => $this->grupo->id_usuario,
@@ -55,13 +67,16 @@ class GrupoEstudoController {
                 "materia" => $this->grupo->materia,
                 "codigo" => $this->grupo->codigo,
                 "link_meet" => $this->grupo->link_meet,
-                "membros" => json_decode($this->grupo->membros),
-                "temas" => json_decode($this->grupo->temas),
-                "duvidas" => json_decode($this->grupo->duvidas),
-                "reunioes" => json_decode($this->grupo->reunioes),
+                "linkMeet" => $this->grupo->link_meet,
+                "membros" => $membros,
+                "temas" => $temas,
+                "duvidas" => $duvidas,
+                "reunioes" => $reunioes,
                 "notas" => $this->grupo->notas,
-                "flashcards_compartilhados" => json_decode($this->grupo->flashcards_compartilhados),
-                "data_criacao" => $this->grupo->data_criacao
+                "flashcards_compartilhados" => $flashcards,
+                "flashcardsCompartilhados" => $flashcards,
+                "data_criacao" => $this->grupo->data_criacao,
+                "dataCriacao" => $this->grupo->data_criacao
             ]);
         } else {
             http_response_code(404);
@@ -92,7 +107,10 @@ class GrupoEstudoController {
         $this->grupo->reunioes = isset($data->reunioes) ? json_encode($data->reunioes) : '[]';
         $this->grupo->notas = $data->notas ?? '';
         $this->grupo->flashcards_compartilhados = isset($data->flashcardsCompartilhados) ? json_encode($data->flashcardsCompartilhados) : '[]';
-        $this->grupo->data_criacao = $data->dataCriacao ?? date('Y-m-d H:i:s');
+        
+        $data_criacao = $data->dataCriacao ?? date('Y-m-d H:i:s');
+        $timestamp = strtotime($data_criacao);
+        $this->grupo->data_criacao = ($timestamp !== false) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
         
         if($this->grupo->create()) {
             http_response_code(201);

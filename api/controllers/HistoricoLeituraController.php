@@ -28,8 +28,13 @@ class HistoricoLeituraController {
         
         $leituras = [];
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['paginas'] = json_decode($row['paginas']);
-            $row['anotacoes'] = json_decode($row['anotacoes']);
+            $row['paginas'] = json_decode($row['paginas']) ?? [];
+            $row['anotacoes'] = json_decode($row['anotacoes']) ?? [];
+            
+            // Aliases para o frontend
+            $row['trechos'] = $row['paginas'];
+            $row['textoCompleto'] = $row['texto_completo'] ?? '';
+            
             array_push($leituras, $row);
         }
         
@@ -42,14 +47,19 @@ class HistoricoLeituraController {
         $this->leitura->id_usuario = $id_usuario;
         
         if($this->leitura->readOne()) {
+            $paginas = json_decode($this->leitura->paginas) ?? [];
+            $anotacoes = json_decode($this->leitura->anotacoes) ?? [];
+            
             echo json_encode([
                 "id_leitura" => $this->leitura->id_leitura,
                 "id_usuario" => $this->leitura->id_usuario,
                 "titulo" => $this->leitura->titulo,
                 "data" => $this->leitura->data,
-                "paginas" => json_decode($this->leitura->paginas),
-                "anotacoes" => json_decode($this->leitura->anotacoes),
-                "texto_completo" => $this->leitura->texto_completo
+                "paginas" => $paginas,
+                "trechos" => $paginas, // alias
+                "anotacoes" => $anotacoes,
+                "texto_completo" => $this->leitura->texto_completo,
+                "textoCompleto" => $this->leitura->texto_completo // alias
             ]);
         } else {
             http_response_code(404);
@@ -69,8 +79,13 @@ class HistoricoLeituraController {
         
         $this->leitura->id_usuario = $id_usuario;
         $this->leitura->titulo = $data->titulo;
-        $this->leitura->data = $data->data ?? date('Y-m-d H:i:s');
-        $this->leitura->paginas = isset($data->paginas) ? json_encode($data->paginas) : '[]';
+        
+        $data_leitura = $data->data ?? date('Y-m-d H:i:s');
+        $timestamp = strtotime($data_leitura);
+        $this->leitura->data = ($timestamp !== false) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
+        
+        // Mapeia trechos para paginas
+        $this->leitura->paginas = isset($data->trechos) ? json_encode($data->trechos) : (isset($data->paginas) ? json_encode($data->paginas) : '[]');
         $this->leitura->anotacoes = isset($data->anotacoes) ? json_encode($data->anotacoes) : '[]';
         $this->leitura->texto_completo = $data->textoCompleto ?? '';
         
@@ -100,7 +115,7 @@ class HistoricoLeituraController {
         }
         
         $this->leitura->titulo = $data->titulo ?? $this->leitura->titulo;
-        $this->leitura->paginas = isset($data->paginas) ? json_encode($data->paginas) : $this->leitura->paginas;
+        $this->leitura->paginas = isset($data->trechos) ? json_encode($data->trechos) : (isset($data->paginas) ? json_encode($data->paginas) : $this->leitura->paginas);
         $this->leitura->anotacoes = isset($data->anotacoes) ? json_encode($data->anotacoes) : $this->leitura->anotacoes;
         $this->leitura->texto_completo = $data->textoCompleto ?? $this->leitura->texto_completo;
         

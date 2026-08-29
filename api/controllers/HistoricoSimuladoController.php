@@ -71,7 +71,11 @@ class HistoricoSimuladoController {
         }
         
         $this->simulado->id_usuario = $id_usuario;
-        $this->simulado->data = $data->data ?? date('Y-m-d H:i:s');
+        
+        $data_simulado = $data->data ?? date('Y-m-d H:i:s');
+        $timestamp = strtotime($data_simulado);
+        $this->simulado->data = ($timestamp !== false) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
+        
         $this->simulado->materia = $data->materia;
         $this->simulado->acertos = $data->acertos ?? 0;
         $this->simulado->erros = $data->erros ?? 0;

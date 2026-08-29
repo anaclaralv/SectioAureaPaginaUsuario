@@ -33,6 +33,13 @@ class GravacaoEstudoController {
             $row['check_lacunas'] = (bool)$row['check_lacunas'];
             $row['check_simplificado'] = (bool)$row['check_simplificado'];
             $row['duracao'] = (int)$row['duracao'];
+            
+            // Aliases para camelCase do frontend
+            $row['checkPalavrasSimples'] = $row['check_palavras_simples'];
+            $row['checkAnalogias'] = $row['check_analogias'];
+            $row['checkLacunas'] = $row['check_lacunas'];
+            $row['checkSimplificado'] = $row['check_simplificado'];
+            
             array_push($gravacoes, $row);
         }
         
@@ -45,6 +52,11 @@ class GravacaoEstudoController {
         $this->gravacao->id_usuario = $id_usuario;
         
         if($this->gravacao->readOne()) {
+            $cps = (bool)$this->gravacao->check_palavras_simples;
+            $ca = (bool)$this->gravacao->check_analogias;
+            $cl = (bool)$this->gravacao->check_lacunas;
+            $cs = (bool)$this->gravacao->check_simplificado;
+            
             echo json_encode([
                 "id_gravacao" => $this->gravacao->id_gravacao,
                 "id_usuario" => $this->gravacao->id_usuario,
@@ -52,10 +64,14 @@ class GravacaoEstudoController {
                 "url" => $this->gravacao->url,
                 "modo" => $this->gravacao->modo,
                 "nome" => $this->gravacao->nome,
-                "check_palavras_simples" => (bool)$this->gravacao->check_palavras_simples,
-                "check_analogias" => (bool)$this->gravacao->check_analogias,
-                "check_lacunas" => (bool)$this->gravacao->check_lacunas,
-                "check_simplificado" => (bool)$this->gravacao->check_simplificado,
+                "check_palavras_simples" => $cps,
+                "checkPalavrasSimples" => $cps,
+                "check_analogias" => $ca,
+                "checkAnalogias" => $ca,
+                "check_lacunas" => $cl,
+                "checkLacunas" => $cl,
+                "check_simplificado" => $cs,
+                "checkSimplificado" => $cs,
                 "anotacoes" => $this->gravacao->anotacoes,
                 "duracao" => (int)$this->gravacao->duracao
             ]);
@@ -76,7 +92,11 @@ class GravacaoEstudoController {
         }
         
         $this->gravacao->id_usuario = $id_usuario;
-        $this->gravacao->data = $data->data ?? date('Y-m-d H:i:s');
+        
+        $data_gravacao = $data->data ?? date('Y-m-d H:i:s');
+        $timestamp = strtotime($data_gravacao);
+        $this->gravacao->data = ($timestamp !== false) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
+        
         $this->gravacao->url = $data->url;
         $this->gravacao->modo = $data->modo;
         $this->gravacao->nome = $data->nome ?? 'Minha Gravação';

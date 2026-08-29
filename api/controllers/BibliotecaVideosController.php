@@ -30,6 +30,11 @@ class BibliotecaVideosController {
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $row['assistido'] = (bool)$row['assistido'];
             $row['nota'] = (int)$row['nota'];
+            
+            // Aliases para camelCase do frontend
+            $row['videoId'] = $row['video_id'];
+            $row['dataAdicionado'] = $row['data_adicionado'];
+            
             array_push($videos, $row);
         }
         
@@ -49,12 +54,14 @@ class BibliotecaVideosController {
                 "titulo" => $this->video->titulo,
                 "url" => $this->video->url,
                 "video_id" => $this->video->video_id,
+                "videoId" => $this->video->video_id,
                 "thumbnail" => $this->video->thumbnail,
                 "tema" => $this->video->tema,
                 "anotacoes" => $this->video->anotacoes,
                 "assistido" => (bool)$this->video->assistido,
                 "nota" => (int)$this->video->nota,
-                "data_adicionado" => $this->video->data_adicionado
+                "data_adicionado" => $this->video->data_adicionado,
+                "dataAdicionado" => $this->video->data_adicionado
             ]);
         } else {
             http_response_code(404);
@@ -82,7 +89,10 @@ class BibliotecaVideosController {
         $this->video->anotacoes = $data->anotacoes ?? '';
         $this->video->assistido = isset($data->assistido) ? (int)$data->assistido : 0;
         $this->video->nota = $data->nota ?? 0;
-        $this->video->data_adicionado = $data->dataAdicionado ?? date('Y-m-d H:i:s');
+        
+        $data_adicionado = $data->dataAdicionado ?? date('Y-m-d H:i:s');
+        $timestamp = strtotime($data_adicionado);
+        $this->video->data_adicionado = ($timestamp !== false) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
         
         if($this->video->create()) {
             http_response_code(201);
