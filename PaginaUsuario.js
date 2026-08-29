@@ -7701,7 +7701,20 @@ let pausado = false;
 let segundosGravacao = 0;
 let timerGravacao = null;
 
-const gravacoesSalvas = JSON.parse(localStorage.getItem('gravacoesEstudo') || '[]');
+let gravacoesSalvas = [];
+
+async function carregarGravacoesServidor() {
+  try {
+    const response = await apiFetch("gravacoesestudo");
+    if (response.ok) {
+      gravacoesSalvas = await response.json();
+      gravacoesSalvas.forEach(g => g.id = g.id_gravacao);
+      renderizarGravacoes();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar gravações do servidor:", err);
+  }
+}
 
 // ===== FUNÇÃO GENÉRICA PARA ABRIR O GRAVADOR COMO MODAL =====
 function abrirGravador(modo) {
@@ -7740,7 +7753,7 @@ function abrirGravador(modo) {
     limparCamposGravador();
 
     // Renderiza as gravações salvas
-    renderizarGravacoes();
+    carregarGravacoesServidor();
   } else {
     console.error('❌ Modal do gravador não encontrado! Verifique o HTML.');
   }
@@ -7937,34 +7950,37 @@ function salvarGravacao() {
   const modoAtivo = localStorage.getItem('modoGravadorAtivo') || 'feynman';
   const nomeGravacao = document.getElementById('nomeGravacao').value.trim();
 
-  const gravacao = {
-    id: Date.now(),
-    data: new Date().toISOString(),
-    url: audioUrl,
-    modo: modoAtivo,
-    nome: nomeGravacao || `Gravação ${modoAtivo === 'podcast' ? 'Podcast' : 'Feynman'} ${new Date().toLocaleDateString('pt-BR')}`,
-    checkPalavrasSimples: document.getElementById('checkPalavrasSimples')?.checked || false,
-    checkAnalogias: document.getElementById('checkAnalogias')?.checked || false,
-    checkLacunas: document.getElementById('checkLacunas')?.checked || false,
-    checkSimplificado: document.getElementById('checkSimplificado')?.checked || false,
-    anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
-    duracao: segundosGravacao
-  };
-
-  gravacoesSalvas.push(gravacao);
-  localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-
-  renderizarGravacoes();
-
-  // Limpar campos
-  limparCamposGravador();
-
-  Swal.fire({
-    icon: 'success',
-    title: 'Gravação salva!',
-    text: `"${gravacao.nome}" foi salva com sucesso.`,
-    timer: 2000,
-    showConfirmButton: false
+  apiFetch("gravacoesestudo", {
+    method: "POST",
+    body: JSON.stringify({
+      data: new Date().toISOString(),
+      url: audioUrl,
+      modo: modoAtivo,
+      nome: nomeGravacao || `Gravação ${modoAtivo === 'podcast' ? 'Podcast' : 'Feynman'} ${new Date().toLocaleDateString('pt-BR')}`,
+      checkPalavrasSimples: document.getElementById('checkPalavrasSimples')?.checked ? 1 : 0,
+      checkAnalogias: document.getElementById('checkAnalogias')?.checked ? 1 : 0,
+      checkLacunas: document.getElementById('checkLacunas')?.checked ? 1 : 0,
+      checkSimplificado: document.getElementById('checkSimplificado')?.checked ? 1 : 0,
+      anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
+      duracao: segundosGravacao
+    })
+  }).then(response => {
+    if (response.ok) {
+      carregarGravacoesServidor();
+      limparCamposGravador();
+      Swal.fire({
+        icon: 'success',
+        title: 'Gravação salva!',
+        text: 'Sua gravação foi salva com sucesso.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } else {
+      mostrarToast('❌ Erro ao salvar gravação', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao salvar gravação', '#ef4444');
   });
 }
 
@@ -8040,19 +8056,24 @@ function renderizarGravacoes() {
 }
 
 function excluirGravacao(id) {
-  const index = gravacoesSalvas.findIndex(g => g.id === id);
-  if (index !== -1) {
-    gravacoesSalvas.splice(index, 1);
-    localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-    renderizarGravacoes();
-
-    Swal.fire({
-      icon: 'success',
-      title: 'Excluída!',
-      timer: 1000,
-      showConfirmButton: false
-    });
-  }
+  apiFetch(`gravacoesestudo/${id}`, {
+    method: "DELETE"
+  }).then(response => {
+    if (response.ok) {
+      carregarGravacoesServidor();
+      Swal.fire({
+        icon: 'success',
+        title: 'Excluída!',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    } else {
+      mostrarToast('❌ Erro ao excluir gravação', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao excluir gravação', '#ef4444');
+  });
 }
 
 // ===== EXPOR FUNÇÕES GLOBALMENTE =====
@@ -8343,26 +8364,38 @@ function editarGravacao(id) {
     }
   }).then((result) => {
     if (result.isConfirmed) {
-      // Atualiza a gravação
-      gravacao.nome = result.value.nome;
-      gravacao.anotacoes = result.value.anotacoes;
-      gravacao.checkPalavrasSimples = result.value.checkPalavrasSimples;
-      gravacao.checkAnalogias = result.value.checkAnalogias;
-      gravacao.checkLacunas = result.value.checkLacunas;
-      gravacao.checkSimplificado = result.value.checkSimplificado;
-
-      // Salva no localStorage
-      localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
-
-      // Re-renderiza a lista
-      renderizarGravacoes();
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Atualizada!',
-        text: 'Gravação atualizada com sucesso.',
-        timer: 1500,
-        showConfirmButton: false
+      apiFetch(`gravacoesestudo/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          nome: result.value.nome,
+          anotacoes: result.value.anotacoes,
+          checkPalavrasSimples: result.value.checkPalavrasSimples ? 1 : 0,
+          checkAnalogias: result.value.checkAnalogias ? 1 : 0,
+          checkLacunas: result.value.checkLacunas ? 1 : 0,
+          checkSimplificado: result.value.checkSimplificado ? 1 : 0
+        })
+      }).then(response => {
+        if (response.ok) {
+          gravacao.nome = result.value.nome;
+          gravacao.anotacoes = result.value.anotacoes;
+          gravacao.checkPalavrasSimples = result.value.checkPalavrasSimples;
+          gravacao.checkAnalogias = result.value.checkAnalogias;
+          gravacao.checkLacunas = result.value.checkLacunas;
+          gravacao.checkSimplificado = result.value.checkSimplificado;
+          renderizarGravacoes();
+          Swal.fire({
+            icon: 'success',
+            title: 'Atualizada!',
+            text: 'Gravação atualizada com sucesso.',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } else {
+          mostrarToast('❌ Erro ao atualizar gravação', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao atualizar gravação', '#ef4444');
       });
     }
   });
@@ -8372,7 +8405,20 @@ function editarGravacao(id) {
 // ===== BIBLIOTECA DE VÍDEOS =================
 // =============================================
 
-let bibliotecaVideos = JSON.parse(localStorage.getItem('bibliotecaVideos') || '[]');
+let bibliotecaVideos = [];
+
+async function carregarVideosServidor() {
+  try {
+    const response = await apiFetch("bibliotecavideos");
+    if (response.ok) {
+      bibliotecaVideos = await response.json();
+      bibliotecaVideos.forEach(v => v.id = v.id_video);
+      renderizarBibliotecaVideos();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar vídeos do servidor:", err);
+  }
+}
 
 // ===== ABRIR BIBLIOTECA =====
 function abrirBibliotecaVideos() {
@@ -8386,7 +8432,7 @@ function abrirBibliotecaVideos() {
   if (modal) {
     modal.style.display = 'flex';
     popularFiltroMateriasVideos();
-    renderizarBibliotecaVideos();
+    carregarVideosServidor();
   }
 }
 
@@ -8517,27 +8563,32 @@ function salvarVideo() {
 
   const videoId = extrairYouTubeId(url);
 
-  const video = {
-    id: Date.now(),
-    materia: materia,
-    titulo: titulo,
-    url: url,
-    videoId: videoId,
-    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-    tema: tema || 'Geral',
-    anotacoes: anotacoes,
-    assistido: false,
-    nota: 0,
-    dataAdicionado: new Date().toISOString()
-  };
-
-  bibliotecaVideos.push(video);
-  localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-
-  fecharModalAdicionarVideo();
-  popularFiltroMateriasVideos();
-  renderizarBibliotecaVideos();
-  mostrarToast('✅ Vídeo adicionado!', '#22c55e');
+  apiFetch("bibliotecavideos", {
+    method: "POST",
+    body: JSON.stringify({
+      materia: materia,
+      titulo: titulo,
+      url: url,
+      videoId: videoId,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      tema: tema || 'Geral',
+      anotacoes: anotacoes,
+      assistido: false,
+      nota: 0,
+      dataAdicionado: new Date().toISOString()
+    })
+  }).then(response => {
+    if (response.ok) {
+      fecharModalAdicionarVideo();
+      carregarVideosServidor();
+      mostrarToast('✅ Vídeo adicionado!', '#22c55e');
+    } else {
+      mostrarToast('❌ Erro ao adicionar vídeo', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao adicionar vídeo', '#ef4444');
+  });
 }
 
 // ===== SALVAR NOVA MATÉRIA NO SISTEMA =====
@@ -8689,10 +8740,22 @@ function abrirVideoEstudo(url) { window.open(url, '_blank'); }
 function alternarAssistido(id) {
   const video = bibliotecaVideos.find(v => v.id === id);
   if (video) {
-    video.assistido = !video.assistido;
-    localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-    renderizarBibliotecaVideos();
-    mostrarToast(video.assistido ? '✅ Marcado como assistido!' : '↩️ Desmarcado!', video.assistido ? '#22c55e' : '#6b7280');
+    const novoStatus = !video.assistido;
+    apiFetch(`bibliotecavideos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ assistido: novoStatus ? 1 : 0 })
+    }).then(response => {
+      if (response.ok) {
+        video.assistido = novoStatus;
+        renderizarBibliotecaVideos();
+        mostrarToast(video.assistido ? '✅ Marcado como assistido!' : '↩️ Desmarcado!', video.assistido ? '#22c55e' : '#6b7280');
+      } else {
+        mostrarToast('❌ Erro ao atualizar status', '#ef4444');
+      }
+    }).catch(err => {
+      console.error(err);
+      mostrarToast('❌ Erro ao atualizar status', '#ef4444');
+    });
   }
 }
 
@@ -8712,10 +8775,22 @@ function avaliarVideo(id) {
     confirmButtonColor: '#f59e0b'
   }).then((result) => {
     if (result.isConfirmed) {
-      video.nota = parseInt(result.value);
-      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-      renderizarBibliotecaVideos();
-      mostrarToast(`${'⭐'.repeat(video.nota)} Avaliação salva!`, '#f59e0b');
+      const nota = parseInt(result.value);
+      apiFetch(`bibliotecavideos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ nota: nota })
+      }).then(response => {
+        if (response.ok) {
+          video.nota = nota;
+          renderizarBibliotecaVideos();
+          mostrarToast(`${'⭐'.repeat(video.nota)} Avaliação salva!`, '#f59e0b');
+        } else {
+          mostrarToast('❌ Erro ao salvar avaliação', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao salvar avaliação', '#ef4444');
+      });
     }
   });
 }
@@ -8749,12 +8824,27 @@ function editarVideo(id) {
     }
   }).then((result) => {
     if (result.isConfirmed) {
-      video.titulo = result.value.titulo;
-      video.tema = result.value.tema;
-      video.anotacoes = result.value.anotacoes;
-      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-      renderizarBibliotecaVideos();
-      mostrarToast('✅ Vídeo atualizado!', '#22c55e');
+      apiFetch(`bibliotecavideos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          titulo: result.value.titulo,
+          tema: result.value.tema,
+          anotacoes: result.value.anotacoes
+        })
+      }).then(response => {
+        if (response.ok) {
+          video.titulo = result.value.titulo;
+          video.tema = result.value.tema;
+          video.anotacoes = result.value.anotacoes;
+          renderizarBibliotecaVideos();
+          mostrarToast('✅ Vídeo atualizado!', '#22c55e');
+        } else {
+          mostrarToast('❌ Erro ao atualizar vídeo', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao atualizar vídeo', '#ef4444');
+      });
     }
   });
 }
@@ -8769,11 +8859,21 @@ function excluirVideo(id) {
     confirmButtonColor: '#ef4444'
   }).then((result) => {
     if (result.isConfirmed) {
-      bibliotecaVideos = bibliotecaVideos.filter(v => v.id !== id);
-      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
-      popularFiltroMateriasVideos();
-      renderizarBibliotecaVideos();
-      mostrarToast('🗑️ Vídeo excluído!', '#ef4444');
+      apiFetch(`bibliotecavideos/${id}`, {
+        method: "DELETE"
+      }).then(response => {
+        if (response.ok) {
+          bibliotecaVideos = bibliotecaVideos.filter(v => v.id !== id);
+          popularFiltroMateriasVideos();
+          renderizarBibliotecaVideos();
+          mostrarToast('🗑️ Vídeo excluído!', '#ef4444');
+        } else {
+          mostrarToast('❌ Erro ao excluir vídeo', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao excluir vídeo', '#ef4444');
+      });
     }
   });
 }
@@ -10137,18 +10237,25 @@ function finalizarSimulado() {
   document.getElementById('simuladoResultado').style.display = 'block';
 
   // Salvar no histórico
-  const historicoSimulado = {
-    data: new Date().toISOString(),
-    materia: document.getElementById('simuladoMateria').value,
-    acertos: simuladoAtual.acertos,
-    erros: simuladoAtual.erros,
-    taxa: taxa,
-    total: total
-  };
-
-  let historico = JSON.parse(localStorage.getItem('historicoSimulados') || '[]');
-  historico.push(historicoSimulado);
-  localStorage.setItem('historicoSimulados', JSON.stringify(historico));
+  apiFetch("historicosimulados", {
+    method: "POST",
+    body: JSON.stringify({
+      data: new Date().toISOString(),
+      materia: document.getElementById('simuladoMateria').value,
+      acertos: simuladoAtual.acertos,
+      erros: simuladoAtual.erros,
+      taxa: taxa,
+      total: total
+    })
+  }).then(response => {
+    if (response.ok) {
+      console.log('✅ Resultado de simulado salvo no banco de dados!');
+    } else {
+      console.error('❌ Erro ao salvar resultado de simulado');
+    }
+  }).catch(err => {
+    console.error(err);
+  });
 
   // RESETAR O ESTADO DO SIMULADO
   setTimeout(() => {
@@ -11105,29 +11212,36 @@ function renderizarResumoAnotacoes() {
 
 // ===== SALVAR NO HISTÓRICO (COM TEXTO DOS TRECHOS) =====
 function salvarLeituraNoHistorico() {
-  const leitura = {
-    id: Date.now(),
-    titulo: leituraSavoringAtual.titulo,
-    data: new Date().toISOString(),
-    totalTrechos: leituraSavoringAtual.trechos.length,
-    trechos: leituraSavoringAtual.trechos.map((texto, index) => ({
-      numero: index + 1,
-      texto: texto
-    })),
-    anotacoes: JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes)),
-    textoCompleto: leituraSavoringAtual.texto
-  };
-  
-  leituraSavoringAtual.idLeituraSalva = leitura.id;
-  
-  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  historico.push(leitura);
-  localStorage.setItem('historicoLeituras', JSON.stringify(historico));
-  
-  console.log('✅ [LEITURA] Salva:', leitura);
-  carregarHistoricoLeituras();
-  
-  mostrarToast('✅ Leitura salva com sucesso!', '#22c55e');
+  apiFetch("historicoleituras", {
+    method: "POST",
+    body: JSON.stringify({
+      titulo: leituraSavoringAtual.titulo,
+      data: new Date().toISOString(),
+      totalTrechos: leituraSavoringAtual.trechos.length,
+      trechos: leituraSavoringAtual.trechos.map((texto, index) => ({
+        numero: index + 1,
+        texto: texto
+      })),
+      anotacoes: JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes)),
+      textoCompleto: leituraSavoringAtual.texto
+    })
+  }).then(response => {
+    if (response.ok) {
+      response.json().then(res => {
+        leituraSavoringAtual.idLeituraSalva = res.id_leitura;
+        console.log('✅ [LEITURA] Salva no banco, ID:', res.id_leitura);
+        carregarHistoricoLeituras().then(() => {
+          renderizarHistoricoLeituras();
+        });
+        mostrarToast('✅ Leitura salva com sucesso!', '#22c55e');
+      });
+    } else {
+      mostrarToast('❌ Erro ao salvar leitura', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao salvar leitura', '#ef4444');
+  });
 }
 
 // ===== RENDERIZAR LEITURA SALVA (COM TEXTO DO TRECHO) =====
@@ -11190,8 +11304,7 @@ function renderizarLeituraSalva(leitura) {
 
 // ===== EDITAR ANOTAÇÃO DO HISTÓRICO (MOSTRANDO O TRECHO) =====
 function editarAnotacaoDoHistorico(leituraId, anotacaoIndex) {
-  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  const leitura = historico.find(l => l.id === leituraId);
+  const leitura = historicoLeituras.find(l => l.id === leituraId);
   
   if (!leitura || !leitura.anotacoes[anotacaoIndex]) return;
   
@@ -11234,26 +11347,38 @@ function editarAnotacaoDoHistorico(leituraId, anotacaoIndex) {
     if (result.isConfirmed) {
       leitura.anotacoes[anotacaoIndex].texto = result.value.trim();
       leitura.anotacoes[anotacaoIndex].data = new Date().toISOString();
-      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
       
-      renderizarLeituraSalva(leitura);
-      renderizarHistoricoLeituras();
-      
-      mostrarToast('✅ Anotação atualizada!', '#22c55e');
+      apiFetch(`historicoleituras/${leituraId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          anotacoes: leitura.anotacoes
+        })
+      }).then(response => {
+        if (response.ok) {
+          renderizarLeituraSalva(leitura);
+          carregarHistoricoLeituras().then(() => renderizarHistoricoLeituras());
+          mostrarToast('✅ Anotação updated!', '#22c55e');
+        } else {
+          mostrarToast('❌ Erro ao atualizar anotação', '#ef4444');
+        }
+      });
     }
   });
 }
 
 // ===== ATUALIZAR NO HISTÓRICO =====
 function atualizarLeituraNoHistorico() {
-  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  
   if (leituraSavoringAtual.idLeituraSalva) {
-    const index = historico.findIndex(l => l.id === leituraSavoringAtual.idLeituraSalva);
-    if (index !== -1) {
-      historico[index].anotacoes = JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes));
-      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
-    }
+    apiFetch(`historicoleituras/${leituraSavoringAtual.idLeituraSalva}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        anotacoes: JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes))
+      })
+    }).then(response => {
+      if (response.ok) {
+        carregarHistoricoLeituras().then(() => renderizarHistoricoLeituras());
+      }
+    });
   }
 }
 
@@ -11310,12 +11435,31 @@ function excluirAnotacaoLeitura(index) {
   });
 }
 
+let historicoLeituras = [];
+
 // ===== CARREGAR HISTÓRICO =====
-function carregarHistoricoLeituras() {
-  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  const count = document.getElementById('leituraHistoricoCount');
-  if (count) count.textContent = historico.length;
-  return historico;
+async function carregarHistoricoLeituras() {
+  try {
+    const response = await apiFetch("historicoleituras");
+    if (response.ok) {
+      historicoLeituras = await response.json();
+      historicoLeituras.forEach(l => {
+        l.id = l.id_leitura;
+        if (typeof l.trechos === 'string') {
+          try { l.trechos = JSON.parse(l.trechos); } catch (e) { l.trechos = []; }
+        }
+        if (typeof l.anotacoes === 'string') {
+          try { l.anotacoes = JSON.parse(l.anotacoes); } catch (e) { l.anotacoes = []; }
+        }
+      });
+      const count = document.getElementById('leituraHistoricoCount');
+      if (count) count.textContent = historicoLeituras.length;
+      return historicoLeituras;
+    }
+  } catch (err) {
+    console.error("Erro ao carregar histórico de leituras:", err);
+  }
+  return [];
 }
 
 // ===== TOGGLE HISTÓRICO =====
@@ -11326,7 +11470,7 @@ function toggleHistoricoLeituras() {
   if (lista.style.display === 'none') {
     lista.style.display = 'block';
     seta.style.transform = 'rotate(180deg)';
-    renderizarHistoricoLeituras();
+    carregarHistoricoLeituras().then(() => renderizarHistoricoLeituras());
   } else {
     lista.style.display = 'none';
     seta.style.transform = 'rotate(0deg)';
@@ -11338,16 +11482,15 @@ function renderizarHistoricoLeituras() {
   const container = document.getElementById('leituraHistoricoLista');
   if (!container) return;
   
-  const historico = carregarHistoricoLeituras();
-  
-  if (historico.length === 0) {
+  if (historicoLeituras.length === 0) {
     container.innerHTML = '<p style="color: #9ca3af; text-align: center; font-size: 0.8rem;">Nenhuma leitura salva ainda.</p>';
     return;
   }
   
-  historico.sort((a, b) => new Date(b.data) - new Date(a.data));
+  const histCopy = [...historicoLeituras];
+  histCopy.sort((a, b) => new Date(b.data) - new Date(a.data));
   
-  container.innerHTML = historico.map(leitura => `
+  container.innerHTML = histCopy.map(leitura => `
     <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; cursor: pointer; transition: 0.2s;"
          onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
          onmouseout="this.style.boxShadow='none'"
@@ -11356,7 +11499,7 @@ function renderizarHistoricoLeituras() {
         <div style="flex: 1;">
           <strong style="font-size: 0.85rem; color: #374151; display: block;">${leitura.titulo}</strong>
           <small style="color: #9ca3af; font-size: 0.7rem;">
-            ${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s) • ${leitura.anotacoes.length} anotação(ões)
+            ${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s) • ${leitura.anotacoes ? leitura.anotacoes.length : 0} anotação(ões)
           </small>
         </div>
         <button onclick="event.stopPropagation(); excluirLeituraSalva(${leitura.id})"
@@ -11370,11 +11513,8 @@ function renderizarHistoricoLeituras() {
 
 // ===== VER LEITURA SALVA (COM EDIÇÃO) =====
 function verLeituraSalva(id) {
-  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-  const leitura = historico.find(l => l.id === id);
-  
+  const leitura = historicoLeituras.find(l => l.id === id);
   if (!leitura) return;
-  
   renderizarLeituraSalva(leitura);
 }
 
@@ -11389,18 +11529,20 @@ function excluirLeituraSalva(id) {
     confirmButtonColor: '#ef4444'
   }).then(result => {
     if (result.isConfirmed) {
-      let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
-      historico = historico.filter(l => l.id !== id);
-      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
-      
-      renderizarHistoricoLeituras();
-      carregarHistoricoLeituras();
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Excluída!',
-        timer: 1000,
-        showConfirmButton: false
+      apiFetch(`historicoleituras/${id}`, {
+        method: "DELETE"
+      }).then(response => {
+        if (response.ok) {
+          carregarHistoricoLeituras().then(() => renderizarHistoricoLeituras());
+          Swal.fire({
+            icon: 'success',
+            title: 'Excluída!',
+            timer: 1000,
+            showConfirmButton: false
+          });
+        } else {
+          mostrarToast('❌ Erro ao excluir leitura', '#ef4444');
+        }
       });
     }
   });
@@ -11477,8 +11619,49 @@ window.mostrarResumoLeitura = mostrarResumoLeitura;
 // ===== GRUPOS DE ESTUDO - COMPLETO ==========
 // =============================================
 
-let gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
+let gruposEstudo = [];
 let grupoAtual = null;
+
+async function carregarGruposServidor() {
+  try {
+    const response = await apiFetch("gruposestudo");
+    if (response.ok) {
+      gruposEstudo = await response.json();
+      gruposEstudo.forEach(g => g.id = g.id_grupo);
+      renderizarListaGrupos();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar grupos de estudo do servidor:", err);
+  }
+}
+
+async function salvarGrupoServidor(grupo) {
+  try {
+    const response = await apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        nome: grupo.nome,
+        materia: grupo.materia,
+        linkMeet: grupo.linkMeet,
+        membros: grupo.membros,
+        temas: grupo.temas,
+        duvidas: grupo.duvidas,
+        reunioes: grupo.reunioes,
+        notas: grupo.notas,
+        flashcardsCompartilhados: grupo.flashcardsCompartilhados
+      })
+    });
+    if (response.ok) {
+      await carregarGruposServidor();
+      if (grupoAtual && grupoAtual.id_grupo === grupo.id_grupo) {
+        grupoAtual = gruposEstudo.find(g => g.id_grupo === grupo.id_grupo);
+        abrirDetalheGrupo(grupoAtual.id_grupo);
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao salvar grupo no servidor:", err);
+  }
+}
 
 // ===== ABRIR MODAL =====
 function abrirGruposEstudo() {
@@ -11488,7 +11671,7 @@ function abrirGruposEstudo() {
   const modal = document.getElementById('gruposEstudoModalOverlay');
   if (modal) {
     modal.style.display = 'flex';
-    renderizarListaGrupos();
+    carregarGruposServidor();
   }
 }
 
@@ -11502,8 +11685,6 @@ function fecharGruposEstudo() {
 function renderizarListaGrupos() {
   const container = document.getElementById('listaGruposEstudo');
   if (!container) return;
-
-  gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
 
   document.getElementById('detalheGrupoEstudo').style.display = 'none';
   container.style.display = 'block';
@@ -11572,38 +11753,50 @@ function abrirCriarGrupo() {
   }).then(result => {
     if (result.isConfirmed) {
       const codigo = gerarCodigoGrupo();
-      const novoGrupo = {
-        id: Date.now(),
-        nome: result.value.nome,
-        materia: result.value.materia || 'Geral',
-        codigo: codigo,
-        linkMeet: '',
-        membros: [{ nome: 'Você (Criador)', email: '', papel: 'Líder' }],
-        temas: [],
-        duvidas: [],
-        reunioes: [],
-        notas: '',
-        flashcardsCompartilhados: [],
-        dataCriacao: new Date().toISOString()
-      };
-
-      gruposEstudo.push(novoGrupo);
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Grupo criado!',
-        html: `
-          <p>Código do grupo: <strong style="font-size: 1.5rem;">${codigo}</strong></p>
-          <p>Compartilhe este código com seus amigos!</p>
-          <button onclick="copiarCodigo('${codigo}')" class="swal2-confirm swal2-styled" style="background: #3b82f6;">
-            <i class="bi bi-clipboard"></i> Copiar Código
-          </button>
-        `,
-        confirmButtonText: 'OK'
+      
+      let userEmail = '';
+      const userObj = JSON.parse(sessionStorage.getItem('usuario') || localStorage.getItem('usuario'));
+      if (userObj && userObj.email) {
+        userEmail = userObj.email;
+      }
+      
+      apiFetch("gruposestudo", {
+        method: "POST",
+        body: JSON.stringify({
+          nome: result.value.nome,
+          materia: result.value.materia || 'Geral',
+          codigo: codigo,
+          linkMeet: '',
+          membros: [{ nome: 'Você (Criador)', email: userEmail, papel: 'Líder' }],
+          temas: [],
+          duvidas: [],
+          reunioes: [],
+          notas: '',
+          flashcardsCompartilhados: [],
+          dataCriacao: new Date().toISOString()
+        })
+      }).then(response => {
+        if (response.ok) {
+          carregarGruposServidor();
+          Swal.fire({
+            icon: 'success',
+            title: 'Grupo criado!',
+            html: `
+              <p>Código do grupo: <strong style="font-size: 1.5rem;">${codigo}</strong></p>
+              <p>Compartilhe este código com seus amigos!</p>
+              <button onclick="copiarCodigo('${codigo}')" class="swal2-confirm swal2-styled" style="background: #3b82f6;">
+                <i class="bi bi-clipboard"></i> Copiar Código
+              </button>
+            `,
+            confirmButtonText: 'OK'
+          });
+        } else {
+          mostrarToast('❌ Erro ao criar grupo', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao criar grupo', '#ef4444');
       });
-
-      renderizarListaGrupos();
     }
   });
 }
@@ -11628,44 +11821,70 @@ function abrirEntrarGrupo() {
   }).then(result => {
     if (result.isConfirmed) {
       const codigo = result.value.trim().toUpperCase();
-      const grupo = gruposEstudo.find(g => g.codigo === codigo);
-
-      if (!grupo) {
+      
+      apiFetch(`gruposestudo/${codigo}`).then(response => {
+        if (!response.ok) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Grupo não encontrado!',
+            text: 'Verifique o código e tente novamente.'
+          });
+          return;
+        }
+        
+        response.json().then(grupo => {
+          Swal.fire({
+            title: 'Digite seu nome',
+            input: 'text',
+            inputPlaceholder: 'Seu nome',
+            showCancelButton: true,
+            confirmButtonText: 'Entrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#22c55e',
+            preConfirm: (nome) => {
+              if (!nome || !nome.trim()) {
+                Swal.showValidationMessage('Digite seu nome!');
+                return false;
+              }
+              return nome;
+            }
+          }).then(res => {
+            if (res.isConfirmed) {
+              let userEmail = '';
+              const userObj = JSON.parse(sessionStorage.getItem('usuario') || localStorage.getItem('usuario'));
+              if (userObj && userObj.email) {
+                userEmail = userObj.email;
+              }
+              
+              const membros = grupo.membros || [];
+              membros.push({ nome: res.value, email: userEmail, papel: 'Membro' });
+              
+              apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+                method: "PUT",
+                body: JSON.stringify({ membros: membros })
+              }).then(resPut => {
+                if (resPut.ok) {
+                  carregarGruposServidor();
+                  Swal.fire({
+                    icon: 'success',
+                    title: `Bem-vindo ao ${grupo.nome}!`,
+                    timer: 1500,
+                    showConfirmButton: false
+                  });
+                } else {
+                  mostrarToast('❌ Erro ao entrar no grupo', '#ef4444');
+                }
+              });
+            }
+          });
+        });
+      }).catch(err => {
+        console.error(err);
         Swal.fire({
           icon: 'error',
-          title: 'Grupo não encontrado!',
-          text: 'Verifique o código e tente novamente.'
+          title: 'Erro de conexão!',
+          text: 'Não foi possível buscar o grupo.'
         });
-        return;
-      }
-
-      Swal.fire({
-        title: 'Digite seu nome',
-        input: 'text',
-        inputPlaceholder: 'Seu nome',
-        showCancelButton: true,
-        confirmButtonText: 'Entrar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#22c55e',
-        preConfirm: (nome) => {
-          if (!nome || !nome.trim()) {
-            Swal.showValidationMessage('Digite seu nome!');
-            return false;
-          }
-          return nome;
-        }
-      }).then(res => {
-        if (res.isConfirmed) {
-          grupo.membros.push({ nome: res.value, email: '', papel: 'Membro' });
-          localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-          Swal.fire({
-            icon: 'success',
-            title: `Bem-vindo ao ${grupo.nome}!`,
-            timer: 1500,
-            showConfirmButton: false
-          });
-          renderizarListaGrupos();
-        }
       });
     }
   });
@@ -11952,7 +12171,7 @@ function iniciarChamadaVideo(id) {
         data: new Date().toISOString(),
         hora: new Date().toLocaleTimeString('pt-BR')
       });
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      salvarGrupoServidor(grupo);
 
       // Abrir Google Meet
       window.open('https://meet.google.com/new', '_blank');
@@ -11975,8 +12194,7 @@ function adicionarMembro(id) {
     if (result.isConfirmed && result.value.trim()) {
       const grupo = gruposEstudo.find(g => g.id === id);
       grupo.membros.push({ nome: result.value.trim(), email: '', papel: 'Membro' });
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-      renderizarDetalheGrupo(grupo);
+      salvarGrupoServidor(grupo);
       mostrarToast('✅ Membro adicionado!', '#22c55e');
     }
   });
@@ -12009,8 +12227,7 @@ function adicionarTema(id) {
       const grupo = gruposEstudo.find(g => g.id === id);
       if (!grupo.temas) grupo.temas = [];
       grupo.temas.push(result.value);
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-      renderizarDetalheGrupo(grupo);
+      salvarGrupoServidor(grupo);
       mostrarToast('✅ Tema adicionado!', '#22c55e');
     }
   });
@@ -12038,8 +12255,7 @@ function adicionarDuvida(id) {
         autor: 'Você',
         resposta: ''
       });
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-      renderizarDetalheGrupo(grupo);
+      salvarGrupoServidor(grupo);
       mostrarToast('✅ Dúvida enviada!', '#f59e0b');
     }
   });
@@ -12058,8 +12274,7 @@ function responderDuvida(id, index) {
     if (result.isConfirmed && result.value.trim()) {
       const grupo = gruposEstudo.find(g => g.id === id);
       grupo.duvidas[index].resposta = result.value.trim();
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-      renderizarDetalheGrupo(grupo);
+      salvarGrupoServidor(grupo);
       mostrarToast('✅ Dúvida respondida!', '#22c55e');
     }
   });
@@ -12086,8 +12301,7 @@ function agendarReuniao(id) {
         data: document.getElementById('inputReuniaoData').value,
         hora: document.getElementById('inputReuniaoHora').value
       });
-      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-      renderizarDetalheGrupo(grupo);
+      salvarGrupoServidor(grupo);
       mostrarToast('✅ Reunião agendada!', '#3b82f6');
     }
   });
@@ -12097,7 +12311,7 @@ function salvarNotasGrupo(id) {
   const notas = document.getElementById('notasGrupoTexto').value;
   const grupo = gruposEstudo.find(g => g.id === id);
   grupo.notas = notas;
-  localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+  salvarGrupoServidor(grupo);
   mostrarToast('✅ Notas salvas!', '#22c55e');
 }
 
@@ -12128,8 +12342,7 @@ function importarFlashcardsGrupo(id) {
         const grupo = gruposEstudo.find(g => g.id === id);
         if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
         grupo.flashcardsCompartilhados = grupo.flashcardsCompartilhados.concat(cardsImportados);
-        localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
-        renderizarDetalheGrupo(grupo);
+        salvarGrupoServidor(grupo);
         mostrarToast('✅ Flashcards importados!', '#22c55e');
       } catch (e) {
         alertErro('Erro', 'JSON inválido!');
