@@ -543,12 +543,83 @@ const Metodos = () => {
     }, 500);
   };
 
+   const abrirCornell = () => {
+    console.log('Abrindo Cornell...');
+    
+    // Fecha o modal
+    setMetodoSelecionado(null);
+    
+    // Salva o modo no localStorage
+    localStorage.setItem('modoCornellAtivo', 'true');
+    
+    // Salva a inteligência atual
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    localStorage.setItem('inteligenciaAtual', inteligencia);
+    
+    // Salva o título do método para referência
+    localStorage.setItem('metodoAtivo', 'Cornell');
+    
+    // Navega para a tela de notas
+    if (typeof window.mostrarTela === 'function') {
+      window.mostrarTela('notas');
+    }
+    
+    // Dispara evento para o menu lateral
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'notas' }));
+    
+    // Scroll até as notas e ativa o modo Cornell
+    setTimeout(() => {
+      const notasContainer = document.getElementById('notasSection');
+      if (notasContainer) {
+        notasContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Dispara evento para ativar o modo Cornell
+        window.dispatchEvent(new CustomEvent('ativarModoCornell', { 
+          detail: { ativo: true } 
+        }));
+      }
+    }, 500);
+  };
+
   // ===== FUNÇÃO PARA RENDERIZAR O BOTÃO DO MODAL =====
   const renderizarBotaoModal = () => {
     if (!metodoSelecionado) return null;
     
     const titulo = metodoSelecionado.titulo;
     const cor = metodos.cor;
+
+ 
+ //VERIFICAÇÃO CORNELL
+    if (titulo === "Metodo Cornell" || titulo === "Método Cornell" || titulo.includes("Cornell")) {
+      console.log('Método Cornell detectado!');
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirCornell}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-journal-text"></i> 
+          Usar Cornell com Notas
+        </button>
+      );
+    }
+
+
     
     // Caso: Pomodoro
     if (titulo === "Pomodoro" || titulo === "Pomodoro com Descanso Ativo") {
