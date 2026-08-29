@@ -2547,6 +2547,30 @@ async function salvarConfiguracao() {
   }
 }
 
+// SAIR DA CONTA (LOGOUT)
+function sairDaConta() {
+  Swal.fire({
+    title: 'Sair da conta?',
+    text: 'Você precisará fazer login novamente para acessar seus dados.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Sim, sair',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userFoto');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('inteligenciaUsuario');
+      localStorage.removeItem('corPrimaria');
+      window.location.href = 'ProjetoIntegrador.html';
+    }
+  });
+}
+
 // ADICIONE esta função no seu JS (após a função salvarConfiguracao, por exemplo)
 function previewFotoSelecionada() {
   const input = document.getElementById('novaFoto');
@@ -3477,9 +3501,10 @@ function renderTabelaMaterias() {
     const tr = document.createElement("tr");
     tr.style.background = isEstudando ? '#fef2f2' : 'transparent';
     tr.innerHTML = `
-      <td>
-        ${m.nome}
-        ${isEstudando ? ' <span style="color: #22c55e;">● Estudando</span>' : ''}
+      <td style="text-align: left; padding-left: 20px;">
+        <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${m.cor || '#9f042c'}; margin-right: 8px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>
+        <span>${m.nome}</span>
+        ${isEstudando ? ' <span style="color: #22c55e; font-size: 0.85rem; margin-left: 6px;">● Estudando</span>' : ''}
       </td>
       <td class="tempo">${h}:${min}:${seg}</td>
       <td>
@@ -4273,25 +4298,41 @@ function atualizarRelogioInfo() {
   }
 }
 function adicionarMateriaRelogio() {
-  const nome = document.getElementById("novaMateriaRelogio").value.trim();
-  if (!nome) return;
+  const nomeInput = document.getElementById("novaMateriaRelogio");
+  const corInput = document.getElementById("novaMateriaRelogioCor");
+  const nome = nomeInput ? nomeInput.value.trim() : "";
+  const cor = corInput ? corInput.value : "#9f042c";
+
+  if (!nome) {
+    Swal.fire({
+      icon: "warning",
+      title: "Nome obrigatório",
+      text: "Por favor, digite o nome da matéria.",
+      timer: 1800,
+      showConfirmButton: false
+    });
+    return;
+  }
 
   apiFetch("materias", {
     method: "POST",
-    body: JSON.stringify({ nome: nome, cor: "#9f042c" })
+    body: JSON.stringify({ nome: nome, cor: cor })
   }).then(async res => {
     if (res.ok) {
       const respData = await res.json();
       const novaMateria = {
         id: respData.id_materia.toString(),
         nome: nome,
-        cor: "#9f042c"
+        cor: cor
       };
       materias.push(novaMateria);
       localStorage.setItem("materias", JSON.stringify(materias));
-      document.getElementById("novaMateriaRelogio").value = "";
+      if (nomeInput) nomeInput.value = "";
       renderTabelaMaterias();
       renderMaterias(); // atualiza o cronograma também
+      if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+      if (typeof carregarMateriasRevisao === 'function') carregarMateriasRevisao();
+      if (typeof renderizarSelectMateriasVideos === 'function') renderizarSelectMateriasVideos();
       Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
     } else {
       Swal.fire({ icon: "error", title: "Erro ao adicionar matéria!", timer: 1500, showConfirmButton: false });

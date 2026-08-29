@@ -26,10 +26,10 @@ section {
 }
 
 #logoNavbar {
-  width: 70px;
-  height: 70px;
+  width: 55px;
+  height: 55px;
   object-fit: contain;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 
@@ -549,10 +549,6 @@ body.dark .navbar {
 /* logo + nome branco */
 body.dark #tituloNavbar {
   color: white !important;
-}
-
-body.dark #logoNavbar {
-  content: url("Icones/LogoBranca.png");
 }
 
 /* menu */
