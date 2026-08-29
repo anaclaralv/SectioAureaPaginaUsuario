@@ -6672,6 +6672,19 @@ function inicializarEventosZoomPan() {
   container.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 }
 
+// ===== CARREGAR DO SERVIDOR =====
+async function carregarMapasMentaisServidor() {
+  try {
+    const response = await apiFetch("mapasmentais");
+    if (response.ok) {
+      mapasMentaisSalvos = await response.json();
+      renderizarMapasSalvos();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar mapas mentais do servidor:", err);
+  }
+}
+
 // ===== ABRIR MODAL =====
 function abrirMapaMental() {
   console.log('🗺️ Abrindo Mapa Mental');
@@ -6682,7 +6695,7 @@ function abrirMapaMental() {
     modal.style.display = 'flex';
     setTimeout(() => {
       inicializarMapaMental();
-      renderizarMapasSalvos();
+      carregarMapasMentaisServidor();
     }, 100);
   }
 }
@@ -7023,18 +7036,24 @@ function salvarMapaMental() {
   if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
   if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
 
-  const mapa = {
-    id: Date.now(),
-    titulo: titulo,
-    data: new Date().toISOString(),
-    nos: mapaMentalNos.map(no => ({ ...no })),
-    conexoes: mapaMentalConexoes
-  };
-
-  mapasMentaisSalvos.push(mapa);
-  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
-  renderizarMapasSalvos();
-  mostrarToast('✅ Mapa salvo!', '#22c55e');
+  apiFetch("mapasmentais", {
+    method: "POST",
+    body: JSON.stringify({
+      titulo: titulo,
+      nos: mapaMentalNos.map(no => ({ ...no })),
+      conexoes: mapaMentalConexoes
+    })
+  }).then(response => {
+    if (response.ok) {
+      carregarMapasMentaisServidor();
+      mostrarToast('✅ Mapa salvo!', '#22c55e');
+    } else {
+      mostrarToast('❌ Erro ao salvar mapa', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao salvar mapa', '#ef4444');
+  });
 }
 
 function renderizarMapasSalvos() {
@@ -7050,19 +7069,20 @@ function renderizarMapasSalvos() {
   [...mapasMentaisSalvos].reverse().forEach(mapa => {
     const div = document.createElement('div');
     div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    const totalNos = mapa.nos ? mapa.nos.length : 0;
     div.innerHTML = `
       <i class="bi bi-diagram-3" style="color:var(--cor-primaria);"></i>
-      <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${mapa.nos.length} tópicos</small></div>
-      <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
-      <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+      <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${totalNos} tópicos</small></div>
+      <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id_mapa})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id_mapa})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
     `;
-    div.onclick = () => abrirMapaSalvo(mapa.id);
+    div.onclick = () => abrirMapaSalvo(mapa.id_mapa);
     container.appendChild(div);
   });
 }
 
 function abrirMapaSalvo(id) {
-  const mapa = mapasMentaisSalvos.find(m => m.id === id);
+  const mapa = mapasMentaisSalvos.find(m => m.id_mapa === id);
   if (!mapa) return;
   abrirMapaMental();
   setTimeout(() => {
@@ -7070,17 +7090,27 @@ function abrirMapaSalvo(id) {
     mapaMentalNos = [];
     mapaMentalConexoes = [];
     document.getElementById('mapaMentalNosContainer').innerHTML = '';
-    mapa.nos.forEach(no => { mapaMentalNos.push(no); renderizarNo(no); });
+    const nosList = mapa.nos || [];
+    nosList.forEach(no => { mapaMentalNos.push(no); renderizarNo(no); });
     mapaMentalConexoes = mapa.conexoes || [];
     desenharConexoes();
   }, 300);
 }
 
 function excluirMapaSalvo(id) {
-  mapasMentaisSalvos = mapasMentaisSalvos.filter(m => m.id !== id);
-  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
-  renderizarMapasSalvos();
-  mostrarToast('🗑️ Mapa excluído!', '#ef4444');
+  apiFetch(`mapasmentais/${id}`, {
+    method: "DELETE"
+  }).then(response => {
+    if (response.ok) {
+      carregarMapasMentaisServidor();
+      mostrarToast('🗑️ Mapa excluído!', '#ef4444');
+    } else {
+      mostrarToast('❌ Erro ao excluir mapa', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao excluir mapa', '#ef4444');
+  });
 }
 
 // ===== LIMPAR / FECHAR =====
@@ -7129,7 +7159,7 @@ let diagramaFluxoOffsetY = 0;
 let diagramaFluxoCanvas = null;
 let diagramaFluxoCtx = null;
 let diagramaFluxoHistorico = [];
-let diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
+let diagramasFluxoSalvos = [];
 
 // Cores automáticas por tipo
 const coresFluxo = {
@@ -7138,6 +7168,19 @@ const coresFluxo = {
   decisao: '#f59e0b',  // Amarelo
   fim: '#ef4444'       // Vermelho
 };
+
+// ===== CARREGAR DO SERVIDOR =====
+async function carregarDiagramasFluxoServidor() {
+  try {
+    const response = await apiFetch("diagramasfluxo");
+    if (response.ok) {
+      diagramasFluxoSalvos = await response.json();
+      renderizarDiagramasSalvos();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar diagramas de fluxo do servidor:", err);
+  }
+}
 
 // ===== ABRIR DIAGRAMA DE FLUXO =====
 function abrirDiagramaFluxo() {
@@ -7149,7 +7192,7 @@ function abrirDiagramaFluxo() {
     modal.style.display = 'flex';
     setTimeout(() => {
       inicializarDiagramaFluxo();
-      renderizarDiagramasSalvos();
+      carregarDiagramasFluxoServidor();
     }, 100);
   }
 }
@@ -7162,8 +7205,6 @@ function fecharDiagramaFluxo() {
 
 // ===== INICIALIZAR =====
 function inicializarDiagramaFluxo() {
-  diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
-
   const container = document.getElementById('diagramaFluxoCanvasContainer');
   const canvas = document.getElementById('diagramaFluxoCanvas');
   if (!container || !canvas) return;
@@ -7523,18 +7564,24 @@ function salvarDiagramaFluxo() {
   if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
   if (diagramaFluxoNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
 
-  const diagrama = {
-    id: Date.now(),
-    titulo: titulo,
-    data: new Date().toISOString(),
-    nos: diagramaFluxoNos.map(no => ({ ...no })),
-    conexoes: diagramaFluxoConexoes
-  };
-
-  diagramasFluxoSalvos.push(diagrama);
-  localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
-  renderizarDiagramasSalvos();
-  mostrarToast('✅ Diagrama salvo!', '#22c55e');
+  apiFetch("diagramasfluxo", {
+    method: "POST",
+    body: JSON.stringify({
+      titulo: titulo,
+      nos: diagramaFluxoNos.map(no => ({ ...no })),
+      conexoes: diagramaFluxoConexoes
+    })
+  }).then(response => {
+    if (response.ok) {
+      carregarDiagramasFluxoServidor();
+      mostrarToast('✅ Diagrama salvo!', '#22c55e');
+    } else {
+      mostrarToast('❌ Erro ao salvar diagrama', '#ef4444');
+    }
+  }).catch(err => {
+    console.error(err);
+    mostrarToast('❌ Erro ao salvar diagrama', '#ef4444');
+  });
 }
 
 // ===== RENDERIZAR DIAGRAMAS SALVOS =====
@@ -7551,23 +7598,25 @@ function renderizarDiagramasSalvos() {
   [...diagramasFluxoSalvos].reverse().forEach(diagrama => {
     const div = document.createElement('div');
     div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    const totalNos = diagrama.nos ? diagrama.nos.length : 0;
+    const totalConexoes = diagrama.conexoes ? diagrama.conexoes.length : 0;
     div.innerHTML = `
       <i class="bi bi-arrow-right-circle" style="color:#3b82f6;"></i>
       <div style="flex:1;">
         <strong>${diagrama.titulo}</strong><br>
-        <small>${diagrama.nos.length} nós • ${diagrama.conexoes.length} conexões</small>
+        <small>${totalNos} nós • ${totalConexoes} conexões</small>
       </div>
-      <button onclick="event.stopPropagation();abrirDiagramaSalvo(${diagrama.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
-      <button onclick="event.stopPropagation();excluirDiagramaSalvo(${diagrama.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+      <button onclick="event.stopPropagation();abrirDiagramaSalvo(${diagrama.id_diagrama})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirDiagramaSalvo(${diagrama.id_diagrama})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
     `;
-    div.onclick = () => abrirDiagramaSalvo(diagrama.id);
+    div.onclick = () => abrirDiagramaSalvo(diagrama.id_diagrama);
     container.appendChild(div);
   });
 }
 
 // ===== ABRIR DIAGRAMA SALVO =====
 function abrirDiagramaSalvo(id) {
-  const diagrama = diagramasFluxoSalvos.find(d => d.id === id);
+  const diagrama = diagramasFluxoSalvos.find(d => d.id_diagrama === id);
   if (!diagrama) return;
 
   abrirDiagramaFluxo();
@@ -7576,7 +7625,8 @@ function abrirDiagramaSalvo(id) {
     diagramaFluxoNos = [];
     diagramaFluxoConexoes = [];
     document.getElementById('diagramaFluxoNosContainer').innerHTML = '';
-    diagrama.nos.forEach(no => {
+    const nosList = diagrama.nos || [];
+    nosList.forEach(no => {
       diagramaFluxoNos.push(no);
       renderizarNoFluxo(no);
     });
@@ -7596,10 +7646,19 @@ function excluirDiagramaSalvo(id) {
     confirmButtonColor: '#ef4444'
   }).then(result => {
     if (result.isConfirmed) {
-      diagramasFluxoSalvos = diagramasFluxoSalvos.filter(d => d.id !== id);
-      localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
-      renderizarDiagramasSalvos();
-      mostrarToast('🗑️ Excluído!', '#ef4444');
+      apiFetch(`diagramasfluxo/${id}`, {
+        method: "DELETE"
+      }).then(response => {
+        if (response.ok) {
+          carregarDiagramasFluxoServidor();
+          mostrarToast('🗑️ Excluído!', '#ef4444');
+        } else {
+          mostrarToast('❌ Erro ao excluir diagrama', '#ef4444');
+        }
+      }).catch(err => {
+        console.error(err);
+        mostrarToast('❌ Erro ao excluir diagrama', '#ef4444');
+      });
     }
   });
 }

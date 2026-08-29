@@ -112,6 +112,26 @@ function rotear($method, $endpoint, $db) {
             elseif ($method == 'DELETE' && $id) $controller->deletar($id);
             break;
             
+        case 'mapasmentais':
+            $controller = new MapaMentalController($db, $id_usuario_logado);
+            if ($method == 'GET') {
+                if ($id) $controller->buscar($id);
+                else $controller->listar();
+            } elseif ($method == 'POST') $controller->criar();
+            elseif ($method == 'PUT' && $id) $controller->atualizar($id);
+            elseif ($method == 'DELETE' && $id) $controller->deletar($id);
+            break;
+            
+        case 'diagramasfluxo':
+            $controller = new DiagramaFluxoController($db, $id_usuario_logado);
+            if ($method == 'GET') {
+                if ($id) $controller->buscar($id);
+                else $controller->listar();
+            } elseif ($method == 'POST') $controller->criar();
+            elseif ($method == 'PUT' && $id) $controller->atualizar($id);
+            elseif ($method == 'DELETE' && $id) $controller->deletar($id);
+            break;
+            
         default:
             http_response_code(404);
             echo json_encode(["message" => "Rota não encontrada"]);

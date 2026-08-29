@@ -137,5 +137,15 @@ class Usuario {
         $stmt->execute();
         return $stmt->rowCount() > 0;
     }
+
+    // Verificar se e-mail já existe
+    public function emailExiste($email) {
+        $query = "SELECT id_usuario FROM " . $this->table . " WHERE email = :email";
+        $stmt = $this->conn->prepare($query);
+        $clean_email = htmlspecialchars(strip_tags($email));
+        $stmt->bindParam(":email", $clean_email);
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
+    }
 }
 ?>

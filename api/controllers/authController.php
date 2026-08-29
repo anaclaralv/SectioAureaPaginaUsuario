@@ -16,6 +16,13 @@ class AuthController {
             echo json_encode(["message" => "Nome, email e senha são obrigatórios"]);
             return;
         }
+
+        // Verificar se o e-mail já está cadastrado
+        if ($this->usuario->emailExiste($data->email)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Este e-mail já está cadastrado"]);
+            return;
+        }
         
         $this->usuario->nome = $data->nome;
         $this->usuario->email = $data->email;
