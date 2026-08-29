@@ -11755,9 +11755,11 @@ function abrirCriarGrupo() {
       const codigo = gerarCodigoGrupo();
       
       let userEmail = '';
-      const userObj = JSON.parse(sessionStorage.getItem('usuario') || localStorage.getItem('usuario'));
-      if (userObj && userObj.email) {
-        userEmail = userObj.email;
+      let userName = 'Criador';
+      const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
+      if (userObj) {
+        if (userObj.email) userEmail = userObj.email;
+        if (userObj.nome) userName = userObj.nome;
       }
       
       apiFetch("gruposestudo", {
@@ -11767,7 +11769,7 @@ function abrirCriarGrupo() {
           materia: result.value.materia || 'Geral',
           codigo: codigo,
           linkMeet: '',
-          membros: [{ nome: 'Você (Criador)', email: userEmail, papel: 'Líder' }],
+          membros: [{ nome: userName, email: userEmail, papel: 'Líder' }],
           temas: [],
           duvidas: [],
           reunioes: [],
@@ -11851,7 +11853,7 @@ function abrirEntrarGrupo() {
           }).then(res => {
             if (res.isConfirmed) {
               let userEmail = '';
-              const userObj = JSON.parse(sessionStorage.getItem('usuario') || localStorage.getItem('usuario'));
+              const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
               if (userObj && userObj.email) {
                 userEmail = userObj.email;
               }
@@ -12023,6 +12025,12 @@ function trocarAbaGrupo(aba) {
 
 // ===== ABA MEMBROS =====
 function renderizarAbaMembros(grupo) {
+  let currentUserEmail = '';
+  const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+  if (userObj && userObj.email) {
+    currentUserEmail = userObj.email;
+  }
+  
   return `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <h3 style="margin: 0;">Membros do Grupo</h3>
@@ -12031,20 +12039,24 @@ function renderizarAbaMembros(grupo) {
         <i class="bi bi-plus"></i> Adicionar
       </button>
     </div>
-    ${grupo.membros.map((m, i) => `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 40px; height: 40px; border-radius: 50%; background: ${i === 0 ? '#9f042c' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-            ${m.nome.charAt(0).toUpperCase()}
+    ${grupo.membros.map((m, i) => {
+      const isMe = (m.email && m.email === currentUserEmail);
+      const labelNome = isMe ? `${m.nome} (Você)` : m.nome;
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${i === 0 ? '#9f042c' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+              ${m.nome ? m.nome.charAt(0).toUpperCase() : '?'}
+            </div>
+            <div>
+              <strong>${labelNome}</strong>
+              <br><small style="color: #9ca3af;">${m.papel || 'Membro'}</small>
+            </div>
           </div>
-          <div>
-            <strong>${m.nome}</strong>
-            <br><small style="color: #9ca3af;">${m.papel || 'Membro'}</small>
-          </div>
+          ${i !== 0 ? `<button onclick="removerMembro(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
         </div>
-        ${i !== 0 ? `<button onclick="removerMembro(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
-      </div>
-    `).join('')}
+      `;
+    }).join('')}
   `;
 }
 
@@ -12316,36 +12328,291 @@ function salvarNotasGrupo(id) {
 }
 
 function exportarFlashcardsGrupo(id) {
+  const materiasLista = typeof materias !== 'undefined' ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
   if (flashcards.length === 0) {
-    alertAviso('Sem flashcards', 'Crie flashcards primeiro!');
+    Swal.fire({
+      title: 'Nenhum Flashcard',
+      text: 'Você não possui flashcards no seu sistema para compartilhar.',
+      icon: 'info'
+    });
     return;
   }
-  const data = JSON.stringify(flashcards);
-  navigator.clipboard.writeText(data).then(() => {
-    mostrarToast('📋 Flashcards copiados!', '#3b82f6');
+
+  let optionsHtml = '<option value="todos">Todos os flashcards</option>';
+  materiasLista.forEach(mat => {
+    optionsHtml += `<option value="${mat.nome}">${mat.nome}</option>`;
+  });
+
+  Swal.fire({
+    title: '📤 Compartilhar com o Grupo',
+    html: `
+      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+        Selecione quais flashcards do seu sistema pessoal você deseja enviar para este grupo de estudos:
+      </p>
+      <select id="selectExportMateria" class="swal2-input" style="width: 80%; margin: 0 auto 15px;">
+        ${optionsHtml}
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Compartilhar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      return document.getElementById('selectExportMateria').value;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const materiaSelecionada = result.value;
+      
+      let cardsFiltrados = flashcards;
+      if (materiaSelecionada !== 'todos') {
+        cardsFiltrados = flashcards.filter(f => f.materiaNome === materiaSelecionada);
+      }
+
+      if (cardsFiltrados.length === 0) {
+        Swal.fire('Nenhum flashcard', `Você não possui flashcards na matéria "${materiaSelecionada}".`, 'warning');
+        return;
+      }
+
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo) {
+        if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
+        
+        let adicionados = 0;
+        cardsFiltrados.forEach(cf => {
+          const existe = grupo.flashcardsCompartilhados.some(f => f.pergunta === cf.pergunta);
+          if (!existe) {
+            grupo.flashcardsCompartilhados.push({
+              pergunta: cf.pergunta,
+              resposta: cf.resposta
+            });
+            adicionados++;
+          }
+        });
+
+        if (adicionados > 0) {
+          salvarGrupoServidor(grupo);
+          mostrarToast(`✅ ${adicionados} flashcards compartilhados!`, '#22c55e');
+        } else {
+          Swal.fire('Nenhum card novo', 'Todos os flashcards selecionados já estão no grupo.', 'info');
+        }
+      }
+    }
   });
 }
 
 function importarFlashcardsGrupo(id) {
+  const grupo = gruposEstudo.find(g => g.id === id);
+  if (!grupo || !grupo.flashcardsCompartilhados || grupo.flashcardsCompartilhados.length === 0) {
+    Swal.fire({
+      title: 'Lista Vazia',
+      text: 'Este grupo não possui flashcards compartilhados para importar.',
+      icon: 'info'
+    });
+    return;
+  }
+
+  const materiasLista = typeof materias !== 'undefined' ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
+  if (materiasLista.length === 0) {
+    Swal.fire({
+      title: 'Nenhuma Matéria',
+      text: 'Você precisa criar pelo menos uma matéria no seu cronograma para importar flashcards.',
+      icon: 'warning'
+    });
+    return;
+  }
+
+  let optionsHtml = '';
+  materiasLista.forEach(mat => {
+    optionsHtml += `<option value="${mat.id}">${mat.nome}</option>`;
+  });
+
   Swal.fire({
-    title: 'Importar Flashcards',
-    input: 'textarea',
-    inputPlaceholder: 'Cole os flashcards aqui (JSON)...',
+    title: '📥 Importar para meu Sistema',
+    html: `
+      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+        Selecione em qual das suas matérias os ${grupo.flashcardsCompartilhados.length} flashcards compartilhados deste grupo serão salvos:
+      </p>
+      <select id="selectImportMateria" class="swal2-input" style="width: 80%; margin: 0 auto 15px;">
+        ${optionsHtml}
+      </select>
+    `,
     showCancelButton: true,
     confirmButtonText: 'Importar',
     cancelButtonText: 'Cancelar',
-    confirmButtonColor: '#22c55e'
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const select = document.getElementById('selectImportMateria');
+      return {
+        id: select.value,
+        nome: select.options[select.selectedIndex].text
+      };
+    }
   }).then(result => {
-    if (result.isConfirmed && result.value.trim()) {
-      try {
-        const cardsImportados = JSON.parse(result.value);
-        const grupo = gruposEstudo.find(g => g.id === id);
-        if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
-        grupo.flashcardsCompartilhados = grupo.flashcardsCompartilhados.concat(cardsImportados);
+    if (result.isConfirmed) {
+      const materiaDestino = result.value;
+      
+      let adicionadosCount = 0;
+      grupo.flashcardsCompartilhados.forEach(f => {
+        const existe = flashcards.some(pf => pf.pergunta === f.pergunta);
+        if (!existe) {
+          const novoCard = {
+            id: Date.now() + Math.random(),
+            materiaId: Number(materiaDestino.id),
+            materiaNome: materiaDestino.nome,
+            tema: "Importado do Grupo",
+            pergunta: f.pergunta,
+            resposta: f.resposta,
+            nivel: 1,
+            dataProxima: new Date().toISOString().split("T")[0],
+            acertos: 0,
+            erros: 0
+          };
+          
+          flashcards.push(novoCard);
+          salvarFlashcardNoBackend(novoCard);
+          adicionadosCount++;
+        }
+      });
+
+      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      
+      if (typeof renderizarFlashcardsAgrupados === 'function') {
+        renderizarFlashcardsAgrupados();
+      }
+
+      Swal.fire({
+        title: 'Importação Concluída!',
+        text: `${adicionadosCount} novos flashcards foram salvos na matéria "${materiaDestino.nome}".`,
+        icon: 'success'
+      });
+    }
+  });
+}
+
+function removerMembro(id, index) {
+  Swal.fire({
+    title: 'Remover Membro',
+    text: 'Deseja realmente remover este membro do grupo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remover',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo && grupo.membros) {
+        grupo.membros.splice(index, 1);
         salvarGrupoServidor(grupo);
-        mostrarToast('✅ Flashcards importados!', '#22c55e');
-      } catch (e) {
-        alertErro('Erro', 'JSON inválido!');
+        mostrarToast('✅ Membro removido!', '#22c55e');
+      }
+    }
+  });
+}
+
+function removerTema(id, index) {
+  Swal.fire({
+    title: 'Remover Tema',
+    text: 'Deseja realmente remover este tema?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remover',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo && grupo.temas) {
+        grupo.temas.splice(index, 1);
+        salvarGrupoServidor(grupo);
+        mostrarToast('✅ Tema removido!', '#22c55e');
+      }
+    }
+  });
+}
+
+function removerDuvida(id, index) {
+  Swal.fire({
+    title: 'Remover Dúvida',
+    text: 'Deseja realmente remover esta dúvida?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remover',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo && grupo.duvidas) {
+        grupo.duvidas.splice(index, 1);
+        salvarGrupoServidor(grupo);
+        mostrarToast('✅ Dúvida removida!', '#22c55e');
+      }
+    }
+  });
+}
+
+function removerReuniao(id, index) {
+  Swal.fire({
+    title: 'Remover Reunião',
+    text: 'Deseja realmente remover esta reunião?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remover',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo && grupo.reunioes) {
+        grupo.reunioes.splice(index, 1);
+        salvarGrupoServidor(grupo);
+        mostrarToast('✅ Reunião removida!', '#22c55e');
+      }
+    }
+  });
+}
+
+function sairDoGrupo(id) {
+  Swal.fire({
+    title: 'Sair do Grupo',
+    text: 'Deseja realmente sair deste grupo de estudos?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sair',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (grupo && grupo.membros) {
+        const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+        const email = userObj.email;
+        const idx = grupo.membros.findIndex(m => m.email === email);
+        if (idx !== -1) {
+          grupo.membros.splice(idx, 1);
+          
+          apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+            method: "PUT",
+            body: JSON.stringify({ membros: grupo.membros })
+          }).then(resPut => {
+            if (resPut.ok) {
+              voltarListaGrupos();
+              carregarGruposServidor();
+              mostrarToast('Você saiu do grupo', '#3b82f6');
+            } else {
+              mostrarToast('❌ Erro ao sair do grupo', '#ef4444');
+            }
+          });
+        }
       }
     }
   });
@@ -12372,4 +12639,9 @@ window.agendarReuniao = agendarReuniao;
 window.salvarNotasGrupo = salvarNotasGrupo;
 window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
 window.importarFlashcardsGrupo = importarFlashcardsGrupo;
+window.removerMembro = removerMembro;
+window.removerTema = removerTema;
+window.removerDuvida = removerDuvida;
+window.removerReuniao = removerReuniao;
+window.sairDoGrupo = sairDoGrupo;
 window.voltarListaGrupos = voltarListaGrupos;
