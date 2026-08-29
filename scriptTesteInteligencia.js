@@ -542,20 +542,22 @@ const iconTheme = document.getElementById('iconTheme');
 
 if (localStorage.getItem('theme') === 'dark') {
   document.body.classList.add('dark');
-  iconTheme.textContent = '☀️';
+  if (iconTheme) iconTheme.textContent = '☀️';
 }
 
-toggleBtn.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  iconTheme.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-  
-  if (chartInstance) {
-    chartInstance.options.plugins.legend.labels.color = 
-      document.body.classList.contains('dark') ? '#ffffff' : '#000000';
-    chartInstance.update();
-  }
-});
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    if (iconTheme) iconTheme.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    
+    if (chartInstance) {
+      chartInstance.options.plugins.legend.labels.color = 
+        document.body.classList.contains('dark') ? '#ffffff' : '#000000';
+      chartInstance.update();
+    }
+  });
+}
 
 // Abre o tutorial automaticamente (só na primeira vez)
 document.addEventListener('DOMContentLoaded', function() {

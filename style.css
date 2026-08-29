@@ -500,6 +500,26 @@ section {
     padding: 6px 16px;
   }
 
+  .theme-toggle {
+    width: 50px;
+    height: 28px;
+    right: 12px;
+  }
+
+  .theme-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  .theme-icon-svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  body.dark .theme-toggle .theme-thumb {
+    transform: translateX(22px);
+  }
+
 }
 
 
@@ -675,30 +695,67 @@ body.dark .text-muted {
   color: #cccccc !important;
 }
 
+/* ================= TOGGLE SWITCH TEMA (DARK / LIGHT) ================= */
 .theme-toggle {
   position: absolute;
   right: 25px;
-  top: 25px;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: #1e1e1e;
-  color: white;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 58px;
+  height: 32px;
+  background-color: #1e1e1e;
+  border: 2px solid #1e1e1e;
+  border-radius: 32px;
+  padding: 2px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.3s;
-  font-size: 20px;
+  justify-content: flex-start;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  user-select: none;
+  z-index: 100;
 }
 
 .theme-toggle:hover {
-  transform: scale(1.1);
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
-/* modo dark */
+.theme-thumb {
+  width: 24px;
+  height: 24px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transform: translateX(0px);
+}
+
+.theme-icon-svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+/* Modo escuro (Dark Mode) */
 body.dark .theme-toggle {
-  background: white;
+  background-color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+body.dark .theme-toggle .theme-thumb {
+  transform: translateX(26px);
+  background-color: #ffffff;
+}
+
+body.dark .theme-toggle .theme-thumb .theme-icon-svg {
+  transform: rotate(180deg);
 }
 
 .google-btn {
