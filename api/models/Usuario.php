@@ -79,7 +79,7 @@ class Usuario {
 
     // Buscar um usuário
     public function readOne() {
-        $query = "SELECT id_usuario, nome, email, plano, tipo_dom, clas_inteli 
+        $query = "SELECT id_usuario, nome, email, foto, plano, tipo_dom, clas_inteli 
                   FROM " . $this->table . " WHERE id_usuario = ? AND ativo = 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id_usuario);
@@ -89,6 +89,7 @@ class Usuario {
         if($row) {
             $this->nome = $row['nome'];
             $this->email = $row['email'];
+            $this->foto = $row['foto'];
             $this->plano = $row['plano'];
             $this->tipo_dom = $row['tipo_dom'];
             $this->clas_inteli = $row['clas_inteli'];
@@ -100,7 +101,7 @@ class Usuario {
     // Atualizar usuário
     public function update() {
         $query = "UPDATE " . $this->table . " 
-                  SET nome = :nome, email = :email, plano = :plano, 
+                  SET nome = :nome, email = :email, foto = :foto, plano = :plano, 
                       tipo_dom = :tipo_dom, clas_inteli = :clas_inteli 
                   WHERE id_usuario = :id";
         
@@ -111,6 +112,7 @@ class Usuario {
         
         $stmt->bindParam(":nome", $this->nome);
         $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":foto", $this->foto);
         $stmt->bindParam(":plano", $this->plano);
         $stmt->bindParam(":tipo_dom", $this->tipo_dom);
         $stmt->bindParam(":clas_inteli", $this->clas_inteli);

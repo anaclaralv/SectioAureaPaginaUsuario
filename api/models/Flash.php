@@ -47,7 +47,11 @@ class Flash {
         $stmt = $this->conn->prepare($query);
         
         $this->pergunta = htmlspecialchars(strip_tags($this->pergunta));
-        $this->tema = htmlspecialchars(strip_tags($this->tema));
+        if (!empty($this->tema) && substr(trim(htmlspecialchars_decode($this->tema)), 0, 1) === '{') {
+            $this->tema = strip_tags(htmlspecialchars_decode($this->tema));
+        } else {
+            $this->tema = htmlspecialchars(strip_tags($this->tema));
+        }
         $this->resposta = htmlspecialchars(strip_tags($this->resposta));
         
         $stmt->bindParam(":id_materia", $this->id_materia);
@@ -66,7 +70,7 @@ class Flash {
     public function read($id_usuario) {
         $query = "SELECT f.*, m.nome as nome_materia 
                   FROM " . $this->table . " f
-                  JOIN PI_Materia m ON f.id_materia = m.id_materia
+                  LEFT JOIN PI_Materia m ON f.id_materia = m.id_materia
                   WHERE f.id_usuario = :id_usuario";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);

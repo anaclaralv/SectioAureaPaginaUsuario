@@ -10,6 +10,14 @@ export default function Notas() {
   const [anexosTemp, setAnexosTemp] = useState([]);
   const [checklistItems, setChecklistItems] = useState([]);
   
+  // === NOVOS STATES PARA O MODO CORNELL ===
+  const [modoCornell, setModoCornell] = useState(false);
+  const [modoRevisao, setModoRevisao] = useState(false);
+  const [inteligenciaAtual, setInteligenciaAtual] = useState('');
+  const [perguntaAtual, setPerguntaAtual] = useState('');
+  const [respostaAtual, setRespostaAtual] = useState('');
+  const [notasCornell, setNotasCornell] = useState([]);
+  
   // Refs para o modal Bootstrap
   const modalRef = useRef(null);
   const modalInstanceRef = useRef(null);
@@ -23,11 +31,18 @@ export default function Notas() {
 
   // Carregar notas do localStorage
   useEffect(() => {
+    // Verifica se está no modo Cornell
+    const modoAtivo = localStorage.getItem('modoCornellAtivo') === 'true';
+    setModoCornell(modoAtivo);
+    
+    // Pega a inteligência atual
+    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    setInteligenciaAtual(inteligencia);
+    
     const notasSalvas = localStorage.getItem('notas');
     if (notasSalvas) {
       try {
         let loadedNotas = JSON.parse(notasSalvas);
-        // Garantir que todas as notas tenham ID
         loadedNotas = loadedNotas.map(nota => {
           if (!nota.id) {
             nota.id = 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -40,12 +55,45 @@ export default function Notas() {
         setNotas([]);
       }
     }
+    
+    // Carrega notas Cornell específicas para a inteligência
+    const chaveCornell = `notasCornell_${inteligencia}`;
+    const notasCornellSalvas = localStorage.getItem(chaveCornell);
+    if (notasCornellSalvas) {
+      try {
+        setNotasCornell(JSON.parse(notasCornellSalvas));
+      } catch (e) {
+        setNotasCornell([]);
+      }
+    }
+
+    // Listener para ativar modo Cornell
+    const handleAtivarCornell = (e) => {
+      setModoCornell(e.detail.ativo);
+      if (e.detail.ativo) {
+        setModoRevisao(false);
+      }
+    };
+
+    window.addEventListener('ativarModoCornell', handleAtivarCornell);
+    
+    return () => {
+      window.removeEventListener('ativarModoCornell', handleAtivarCornell);
+    };
   }, []);
 
-  // Salvar notas no localStorage
+  // Salvar notas normais
   useEffect(() => {
     localStorage.setItem('notas', JSON.stringify(notas));
   }, [notas]);
+
+  // Salvar notas Cornell
+  useEffect(() => {
+    if (notasCornell.length > 0 && inteligenciaAtual) {
+      const chaveCornell = `notasCornell_${inteligenciaAtual}`;
+      localStorage.setItem(chaveCornell, JSON.stringify(notasCornell));
+    }
+  }, [notasCornell, inteligenciaAtual]);
 
   // Inicializar modal Bootstrap
   useEffect(() => {
@@ -96,47 +144,47 @@ export default function Notas() {
   };
 
   // Renderizar checklist no modal
- const renderizarChecklistModal = useCallback((items) => {
-  const container = document.getElementById('checklistContainer');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  if (!Array.isArray(items)) items = [];
-  
-  items.forEach((item, i) => {
-    const div = document.createElement('div');
-    div.className = `check-item ${item.checked ? 'completed' : ''}`;
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.marginBottom = '5px';
-    div.innerHTML = `
-      <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
-      <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
-      <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
-    `;
+  const renderizarChecklistModal = useCallback((items) => {
+    const container = document.getElementById('checklistContainer');
+    if (!container) return;
     
-    const checkbox = div.querySelector('input[type="checkbox"]');
-    const textoInput = div.querySelector('input[type="text"]');
-    const btnExcluir = div.querySelector('.btn-excluir-check');
+    container.innerHTML = '';
+    if (!Array.isArray(items)) items = [];
     
-    checkbox.addEventListener('change', () => {
-      item.checked = checkbox.checked;
-      div.classList.toggle('completed', item.checked);
+    items.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = `check-item ${item.checked ? 'completed' : ''}`;
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.marginBottom = '5px';
+      div.innerHTML = `
+        <input type="checkbox" ${item.checked ? 'checked' : ''} style="margin-right:5px;">
+        <input type="text" class="form-control form-control-sm" value="${item.texto || ''}" style="flex:1; margin-right:5px;">
+        <button class="btn-excluir-check" style="border:none; background:none; cursor:pointer;" type="button">✕</button>
+      `;
+      
+      const checkbox = div.querySelector('input[type="checkbox"]');
+      const textoInput = div.querySelector('input[type="text"]');
+      const btnExcluir = div.querySelector('.btn-excluir-check');
+      
+      checkbox.addEventListener('change', () => {
+        item.checked = checkbox.checked;
+        div.classList.toggle('completed', item.checked);
+      });
+      
+      textoInput.addEventListener('input', () => {
+        item.texto = textoInput.value;
+      });
+      
+      btnExcluir.addEventListener('click', () => {
+        const updatedItems = items.filter((_, idx) => idx !== i);
+        renderizarChecklistModal(updatedItems);
+        setChecklistItems(updatedItems);
+      });
+      
+      container.appendChild(div);
     });
-    
-    textoInput.addEventListener('input', () => {
-      item.texto = textoInput.value;
-    });
-    
-    btnExcluir.addEventListener('click', () => {
-      const updatedItems = items.filter((_, idx) => idx !== i);
-      renderizarChecklistModal(updatedItems);
-      setChecklistItems(updatedItems);
-    });
-    
-    container.appendChild(div);
-  });
-}, []); // ← Sem dependência, usa os items passados como argumento
+  }, []);
 
   // Adicionar item ao checklist
   const adicionarChecklistItem = () => {
@@ -233,6 +281,90 @@ export default function Notas() {
     renderizarPreviews();
   }, [anexosTemp, renderizarPreviews]);
 
+  // === NOVAS FUNÇÕES PARA O MODO CORNELL ===
+  
+  // Alternar modo revisão
+  const alternarModoRevisao = () => {
+    setModoRevisao(!modoRevisao);
+  };
+
+  // Adicionar nota Cornell
+  const adicionarNotaCornell = () => {
+    if (perguntaAtual.trim() && respostaAtual.trim()) {
+      const novaNotaCornell = {
+        id: 'cornell_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        pergunta: perguntaAtual,
+        resposta: respostaAtual,
+        data: new Date().toLocaleString()
+      };
+      setNotasCornell([...notasCornell, novaNotaCornell]);
+      setPerguntaAtual('');
+      setRespostaAtual('');
+      
+      // Feedback visual
+      const btn = document.querySelector('.btn-adicionar-cornell');
+      if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ Adicionado!';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 1500);
+      }
+    } else {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        text: 'Preencha tanto a pergunta quanto a resposta!',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  };
+
+  // Excluir nota Cornell
+  const excluirNotaCornell = (id) => {
+    Swal.fire({
+      title: 'Excluir anotação Cornell?',
+      text: "Essa ação não pode ser desfeita!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sim, excluir'
+    }).then(result => {
+      if (result.isConfirmed) {
+        setNotasCornell(notasCornell.filter(n => n.id !== id));
+        Swal.fire('Excluída!', '', 'success');
+      }
+    });
+  };
+
+  // Revelar resposta individual no modo revisão
+  const revelarResposta = (pergunta, resposta) => {
+    Swal.fire({
+      title: '📝 Pergunta',
+      html: `<div style="text-align: left; padding: 10px;">
+        <p><strong>Pergunta:</strong></p>
+        <p style="background: #f8f9fa; padding: 10px; border-radius: 8px;">${pergunta}</p>
+        <p><strong>💡 Resposta:</strong></p>
+        <p style="background: #e8f5e9; padding: 10px; border-radius: 8px;">${resposta}</p>
+      </div>`,
+      icon: 'info',
+      confirmButtonColor: '#3085d6',
+      confirmButtonText: 'Entendi!'
+    });
+  };
+
+  // Obter dicas específicas por inteligência
+  const getDicaInteligencia = () => {
+    const dicas = {
+      logico: "Use o lado esquerdo para fórmulas matemáticas e o direito para aplicações práticas.",
+      intrapessoal: "Use perguntas reflexivas à esquerda e suas reflexões pessoais à direita.",
+      espacial: "Use o lado esquerdo para diagramas mentais e o direito para descrições detalhadas."
+    };
+    return dicas[inteligenciaAtual] || "Organize suas perguntas à esquerda e respostas à direita.";
+  };
+
   // Abrir modal para editar/criar nota
   const abrirModal = useCallback((nota = null, index = null) => {
     setNotaEditandoIndex(index);
@@ -266,8 +398,8 @@ export default function Notas() {
   // Salvar nota
   const salvarNota = useCallback(() => {
     if (anexoInputRef.current) {
-  anexoInputRef.current.value = '';
-}
+      anexoInputRef.current.value = '';
+    }
     const titulo = tituloInputRef.current?.value || '';
     const texto = textoDivRef.current?.innerHTML || '';
     const cor = corInputRef.current?.value || '#ffffff';
@@ -406,92 +538,361 @@ export default function Notas() {
       return a.titulo.localeCompare(b.titulo);
     });
 
+  // Obter cores por inteligência
+  const getCoresInteligencia = () => {
+    const cores = {
+      logico: { primaria: '#ffbd59', secundaria: '#ffa726' },
+      intrapessoal: { primaria: '#5170ff', secundaria: '#3d5cbf' },
+      espacial: { primaria: '#d203a4', secundaria: '#a80283' }
+    };
+    return cores[inteligenciaAtual] || cores.logico;
+  };
+
+  const cores = getCoresInteligencia();
+
   return (
     <section id="notasSection">
-      <h1 className="mb-3">Minhas Notas</h1>
+      <h1 className="mb-3">
+        {modoCornell ? (
+          <>
+            <i className="bi bi-journal-text" style={{ color: cores.primaria }}></i>
+            Método Cornell
+            <span className="inteligencia-badge-cornell" style={{ 
+              background: cores.primaria,
+              marginLeft: '12px',
+              fontSize: '14px',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              color: '#fff',
+              display: 'inline-block'
+            }}>
+              {inteligenciaAtual === 'logico' ? '🧮 Lógico-Matemática' :
+               inteligenciaAtual === 'intrapessoal' ? '🧠 Intrapessoal' : '🌌 Espacial'}
+            </span>
+          </>
+        ) : (
+          <>
+            <i className="bi bi-journal"></i>
+            Minhas Notas
+          </>
+        )}
+      </h1>
       
-      <div className="d-flex mb-3 justify-content-between">
-        <input
-          type="text"
-          className="form-control me-2"
-          placeholder="Pesquisar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <button className="btn btn-primary" id="btnNova" onClick={() => abrirModal()}>
-          <i className="fa fa-plus"></i> Nova
-        </button>
-      </div>
-
-      <div id="notasContainer" className="row g-3">
-        {notasFiltradas.map((nota, idx) => {
-          const totalItens = nota.checklist?.length || 0;
-          const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
-          const pendentes = totalItens - itensConcluidos;
-          
-          return (
-            <div key={nota.id} className="col-md-4">
-              <div className="card-nota" style={{ backgroundColor: nota.cor, color: nota.corTexto || '#000000' }}>
-                <i
-                  className={`bi bi-star-fill estrela ${nota.favorito ? 'favorito' : ''}`}
-                  onClick={() => toggleFavorito(nota.id)}
-                />
-                <h5>{nota.titulo}</h5>
-                <small>{nota.dataCriacao || ""}</small>
-                
-                {totalItens > 0 && (
-                  <div className={`checklist-stats ${pendentes === 0 ? 'concluido' : 'pendente'}`}>
-                    {pendentes === 0 ? '✅' : '📋'} {itensConcluidos}/{totalItens} itens {pendentes === 0 ? 'concluídos' : 'pendentes'}
-                  </div>
-                )}
-                
-                <div className="card-conteudo">
-                  {nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
-                  
-                  <div className="checklist-card">
-                    {nota.checklist?.map((c, i) => (
-                      <div key={i} className={`check-item ${c.checked ? 'completed' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={c.checked}
-                          onChange={() => toggleChecklistItem(nota.id, i)}
-                        />
-                        <span>{c.texto}</span>
-                        <button
-                          className="btn-excluir-check"
-                          onClick={() => excluirChecklistItem(nota.id, i)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+      {modoCornell ? (
+        // ===== MODO CORNELL =====
+        <div className="cornell-container">
+          <div className="cornell-info" style={{ 
+            background: '#f8f9fa', 
+            padding: '20px', 
+            borderRadius: '12px', 
+            marginBottom: '20px',
+            borderLeft: `4px solid ${cores.primaria}`
+          }}>
+            <div className="cornell-explicacao">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0 }}><strong>📝 Método Cornell:</strong> Divida a página em duas colunas:</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '12px' }}>
+                    <div style={{ padding: '10px', background: '#fff3f3', borderRadius: '8px', borderLeft: '4px solid #dc3545' }}>
+                      <strong style={{ color: '#dc3545' }}>❓ Esquerda:</strong>
+                      <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666' }}>
+                        Perguntas e Fórmulas
+                      </p>
+                      <small style={{ color: '#999', fontSize: '12px' }}>{getDicaInteligencia()}</small>
+                    </div>
+                    <div style={{ padding: '10px', background: '#f0fff4', borderRadius: '8px', borderLeft: '4px solid #28a745' }}>
+                      <strong style={{ color: '#28a745' }}>💡 Direita:</strong>
+                      <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666' }}>
+                        Respostas e Explicações
+                      </p>
+                      <small style={{ color: '#999', fontSize: '12px' }}>Anote as respostas de forma clara e completa.</small>
+                    </div>
                   </div>
                 </div>
-                
-                {renderizarIndicadorAnexos(nota.anexos)}
-                {renderizarAnexosCard(nota.anexos)}
-                
-                <div className="mt-2">
-                  <button
-                    className="btn btn-sm btn-warning btn-editar"
-                    onClick={() => abrirModal(nota, notas.findIndex(n => n.id === nota.id))}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger btn-excluir"
-                    onClick={() => excluirNota(nota.id)}
-                  >
-                    Excluir
-                  </button>
-                </div>
+                <button 
+                  className={`btn-revisao ${modoRevisao ? 'ativo' : ''}`}
+                  onClick={alternarModoRevisao}
+                  style={{
+                    background: modoRevisao ? cores.primaria : 'transparent',
+                    color: modoRevisao ? '#fff' : cores.primaria,
+                    border: `2px solid ${cores.primaria}`,
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s',
+                    marginTop: '10px'
+                  }}
+                >
+                  <i className={`bi ${modoRevisao ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                  {modoRevisao ? ' Desativar Revisão' : ' Ativar Revisão'}
+                </button>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Modal */}
+          <div className="cornell-input" style={{ marginBottom: '30px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="coluna-esquerda">
+                <label style={{ display: 'block', fontWeight: 'bold', color: '#dc3545', marginBottom: '5px' }}>
+                  <span>❓</span> Perguntas e Fórmulas
+                </label>
+                <textarea
+                  value={perguntaAtual}
+                  onChange={(e) => setPerguntaAtual(e.target.value)}
+                  placeholder={inteligenciaAtual === 'logico' ? 
+                    "Ex: Qual a fórmula de Bhaskara?" :
+                    inteligenciaAtual === 'intrapessoal' ?
+                    "Ex: Como me sinto em relação a este tema?" :
+                    "Ex: Como visualizo este conceito espacialmente?"
+                  }
+                  rows="3"
+                  className="form-control"
+                  style={{ borderColor: '#dc3545' }}
+                />
+                <small style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#666' }}>
+                  {inteligenciaAtual === 'logico' ? '🔢 Use fórmulas e equações' :
+                   inteligenciaAtual === 'intrapessoal' ? '🧠 Use perguntas reflexivas' :
+                   '🌌 Use perguntas sobre visualização'}
+                </small>
+              </div>
+              <div className="coluna-direita">
+                <label style={{ display: 'block', fontWeight: 'bold', color: '#28a745', marginBottom: '5px' }}>
+                  <span>💡</span> Respostas e Explicações
+                </label>
+                <textarea
+                  value={respostaAtual}
+                  onChange={(e) => setRespostaAtual(e.target.value)}
+                  placeholder="Ex: x = (-b ± √(b²-4ac)) / 2a"
+                  rows="3"
+                  className="form-control"
+                  style={{ borderColor: '#28a745' }}
+                />
+                <small style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#666' }}>
+                  📝 Escreva a resposta de forma clara e detalhada
+                </small>
+              </div>
+            </div>
+            <button 
+              className="btn-adicionar-cornell"
+              onClick={adicionarNotaCornell}
+              style={{
+                background: cores.primaria,
+                color: '#fff',
+                border: 'none',
+                padding: '10px 24px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                marginTop: '15px',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+            >
+              <i className="bi bi-plus-lg"></i>
+              Adicionar ao Caderno Cornell
+            </button>
+          </div>
+
+          <div className="notas-lista">
+            <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>📒 Caderno Cornell</span>
+              <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#999' }}>
+                {notasCornell.length} anotações
+              </span>
+            </h3>
+            
+            {notasCornell.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px', 
+                background: '#f8f9fa', 
+                borderRadius: '12px' 
+              }}>
+                <i className="bi bi-journal-text" style={{ fontSize: '48px', color: '#ccc' }}></i>
+                <p style={{ margin: '10px 0 0 0', color: '#666' }}>Nenhuma anotação Cornell ainda.</p>
+                <p style={{ fontSize: '14px', color: '#999' }}>Adicione perguntas e respostas para começar!</p>
+              </div>
+            ) : (
+              <div className={`row g-3 ${modoRevisao ? 'modo-revisao' : ''}`}>
+                {notasCornell.map((nota) => (
+                  <div key={nota.id} className="col-md-6">
+                    <div className="card-nota" style={{ 
+                      background: '#fff', 
+                      border: `2px solid ${cores.primaria}`,
+                      borderRadius: '12px',
+                      padding: '15px',
+                      position: 'relative'
+                    }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        <div style={{ borderRight: '2px solid #e0e0e0', paddingRight: '15px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc3545', textTransform: 'uppercase' }}>
+                            ❓ Pergunta:
+                          </span>
+                          <p className={`texto-pergunta ${modoRevisao ? 'revisao-oculta' : ''}`} style={{ 
+                            color: '#dc3545', 
+                            fontWeight: '500',
+                            marginTop: '5px',
+                            filter: modoRevisao ? 'blur(8px)' : 'none',
+                            cursor: modoRevisao ? 'pointer' : 'default',
+                            transition: 'filter 0.3s'
+                          }}>
+                            {nota.pergunta}
+                          </p>
+                          {modoRevisao && (
+                            <button 
+                              className="btn-revelar-resposta"
+                              onClick={() => revelarResposta(nota.pergunta, nota.resposta)}
+                              style={{
+                                background: cores.primaria,
+                                color: '#fff',
+                                border: 'none',
+                                padding: '4px 12px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginTop: '8px'
+                              }}
+                            >
+                              <i className="bi bi-eye"></i> Ver Resposta
+                            </button>
+                          )}
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#28a745', textTransform: 'uppercase' }}>
+                            💡 Resposta:
+                          </span>
+                          <p className={`texto-resposta ${modoRevisao ? 'revisao-oculta' : ''}`} style={{ 
+                            color: '#28a745', 
+                            fontWeight: '500',
+                            marginTop: '5px',
+                            filter: modoRevisao ? 'blur(8px)' : 'none',
+                            transition: 'filter 0.3s'
+                          }}>
+                            {nota.resposta}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #f0f0f0'
+                      }}>
+                        <span style={{ fontSize: '12px', color: '#999' }}>📅 {nota.data}</span>
+                        <button 
+                          className="btn-excluir"
+                          onClick={() => excluirNotaCornell(nota.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#dc3545',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        // ===== MODO NORMAL DE NOTAS =====
+        <>
+          <div className="d-flex mb-3 justify-content-between">
+            <input
+              type="text"
+              className="form-control me-2"
+              placeholder="Pesquisar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button className="btn btn-primary" id="btnNova" onClick={() => abrirModal()}>
+              <i className="fa fa-plus"></i> Nova
+            </button>
+          </div>
+
+          <div id="notasContainer" className="row g-3">
+            {notasFiltradas.map((nota, idx) => {
+              const totalItens = nota.checklist?.length || 0;
+              const itensConcluidos = nota.checklist?.filter(c => c.checked).length || 0;
+              const pendentes = totalItens - itensConcluidos;
+              
+              return (
+                <div key={nota.id} className="col-md-4">
+                  <div className="card-nota" style={{ backgroundColor: nota.cor, color: nota.corTexto || '#000000' }}>
+                    <i
+                      className={`bi bi-star-fill estrela ${nota.favorito ? 'favorito' : ''}`}
+                      onClick={() => toggleFavorito(nota.id)}
+                    />
+                    <h5>{nota.titulo}</h5>
+                    <small>{nota.dataCriacao || ""}</small>
+                    
+                    {totalItens > 0 && (
+                      <div className={`checklist-stats ${pendentes === 0 ? 'concluido' : 'pendente'}`}>
+                        {pendentes === 0 ? '✅' : '📋'} {itensConcluidos}/{totalItens} itens {pendentes === 0 ? 'concluídos' : 'pendentes'}
+                      </div>
+                    )}
+                    
+                    <div className="card-conteudo">
+                      {nota.texto.replace(/<[^>]+>/g, "").slice(0, 100)}
+                      
+                      <div className="checklist-card">
+                        {nota.checklist?.map((c, i) => (
+                          <div key={i} className={`check-item ${c.checked ? 'completed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={c.checked}
+                              onChange={() => toggleChecklistItem(nota.id, i)}
+                            />
+                            <span>{c.texto}</span>
+                            <button
+                              className="btn-excluir-check"
+                              onClick={() => excluirChecklistItem(nota.id, i)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {renderizarIndicadorAnexos(nota.anexos)}
+                    {renderizarAnexosCard(nota.anexos)}
+                    
+                    <div className="mt-2">
+                      <button
+                        className="btn btn-sm btn-warning btn-editar"
+                        onClick={() => abrirModal(nota, notas.findIndex(n => n.id === nota.id))}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger btn-excluir"
+                        onClick={() => excluirNota(nota.id)}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Modal - Mantido igual */}
       <div className="modal fade" id="notaModal" ref={modalRef} tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-lg modal-dialog-centered">
           <div className="modal-content">
@@ -581,6 +982,52 @@ export default function Notas() {
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* Estilos específicos para o modo revisão */
+        .modo-revisao .revisao-oculta {
+          filter: blur(8px);
+          cursor: pointer;
+          transition: filter 0.3s;
+        }
+        
+        .modo-revisao .revisao-oculta:hover {
+          filter: blur(2px);
+        }
+        
+        .btn-revisao {
+          transition: all 0.3s;
+        }
+        
+        .btn-revisao:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .inteligencia-badge-cornell {
+          animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+          .cornell-info > div {
+            flex-direction: column;
+          }
+          
+          .cornell-info > div > div:first-child {
+            width: 100%;
+          }
+          
+          .cornell-info > div > div:last-child {
+            margin-top: 10px;
+          }
+        }
+      `}</style>
     </section>
   );
 }

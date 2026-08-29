@@ -21,6 +21,10 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+
+  <!-- Mapa mental -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <!-- Seu CSS SEMPRE por último -->
   <link rel="stylesheet" href="PaginaUsuario.css">
 </head>
@@ -163,13 +167,18 @@
               <p id="tempoProximaInicio"></p>
             </div>
 
-                      <div class="col-12 mt-3">
-            <div class="card p-3 text-center" style="cursor: pointer; transition: 0.2s; border: 2px dashed var(--cor-primaria); background: #fefefe;" onclick="abrirModalAmbiente()" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.15)'; this.style.background='#fef2f2'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.style.background='#fefefe'">
-              <i class="bi bi-lightbulb-fill" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px; display: block;"></i>
-              <h5 style="margin-bottom: 4px !important;">Como preparar o ambiente?</h5>
-              <p style="font-size: 0.8rem; color: #9ca3af; margin: 0;">Clique aqui para ver as dicas</p>
+            <div class="col-12 mt-3">
+              <div class="card p-3 text-center"
+                style="cursor: pointer; transition: 0.2s; border: 2px dashed var(--cor-primaria); background: #fefefe;"
+                onclick="abrirModalAmbiente()"
+                onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.15)'; this.style.background='#fef2f2'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.style.background='#fefefe'">
+                <i class="bi bi-lightbulb-fill"
+                  style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 8px; display: block;"></i>
+                <h5 style="margin-bottom: 4px !important;">Como preparar o ambiente?</h5>
+                <p style="font-size: 0.8rem; color: #9ca3af; margin: 0;">Clique aqui para ver as dicas</p>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
@@ -390,7 +399,7 @@
         </div>
 
         <!-- POMODORO -->
-        <div class="relogio-card" style="width: 100%;">
+        <div class="relogio-card" id="cardPomodoro" style="width: 100%;">
           <h3><i class="bi bi-circle-fill" style="color: #ef4444; font-size: 0.8rem;"></i> Pomodoro</h3>
           <p id="pomodoroDisplay">25:00</p>
           <div class="relogio-botoes">
@@ -842,7 +851,8 @@
     <section id="metodosSection" style="display:none;" class="metodos-container">
       <div id="metodosHeader" class="metodos-header">
         <div class="inteligencia-badge" id="inteligenciaBadge" style="background: var(--cor-primaria);">
-          <img id="inteligenciaBadgeIcon" src="Icones/logico.png" alt="Inteligência" style="width: 28px; height: 28px; object-fit: contain;">
+          <img id="inteligenciaBadgeIcon" src="Icones/logico.png" alt="Inteligência"
+            style="width: 28px; height: 28px; object-fit: contain;">
           <span id="inteligenciaBadgeNome">Inteligência Lógico-Matemática</span>
         </div>
         <h1>Métodos de Estudo para você</h1>
@@ -854,12 +864,13 @@
       </div>
 
       <!-- Modal Overlay Customizado -->
-      <div id="metodoModalOverlay" class="modal-overlay" style="display:none;" onclick="window.fecharMetodoModal()">
+      <div id="metodoModalOverlay" class="modal-overlay" style="display:none; z-index: 1000;"
+        onclick="window.fecharMetodoModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           <button class="modal-close" onclick="window.fecharMetodoModal()">
             <i class="bi bi-x-lg"></i>
           </button>
-          
+
           <div class="modal-header">
             <h2 id="modalMetodoTitulo">Título do Método</h2>
             <div class="modal-tags">
@@ -887,7 +898,8 @@
 
             <div class="modal-dica">
               <i class="bi bi-lightbulb-fill"></i>
-              <span id="modalMetodoDica">Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.</span>
+              <span id="modalMetodoDica">Dica: Adapte esse método ao seu estilo pessoal e combine com outras
+                técnicas.</span>
             </div>
           </div>
 
@@ -900,90 +912,308 @@
 
     <!-- ==================== REVISÃO INTELIGENTE ==================== -->
     <section id="revisaoSection" style="display:none;">
-      <!-- CABEÇALHO -->
-      <div class="revisao-header">
+
+      <!-- CABEÇALHO SIMPLES -->
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
         <h1>Revisão Inteligente</h1>
-        <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
-          <i class="bi bi-plus-lg"></i> Novo Flashcard
-        </button>
-      </div>
-
-      <!-- AVISO DE PROVA -->
-      <div id="avisoProva" class="aviso-prova" style="display: none;">
-        <div class="aviso-conteudo">
-          <i class="bi bi-calendar-exclamation"></i>
-          <div>
-            <strong>Prova se aproximando!</strong>
-            <p id="textoAvisoProva"></p>
-          </div>
-          <button onclick="criarRevisaoPorProva()" class="btn-aviso">Criar Revisão</button>
-        </div>
-      </div>
-
-      <!-- ESTATÍSTICAS FIXAS -->
-      <div class="revisao-stats-fixas">
-        <div class="stat-box">
-          <span>Hoje</span>
-          <strong id="totalHoje">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>Atrasadas</span>
-          <strong id="totalAtrasadas">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>Concluídas</span>
-          <strong id="totalConcluidas">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>Taxa Acerto</span>
-          <strong id="taxaAcertoGeral">0%</strong>
-        </div>
-      </div>
-
-      <!-- REGRAS -->
-      <div class="revisao-regras">
-        💡 Acertei = próximo nível | Errei = revisar amanhã
-      </div>
-
-      <!-- ABAS -->
-      <div class="revisao-abas">
-        <button class="aba-btn active" data-aba="meusCards">Meus Cards</button>
-        <button class="aba-btn" data-aba="revisar"> Revisar</button>
-      </div>
-
-      <!-- FILTRO POR MATÉRIA (comum às duas abas) -->
-      <div class="revisao-filtro">
-        <select id="filtroMateriaRevisao" class="filtro-materia-select">
-          <option value="todas">Todas as matérias</option>
-        </select>
-      </div>
-
-      <!-- CONTEÚDO ABA: MEUS CARDS -->
-      <div id="abaMeusCards" class="aba-conteudo">
-        <div id="listaFlashcardsAgrupada"></div>
-      </div>
-
-      <!-- CONTEÚDO ABA: REVISAR -->
-      <div id="abaRevisar" class="aba-conteudo" style="display: none;">
-        <div class="revisar-centro" style="text-align: center; padding: 60px 20px;">
-          <i class="bi bi-arrow-repeat"
-            style="font-size: 4rem; color: var(--cor-primaria); display: block; margin-bottom: 20px;"></i>
-          <p style="font-size: 1.2rem; color: #4b5563; margin-bottom: 10px;">
-            Voce tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.5rem;">0</strong> cards
-            para revisar!
-          </p>
-          <p style="color: #6b7280; margin-bottom: 30px; font-size: 0.9rem;">
-            A revisao espacada ajuda a fixar o conteudo na memoria de longo prazo.
-          </p>
-          <button class="btn-iniciar-revisao" onclick="iniciarRevisao()"
-            style="background: var(--cor-primaria); color: white; border: none; padding: 15px 40px; border-radius: 40px; font-size: 1.1rem; cursor: pointer; font-weight: 600; transition: 0.2s;"
-            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            <i class="bi bi-play-fill"></i> Iniciar Revisao
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn-add-materia-revisao" onclick="abrirModalNovaMateria()">
+            <i class="bi bi-plus-circle"></i> Nova Matéria
+          </button>
+          <button class="btn-add-revisao" onclick="abrirModalFlashcard()">
+            <i class="bi bi-plus-lg"></i> Novo Flashcard
           </button>
         </div>
       </div>
 
-      <!-- MODO FOCO (REVISÃO) -->
+      <!-- MODAL NOVA MATÉRIA -->
+      <div class="modal fade" id="modalNovaMateriaRevisao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header" style="background: var(--cor-primaria); color: white;">
+              <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nova Matéria</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-book"></i> Nome da Matéria</label>
+                <input type="text" id="novaMateriaRevisaoNome" class="form-control"
+                  placeholder="Ex: Biologia, Química...">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold"><i class="bi bi-palette"></i> Cor</label>
+                <input type="color" id="novaMateriaRevisaoCor" class="form-control form-control-color" value="#9f042c">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="salvarNovaMateriaRevisao()">
+                <i class="bi bi-save"></i> Salvar Matéria
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AVISO DE PROVA (mantido e melhorado) -->
+      <div id="avisoProva" class="aviso-prova" style="display: none;">
+        <div class="aviso-conteudo">
+          <i class="bi bi-calendar-exclamation"></i>
+          <div>
+            <strong>📅 Prova se aproximando!</strong>
+            <p id="textoAvisoProva"></p>
+            <small id="diasParaProva"></small>
+          </div>
+          <button onclick="criarRevisaoPorProva()" class="btn-aviso">
+            <i class="bi bi-plus-circle"></i> Criar Revisão para Prova
+          </button>
+          <button onclick="fecharAviso('avisoProva')" class="btn-fechar-aviso">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- AVISO DE CARDS ATRASADOS -->
+      <div id="avisoCardsAtrasados" class="aviso-atrasados" style="display: none;">
+        <div class="aviso-conteudo">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <strong>⚠️ Cards atrasados!</strong>
+            <p id="detalhesAtrasados"></p>
+          </div>
+          <button onclick="irParaAbaRevisar()" class="btn-aviso">
+            <i class="bi bi-arrow-repeat"></i> Revisar Agora
+          </button>
+          <button onclick="fecharAviso('avisoCardsAtrasados')" class="btn-fechar-aviso">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD RÁPIDO -->
+      <div class="revisao-dashboard">
+        <div class="stat-box" style="border-left: 4px solid var(--cor-primaria);">
+          <span>📊 Para Hoje</span>
+          <strong id="totalHoje">0</strong>
+        </div>
+        <div class="stat-box" style="border-left: 4px solid #ef4444;">
+          <span>⚠️ Atrasadas</span>
+          <strong id="totalAtrasadas">0</strong>
+        </div>
+        <div class="stat-box" style="border-left: 4px solid #22c55e;">
+          <span>✅ Concluídas</span>
+          <strong id="totalConcluidas">0</strong>
+        </div>
+        <div class="stat-box" style="border-left: 4px solid #f59e0b;">
+          <span>🎯 Taxa Acerto</span>
+          <strong id="taxaAcertoGeral">0%</strong>
+        </div>
+      </div>
+
+      <!-- ABAS PRINCIPAIS -->
+      <div class="revisao-abas" id="revisaoAbas">
+        <button class="aba-btn active" data-aba="meusCards" onclick="trocarAbaRevisao('meusCards')">
+          <i class="bi bi-collection"></i> Meus Cards
+        </button>
+        <button class="aba-btn" data-aba="revisar" onclick="trocarAbaRevisao('revisar')">
+          <i class="bi bi-arrow-repeat"></i> Revisar
+        </button>
+        <button class="aba-btn" data-aba="simulado" onclick="trocarAbaRevisao('simulado')" id="abaSimuladoBtn"
+          style="display:none;">
+          <i class="bi bi-pencil-square"></i> Simulado
+        </button>
+        <button class="aba-btn" data-aba="historico" onclick="trocarAbaRevisao('historico')">
+          <i class="bi bi-clock-history"></i> Histórico
+        </button>
+      </div>
+
+      <!-- ==================== ABA: MEUS CARDS ==================== -->
+      <div id="abaMeusCards" class="aba-conteudo">
+        <!-- Filtros -->
+        <div class="revisao-filtros">
+          <select id="filtroMateriaRevisao" class="filtro-materia-select" onchange="aplicarFiltrosCards()">
+            <option value="todas">📚 Todas as matérias</option>
+          </select>
+          <input type="text" id="buscaFlashcard" placeholder="🔍 Buscar card..." oninput="aplicarFiltrosCards()">
+        </div>
+
+        <!-- Lista de cards agrupados -->
+        <div id="listaFlashcardsAgrupada"></div>
+      </div>
+
+      <!-- ==================== ABA: REVISAR ==================== -->
+      <div id="abaRevisar" class="aba-conteudo" style="display:none;">
+        <!-- Filtro de matéria para revisão -->
+        <div class="revisao-filtros" style="margin-bottom: 20px;">
+          <label style="font-weight: 600; color: #4b5563;">
+            <i class="bi bi-funnel"></i> Revisar:
+          </label>
+          <select id="filtroMateriaRevisaoModo" class="filtro-materia-select" onchange="atualizarContadoresRevisao()">
+            <option value="todas">Todas as matérias</option>
+          </select>
+        </div>
+
+        <div class="revisar-centro" style="text-align: center; padding: 40px 20px;">
+          <i class="bi bi-arrow-repeat"
+            style="font-size: 3.5rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i>
+          <p style="font-size: 1.1rem; color: #4b5563; margin-bottom: 10px;">
+            Você tem <strong id="countPendentes" style="color: var(--cor-primaria); font-size: 1.4rem;">0</strong> cards
+            para revisar
+          </p>
+          <p style="color: #6b7280; margin-bottom: 25px; font-size: 0.9rem;" id="textoProximaRevisao">
+            Escolha o modo de revisão
+          </p>
+
+          <!-- CARDS DE MODO -->
+          <div
+            style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 0 auto;">
+
+            <!-- REVISÃO INTELIGENTE -->
+            <div class="modo-revisao-card"
+              style="flex: 1; min-width: 250px; max-width: 320px; background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid var(--cor-primaria); cursor: pointer; transition: 0.3s;"
+              onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'"
+              onclick="iniciarRevisao()">
+              <i class="bi bi-lightning-charge-fill" style="font-size: 2.5rem; color: var(--cor-primaria);"></i>
+              <h3 style="margin: 15px 0 10px; color: #374151;">Revisão Inteligente</h3>
+              <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 15px;">
+                Revisa apenas cards pendentes para hoje ou atrasados
+              </p>
+              <div style="background: #f0f9ff; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                <span style="font-size: 0.8rem; color: #0369a1;">
+                  <i class="bi bi-info-circle"></i>
+                  Cards serão reagendados baseado no seu desempenho
+                </span>
+              </div>
+              <button class="btn-revisao-modo" style="width: 100%;">
+                <i class="bi bi-play-fill"></i> Começar Inteligente
+              </button>
+            </div>
+
+            <!-- REVISÃO LIVRE -->
+            <div class="modo-revisao-card"
+              style="flex: 1; min-width: 250px; max-width: 320px; background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; cursor: pointer; transition: 0.3s;"
+              onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'"
+              onclick="iniciarRevisaoLivre()">
+              <i class="bi bi-shuffle" style="font-size: 2.5rem; color: #6b7280;"></i>
+              <h3 style="margin: 15px 0 10px; color: #374151;">Revisão Livre</h3>
+              <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 15px;">
+                Revisa todos os cards, independente da data
+              </p>
+              <div style="background: #f9fafb; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                <span style="font-size: 0.8rem; color: #6b7280;">
+                  <i class="bi bi-info-circle"></i>
+                  Cards não serão reagendados
+                </span>
+              </div>
+              <button class="btn-revisao-modo btn-revisao-livre" style="width: 100%;">
+                <i class="bi bi-play-fill"></i> Começar Livre
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ABA: SIMULADO (TESTE PRÁTICO) ==================== -->
+      <div id="abaSimulado" class="aba-conteudo" style="display:none;">
+        <div class="simulado-config"
+          style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+          <h3 style="text-align: center; color: #374151; margin-bottom: 25px;">
+            <i class="bi bi-pencil-square" style="color: var(--cor-primaria);"></i>
+            Configurar Simulado
+          </h3>
+
+          <!-- Matéria -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-book"></i> Matéria:
+            </label>
+            <select id="simuladoMateria" class="form-select">
+              <option value="todas">Todas as matérias</option>
+            </select>
+          </div>
+
+          <!-- Número de questões -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-list-ol"></i> Número de questões:
+            </label>
+            <div class="btn-group w-100" role="group">
+              <button type="button" class="btn btn-outline-primary active" data-num="5"
+                onclick="selecionarNumQuestoes(this)">5</button>
+              <button type="button" class="btn btn-outline-primary" data-num="10"
+                onclick="selecionarNumQuestoes(this)">10</button>
+              <button type="button" class="btn btn-outline-primary" data-num="15"
+                onclick="selecionarNumQuestoes(this)">15</button>
+              <button type="button" class="btn btn-outline-primary" data-num="todas"
+                onclick="selecionarNumQuestoes(this)">Todas</button>
+            </div>
+          </div>
+
+          <!-- Tempo -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-clock"></i> Tempo por questão:
+            </label>
+            <select id="simuladoTempo" class="form-select">
+              <option value="30">30 segundos</option>
+              <option value="60" selected>1 minuto</option>
+              <option value="120">2 minutos</option>
+              <option value="0">Sem limite</option>
+            </select>
+          </div>
+
+          <!-- Modo -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-toggles"></i> Modo:
+            </label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="modoSimulado" id="modoTreino" checked>
+              <label class="form-check-label" for="modoTreino">
+                🎯 Treino (feedback imediato)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="modoSimulado" id="modoProva">
+              <label class="form-check-label" for="modoProva">
+                📝 Prova (feedback no final)
+              </label>
+            </div>
+          </div>
+
+          <!-- Botão iniciar -->
+          <button class="btn btn-primary w-100"
+            style="background: var(--cor-primaria); border: none; padding: 12px; font-weight: 600;"
+            onclick="iniciarSimulado()">
+            <i class="bi bi-play-fill"></i> Iniciar Simulado
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== ABA: HISTÓRICO ==================== -->
+      <div id="abaHistorico" class="aba-conteudo" style="display:none;">
+        <div style="background: white; border-radius: 16px; padding: 25px;">
+          <h3 style="margin-bottom: 20px;">
+            <i class="bi bi-clock-history" style="color: var(--cor-primaria);"></i>
+            Histórico de Revisões
+          </h3>
+
+          <!-- Gráfico de desempenho -->
+          <div style="margin-bottom: 30px;">
+            <h4 style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+              <i class="bi bi-graph-up"></i> Desempenho por Matéria
+            </h4>
+            <canvas id="graficoDesempenhoMaterias" height="200"></canvas>
+          </div>
+
+          <!-- Lista de revisões -->
+          <div id="historicoRevisoes"></div>
+        </div>
+      </div>
+
+      <!-- MODO FOCO (REVISÃO) - Mantido e melhorado -->
       <div id="modoFocoContainer" class="revisao-foco-container" style="display: none;">
         <div class="foco-card">
           <div class="foco-header">
@@ -995,17 +1225,66 @@
               <i class="bi bi-x-lg"></i>
             </button>
           </div>
+
+          <!-- Timer do simulado -->
+          <div id="simuladoTimer" style="display: none; text-align: center; margin: 10px 0;">
+            <span style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria);"
+              id="simuladoTempoRestante">00:00</span>
+          </div>
+
           <div class="foco-pergunta" id="focoPergunta">Pergunta</div>
           <div class="foco-resposta" id="focoResposta" style="display: none;">Resposta</div>
+
+          <!-- Informação do nível -->
+          <div id="focoInfoNivel"
+            style="display: none; background: #f8fafc; border-radius: 10px; padding: 10px; margin: 10px 0; font-size: 0.85rem;">
+            <span id="focoNivelAtual">Nível: 0</span> |
+            <span id="focoSugestao">Sugestão: revise em 1 dia</span>
+          </div>
+
           <div class="foco-botoes">
             <button id="btnMostrarResposta" class="btn-mostrar-resposta" onclick="mostrarRespostaFoco()">
               <i class="bi bi-eye"></i> Mostrar Resposta
             </button>
+
             <div id="botoesResposta" class="botoes-resposta" style="display: none;">
-              <button class="btn-errei" onclick="responderFlashcard('errei')">❌ Errei</button>
-              <button class="btn-acertei" onclick="responderFlashcard('acertei')">✅ Acertei</button>
+              <button class="btn-errei" onclick="responderContexto('errei')">❌ Errei</button>
+              <button class="btn-acertei" onclick="responderContexto('acertei')">✅ Acertei</button>
+              <button class="btn-facil" onclick="responderContexto('facil')">🚀 Muito Fácil!</button>
             </div>
           </div>
+
+          <!-- Resultado do simulado -->
+          <div id="simuladoResultado"
+            style="display: none; text-align: center; padding: 20px; background: #f0fdf4; border-radius: 10px; margin-top: 15px;">
+            <h3 style="color: #16a34a; margin-bottom: 10px;">🎉 Simulado Concluído!</h3>
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+              <div>
+                <strong id="simuladoAcertos">0</strong>
+                <p style="font-size: 0.8rem;">Acertos</p>
+              </div>
+              <div>
+                <strong id="simuladoErros">0</strong>
+                <p style="font-size: 0.8rem;">Erros</p>
+              </div>
+              <div>
+                <strong id="simuladoTaxa">0%</strong>
+                <p style="font-size: 0.8rem;">Taxa de Acerto</p>
+              </div>
+            </div>
+
+            <!-- ADICIONE ESTES BOTÕES -->
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+              <button class="btn btn-success" onclick="fecharModoFoco()" style="padding: 10px 20px;">
+                <i class="bi bi-check-circle"></i> Voltar
+              </button>
+              <button class="btn btn-primary" onclick="reiniciarSimulado()"
+                style="padding: 10px 20px; background: #3b82f6; border: none;">
+                <i class="bi bi-arrow-repeat"></i> Fazer Outro Simulado
+              </button>
+            </div>
+          </div>
+
           <div class="foco-progresso">
             <span id="focoContador">Card 0 de 0</span>
             <div class="progresso-barra">
@@ -1025,14 +1304,14 @@
             </div>
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label fw-bold"><i class="bi bi-book"></i> Materia</label>
+                <label class="form-label fw-bold"><i class="bi bi-book"></i> Matéria</label>
                 <select id="revisaoMateria" class="form-select">
-                  <option value="">Selecione uma materia</option>
+                  <option value="">Selecione uma matéria</option>
                 </select>
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold"><i class="bi bi-folder"></i> Tema</label>
-                <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
+                <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funções...">
               </div>
               <div class="mb-3">
                 <label class="form-label fw-bold"><i class="bi bi-question-circle"></i> Pergunta</label>
@@ -1045,7 +1324,7 @@
                   placeholder="Digite a resposta..."></textarea>
               </div>
               <div class="alert alert-info" style="font-size: 0.85rem;">
-                <i class="bi bi-lightbulb"></i> Dica: Use perguntas objetivas para revisoes mais eficientes!
+                <i class="bi bi-lightbulb"></i> Dica: Use perguntas objetivas para revisões mais eficientes!
               </div>
             </div>
             <div class="modal-footer">
@@ -1057,7 +1336,693 @@
           </div>
         </div>
       </div>
+
     </section>
+
+    <!-- ==================== MODAL DO MAPA MENTAL ==================== -->
+    <div id="mapaMentalModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharMapaMental()">
+
+      <div class="modal-content-mapa"
+        style="background: white; border-radius: 20px; width: 95%; max-width: 1200px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
+          <div>
+            <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: 1.3rem;">
+              <i class="bi bi-diagram-3" style="color: var(--cor-primaria);"></i>
+              Mapa Mental
+            </h2>
+            <p style="margin: 3px 0 0; font-size: 0.75rem; color: #9ca3af;">
+              Clique para adicionar | Arraste para mover | Duplo clique para editar | ctrl z para desfazer
+            </p>
+          </div>
+          <button onclick="fecharMapaMental()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 5px;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- BARRA DE FERRAMENTAS -->
+        <div
+          style="display: flex; gap: 8px; padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; align-items: center; flex-shrink: 0;">
+          <input type="text" id="mapaMentalTitulo" placeholder="Nome do mapa (ex: Citologia)"
+            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+
+          <input type="color" id="mapaMentalCorNo" value="#9f042c"
+            style="width: 35px; height: 35px; border: none; border-radius: 8px; cursor: pointer;"
+            title="Cor do novo nó">
+
+          <button onclick="adicionarNoCentral()"
+            style="background: var(--cor-primaria); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-plus-circle"></i> Central
+          </button>
+
+          <button onclick="limparMapa()"
+            style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-trash"></i> Limpar
+          </button>
+
+          <button onclick="salvarMapaMental()"
+            style="background: #22c55e; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <i class="bi bi-save"></i> Salvar
+          </button>
+          <!-- BOTÕES DE ZOOM -->
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <button onclick="zoomOut()"
+              style="background: #f3f4f6; color: #374151; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; display: flex; align-items: center; justify-content: center;"
+              title="Zoom out (mapa fica pequeno)">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+
+            <span id="mapaMentalZoomIndicador"
+              style="font-size: 0.8rem; font-weight: 700; color: #374151; min-width: 45px; text-align: center;">
+              100%
+            </span>
+
+            <button onclick="zoomIn()"
+              style="background: #f3f4f6; color: #374151; border: none; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; display: flex; align-items: center; justify-content: center;"
+              title="Zoom in (mapa fica grande)">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+
+            <button onclick="resetZoom()"
+              style="background: #f3f4f6; color: #374151; border: none; padding: 5px 10px; height: 35px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 3px;"
+              title="Reset zoom (100%)">
+              <i class="bi bi-arrows-fullscreen"></i> 100%
+            </button>
+          </div>
+        </div>
+
+        <!-- ÁREA DO CANVAS -->
+        <div id="mapaMentalCanvasContainer"
+          style="flex: 1; min-height: 0; position: relative; background: #fefefe; overflow: hidden; cursor: crosshair;">
+
+          <!-- Grid de fundo -->
+          <div
+            style="position: absolute; inset: 0; background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5; pointer-events: none;">
+          </div>
+
+          <!-- Canvas para desenhar -->
+          <canvas id="mapaMentalCanvas"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+          </canvas>
+
+          <!-- Área dos nós -->
+          <div id="mapaMentalNosContainer" style="position: absolute; inset: 0; z-index: 10;">
+          </div>
+        </div>
+
+        <!-- RODAPÉ -->
+        <div
+          style="display: flex; gap: 12px; padding: 8px 20px; background: #f9fafb; border-top: 1px solid #e5e7eb; font-size: 0.7rem; color: #9ca3af; flex-wrap: wrap; flex-shrink: 0;">
+          <span><i class="bi bi-mouse"></i> Clique: adicionar</span>
+          <span><i class="bi bi-arrows-move"></i> Arraste: mover</span>
+          <span><i class="bi bi-pencil"></i> Duplo clique: editar</span>
+          <span><i class="bi bi-x-circle"></i> Botão ×: deletar</span>
+          <span>Ctrl + z : desfazer</span>
+
+        </div>
+        <!-- Dentro do modal do Mapa Mental, adicione após o rodapé -->
+        <div
+          style="padding: 15px 20px; background: #f9fafb; border-top: 2px solid #e5e7eb; max-height: 200px; overflow-y: auto; flex-shrink: 0;">
+          <h4
+            style="margin: 0 0 10px; font-size: 0.9rem; color: #4b5563; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-folder2-open"></i> Meus Mapas Salvos
+          </h4>
+          <div id="listaMapasSalvos" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA DE MAPAS SALVOS -->
+    <div id="mapasSalvosSection" style="display: none; margin-top: 30px;">
+      <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <i class="bi bi-folder2-open"></i> Meus Mapas Mentais
+      </h3>
+      <div id="listaMapasSalvos"></div>
+    </div>
+
+    <!-- ==================== MODAL DA BIBLIOTECA DE VÍDEOS ==================== -->
+    <div id="bibliotecaVideosModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharBibliotecaVideos()">
+
+      <div
+        style="background: white; border-radius: 20px; width: 95%; max-width: 1000px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
+          <div>
+            <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px;">
+              <i class="bi bi-collection-play" style="color: var(--cor-primaria);"></i>
+              Biblioteca de Vídeos
+            </h2>
+            <p style="margin: 5px 0 0; font-size: 0.8rem; color: #9ca3af;">
+              Organize vídeos educativos por matéria e tema
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="abrirModalAdicionarVideo()"
+              style="background: var(--cor-primaria); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-plus-lg"></i> Adicionar Vídeo
+            </button>
+            <button onclick="fecharBibliotecaVideos()"
+              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div
+          style="display: flex; gap: 10px; padding: 15px 25px; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; flex-shrink: 0;">
+          <select id="filtroMateriaVideos" onchange="renderizarBibliotecaVideos()"
+            style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem; cursor: pointer;">
+            <option value="todas">Todas as matérias</option>
+          </select>
+
+          <select id="filtroStatusVideos" onchange="renderizarBibliotecaVideos()"
+            style="padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem; cursor: pointer;">
+            <option value="todos">Todos</option>
+            <option value="assistidos">Assistidos</option>
+            <option value="nao_assistidos">Não assistidos</option>
+          </select>
+
+          <input type="text" id="buscaVideos" placeholder="Buscar vídeo..." oninput="renderizarBibliotecaVideos()"
+            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem;">
+        </div>
+
+        <!-- LISTA DE VÍDEOS -->
+        <div id="listaVideosEstudo" style="flex: 1; overflow-y: auto; padding: 20px 25px;">
+          <!-- preenchido dinamicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL ADICIONAR VÍDEO ==================== -->
+    <div id="modalAdicionarVideoOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharModalAdicionarVideo()">
+
+      <div
+        style="background: white; border-radius: 20px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;"
+        onclick="event.stopPropagation()">
+
+        <h3 style="text-align: center; margin-bottom: 25px; color: #374151;">
+          <i class="bi bi-collection-play" style="color: var(--cor-primaria);"></i> Adicionar Vídeo
+        </h3>
+
+        <!-- MATÉRIA -->
+        <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Matéria:</label>
+        <select id="videoMateria"
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+          <option value="">Selecione uma matéria</option>
+        </select>
+
+        <!-- CAMPO NOVA MATÉRIA (escondido por padrão) -->
+        <div id="campoNovaMateriaVideo" style="display: none; margin-bottom: 15px;">
+          <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Nome da nova matéria:</label>
+          <input type="text" id="novaMateriaVideo" placeholder="Ex: Biologia, Química..."
+            style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem;">
+        </div>
+
+        <!-- TÍTULO -->
+        <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Título do vídeo:</label>
+        <input type="text" id="videoTitulo" placeholder="Ex: O que é Citologia?"
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+
+        <!-- LINK -->
+        <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Link do vídeo:</label>
+        <input type="url" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..."
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem;"
+          onblur="carregarThumbnailPreview()">
+
+        <!-- PREVIEW DA THUMBNAIL -->
+        <div id="videoThumbnailPreview" style="display: none; margin-bottom: 15px; text-align: center;">
+          <img id="videoThumbnailImg" src="" alt="Thumbnail"
+            style="max-width: 100%; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        </div>
+
+        <!-- TEMA -->
+        <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Tema/Pasta:</label>
+        <input type="text" id="videoTema" placeholder="Ex: Citologia, Genética..."
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+
+        <!-- ANOTAÇÕES -->
+        <label style="font-weight: 600; color: #4b5563; font-size: 0.85rem;">Anotações:</label>
+        <textarea id="videoAnotacoes" rows="4" placeholder="Anotações sobre o vídeo..."
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; resize: vertical;"></textarea>
+
+        <!-- BOTÕES -->
+        <div style="display: flex; gap: 10px;">
+          <button onclick="fecharModalAdicionarVideo()"
+            style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; color: #6b7280; font-weight: 600; cursor: pointer;">
+            Cancelar
+          </button>
+          <button onclick="salvarVideo()"
+            style="flex: 1; padding: 12px; border: none; border-radius: 12px; background: var(--cor-primaria); color: white; font-weight: 600; cursor: pointer;">
+            <i class="bi bi-save"></i> Salvar Vídeo
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== MODAL DO GRAVADOR ==================== -->
+    <div id="gravadorModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharGravadorModal()">
+
+      <div
+        style="background: white; border-radius: 15px; padding: 25px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 id="gravadorTitulo" style="display: flex; align-items: center; gap: 10px; margin: 0; color: #4b5563;">
+            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+            Gravador de Explicação
+          </h3>
+          <button onclick="fecharGravadorModal()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- ⬇️ NOVO: CAMPO PARA NOMEAR A GRAVAÇÃO ⬇️ -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-tag"></i> Nome da Gravação:
+          </label>
+          <input type="text" id="nomeGravacao" placeholder="Ex: Explicação sobre Citologia - Capítulo 3"
+            style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; transition: 0.2s;"
+            onfocus="this.style.borderColor='var(--cor-primaria)'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+
+        <!-- BOTÕES DE GRAVAÇÃO -->
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+          <button id="btnGravar" onclick="iniciarGravacao()"
+            style="background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="bi bi-record-circle"></i> Gravar
+          </button>
+
+          <button id="btnPausarAudio" onclick="pausarGravacao()" disabled
+            style="background: #f59e0b; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+            <i class="bi bi-pause-circle"></i> Pausar
+          </button>
+
+          <button id="btnPararAudio" onclick="pararGravacao()" disabled
+            style="background: #6b7280; color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5;">
+            <i class="bi bi-stop-circle"></i> Parar
+          </button>
+        </div>
+
+        <!-- TEMPO DE GRAVAÇÃO -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span id="tempoGravacao" style="font-size: 1.5rem; font-weight: 700; color: var(--cor-primaria);">00:00</span>
+        </div>
+
+        <!-- CHECKLIST -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <h4 style="margin-bottom: 15px; font-size: 0.95rem; color: #4b5563; font-weight: 600;">
+            <i class="bi bi-clipboard-check"></i> Autoavaliação:
+          </h4>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkPalavrasSimples" style="width: 18px; height: 18px;">
+            <span>Expliquei com palavras simples?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkAnalogias" style="width: 18px; height: 18px;">
+            <span>Usei analogias ou exemplos?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkLacunas" style="width: 18px; height: 18px;">
+            <span>Identifiquei lacunas no entendimento?</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="checkSimplificado" style="width: 18px; height: 18px;">
+            <span>Consegui simplificar o conceito?</span>
+          </label>
+        </div>
+
+        <!-- ANOTAÇÕES -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-pencil"></i> Anotações do que melhorar:
+          </label>
+          <textarea id="anotacoesGravacao" rows="3" placeholder="Enquanto ouve, anote os pontos que precisa melhorar..."
+            style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; resize: vertical;"></textarea>
+        </div>
+
+        <!-- ÁUDIO GRAVADO -->
+        <div id="audioGravadoArea"
+          style="display: none; margin-bottom: 20px; background: #f0fdf4; padding: 15px; border-radius: 10px;">
+          <p style="font-size: 0.85rem; color: #16a34a; margin-bottom: 10px; font-weight: 600;">
+            <i class="bi bi-check-circle-fill"></i> Gravação concluída!
+          </p>
+          <audio id="audioGravadoPlayer" controls style="width: 100%;"></audio>
+        </div>
+
+        <!-- BOTÃO SALVAR -->
+        <button onclick="salvarGravacao()"
+          style="background: #22c55e; color: white; border: none; padding: 12px 30px; border-radius: 40px; cursor: pointer; font-weight: 600; width: 100%;">
+          <i class="bi bi-save"></i> Salvar Gravação
+        </button>
+
+        <!-- LISTA DE GRAVAÇÕES -->
+        <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+          <h4 style="margin-bottom: 15px; font-size: 1rem; color: #4b5563;">
+            <i class="bi bi-folder2-open"></i> Minhas Gravações
+          </h4>
+          <div id="listaGravacoes"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== MODAL LEITURA SAVORING ==================== -->
+    <div id="leituraSavoringModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharLeituraSavoring()">
+
+      <div
+        style="background: white; border-radius: 20px; width: 95%; max-width: 800px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
+          <div>
+            <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px;">
+              <i class="bi bi-book" style="color: var(--cor-primaria);"></i>
+              Leitura Savoring
+            </h2>
+            <p style="margin: 5px 0 0; font-size: 0.8rem; color: #9ca3af;">
+              Leia com calma, reflita e anote suas ideias
+            </p>
+          </div>
+          <button onclick="fecharLeituraSavoring()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- CONTEÚDO -->
+        <div style="flex: 1; overflow-y: auto; padding: 25px;">
+
+          <!-- PASSO 1: Iniciar leitura -->
+          <div id="leituraInicio">
+            <div style="margin-bottom: 20px;">
+              <label style="font-weight: 600; color: #4b5563; display: block; margin-bottom: 5px;">
+                📚 Título da Leitura
+              </label>
+              <input type="text" id="leituraTitulo" placeholder="Ex: Capítulo 3 - Biologia Celular"
+                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="font-weight: 600; color: #4b5563; display: block; margin-bottom: 5px;">
+                📝 Texto para leitura (cole aqui)
+              </label><textarea id="leituraTexto" rows="6" placeholder="Cole o texto que deseja estudar..."
+                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; resize: vertical; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;"></textarea>
+
+              <!-- DICA -->
+              <div
+                style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 10px; margin-top: 10px; font-size: 0.8rem; color: #166534;">
+                <i class="bi bi-lightbulb"></i>
+                <strong>Dica:</strong> Separe os trechos com uma linha em branco (pressione Enter duas vezes).
+                Cada trecho será lido separadamente com pausa para reflexão.
+              </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="font-weight: 600; color: #4b5563; display: block; margin-bottom: 5px;">
+                ⏱️ Tempo de leitura por trecho
+              </label>
+              <select id="leituraTempoTrecho"
+                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem;">
+                <option value="1">1 minuto</option>
+                <option value="2" selected>2 minutos</option>
+                <option value="3">3 minutos</option>
+                <option value="5">5 minutos</option>
+              </select>
+            </div>
+
+            <button onclick="iniciarLeituraSavoring()"
+              style="background: var(--cor-primaria); color: white; border: none; padding: 15px 30px; border-radius: 40px; font-weight: 600; cursor: pointer; width: 100%; font-size: 1rem;">
+              <i class="bi bi-play-fill"></i> Iniciar Leitura
+            </button>
+          </div>
+
+          <!-- PASSO 2: Modo leitura -->
+          <div id="leituraModo" style="display: none;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 id="leituraTituloAtual" style="margin: 0; color: #1f2937;"></h3>
+                <small style="color: #6b7280;">Trecho <span id="leituraTrechoAtual">1</span> de <span
+                    id="leituraTrechoTotal">1</span></small>
+              </div>
+              <div id="leituraTimer"
+                style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria); font-family: monospace;">
+                00:00
+              </div>
+            </div>
+
+            <div id="leituraTrechoTexto"
+              style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 15px; padding: 20px; margin-bottom: 20px; min-height: 200px; font-size: 1rem; line-height: 1.8; color: #374151; white-space: pre-wrap; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; max-height: 400px; overflow-y: auto; text-align: left;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+              <button onclick="pausarLeituraSavoring()" id="btnPausarLeitura"
+                style="flex: 1; min-width: 120px; background: #f59e0b; color: white; border: none; padding: 12px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-pause-fill"></i> Pausar
+              </button>
+              <button onclick="proximoTrechoLeitura()" id="btnProximoTrecho"
+                style="flex: 1; min-width: 120px; background: var(--cor-primaria); color: white; border: none; padding: 12px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-arrow-right"></i> Próximo Trecho
+              </button>
+            </div>
+          </div>
+
+          <!-- PASSO 3: Reflexão -->
+          <div id="leituraReflexao" style="display: none;">
+            <h3 style="color: #1f2937; margin-bottom: 15px;">
+              <i class="bi bi-pencil"></i> Momento de Reflexão
+            </h3>
+
+            <p style="color: #6b7280; margin-bottom: 15px;">O que você entendeu deste trecho? Anote suas reflexões:</p>
+
+            <textarea id="leituraAnotacao" rows="5" placeholder="Minhas reflexões sobre este trecho..."
+              style="width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; resize: vertical; font-size: 0.95rem;"></textarea>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+              <button onclick="salvarReflexaoLeitura()"
+                style="flex: 1; min-width: 120px; background: #22c55e; color: white; border: none; padding: 12px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-save"></i> Salvar Reflexão
+              </button>
+              <button onclick="pularReflexaoLeitura()"
+                style="flex: 1; min-width: 120px; background: #9ca3af; color: white; border: none; padding: 12px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-skip-forward"></i> Pular
+              </button>
+            </div>
+          </div>
+
+          <!-- PASSO 4: Resumo final -->
+          <div id="leituraResumo" style="display: none;">
+            <h3 style="color: #1f2937; margin-bottom: 20px; text-align: center;">
+              <i class="bi bi-check-circle"></i> Leitura Concluída!
+            </h3>
+
+            <div id="leituraResumoAnotacoes" style="margin-bottom: 20px;"></div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="novaLeituraSavoring()"
+                style="flex: 1; min-width: 150px; background: #3b82f6; color: white; border: none; padding: 15px 30px; border-radius: 40px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-plus-circle"></i> Nova Leitura
+              </button>
+              <button onclick="fecharLeituraSavoring()"
+                style="flex: 1; min-width: 150px; background: var(--cor-primaria); color: white; border: none; padding: 15px 30px; border-radius: 40px; font-weight: 600; cursor: pointer;">
+                <i class="bi bi-check"></i> Concluir e Fechar
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <!-- Dentro do modal, após o div de conteúdo -->
+        <div
+          style="padding: 15px 25px; background: #f9fafb; border-top: 2px solid #e5e7eb; max-height: 200px; overflow-y: auto; flex-shrink: 0;">
+          <h4
+            style="margin: 0 0 10px; font-size: 0.9rem; color: #4b5563; display: flex; align-items: center; gap: 8px; cursor: pointer;"
+            onclick="toggleHistoricoLeituras()">
+            <i class="bi bi-clock-history"></i> Histórico de Leituras
+            <span id="leituraHistoricoCount"
+              style="background: #e5e7eb; padding: 2px 8px; border-radius: 15px; font-size: 0.7rem;">0</span>
+            <i class="bi bi-chevron-down" id="leituraHistoricoSeta" style="margin-left: auto;"></i>
+          </h4>
+          <div id="leituraHistoricoLista" style="display: none; margin-top: 10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL GRUPOS DE ESTUDO ==================== -->
+    <div id="gruposEstudoModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharGruposEstudo()">
+
+      <div
+        style="background: white; border-radius: 20px; width: 95%; max-width: 1100px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO (ajustado) -->
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
+  <div style="flex: 1; min-width: 150px;">
+    <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: clamp(1rem, 2vw, 1.3rem);">
+      <i class="bi bi-people-fill" style="color: var(--cor-primaria);"></i>
+      Grupos de Estudo
+    </h2>
+    <p style="margin: 5px 0 0; font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #9ca3af;">
+      Estude em grupo, compartilhe conhecimento e evolua junto
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <button onclick="abrirCriarGrupo()"
+      style="background: var(--cor-primaria); color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
+      <i class="bi bi-plus-lg"></i> Criar Grupo
+    </button>
+    <button onclick="abrirEntrarGrupo()"
+      style="background: #3b82f6; color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
+      <i class="bi bi-box-arrow-in-right"></i> Entrar com Código
+    </button>
+    <button onclick="fecharGruposEstudo()"
+      style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+</div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div style="flex: 1; overflow-y: auto; padding: 25px;">
+
+          <!-- LISTA DE GRUPOS -->
+          <div id="listaGruposEstudo"></div>
+
+          <!-- DETALHE DO GRUPO (escondido por padrão) -->
+          <div id="detalheGrupoEstudo" style="display: none;"></div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL DIAGRAMA DE FLUXO ==================== -->
+    <div id="diagramaFluxoModalOverlay"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99999; align-items: center; justify-content: center; padding: 20px;"
+      onclick="fecharDiagramaFluxo()">
+
+      <div
+        style="background: white; border-radius: 20px; width: 95%; max-width: 1200px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"
+        onclick="event.stopPropagation()">
+
+        <!-- CABEÇALHO -->
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
+          <div>
+            <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: 1.3rem;">
+              <i class="bi bi-arrow-right-circle" style="color: #3b82f6;"></i>
+              Diagrama de Fluxo
+            </h2>
+            <p style="margin: 3px 0 0; font-size: 0.75rem; color: #9ca3af;">
+              Clique para adicionar passo | Conecte com setas | Duplo clique para editar
+            </p>
+          </div>
+          <button onclick="fecharDiagramaFluxo()"
+            style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 5px;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- BARRA DE FERRAMENTAS -->
+        <div
+          style="display: flex; gap: 8px; padding: 10px 20px; background: white; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; align-items: center; flex-shrink: 0;">
+          <input type="text" id="diagramaFluxoTitulo" placeholder="Nome do diagrama (ex: Processo de Fotossíntese)"
+            style="flex: 1; min-width: 150px; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+
+          <!-- BOTÕES DE ADICIONAR NÓS -->
+          <button onclick="adicionarNoFluxo('inicio')"
+            style="background: #22c55e; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+            <i class="bi bi-play-circle"></i> Início
+          </button>
+          <button onclick="adicionarNoFluxo('processo')"
+            style="background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+            <i class="bi bi-gear"></i> Processo
+          </button>
+          <button onclick="adicionarNoFluxo('decisao')"
+            style="background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+            <i class="bi bi-question-circle"></i> Decisão
+          </button>
+          <button onclick="adicionarNoFluxo('fim')"
+            style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+            <i class="bi bi-stop-circle"></i> Fim
+          </button>
+
+          <button onclick="limparDiagramaFluxo()"
+            style="background: #6b7280; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem;">
+            <i class="bi bi-trash"></i> Limpar
+          </button>
+
+          <button onclick="salvarDiagramaFluxo()"
+            style="background: #22c55e; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem;">
+            <i class="bi bi-save"></i> Salvar
+          </button>
+        </div>
+
+        <!-- ÁREA DO CANVAS -->
+        <div id="diagramaFluxoCanvasContainer"
+          style="flex: 1; min-height: 0; position: relative; background: #fefefe; overflow: hidden; cursor: crosshair;">
+
+          <!-- Grid de fundo -->
+          <div
+            style="position: absolute; inset: 0; background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5; pointer-events: none;">
+          </div>
+
+          <!-- Canvas para setas -->
+          <canvas id="diagramaFluxoCanvas"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+
+          <!-- Container dos nós -->
+          <div id="diagramaFluxoNosContainer" style="position: absolute; inset: 0; z-index: 10;"></div>
+        </div>
+
+        <!-- RODAPÉ -->
+        <div
+          style="display: flex; gap: 12px; padding: 8px 20px; background: #f9fafb; border-top: 1px solid #e5e7eb; font-size: 0.7rem; color: #9ca3af; flex-wrap: wrap; flex-shrink: 0;">
+          <span><i class="bi bi-mouse"></i> Clique no canvas: adicionar processo</span>
+          <span><i class="bi bi-arrows-move"></i> Arraste: mover</span>
+          <span><i class="bi bi-pencil"></i> Duplo clique: editar</span>
+          <span><i class="bi bi-link"></i> Clique em 2 nós: conectar com seta</span>
+          <span><i class="bi bi-x-circle"></i> Botão ×: deletar</span>
+        </div>
+
+        <!-- LISTA DE DIAGRAMAS SALVOS -->
+        <div
+          style="padding: 15px 20px; background: #f9fafb; border-top: 2px solid #e5e7eb; max-height: 150px; overflow-y: auto; flex-shrink: 0;">
+          <h4 style="margin: 0 0 10px; font-size: 0.9rem; color: #4b5563;">
+            <i class="bi bi-folder2-open"></i> Meus Diagramas Salvos
+          </h4>
+          <div id="listaDiagramasFluxoSalvos" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- ==================== PLANOS ==================== -->
     <section id="planosSection" style="display:none;">

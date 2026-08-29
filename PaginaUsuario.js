@@ -1,7 +1,7 @@
 // Fallback local caso api.js não seja carregado
 if (typeof apiFetch === 'undefined') {
-  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
-    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
+  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:'))
+    ? window.location.origin + '/SectioAureaPaginaUsuario/api'
     : 'http://localhost/SectioAureaPaginaUsuario/api';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
@@ -28,7 +28,7 @@ if (typeof apiFetch === 'undefined') {
 }
 
 if (typeof normalizarInteligencia === 'undefined') {
-  window.normalizarInteligencia = function(nomeDb) {
+  window.normalizarInteligencia = function (nomeDb) {
     if (!nomeDb || typeof nomeDb !== 'string') return "";
     const mapa = {
       "Linguística": "linguistica",
@@ -86,11 +86,11 @@ async function carregarPerfilUsuario() {
         localStorage.setItem("planoUsuario", data.plano.toLowerCase());
       }
       localStorage.setItem("user", JSON.stringify(data));
-      
+
       if (data.tipo_dom) {
         aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
       }
-      
+
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
@@ -175,7 +175,7 @@ function extrairTituloLimpo(val) {
         if (parsed && typeof parsed === "object") {
           if (parsed.title) return extrairTituloLimpo(parsed.title);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return str;
   }
@@ -195,7 +195,7 @@ async function carregarEventosDoBackend() {
         try {
           parsed = JSON.parse(rawTipo);
           if (typeof parsed === 'string') {
-            try { parsed = JSON.parse(parsed); } catch(ex) {}
+            try { parsed = JSON.parse(parsed); } catch (ex) { }
           }
           if (typeof parsed === 'object' && parsed !== null) {
             rawTitle = parsed.title || rawTipo;
@@ -288,21 +288,21 @@ async function carregarSessoesDoBackend() {
     if (response.ok) {
       const sessoes = await response.json();
       tempoEstudo = {};
-      
+
       materias.forEach(m => {
         tempoEstudo[m.id] = { total: 0, historico: {} };
       });
-      
+
       sessoes.forEach(sessao => {
         const matId = sessao.id_materia;
         if (!matId) return;
         if (!tempoEstudo[matId]) {
           tempoEstudo[matId] = { total: 0, historico: {} };
         }
-        
+
         const segundos = timeToSeconds(sessao.tempo_cronometro);
         tempoEstudo[matId].total += segundos;
-        
+
         const dataStr = sessao.created_at.split(' ')[0];
         if (!tempoEstudo[matId].historico[dataStr]) {
           tempoEstudo[matId].historico[dataStr] = 0;
@@ -355,46 +355,6 @@ async function salvarSessaoEstudoNoBackend(materiaId, segundos, descricao = "Ses
     }
   } catch (err) {
     console.error("Erro ao salvar sessão de estudo:", err);
-  }
-}
-
-async function carregarFlashcardsDoBackend() {
-  try {
-    const response = await apiFetch("flashcards");
-    if (response.ok) {
-      const data = await response.json();
-      flashcards = data.map(f => {
-        let parsedTema = {
-          tema: f.tema || "Geral",
-          nivel: 0,
-          dataProxima: new Date().toISOString().split("T")[0],
-          acertos: 0,
-          erros: 0
-        };
-        try {
-          if (f.tema && f.tema.startsWith('{')) {
-            parsedTema = JSON.parse(f.tema);
-          }
-        } catch (e) {
-          console.error("Erro ao fazer parse do tema JSON:", e);
-        }
-        return {
-          id: Number(f.id_flash),
-          materiaId: Number(f.id_materia),
-          materiaNome: f.nome_materia || "Sem materia",
-          tema: parsedTema.tema || "Geral",
-          pergunta: f.pergunta,
-          resposta: f.resposta,
-          nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
-          dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
-          acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
-          erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
-        };
-      });
-      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-    }
-  } catch (err) {
-    console.error("Erro ao carregar flashcards:", err);
   }
 }
 
@@ -815,15 +775,42 @@ function fecharMetodoModal() {
 window.fecharMetodoModal = fecharMetodoModal;
 
 function irParaRevisao(tipoRevisao, metodoTitulo) {
+  console.log('🔄 [REVISÃO] Indo para revisão:', tipoRevisao, metodoTitulo);
+
   localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
   localStorage.setItem('metodoSelecionado', metodoTitulo);
-  
+
   fecharMetodoModal();
-  
+
   if (typeof mostrarTela === 'function') {
     mostrarTela('revisao');
   }
-  
+
+  // Inicializa a revisão (carrega matérias e flashcards)
+  initRevisao().then(() => {
+    // Se for simulado, abre a aba de simulado
+    if (tipoRevisao === 'simulado') {
+      setTimeout(() => {
+        // Mostrar a aba de simulado
+        document.getElementById('abaSimuladoBtn').style.display = 'block';
+        trocarAbaRevisao('simulado');
+        carregarOpcoesSimulado();
+      }, 300);
+    } else if (tipoRevisao === 'flashcards') {
+      // Abre a aba de cards
+      setTimeout(() => {
+        trocarAbaRevisao('meusCards');
+        abrirModalFlashcard();
+      }, 300);
+    } else {
+      // Abre a aba de revisar
+      setTimeout(() => {
+        trocarAbaRevisao('revisar');
+        atualizarContadoresRevisao();
+      }, 300);
+    }
+  });
+
   const sidebarLinks = document.querySelectorAll('#menuLateral .nav-link');
   sidebarLinks.forEach(link => {
     const onclickAttr = link.getAttribute('onclick');
@@ -834,135 +821,8 @@ function irParaRevisao(tipoRevisao, metodoTitulo) {
     }
   });
 }
+
 window.irParaRevisao = irParaRevisao;
-
-function verDetalhesMetodo(tipoInteligencia, metodoId) {
-  const metodosData = metodosPorInteligencia[tipoInteligencia];
-  if (!metodosData) return;
-  
-  const metodo = metodosData.metodos.find(m => m.id === metodoId);
-  if (!metodo) return;
-
-  const modalTitulo = document.getElementById("modalMetodoTitulo");
-  const modalTempo = document.getElementById("modalMetodoTempo");
-  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
-  const passosList = document.getElementById("modalMetodoPassos");
-  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
-  const beneficiosList = document.getElementById("modalMetodoBeneficios");
-  const modalDica = document.getElementById("modalMetodoDica");
-  const footer = document.getElementById("modalMetodoFooter");
-
-  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
-  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
-  
-  if (modalDificuldade) {
-    modalDificuldade.textContent = metodo.dificuldade;
-    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
-  }
-
-  if (passosList) {
-    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
-  }
-
-  if (beneficiosList && beneficiosContainer) {
-    if (metodo.beneficios && metodo.beneficios.length > 0) {
-      beneficiosContainer.style.display = "block";
-      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
-    } else {
-      beneficiosContainer.style.display = "none";
-    }
-  }
-
-  if (modalDica) {
-    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
-  }
-
-  if (footer) {
-    footer.innerHTML = "";
-    if (metodo.titulo === "Flashcards") {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
-      btn.onclick = () => window.irParaRevisao("flashcards", metodo.titulo);
-      footer.appendChild(btn);
-    } else if (metodo.irParaRevisao) {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
-      btn.onclick = () => window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo);
-      footer.appendChild(btn);
-    } else {
-      const btn = document.createElement("button");
-      btn.className = "btn-aplicar";
-      btn.style.background = metodosData.cor;
-      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
-      btn.onclick = window.fecharMetodoModal;
-      footer.appendChild(btn);
-    }
-  }
-
-  const modalOverlay = document.getElementById("metodoModalOverlay");
-  if (modalOverlay) {
-    modalOverlay.style.display = "flex";
-  }
-}
-window.verDetalhesMetodo = verDetalhesMetodo;
-
-function renderizarMetodosEstudo() {
-  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
-  
-  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
-    const user = JSON.parse(localStorage.getItem("user")) || {};
-    if (user.tipo_dom) {
-      tipoInteligencia = normalizarInteligencia(user.tipo_dom);
-    }
-  }
-
-  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
-    tipoInteligencia = 'logico';
-  }
-
-  const metodosData = metodosPorInteligencia[tipoInteligencia];
-  document.documentElement.style.setProperty('--cor-primaria', metodosData.cor);
-
-  const badgeNome = document.getElementById("inteligenciaBadgeNome");
-  const badgeIcon = document.getElementById("inteligenciaBadgeIcon");
-  const badgeDiv = document.getElementById("inteligenciaBadge");
-  const badgeDescricao = document.getElementById("inteligenciaBadgeDescricao");
-
-  if (badgeNome) badgeNome.textContent = `Inteligência ${metodosData.nome}`;
-  if (badgeIcon) badgeIcon.src = iconesInteligencia[tipoInteligencia] || "Icones/logico.png";
-  if (badgeDiv) badgeDiv.style.background = metodosData.cor;
-  if (badgeDescricao) badgeDescricao.textContent = metodosData.descricao;
-
-  const containerRecomendados = document.getElementById("listaMetodosRecomendados");
-  if (containerRecomendados) {
-    containerRecomendados.innerHTML = "";
-    metodosData.metodos.forEach(metodo => {
-      containerRecomendados.innerHTML += `
-        <div class="metodo-card" onclick="window.verDetalhesMetodo('${tipoInteligencia}', ${metodo.id})">
-          <div class="metodo-card-header">
-            <h3>${metodo.titulo}</h3>
-            <div class="metodo-tags">
-              <span class="tag-tempo">
-                <i class="bi bi-clock"></i> ${metodo.tempo}
-              </span>
-              <span class="tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">
-                ${metodo.dificuldade}
-              </span>
-            </div>
-          </div>
-          <p class="metodo-descricao">${metodo.descricao}</p>
-          <button class="btn-ver-mais" style="color: ${metodosData.cor}">
-            Ver método completo <i class="bi bi-arrow-right"></i>
-          </button>
-        </div>
-      `;
-    });
-  }
-}
 
 // ===== FUNÇÕES GLOBAIS PARA ANEXOS =====
 window.removerAnexo = function (index) {
@@ -989,6 +849,7 @@ window.abrirLightbox = function (src) {
   document.body.appendChild(lightbox);
 };
 function mostrarTela(tela) {
+  console.log('🔄 Mostrando tela:', tela);
   if (tela === "estatistica" && !verificarAcesso('estatisticas')) return;
   if (tela === "cronogramaNovo" && !verificarAcesso('cronograma')) return;
   const telas = [
@@ -1035,6 +896,7 @@ function mostrarTela(tela) {
     atualizarBotoesPlanos();
   }
   if (tela === "metodos") {
+    console.log('🎨 Chamando renderizarMetodosEstudo');
     renderizarMetodosEstudo();
   }
   if (tela === "revisao") {
@@ -1384,7 +1246,7 @@ async function adicionarEvento() {
       } else if (recorrencia === "mensal") {
         novaData.setMonth(dataInicio.getMonth() + i);
       }
-      
+
       const dataStr = novaData.toISOString().split('T')[0];
       await salvarEventoNoBackend(titulo, dataStr, cor, { ...extProps, isRecorrente: true });
     }
@@ -1467,37 +1329,8 @@ function carregarEventos() {
 }
 
 function atualizarEventosTarefas() {
-  if (!calendar) return;
-
-  isUpdating = true;
-  // Remove todos os eventos
-  try {
-    // Remove apenas eventos de tarefas
-    calendar.getEvents()
-      .filter(ev => ev.extendedProps?.isTarefa === true)
-      .forEach(ev => ev.remove());
-
-    const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
-    tarefasLS
-      .filter(t => t.data && !t.concluida)
-      .forEach(t => {
-        calendar.addEvent({
-          title: `${t.titulo}`,
-          start: t.data,
-          backgroundColor: corPrioridade(t.prioridade),
-          borderColor: corPrioridade(t.prioridade),
-          textColor: '#ffffff',
-          
-          extendedProps: {
-            isTarefa: true,
-            tarefaId: t.id
-          }
-        });
-      });
-  } catch (error) {
-    console.error("Erro ao atualizar tarefas:", error);
-  } finally {
-    isUpdating = false;
+  if (calendar && typeof calendar.refetchEvents === 'function') {
+    calendar.refetchEvents();
   }
 }
 
@@ -1743,7 +1576,7 @@ document.addEventListener('DOMContentLoaded', function () {
               });
               return;
             }
-            
+
             try {
               const response = await apiFetch(`eventos/${event.id}`, {
                 method: "PUT",
@@ -1809,7 +1642,9 @@ document.addEventListener('DOMContentLoaded', function () {
     events: async function (info, successCallback, failureCallback) {
       try {
         const eventosBackend = await carregarEventosDoBackend();
-        const eventosTarefas = tarefas
+        const listaTarefas = (tarefas && tarefas.length > 0) ? tarefas : (JSON.parse(localStorage.getItem("tarefas")) || []);
+
+        const eventosTarefas = listaTarefas
           .filter(t => t.data && !t.concluida)
           .map(t => ({
             id: 't_' + t.id,
@@ -1823,9 +1658,14 @@ document.addEventListener('DOMContentLoaded', function () {
               tarefaId: t.id
             }
           }));
-        successCallback([...eventosBackend, ...eventosTarefas]);
+
+        const mapEventos = new Map();
+        eventosBackend.forEach(e => mapEventos.set('e_' + (e.id || e.title + e.start), e));
+        eventosTarefas.forEach(t => mapEventos.set(t.id, t));
+
+        successCallback(Array.from(mapEventos.values()));
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao carregar eventos no calendário:", err);
         failureCallback(err);
       }
     },
@@ -1854,10 +1694,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search");
   const notaModal = new bootstrap.Modal(document.getElementById("notaModal"));
 
-  function salvarNotas() {
-    // Chamada fictícia - as notas são persistidas diretamente no backend.
-  }
-
+  
   function renderNotas() {
     notasContainer.innerHTML = "";
     const filtro = searchInput.value.toLowerCase();
@@ -2400,6 +2237,8 @@ document.addEventListener("DOMContentLoaded", () => {
       processarImagens(files);
     });
   }
+
+  
 });
 function atualizarResumoInicio() {
   const hoje = hojeFormatado();
@@ -2489,31 +2328,7 @@ function atualizarResumoInicio() {
     }
   }
   // ---------- MATÉRIAS DO DIA ----------
-  // pegar cronograma novo
-  const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
-  const blocosHoje = cronogramaLocal
-    .filter(b => b.dia === hojeSemana)
-    .sort((a, b) => a.inicio.localeCompare(b.inicio));
-
-  // Usar o elemento que realmente existe no HTML
-  const listaHojeCronograma = document.getElementById("listaHojeCronograma");
-  if (listaHojeCronograma) {
-    listaHojeCronograma.innerHTML = "";
-    if (blocosHoje.length === 0) {
-      listaHojeCronograma.innerHTML = "<li>Sem matérias hoje</li>";
-    } else {
-      blocosHoje.forEach(bloco => {
-        const li = document.createElement("li");
-        li.textContent = `${bloco.materia.nome} - ${bloco.inicio} às ${bloco.fim}`;
-        li.style.background = bloco.materia.cor;
-        li.style.color = "#fff";
-        li.style.padding = "3px 5px";
-        li.style.borderRadius = "4px";
-        li.style.marginBottom = "3px";
-        listaHojeCronograma.appendChild(li);
-      });
-    }
-  }
+  renderizarResumoHoje();
 }
 
 function atualizarTudo() {
@@ -2522,7 +2337,6 @@ function atualizarTudo() {
   atualizarEventosTarefas();
 }
 
-// No final do arquivo PaginaUsuario.js, após TODAS as funções
 document.addEventListener("DOMContentLoaded", async () => {
   // Carrega os dados do backend antes de renderizar
   await carregarPerfilUsuario();
@@ -2545,7 +2359,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   atualizarMateriaAgora();
   renderizarTarefas();
   initRevisao();
-  renderizarFlashcards();
   carregarMetas();
   closeSidebarOnLinkClick();
   aplicarBloqueiosPlano();
@@ -2575,17 +2388,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 function renderizarResumoHoje() {
   const lista = document.getElementById("listaHojeCronograma");
   if (!lista) return;
-  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][new Date().getDay()];
+
+  const agora = new Date();
+  const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
+  const hojeSemana = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
   const cronogramaLocal = (typeof cronogramaNovo !== 'undefined' && cronogramaNovo) ? cronogramaNovo : [];
+
   lista.innerHTML = "";
-  const blocosHoje = cronogramaLocal.filter(b => b.dia === hojeSemana);
+  const blocosHoje = cronogramaLocal
+    .filter(b => b.dia === hojeSemana)
+    .sort((a, b) => {
+      const aPassou = (a.fim || "00:00") <= horaAtual;
+      const bPassou = (b.fim || "00:00") <= horaAtual;
+
+      if (aPassou && !bPassou) return 1;  // 'a' já passou -> vai pro final
+      if (!aPassou && bPassou) return -1; // 'b' já passou -> vai pro final
+
+      return (a.inicio || "").localeCompare(b.inicio || "");
+    });
+
   if (blocosHoje.length === 0) {
-    lista.innerHTML = "<li>Sem atividades hoje</li>";
+    lista.innerHTML = "<li style='color: #6b7280; font-style: italic; list-style: none;'>Sem atividades agendadas para hoje</li>";
     return;
   }
+
   blocosHoje.forEach(bloco => {
     const li = document.createElement("li");
-    li.textContent = `${bloco.inicio} - ${bloco.fim} : ${bloco.materia.nome}`;
+    li.style.padding = "6px 10px";
+    li.style.borderRadius = "6px";
+    li.style.marginBottom = "6px";
+    li.style.display = "flex";
+    li.style.alignItems = "center";
+    li.style.justifyContent = "space-between";
+    li.style.fontSize = "0.9rem";
+    li.style.listStyle = "none";
+    li.style.transition = "all 0.2s ease";
+
+    const cor = bloco.materia?.cor || "#9f042c";
+    const nomeMateria = bloco.materia?.nome || "Matéria";
+    const inicio = bloco.inicio || "00:00";
+    const fim = bloco.fim || "00:00";
+
+    const jaPassou = fim <= horaAtual;
+    const emAndamento = inicio <= horaAtual && fim > horaAtual;
+
+    if (jaPassou) {
+      // Passou da hora -> Riscar (line-through) e esmaecer
+      li.style.background = "#f3f4f6";
+      li.style.color = "#9ca3af";
+      li.style.textDecoration = "line-through";
+      li.style.borderLeft = "4px solid #d1d5db";
+      li.innerHTML = `
+        <span><i class="bi bi-check-circle-fill me-1" style="color: #9ca3af;"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+        <span style="font-size: 0.75rem; text-decoration: none; font-style: italic; color: #9ca3af;">Encerrado</span>
+      `;
+    } else if (emAndamento) {
+      // Em andamento -> Destacar com a cor da matéria e badge
+      li.style.background = cor;
+      li.style.color = "#ffffff";
+      li.style.fontWeight = "bold";
+      li.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+      li.innerHTML = `
+        <span><i class="bi bi-play-circle-fill me-1"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+        <span class="badge bg-light text-dark" style="font-size: 0.75rem;">Agora!</span>
+      `;
+    } else {
+      // Futuro -> Normal
+      li.style.background = cor;
+      li.style.color = "#ffffff";
+      li.innerHTML = `
+        <span><i class="bi bi-clock me-1"></i> ${nomeMateria} (${inicio} às ${fim})</span>
+      `;
+    }
+
     lista.appendChild(li);
   });
 }
@@ -2602,29 +2477,44 @@ document.getElementById('userInfo').addEventListener('click', function () {
 });
 // SALVAR CONFIGURAÇÕES
 async function salvarConfiguracao() {
-  const novoNome = document.getElementById('novoNome').value.trim();
+  const novoNome = document.getElementById('novoNome')?.value.trim();
+  const novoEmail = document.getElementById('novoEmail')?.value.trim();
   const previewFoto = document.getElementById('previewFoto');
   const foto = previewFoto ? previewFoto.src : "";
+
+  if (!novoNome || !novoEmail) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atenção',
+      text: 'Preencha o nome e o e-mail!'
+    });
+    return;
+  }
 
   try {
     const response = await apiFetch("perfil", {
       method: "PUT",
       body: JSON.stringify({
         nome: novoNome,
+        email: novoEmail,
         foto: foto
       })
     });
     if (response.ok) {
-      document.getElementById('sidebarNome').textContent = novoNome;
-      if (foto) {
-        const sidebarFoto = document.getElementById('sidebarFoto');
-        if (sidebarFoto) sidebarFoto.src = foto;
-        localStorage.setItem("userFoto", foto);
-      }
+      const sidebarNome = document.getElementById('sidebarNome');
+      const sidebarEmail = document.getElementById('sidebarEmail');
+      const sidebarFoto = document.getElementById('sidebarFoto');
+
+      if (sidebarNome) sidebarNome.textContent = novoNome;
+      if (sidebarEmail) sidebarEmail.textContent = novoEmail;
+      if (foto && sidebarFoto) sidebarFoto.src = foto;
+
       localStorage.setItem("userName", novoNome);
-      
+      if (foto) localStorage.setItem("userFoto", foto);
+
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       user.nome = novoNome;
+      user.email = novoEmail;
       user.foto = foto;
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -2636,7 +2526,9 @@ async function salvarConfiguracao() {
         showConfirmButton: false
       });
 
-      bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
+      const modalEl = document.getElementById('configModal');
+      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
     } else {
       const data = await response.json();
       Swal.fire({
@@ -2646,7 +2538,7 @@ async function salvarConfiguracao() {
       });
     }
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao salvar perfil:", err);
     Swal.fire({
       icon: 'error',
       title: 'Erro!',
@@ -2661,11 +2553,39 @@ function previewFotoSelecionada() {
   const preview = document.getElementById('previewFoto');
 
   if (input.files && input.files[0]) {
+    const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function (e) {
-      preview.src = e.target.result;  // Atualiza o preview no modal
-    }
-    reader.readAsDataURL(input.files[0]);
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        const maxDimension = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        preview.src = resizedDataUrl;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 }
 // ---------- VARIÁVEIS GLOBAIS ----------
@@ -4643,7 +4563,9 @@ function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('overlay');
   if (!sidebar) return;
+
   sidebar.classList.toggle('show');
+
   if (overlay) {
     if (sidebar.classList.contains('show')) {
       overlay.classList.add('show');
@@ -4663,22 +4585,69 @@ function closeSidebar() {
   if (overlay) overlay.classList.remove('show');
   document.body.style.overflow = '';
 }
+
+// ===== FECHAR SIDEBAR AO CLICAR EM LINKS =====
+function closeSidebarOnLinkClick() {
+  const links = document.querySelectorAll('#menuLateral .nav-link, .sidebar a, .sidebar button');
+
+  links.forEach(link => {
+    // Remove listener antigo para não duplicar
+    link.removeEventListener('click', handleSidebarLinkClick);
+    // Adiciona listener novo
+    link.addEventListener('click', handleSidebarLinkClick);
+  });
+}
+
+function handleSidebarLinkClick() {
+  if (window.innerWidth <= 768) {
+    closeSidebar();
+  }
+}
+
+// ===== EVENT DELEGATION (MAIS ROBUSTO) =====
+// Esta abordagem funciona mesmo se os links forem criados dinamicamente
+document.addEventListener('click', function (e) {
+  // Verifica se o clique foi em um link do menu lateral
+  const sidebarLink = e.target.closest('#menuLateral .nav-link, .sidebar .nav-link, .sidebar a');
+
+  if (sidebarLink && window.innerWidth <= 768) {
+    // Pequeno delay para garantir que a navegação aconteça
+    setTimeout(() => {
+      closeSidebar();
+    }, 100);
+  }
+});
+
+// ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', function () {
   const overlay = document.getElementById('overlay');
   if (overlay) {
     overlay.onclick = closeSidebar;
   }
-});
-function closeSidebarOnLinkClick() {
-  const links = document.querySelectorAll('#menuLateral .nav-link');
-  links.forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        closeSidebar();
-      }
+
+  // Chama a função para configurar os links
+  closeSidebarOnLinkClick();
+
+  // Usa MutationObserver para detectar novos links adicionados
+  const menuLateral = document.getElementById('menuLateral');
+  if (menuLateral) {
+    const observer = new MutationObserver(function () {
+      closeSidebarOnLinkClick();
     });
-  });
-}
+
+    observer.observe(menuLateral, {
+      childList: true,
+      subtree: true
+    });
+  }
+});
+
+// ===== EXPORTAR FUNÇÕES GLOBALMENTE =====
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+window.closeSidebarOnLinkClick = closeSidebarOnLinkClick;
+
+// ===== RESIZE =====
 window.addEventListener('resize', function () {
   if (window.innerWidth > 768) {
     closeSidebar();
@@ -5457,703 +5426,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   console.log('✅ Seção de Estatísticas inicializada');
 });
-/** ==================== REVISÃO INTELIGENTE ==================== */
-let flashcards = [];
-let revisoesEmAndamento = [];
-let indiceAtualFoco = 0;
-let filtroAtivo = "hoje";
-// ==================== CARREGAR DADOS ====================
-function carregarFlashcards() {
-  try {
-    const salvos = localStorage.getItem("flashcards_sistema");
-    if (salvos) {
-      flashcards = JSON.parse(salvos);
-    }
-  } catch (e) {
-    flashcards = [];
-  }
-  popularFiltroMaterias();  // ← NOVO
-  renderizarFlashcardsAgrupados();
-  atualizarEstatisticas();
-  verificarProvasProximas();
-}
-function salvarFlashcards() {
-  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-}
-// ==================== VERIFICAR PROVAS NO CALENDÁRIO ====================
-function verificarProvasProximas() {
-  if (!calendar) return;
-  const hoje = new Date();
-  const eventos = calendar.getEvents();
-  const provasProximas = [];
-  eventos.forEach(evento => {
-    if (evento.extendedProps?.tipo !== "prova") return;
-    const dataEvento = new Date(evento.start);
-    const diasRestantes = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
-    if (diasRestantes <= 7 && diasRestantes > 0) {
-      provasProximas.push({
-        titulo: evento.title,
-        data: dataEvento,
-        dias: diasRestantes
-      });
-    }
-  });
-  if (provasProximas.length > 0) {
-    const avisoDiv = document.getElementById("avisoProva");
-    const textoAviso = document.getElementById("textoAvisoProva");
-    if (avisoDiv && textoAviso && provasProximas[0]) {
-      const prova = provasProximas[0];
-      textoAviso.innerHTML = `${prova.titulo} - Faltam ${prova.dias} dias!`;
-      avisoDiv.style.display = "block";
-      window.provaAtual = prova;
-    }
-  }
-}
-function criarRevisaoPorProva() {
-  if (window.provaAtual) {
-    abrirModalFlashcardComProva(window.provaAtual.titulo);
-  }
-}//REVISAO
-function configurarAbasRevisao() {
-  document.querySelectorAll('.aba-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const aba = btn.dataset.aba;
-      document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
-      document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
-      if (aba === 'revisar') {
-        atualizarMensagemRevisar();
-      }
-      renderizarFlashcardsAgrupados();
-    });
-  });
-}
-// NOVO: Atualizar mensagem da aba revisar
-function atualizarMensagemRevisar() {
-  const hojeData = new Date().toISOString().split('T')[0];
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let pendentes = flashcards.filter(f => f.dataProxima <= hojeData);
-  if (filtroMateria !== 'todas') {
-    pendentes = pendentes.filter(f => f.materiaNome === filtroMateria);
-  }
-  const countEl = document.getElementById('countPendentes');
-  if (countEl) {
-    countEl.textContent = pendentes.length;
-    if (pendentes.length === 0) {
-      countEl.style.color = '#22c55e'; // Verde - tudo revisado
-    } else if (pendentes.length > 10) {
-      countEl.style.color = '#ef4444'; // Vermelho - muitos atrasados
-    } else {
-      countEl.style.color = '#f59e0b'; // Laranja - quantidade normal
-    }
-  }
-}
-function configurarFiltroRevisao() {
-  const filtro = document.getElementById('filtroMateriaRevisao');
-  if (filtro) {
-    filtro.addEventListener('change', () => {
-      renderizarFlashcardsAgrupados();
-      atualizarMensagemRevisar();
-    });
-  }
-}
-function renderizarFlashcardsAgrupados() {
-  const container = document.getElementById('listaFlashcardsAgrupada');
-  if (!container) return;
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let cardsFiltrados = [...flashcards];
-  if (filtroMateria !== 'todas') {
-    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
-  }
 
-  if (cardsFiltrados.length === 0) {
-    container.innerHTML = '<p class="vazio">Nenhum flashcard encontrado!</p>';
-    return;
-  }
-  const porMateria = {};
-  cardsFiltrados.forEach(f => {
-    if (!porMateria[f.materiaNome]) {
-      porMateria[f.materiaNome] = { temas: {}, count: 0 };
-    }
-    if (!porMateria[f.materiaNome].temas[f.tema]) {
-      porMateria[f.materiaNome].temas[f.tema] = [];
-    }
-    porMateria[f.materiaNome].temas[f.tema].push(f);
-    porMateria[f.materiaNome].count++;
-  });
-  const ordenarCards = (cards) => {
-    const hojeData = hoje();
-    return cards.sort((a, b) => {
-      const aAtrasado = a.dataProxima < hojeData;
-      const bAtrasado = b.dataProxima < hojeData;
-      if (aAtrasado && !bAtrasado) return -1;
-      if (!aAtrasado && bAtrasado) return 1;
-      return a.dataProxima.localeCompare(b.dataProxima);
-    });
-  };
-  let html = '';
-  let index = 0;
-  for (const materia in porMateria) {
-    const materiaData = porMateria[materia];
-    const materiaId = `materia-${index}`;
-    html += `
-      <div class="materia-acordeon">
-        <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
-          <div class="materia-titulo">
-            <i class="bi bi-journal-bookmark-fill"></i>
-            <h3>${materia}</h3>
-            <span class="materia-badge-count">${materiaData.count}</span>
-          </div>
-          <span class="materia-seta" id="${materiaId}-seta">▶</span>
-        </div>
-        <div class="materia-conteudo" id="${materiaId}-conteudo">
-    `;
 
-    for (const tema in materiaData.temas) {
-      const cards = ordenarCards(materiaData.temas[tema]);
-      const temaCount = cards.length;
-
-      html += `
-        <div class="tema-grupo">
-          <div class="tema-header">
-            <i class="bi bi-folder2"></i>
-            <h4>${tema}</h4>
-            <span class="tema-badge-count">${temaCount}</span>
-          </div>
-      `;
-
-      cards.forEach(f => {
-        const isAtrasada = f.dataProxima < hoje();
-        const isHoje = f.dataProxima === hoje();
-        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
-
-        html += `
-          <div class="card-flashcard ${classeDestaque}">
-            <div class="card-pergunta">${f.pergunta}</div>
-            <div class="card-data">📅 ${formatarData(f.dataProxima)}</div>
-           <div class="card-acoes">
-  <button onclick="editarFlashcard(${f.id})" title="Editar">
-    <i class="bi bi-pencil"></i>
-  </button>
-  <button onclick="excluirFlashcard(${f.id})" title="Excluir">
-    <i class="bi bi-trash"></i>
-  </button>
-</div>
-          </div>
-        `;
-      });
-      html += `</div>`;
-    }
-    html += `
-        </div>
-      </div>
-    `;
-    index++;
-  }
-  container.innerHTML = html;
-}
-function toggleAcordeon(materiaId) {
-  const conteudo = document.getElementById(`${materiaId}-conteudo`);
-  const seta = document.getElementById(`${materiaId}-seta`);
-  if (conteudo.style.display === 'block') {
-    conteudo.style.display = 'none';
-    seta.classList.remove('aberto');
-    seta.textContent = '▶';
-  } else {
-    conteudo.style.display = 'block';
-    seta.classList.add('aberto');
-    seta.textContent = '▼';
-  }
-}
-function formatarData(dataStr) {
-  const data = new Date(dataStr);
-  return data.toLocaleDateString('pt-BR');
-}
-// ==================== MODAL E CRIAÇÃO ====================
-function abrirModalFlashcard() {
-  const select = document.getElementById("revisaoMateria");
-  if (select && materias) {
-    select.innerHTML = '<option value="">Selecione uma materia</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
-  }
-  document.getElementById("revisaoTema").value = "";
-  document.getElementById("revisaoPergunta").value = "";
-  document.getElementById("revisaoResposta").value = "";
-  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
-  modal.show();
-}
-function abrirModalFlashcardComProva(tituloProva) {
-  const select = document.getElementById("revisaoMateria");
-  if (select && materias) {
-    select.innerHTML = '<option value="">Selecione uma matéria</option>';
-    materias.forEach(m => {
-      select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
-    });
-  }
-  document.getElementById("revisaoTema").value = "Prova";
-  document.getElementById("revisaoPergunta").value = `Revisar conteúdo da prova: ${tituloProva}`;
-  document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
-  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
-  modal.show();
-}
-function salvarFlashcard() {
-  const materiaId = document.getElementById("revisaoMateria").value;
-  const tema = document.getElementById("revisaoTema").value.trim();
-  const pergunta = document.getElementById("revisaoPergunta").value.trim();
-  const resposta = document.getElementById("revisaoResposta").value.trim();
-  if (!materiaId) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atencao',
-      text: 'Selecione uma materia!',
-      confirmButtonColor: '#9f042c'
-    });
-    return;
-  }
-  if (!pergunta || !resposta) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atencao',
-      text: 'Preencha a pergunta e a resposta!',
-      confirmButtonColor: '#9f042c'
-    });
-    return;
-  }
-  const materia = materias.find(m => m.id == materiaId);
-  const temaJson = JSON.stringify({
-    tema: tema || "Geral",
-    nivel: 0,
-    dataProxima: new Date().toISOString().split("T")[0],
-    acertos: 0,
-    erros: 0
-  });
-
-  apiFetch("flashcards", {
-    method: "POST",
-    body: JSON.stringify({
-      id_materia: materiaId,
-      pergunta: pergunta,
-      resposta: resposta,
-      tema: temaJson
-    })
-  }).then(async res => {
-    if (res.ok) {
-      const respData = await res.json();
-      flashcards.push({
-        id: Number(respData.id_flash),
-        materiaId: Number(materiaId),
-        materiaNome: materia ? materia.nome : "Sem materia",
-        tema: tema || "Geral",
-        pergunta: pergunta,
-        resposta: resposta,
-        nivel: 0,
-        dataProxima: new Date().toISOString().split("T")[0],
-        acertos: 0,
-        erros: 0
-      });
-      salvarFlashcards();
-      popularFiltroMaterias();
-      renderizarFlashcardsAgrupados();
-      atualizarEstatisticas();
-      const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
-      if (modal) modal.hide();
-      Swal.fire({
-        icon: 'success',
-        title: 'Flashcard criado!',
-        text: 'Comece a revisar para fixar o conteudo.',
-        timer: 2000,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      });
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Erro!',
-        text: 'Não foi possível salvar o flashcard no servidor.',
-        confirmButtonColor: '#9f042c'
-      });
-    }
-  }).catch(err => {
-    console.error("Erro ao salvar flashcard:", err);
-  });
-}
-// ==================== RENDERIZAR LISTA ====================
-function hoje() {
-  return new Date().toISOString().split("T")[0];
-}
-function proximaRevisao(nivel, dificuldade) {
-  let dias = [1, 3, 7, 14, 30];
-  if (dificuldade === "facil") dias = [3, 7, 14, 30, 60];
-  if (dificuldade === "dificil") dias = [0.5, 1, 3, 7, 14];
-  const data = new Date();
-  data.setDate(data.getDate() + dias[nivel]);
-  return data.toISOString().split("T")[0];
-}
-function renderizarFlashcards() {
-  const container = document.getElementById("listaFlashcards");
-  if (!container) return;
-  let flashcardsFiltrados = [...flashcards];
-  const tipoFiltro = document.getElementById("filtroTipo")?.value;
-  if (tipoFiltro) {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.tipo === tipoFiltro);
-  }
-  if (filtroAtivo === "hoje") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima === hoje());
-  } else if (filtroAtivo === "atrasadas") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima < hoje());
-  } else if (filtroAtivo === "semana") {
-    const semanaQueVem = new Date();
-    semanaQueVem.setDate(semanaQueVem.getDate() + 7);
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => f.dataProxima <= semanaQueVem.toISOString().split("T")[0]);
-  }
-  const materiaFiltro = document.getElementById("filtroMateria")?.value;
-  if (materiaFiltro && materiaFiltro !== "") {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f => String(f.materiaId) === String(materiaFiltro));
-  }
-  const busca = document.getElementById("buscaRevisao")?.value.toLowerCase();
-  if (busca) {
-    flashcardsFiltrados = flashcardsFiltrados.filter(f =>
-      f.pergunta.toLowerCase().includes(busca) ||
-      f.resposta.toLowerCase().includes(busca) ||
-      f.tema.toLowerCase().includes(busca)
-    );
-  }
-  flashcardsFiltrados.sort((a, b) => {
-    if (a.dataProxima < hoje() && b.dataProxima >= hoje()) return -1;
-    if (a.dataProxima >= hoje() && b.dataProxima < hoje()) return 1;
-    return a.dataProxima.localeCompare(b.dataProxima);
-  });
-  if (flashcardsFiltrados.length === 0) {
-    container.innerHTML = '<div class="empty-message">🎉 Nenhum flashcard encontrado!</div>';
-  } else {
-    container.innerHTML = flashcardsFiltrados.map(f => criarCardHTML(f)).join('');
-  }
-  atualizarEstatisticas();
-  adicionarEventosCards();
-}
-function criarCardHTML(flashcard) {
-  const isAtrasada = flashcard.dataProxima < hoje();
-  const dataFormatada = new Date(flashcard.dataProxima).toLocaleDateString();
-  const hojeDate = new Date();
-  const proximaDate = new Date(flashcard.dataProxima);
-  const diffTime = proximaDate - hojeDate;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  let mensagemRevisao = "";
-  if (isAtrasada) {
-    mensagemRevisao = `<span style="color: #ef4444; font-size: 0.7rem;"> Atrasada! Revise hoje!</span>`;
-  } else if (diffDays === 0) {
-    mensagemRevisao = `<span style="color: #22c55e; font-size: 0.7rem;"> Hoje! Revise agora!</span>`;
-  } else if (diffDays === 1) {
-    mensagemRevisao = `<span style="color: #f59e0b; font-size: 0.7rem;"> Amanhã</span>`;
-  } else {
-    mensagemRevisao = `<span style="color: #6b7280; font-size: 0.7rem;"> Próxima revisão em ${diffDays} dias</span>`;
-  }
-  return `
-    <div class="flashcard-item" data-id="${flashcard.id}">
-      <div class="flashcard-header">
-        <div class="flashcard-badges">
-          <span class="materia-badge">${flashcard.materiaNome}</span>
-          <span class="tema-badge"> ${flashcard.tema}</span>
-          <span class="data-badge ${isAtrasada ? 'atrasada' : ''}">
-            ${isAtrasada ? ' Atrasada' : ' ' + dataFormatada}
-          </span>
-        </div>
-      </div>
-      <div class="flashcard-pergunta">${flashcard.pergunta}</div>
-      <div class="flashcard-resposta">${flashcard.resposta}</div>
-      <div style="margin-top: 8px; font-size: 0.7rem;">
-        ${mensagemRevisao}
-      </div>
-      <div class="flashcard-acoes">
-        <button class="btn-editar-flashcard" onclick="editarFlashcard(${flashcard.id})">✏️ Editar</button>
-        <button class="btn-excluir-flashcard" onclick="excluirFlashcard(${flashcard.id})">🗑️ Excluir</button>
-      </div>
-    </div>
-  `;
-}
-function adicionarEventosCards() {
-  document.querySelectorAll('.flashcard-item').forEach(card => {
-    const pergunta = card.querySelector('.flashcard-pergunta');
-    const resposta = card.querySelector('.flashcard-resposta');
-    card.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (resposta.style.display === 'none' || !resposta.style.display) {
-        resposta.style.display = 'block';
-      } else {
-        resposta.style.display = 'none';
-      }
-    });
-  });
-}
-// ==================== ESTATÍSTICAS ====================
-function atualizarEstatisticas() {
-  const hojeData = hoje();
-  const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
-  const revisoesAtrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
-  const revisoesConcluidas = flashcards.filter(f => f.nivel > 0).length;
-  const totalAcertos = flashcards.reduce((sum, f) => sum + f.acertos, 0);
-  const totalRespostas = flashcards.reduce((sum, f) => sum + f.acertos + f.erros, 0);
-  const taxaAcerto = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
-  document.getElementById("totalHoje").textContent = revisoesHoje;
-  document.getElementById("totalAtrasadas").textContent = revisoesAtrasadas;
-  document.getElementById("totalConcluidas").textContent = revisoesConcluidas;
-  document.getElementById("taxaAcertoGeral").textContent = `${taxaAcerto}%`;
-}
-// ==================== MODO FOCO ====================
-function iniciarRevisao() {
-  const hojeData = new Date().toISOString().split('T')[0];
-  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
-  let cardsPendentes = flashcards.filter(f => f.dataProxima <= hojeData);
-  if (filtroMateria !== 'todas') {
-    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
-  }
-  if (cardsPendentes.length === 0) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Nada para revisar!',
-      text: filtroMateria !== 'todas' ?
-        'Nao ha cards pendentes para esta materia.' :
-        'Todos os cards foram revisados! Volte quando houver novos.',
-      confirmButtonColor: '#9f042c',
-      confirmButtonText: 'Entendi'
-    });
-    return;
-  }
-  revisoesEmAndamento = cardsPendentes.sort(() => Math.random() - 0.5);
-  indiceAtualFoco = 0;
-  mostrarCardFoco();
-  Swal.fire({
-    icon: 'success',
-    title: 'Boa revisao!',
-    text: `${cardsPendentes.length} cards para revisar.`,
-    timer: 1500,
-    showConfirmButton: false,
-    position: 'top-end',
-    toast: true
-  });
-}
-function mostrarCardFoco() {
-  if (indiceAtualFoco >= revisoesEmAndamento.length) {
-    finalizarRevisao();
-    return;
-  }
-  const card = revisoesEmAndamento[indiceAtualFoco];
-  document.getElementById('focoMateria').textContent = card.materiaNome;
-  document.getElementById('focoMateria').className = 'badge';
-  document.getElementById('focoMateria').style.background = '#9f042c';
-  document.getElementById('focoMateria').style.color = 'white';
-  document.getElementById('focoMateria').style.padding = '5px 12px';
-  document.getElementById('focoMateria').style.borderRadius = '20px';
-  document.getElementById('focoTema').textContent = card.tema;
-  document.getElementById('focoTema').className = 'badge';
-  document.getElementById('focoTema').style.background = '#e5e7eb';
-  document.getElementById('focoTema').style.color = '#374151';
-  document.getElementById('focoTema').style.padding = '5px 12px';
-  document.getElementById('focoTema').style.borderRadius = '20px';
-  document.getElementById('focoPergunta').textContent = card.pergunta;
-  document.getElementById('focoResposta').innerHTML = card.resposta;
-  document.getElementById('focoResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'none';
-  document.getElementById('btnMostrarResposta').style.display = 'inline-block';
-  const total = revisoesEmAndamento.length;
-  const atual = indiceAtualFoco + 1;
-  document.getElementById('focoContador').textContent = `Card ${atual} de ${total}`;
-  const progresso = (atual / total) * 100;
-  document.getElementById('focoProgressoBarra').style.width = `${progresso}%`;
-  document.getElementById('modoFocoContainer').style.display = 'flex';
-}
-function popularFiltroMaterias() {
-  const select = document.getElementById('filtroMateriaRevisao');
-  if (!select) return;
-  select.innerHTML = '<option value="todas">Todas as matérias</option>';
-  if (materias) {
-    const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
-    nomesOrdenados.forEach(materia => {
-      select.innerHTML += `<option value="${materia}">${materia}</option>`;
-    });
-  }
-}
-function mostrarRespostaFoco() {
-  document.getElementById('focoResposta').style.display = 'block';
-  document.getElementById('btnMostrarResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'flex';
-}
-function responderFlashcard(resultado) {
-  const card = revisoesEmAndamento[indiceAtualFoco];
-  const flashcardOriginal = flashcards.find(f => f.id === card.id);
-  if (!flashcardOriginal) return;
-  if (resultado === 'acertei') {
-    flashcardOriginal.nivel = Math.min(flashcardOriginal.nivel + 1, 4);
-    flashcardOriginal.acertos++;
-  } else {
-    flashcardOriginal.nivel = Math.max(flashcardOriginal.nivel - 1, 0);
-    flashcardOriginal.erros++;
-  }
-  const intervalos = [1, 3, 7, 14, 30]; // dias
-  const dias = intervalos[flashcardOriginal.nivel] || 1;
-  const novaData = new Date();
-  novaData.setDate(novaData.getDate() + dias);
-  const dataProxima = novaData.toISOString().split('T')[0];
-
-  apiFetch(`flashcards/${flashcardOriginal.id}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      pergunta: flashcardOriginal.pergunta,
-      resposta: flashcardOriginal.resposta,
-      tema: JSON.stringify({
-        tema: flashcardOriginal.tema,
-        nivel: flashcardOriginal.nivel,
-        dataProxima: dataProxima,
-        acertos: flashcardOriginal.acertos,
-        erros: flashcardOriginal.erros
-      })
-    })
-  }).then(res => {
-    if (res.ok) {
-      flashcardOriginal.dataProxima = dataProxima;
-      salvarFlashcards();
-      atualizarEstatisticas();
-    } else {
-      console.error("Erro ao atualizar progresso do flashcard no backend");
-    }
-  }).catch(err => {
-    console.error("Erro ao atualizar flashcard:", err);
-  });
-
-  indiceAtualFoco++;
-  mostrarCardFoco();
-}
-function finalizarRevisao() {
-  document.getElementById("modoFocoContainer").style.display = "none";
-  renderizarFlashcardsAgrupados();
-  atualizarMensagemRevisar();
-  Swal.fire({
-    icon: 'success',
-    title: '🎉 Revisão concluída!',
-    text: 'Parabéns! Você revisou tudo por hoje.',
-    timer: 2000,
-    showConfirmButton: false
-  });
-}
-function fecharModoFoco() {
-  document.getElementById("modoFocoContainer").style.display = "none";
-}
-// ==================== EDITAR E EXCLUIR ====================
-function editarFlashcard(id) {
-  const flashcard = flashcards.find(f => f.id == id);
-  if (!flashcard) return;
-
-  Swal.fire({
-    title: 'Editar Flashcard',
-    html: `
-      <input id="editPergunta" class="swal2-input" value="${flashcard.pergunta.replace(/"/g, '&quot;')}">
-      <textarea id="editResposta" class="swal2-textarea" rows="3">${flashcard.resposta.replace(/"/g, '&quot;')}</textarea>
-      <input id="editTema" class="swal2-input" value="${flashcard.tema}">
-    `,
-    confirmButtonText: 'Salvar',
-    showCancelButton: true,
-    preConfirm: () => {
-      const pergunta = document.getElementById('editPergunta').value;
-      const resposta = document.getElementById('editResposta').value;
-      const tema = document.getElementById('editTema').value;
-
-      if (!pergunta || !resposta) {
-        Swal.showValidationMessage('Preencha todos os campos!');
-        return false;
-      }
-      return { pergunta, resposta, tema };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const { pergunta, resposta, tema } = result.value;
-
-      apiFetch(`flashcards/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          pergunta: pergunta,
-          resposta: resposta,
-          tema: JSON.stringify({
-            tema: tema || "Geral",
-            nivel: flashcard.nivel,
-            dataProxima: flashcard.dataProxima,
-            acertos: flashcard.acertos,
-            erros: flashcard.erros
-          })
-        })
-      }).then(res => {
-        if (res.ok) {
-          flashcard.pergunta = pergunta;
-          flashcard.resposta = resposta;
-          flashcard.tema = tema || "Geral";
-          salvarFlashcards();
-          renderizarFlashcardsAgrupados();
-          atualizarEstatisticas();
-          Swal.fire('Atualizado!', '', 'success');
-        } else {
-          Swal.fire('Erro!', 'Não foi possível salvar as alterações no servidor.', 'error');
-        }
-      }).catch(err => {
-        console.error("Erro ao atualizar flashcard:", err);
-      });
-    }
-  });
-}
-function excluirFlashcard(id) {
-  Swal.fire({
-    title: 'Excluir flashcard?',
-    text: 'Essa ação não pode ser desfeita!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Sim, excluir',
-    cancelButtonText: 'Cancelar'
-  }).then(result => {
-    if (result.isConfirmed) {
-      apiFetch(`flashcards/${id}`, {
-        method: "DELETE"
-      }).then(res => {
-        if (res.ok) {
-          flashcards = flashcards.filter(f => f.id != id);
-          salvarFlashcards();
-          renderizarFlashcardsAgrupados();
-          atualizarEstatisticas();
-          Swal.fire('Excluído!', '', 'success');
-        } else {
-          Swal.fire('Erro!', 'Não foi possível excluir o flashcard no servidor.', 'error');
-        }
-      }).catch(err => {
-        console.error("Erro ao deletar flashcard:", err);
-      });
-    }
-  });
-}
-// ==================== FILTROS ====================
-function configurarFiltros() {
-  document.querySelectorAll('.filtro-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filtroAtivo = btn.dataset.filtro;
-      renderizarFlashcards();
-    });
-  });
-  document.getElementById("filtroMateria")?.addEventListener('change', () => renderizarFlashcards());
-  document.getElementById("buscaRevisao")?.addEventListener('input', () => renderizarFlashcards());
-}
-// ==================== INICIALIZAR ====================
-function initRevisao() {
-  adicionarModalFlashcardHTML();
-  carregarFlashcards();
-  configurarAbasRevisao();
-}
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initRevisao();
-  });
-}
 // ===== NOTIFICAÇÕES DE TAREFAS =====
 function verificarNotificacoesTarefas() {
   // Verifica se o navegador suporta notificações
@@ -6202,48 +5476,7 @@ function forcarAtualizacaoImediata() {
 
 setTimeout(forcarAtualizacaoImediata, 10);
 
-function adicionarModalFlashcardHTML() {
-  if (document.getElementById("modalRevisao")) {
-    return;
-  }
-  const modalHTML = `
-    <div class="modal fade modal-flashcard" id="modalRevisao" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Novo Flashcard</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">Materia</label>
-              <select id="revisaoMateria" class="form-select">
-                <option value="">Selecione uma materia</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Tema</label>
-              <input type="text" id="revisaoTema" class="form-control" placeholder="Ex: Citologia, Funcoes...">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Pergunta</label>
-              <textarea id="revisaoPergunta" class="form-control" rows="2" placeholder="Digite a pergunta..."></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Resposta</label>
-              <textarea id="revisaoResposta" class="form-control" rows="3" placeholder="Digite a resposta..."></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" onclick="salvarFlashcard()">Salvar Flashcard</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
+
 // ===== PLANOS =====
 function verificarPlano() {
   const plano = localStorage.getItem("planoUsuario") || "gratuito";
@@ -6432,9 +5665,9 @@ function aplicarBloqueiosPlano() {
 function mostrarTourBoasVindas() {
   const jaViu = localStorage.getItem("tourBoasVindas");
   if (jaViu) return;
-  
+
   const { plano } = verificarPlano();
-  
+
   const passos = [
     {
       titulo: "Bem-vindo ao Sectio Aurea!",
@@ -6475,7 +5708,7 @@ function mostrarTourBoasVindas() {
     },
     {
       titulo: "Cronograma Inteligente",
-      texto: plano === "gratuito" 
+      texto: plano === "gratuito"
         ? "Disponivel nos planos Basico e Pro. Monte sua grade semanal arrastando as materias para os dias."
         : "Arraste as materias para os dias da semana e monte sua grade de estudos. O relogio inteligente segue esse cronograma.",
       icone: "bi bi-diagram-3"
@@ -6492,14 +5725,14 @@ function mostrarTourBoasVindas() {
         : `Voce esta no plano ${plano.charAt(0).toUpperCase() + plano.slice(1)}. Aproveite todas as funcionalidades!`,
       icone: "bi bi-check-circle-fill"
     }
-  ];  
+  ];
   let passoAtual = 0;
-  
+
   function mostrarPasso() {
     const passo = passos[passoAtual];
     const isUltimo = passoAtual === passos.length - 1;
     const isPrimeiro = passoAtual === 0;
-    
+
     Swal.fire({
       title: passo.titulo,
       html: `
@@ -6535,7 +5768,7 @@ function mostrarTourBoasVindas() {
       }
     });
   }
-  
+
   mostrarPasso();
 }
 function abrirModalAmbiente() {
@@ -6571,14 +5804,14 @@ function abrirModalAmbiente() {
       icone: "bi bi-bullseye"
     }
   ];
-  
+
   let passoAtual = 0;
-  
+
   function mostrarPasso() {
     const passo = passos[passoAtual];
     const isUltimo = passoAtual === passos.length - 1;
     const isPrimeiro = passoAtual === 0;
-    
+
     Swal.fire({
       title: passo.titulo,
       html: `
@@ -6606,7 +5839,7 @@ function abrirModalAmbiente() {
       }
     });
   }
-  
+
   mostrarPasso();
 }
 
@@ -6615,3 +5848,6252 @@ window.addEventListener("beforeunload", () => {
     localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
   }
 });
+
+
+// ===== CORNELL - VERSÃO FOLHA DE PAPEL =====
+
+// Estado do Cornell
+let cornellDados = {
+  titulo: '',
+  perguntas: [], // [{id, texto}]
+  respostas: [], // [{id, texto, perguntaId}]
+  resumo: ''
+};
+
+let cornellEditandoId = null;
+let cornellModoRevisao = false;
+
+// ===== ABRIR CORNELL =====
+function abrirCornell() {
+  console.log('📝 Abrindo Cornell');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+
+  // Busca notas existentes
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  // Filtra apenas notas Cornell
+  const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
+
+  // Cria ou atualiza o modal
+  let modal = document.getElementById('cornellModalOverlay');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cornellModalOverlay';
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 999999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease;
+    `;
+    document.body.appendChild(modal);
+  }
+
+  modal.style.display = 'flex';
+  modal.innerHTML = criarHtmlCornell(notasCornell);
+  modal.querySelector('.cornell-modal-content').style.animation = 'slideUp 0.3s ease';
+
+  // Inicializa eventos
+  inicializarEventosCornell(notasCornell);
+}
+
+function criarHtmlCornell(notasCornell) {
+  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  
+  // Cores baseadas na inteligência do usuário
+  const cores = {
+    linguistica: '#9f042c',
+    intrapessoal: '#5170ff',
+    interpessoal: '#ff5f00',
+    musical: '#8a03d2',
+    logico: '#ffbd59',
+    espacial: '#d203a4',
+    corporal: '#00bf63',
+  };
+  
+  const cor = cores[inteligencia] || cores.logico;
+
+  // Lista de notas salvas
+  let notasHtml = '';
+  if (notasCornell.length === 0) {
+    notasHtml = `
+      <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">
+        Nenhuma nota salva ainda
+      </div>
+    `;
+  } else {
+    notasHtml = notasCornell.map(nota => `
+      <div style="
+        background: white;
+        border-radius: 6px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #eee;
+        transition: all 0.2s;
+        cursor: pointer;
+      " onmouseover="this.style.borderColor='${cor}'; this.style.background='#fafafa'"
+         onmouseout="this.style.borderColor='#eee'; this.style.background='white'">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <div style="font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${nota.titulo || 'Nota sem título'}
+          </div>
+          <span style="font-size:9px;color:#999;flex-shrink:0;">
+            ${nota.dataCriacao || new Date().toLocaleDateString('pt-BR')}
+          </span>
+        </div>
+        <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
+          <button onclick="event.stopPropagation(); abrirNotaCornell('${nota.id}')" style="
+            background:none;border:none;color:#999;cursor:pointer;padding:2px 5px;border-radius:3px;font-size:12px;
+          " onmouseover="this.style.background='#f0f0f0'"
+             onmouseout="this.style.background='transparent'">
+            <i class="bi bi-eye"></i>
+          </button>
+          <button onclick="event.stopPropagation(); excluirNotaCornell('${nota.id}')" style="
+            background:none;border:none;color:#999;cursor:pointer;padding:2px 5px;border-radius:3px;font-size:12px;
+          " onmouseover="this.style.background='#fee';this.style.color='#dc3545'"
+             onmouseout="this.style.background='transparent';this.style.color='#999'">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  return `
+    <div style="
+      background: #f5f0ea;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 820px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    ">
+      <!-- Header -->
+      <div style="
+        background: ${cor};
+        padding: 12px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      ">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="bi bi-journal" style="color:white;font-size:16px;"></i>
+          <span style="color:white;font-weight:600;font-size:14px;">Método Cornell</span>
+          <span style="font-size:9px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.1);padding:1px 8px;border-radius:8px;">
+            ${inteligencia.charAt(0).toUpperCase() + inteligencia.slice(1)}
+          </span>
+        </div>
+        <button onclick="fecharCornell()" style="
+          background:rgba(255,255,255,0.08);color:white;border:none;
+          padding:3px 10px;border-radius:4px;cursor:pointer;font-size:13px;
+        " onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+           onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Corpo -->
+      <div style="flex:1;overflow-y:auto;padding:20px 24px 24px;background:#f5f0ea;">
+        <!-- Folha de caderno -->
+        <div style="
+          background: #fcf9f5;
+          border-radius: 8px;
+          padding: 24px 28px 20px;
+          max-width: 740px;
+          margin: 0 auto;
+          position: relative;
+          min-height: 380px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        ">
+          <!-- Linhas do caderno -->
+          <div style="
+            position:absolute;top:0;left:0;right:0;bottom:0;
+            pointer-events:none;opacity:0.05;
+            background-image: repeating-linear-gradient(
+              transparent,
+              transparent 25px,
+              ${cor} 25.5px
+            );
+            border-radius:8px;
+          "></div>
+
+          <!-- Linha da margem -->
+          <div style="
+            position:absolute;top:0;left:48px;bottom:0;
+            width:1.5px;
+            background:${cor}15;
+            pointer-events:none;
+          "></div>
+
+          <!-- Conteúdo -->
+          <div style="position:relative;z-index:1;">
+            <!-- Título -->
+            <div style="margin-bottom:16px;">
+              <input id="cornellTituloInput" type="text" style="
+                width:100%;padding:4px 0;
+                border:none;border-bottom:1.5px solid #d0c8bc;
+                font-size:17px;font-weight:600;
+                color:${cor};
+                background:transparent;
+                outline:none;transition:border-color 0.3s;
+                font-family:inherit;
+              " placeholder="Título da anotação..."
+              onfocus="this.style.borderColor='${cor}'"
+              onblur="this.style.borderColor='#d0c8bc'">
+            </div>
+
+            <!-- Duas colunas -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:14px;">
+              <!-- Esquerda -->
+              <div>
+                <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">
+                  Perguntas
+                </div>
+                <textarea id="cornellPerguntaInput" style="
+                  width:100%;min-height:160px;
+                  padding:8px 10px;
+                  border:1px solid #e0d8ce;
+                  border-radius:4px;
+                  font-family:inherit;font-size:13px;
+                  resize:vertical;
+                  transition:border-color 0.3s;
+                  background:#faf8f5;
+                  line-height:1.7;
+                  color:#2c3e50;
+                " placeholder="Escreva suas perguntas aqui..."
+                onfocus="this.style.borderColor='${cor}';this.style.background='white'"
+                onblur="this.style.borderColor='#e0d8ce';this.style.background='#faf8f5'"></textarea>
+                <div style="margin-top:3px;font-size:9px;color:#b0a89c;text-align:right;">
+                  <span id="cornellContadorPergunta">0</span>
+                </div>
+              </div>
+
+              <!-- Direita -->
+              <div>
+                <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">
+                  Respostas
+                </div>
+                <textarea id="cornellRespostaInput" style="
+                  width:100%;min-height:160px;
+                  padding:8px 10px;
+                  border:1px solid #e0d8ce;
+                  border-radius:4px;
+                  font-family:inherit;font-size:13px;
+                  resize:vertical;
+                  transition:border-color 0.3s;
+                  background:#faf8f5;
+                  line-height:1.7;
+                  color:#2c3e50;
+                " placeholder="Escreva suas respostas aqui..."
+                onfocus="this.style.borderColor='${cor}';this.style.background='white'"
+                onblur="this.style.borderColor='#e0d8ce';this.style.background='#faf8f5'"></textarea>
+                <div style="margin-top:3px;font-size:9px;color:#b0a89c;text-align:right;">
+                  <span id="cornellContadorResposta">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumo -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;">
+                Resumo (opcional)
+              </div>
+              <textarea id="cornellResumoInput" style="
+                width:100%;min-height:40px;
+                padding:6px 10px;
+                border:1px solid #e0d8ce;
+                border-radius:4px;
+                font-family:inherit;font-size:13px;
+                resize:vertical;
+                transition:border-color 0.3s;
+                background:#faf8f5;
+                line-height:1.5;
+                color:#2c3e50;
+              " placeholder="Resuma o que aprendeu..."
+              onfocus="this.style.borderColor='${cor}';this.style.background='white'"
+              onblur="this.style.borderColor='#e0d8ce';this.style.background='#faf8f5'"></textarea>
+            </div>
+
+            <!-- Botões -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1.5px solid #e8e0d6;">
+              <button onclick="salvarNotaCornell()" style="
+                background:${cor};color:white;border:none;
+                padding:7px 20px;border-radius:6px;
+                font-weight:600;cursor:pointer;
+                transition:all 0.2s;
+                display:flex;align-items:center;gap:6px;
+                font-size:13px;
+              " onmouseover="this.style.opacity='0.85'"
+                 onmouseout="this.style.opacity='1'">
+                <i class="bi bi-save" style="font-size:13px;"></i> Salvar
+              </button>
+              <button onclick="limparCamposCornell()" style="
+                background:#d0c8bc;color:#5a4a3a;border:none;
+                padding:7px 16px;border-radius:6px;
+                font-weight:500;cursor:pointer;
+                transition:all 0.2s;
+                display:flex;align-items:center;gap:6px;
+                font-size:13px;
+              " onmouseover="this.style.background='#c0b8ac'"
+                 onmouseout="this.style.background='#d0c8bc'">
+                <i class="bi bi-eraser" style="font-size:13px;"></i> Limpar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de notas -->
+        <div style="max-width:740px;margin:16px auto 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:12px;color:#5a6a7a;font-weight:500;display:flex;align-items:center;gap:6px;">
+              <i class="bi bi-archive" style="color:${cor};font-size:14px;"></i>
+              Minhas Notas
+              <span id="cornellTotalNotas" style="font-size:10px;font-weight:normal;color:#b0a89c;">
+                (${notasCornell.length})
+              </span>
+            </span>
+          </div>
+
+          <div id="cornellListaNotas" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;padding-right:2px;">
+            ${notasHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== INICIALIZAR EVENTOS =====
+function inicializarEventosCornell(notasCornell) {
+  // Contadores de caracteres
+  const perguntaInput = document.getElementById('cornellPerguntaInput');
+  const respostaInput = document.getElementById('cornellRespostaInput');
+  const contPergunta = document.getElementById('cornellContadorPergunta');
+  const contResposta = document.getElementById('cornellContadorResposta');
+
+  if (perguntaInput && contPergunta) {
+    perguntaInput.addEventListener('input', function() {
+      contPergunta.textContent = this.value.length;
+    });
+  }
+
+  if (respostaInput && contResposta) {
+    respostaInput.addEventListener('input', function() {
+      contResposta.textContent = this.value.length;
+    });
+  }
+
+  // Fechar com ESC
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('cornellModalOverlay');
+      if (modal && modal.style.display === 'flex') {
+        fecharCornell();
+      }
+      document.removeEventListener('keydown', handler);
+    }
+  });
+
+  // Fechar clicando fora
+  const modal = document.getElementById('cornellModalOverlay');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) fecharCornell();
+    });
+  }
+}
+
+// ===== SALVAR NOTA CORNELL =====
+function salvarNotaCornell() {
+  const tituloInput = document.getElementById('cornellTituloInput');
+  const perguntaInput = document.getElementById('cornellPerguntaInput');
+  const respostaInput = document.getElementById('cornellRespostaInput');
+  const resumoInput = document.getElementById('cornellResumoInput');
+
+  if (!perguntaInput || !respostaInput) return;
+
+  const titulo = tituloInput ? tituloInput.value.trim() : 'Nota Cornell';
+  const pergunta = perguntaInput.value.trim();
+  const resposta = respostaInput.value.trim();
+  const resumo = resumoInput ? resumoInput.value.trim() : '';
+
+  if (!pergunta || !resposta) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos!',
+        text: 'Preencha tanto a pergunta quanto a resposta.',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+    return;
+  }
+
+  // Busca notas existentes
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  // Cria a nota
+  const novaNota = {
+    id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    titulo: titulo || `📝 Cornell: ${pergunta.substring(0, 30)}${pergunta.length > 30 ? '...' : ''}`,
+    texto: `
+<div style="padding: 20px; background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  
+    <div style="border-right: 3px solid #dc3545; padding-right: 20px;">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+        <span style="background: #dc3545; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
+        <strong style="color: #dc3545; font-size: 13px;">Pergunta</strong>
+      </div>
+      <p style="margin: 0; color: #dc3545; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${pergunta}</p>
+    </div>
+    <div>
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+        <span style="background: #28a745; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
+        <strong style="color: #28a745; font-size: 13px;">Resposta</strong>
+      </div>
+      <p style="margin: 0; color: #28a745; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resposta}</p>
+    </div>
+  </div>
+  ${resumo ? `
+  <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+      <span style="background: #6c757d; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
+      <strong style="color: #6c757d; font-size: 13px;">Resumo</strong>
+    </div>
+    <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resumo}</p>
+  </div>
+  ` : ''}
+  <div style="margin-top: 12px; padding: 6px 12px; background: #f0f0f0; border-radius: 6px; font-size: 11px; color: #666; display: inline-block;">
+    <i class="bi bi-tag"></i> Método Cornell
+  </div>
+</div>
+    `,
+    cor: '#ffffff',
+    corTexto: '#000000',
+    checklist: [],
+    anexos: [],
+    favorito: false,
+    dataCriacao: new Date().toLocaleString('pt-BR'),
+    tipo: 'cornell',
+    pergunta: pergunta,
+    resposta: resposta,
+    resumo: resumo
+  };
+
+  notas.unshift(novaNota);
+  localStorage.setItem('notas', JSON.stringify(notas));
+
+  // Limpa campos
+  if (tituloInput) tituloInput.value = '';
+  perguntaInput.value = '';
+  respostaInput.value = '';
+  if (resumoInput) resumoInput.value = '';
+  document.getElementById('cornellContadorPergunta').textContent = '0';
+  document.getElementById('cornellContadorResposta').textContent = '0';
+
+  // Re-renderiza
+  const notasCornell = notas.filter(n => n.tipo === 'cornell');
+  const lista = document.getElementById('cornellListaNotas');
+  if (lista) {
+    const total = document.getElementById('cornellTotalNotas');
+    if (total) total.textContent = `(${notasCornell.length})`;
+    // Atualiza a lista
+    const modal = document.getElementById('cornellModalOverlay');
+    if (modal) {
+      const novasNotas = JSON.parse(localStorage.getItem('notas') || '[]').filter(n => n.tipo === 'cornell');
+      modal.innerHTML = criarHtmlCornell(novasNotas);
+      inicializarEventosCornell(novasNotas);
+    }
+  }
+
+  // Feedback
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'success',
+      title: 'Nota salva!',
+      text: `"${novaNota.titulo}" foi adicionado.`,
+      timer: 1500,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    });
+  }
+
+  // Atualiza lista de notas principal
+  if (typeof renderNotas === 'function') {
+    renderNotas();
+  }
+}
+
+// ===== ABRIR NOTA CORNELL =====
+function abrirNotaCornell(id) {
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  const nota = notas.find(n => n.id === id);
+  if (!nota) return;
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: nota.titulo || 'Nota Cornell',
+      html: nota.texto,
+      confirmButtonText: 'Fechar',
+      confirmButtonColor: 'var(--cor-primaria)',
+      width: '700px',
+      customClass: {
+        content: 'text-left'
+      }
+    });
+  }
+}
+
+// ===== EXCLUIR NOTA CORNELL =====
+function excluirNotaCornell(id) {
+  let notas = [];
+  try {
+    const notasSalvas = localStorage.getItem('notas');
+    if (notasSalvas) {
+      notas = JSON.parse(notasSalvas);
+    }
+  } catch (e) {
+    notas = [];
+  }
+
+  const notaIndex = notas.findIndex(n => n.id === id);
+  if (notaIndex === -1) return;
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Excluir anotação?',
+      text: 'Essa ação não pode ser desfeita!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545'
+    }).then(result => {
+      if (result.isConfirmed) {
+        notas.splice(notaIndex, 1);
+        localStorage.setItem('notas', JSON.stringify(notas));
+
+        // Re-renderiza
+        if (typeof renderNotas === 'function') {
+          renderNotas();
+        }
+
+        // Atualiza o modal
+        const modal = document.getElementById('cornellModalOverlay');
+        if (modal) {
+          const novasNotas = JSON.parse(localStorage.getItem('notas') || '[]').filter(n => n.tipo === 'cornell');
+          modal.innerHTML = criarHtmlCornell(novasNotas);
+          inicializarEventosCornell(novasNotas);
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Anotação excluída!',
+          timer: 1200,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }
+    });
+  }
+}
+
+// ===== LIMPAR CAMPOS =====
+function limparCamposCornell() {
+  const pergunta = document.getElementById('cornellPerguntaInput');
+  const resposta = document.getElementById('cornellRespostaInput');
+  const resumo = document.getElementById('cornellResumoInput');
+
+  if (pergunta) pergunta.value = '';
+  if (resposta) resposta.value = '';
+  if (resumo) resumo.value = '';
+  document.getElementById('cornellContadorPergunta').textContent = '0';
+  document.getElementById('cornellContadorResposta').textContent = '0';
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Campos limpos!',
+      timer: 800,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    });
+  }
+}
+
+// ===== FECHAR CORNELL =====
+function fecharCornell() {
+  const modal = document.getElementById('cornellModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== EXPORTAR FUNÇÕES =====
+window.abrirCornell = abrirCornell;
+window.fecharCornell = fecharCornell;
+window.salvarNotaCornell = salvarNotaCornell;
+window.limparCamposCornell = limparCamposCornell;
+window.excluirNotaCornell = excluirNotaCornell;
+window.abrirNotaCornell = abrirNotaCornell;
+
+// =============================================
+// ===== MAPA MENTAL - VERSÃO FINAL ===========
+// =============================================
+
+let mapaMentalNos = [];
+let mapaMentalConexoes = [];
+let mapaMentalIdCounter = 0;
+let mapaMentalNoArrastando = null;
+let mapaMentalConectando = null;
+let mapaMentalOffsetX = 0;
+let mapaMentalOffsetY = 0;
+let mapaMentalCanvas = null;
+let mapaMentalCtx = null;
+let mapaMentalHistorico = [];
+let mapasMentaisSalvos = JSON.parse(localStorage.getItem('mapasMentais') || '[]');
+let mapaMentalZoom = 1;
+let mapaMentalZoomMin = 0.1;
+let mapaMentalZoomMax = 5;
+let mapaMentalPanning = false;
+let mapaMentalPanStartX = 0;
+let mapaMentalPanStartY = 0;
+let mapaMentalArrastandoFundo = false;
+
+// ===== TOAST =====
+function mostrarToast(mensagem, cor = '#22c55e') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: ${cor}; color: white; padding: 12px 20px; border-radius: 10px;
+    font-weight: 600; font-size: 0.9rem; z-index: 9999999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: slideDown 0.3s ease;
+  `;
+  toast.innerHTML = mensagem;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// ===== HISTÓRICO (CTRL+Z) =====
+function salvarEstadoHistorico() {
+  mapaMentalHistorico.push({
+    nos: JSON.parse(JSON.stringify(mapaMentalNos)),
+    conexoes: JSON.parse(JSON.stringify(mapaMentalConexoes))
+  });
+  if (mapaMentalHistorico.length > 50) mapaMentalHistorico.shift();
+}
+
+function desfazerUltimaAcao() {
+  if (mapaMentalHistorico.length === 0) return;
+  const estado = mapaMentalHistorico.pop();
+  mapaMentalNos = estado.nos;
+  mapaMentalConexoes = estado.conexoes;
+  document.getElementById('mapaMentalNosContainer').innerHTML = '';
+  mapaMentalNos.forEach(no => renderizarNo(no));
+  desenharConexoes();
+  mostrarToast('↩️ Ação desfeita!', '#6b7280');
+}
+
+// ===== ZOOM =====
+function aplicarZoom(fator) {
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (!container) return;
+
+  const novoZoom = Math.max(mapaMentalZoomMin, Math.min(mapaMentalZoomMax, mapaMentalZoom * fator));
+  if (novoZoom === mapaMentalZoom) return;
+
+  mapaMentalZoom = novoZoom;
+  container.style.transform = `scale(${mapaMentalZoom})`;
+  container.style.transformOrigin = '0 0';
+
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = Math.round(mapaMentalZoom * 100) + '%';
+
+  desenharConexoes();
+}
+
+function zoomIn() { aplicarZoom(1.2); }
+function zoomOut() { aplicarZoom(0.8); }
+
+function resetZoom() {
+  mapaMentalZoom = 1;
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (container) {
+    container.style.transform = 'scale(1)';
+    container.style.transformOrigin = '0 0';
+  }
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = '100%';
+  desenharConexoes();
+}
+
+function atualizarIndicadorZoom() {
+  const indicador = document.getElementById('mapaMentalZoomIndicador');
+  if (indicador) indicador.textContent = Math.round(mapaMentalZoom * 100) + '%';
+}
+
+// ===== EVENTOS DE ZOOM E PAN =====
+function inicializarEventosZoomPan() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  if (!container) return;
+
+  // Zoom com roda do mouse
+  container.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    aplicarZoom(e.deltaY < 0 ? 1.1 : 0.9);
+  }, { passive: false });
+
+  // Pan - arrastar o fundo com botão esquerdo
+  container.addEventListener('mousedown', function (e) {
+    if (e.target === container || e.target.id === 'mapaMentalNosContainer' || e.target === document.getElementById('mapaMentalCanvas')) {
+      mapaMentalArrastandoFundo = true;
+      mapaMentalPanStartX = e.clientX;
+      mapaMentalPanStartY = e.clientY;
+      container.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!mapaMentalArrastandoFundo) return;
+
+    const dx = e.clientX - mapaMentalPanStartX;
+    const dy = e.clientY - mapaMentalPanStartY;
+    mapaMentalPanStartX = e.clientX;
+    mapaMentalPanStartY = e.clientY;
+
+    mapaMentalNos.forEach(no => {
+      no.x += dx / mapaMentalZoom;
+      no.y += dy / mapaMentalZoom;
+      const div = document.getElementById(`mapa-no-${no.id}`);
+      if (div) {
+        div.style.left = no.x + 'px';
+        div.style.top = no.y + 'px';
+      }
+    });
+    desenharConexoes();
+  });
+
+  document.addEventListener('mouseup', function () {
+    mapaMentalArrastandoFundo = false;
+    container.style.cursor = 'crosshair';
+  });
+
+  // Pan alternativo - botão do meio ou direito
+  container.addEventListener('mousedown', function (e) {
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      mapaMentalPanning = true;
+      mapaMentalPanStartX = e.clientX;
+      mapaMentalPanStartY = e.clientY;
+      container.style.cursor = 'grabbing';
+    }
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!mapaMentalPanning) return;
+    const dx = e.clientX - mapaMentalPanStartX;
+    const dy = e.clientY - mapaMentalPanStartY;
+    mapaMentalPanStartX = e.clientX;
+    mapaMentalPanStartY = e.clientY;
+
+    mapaMentalNos.forEach(no => {
+      no.x += dx / mapaMentalZoom;
+      no.y += dy / mapaMentalZoom;
+      const div = document.getElementById(`mapa-no-${no.id}`);
+      if (div) {
+        div.style.left = no.x + 'px';
+        div.style.top = no.y + 'px';
+      }
+    });
+    desenharConexoes();
+  });
+
+  document.addEventListener('mouseup', function () {
+    mapaMentalPanning = false;
+    container.style.cursor = 'crosshair';
+  });
+
+  // Ctrl+Z
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      const modalAberto = document.getElementById('mapaMentalModalOverlay');
+      if (modalAberto && modalAberto.style.display === 'flex') {
+        e.preventDefault();
+        desfazerUltimaAcao();
+      }
+    }
+  });
+
+  // Previne menu de contexto
+  container.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+}
+
+// ===== ABRIR MODAL =====
+function abrirMapaMental() {
+  console.log('🗺️ Abrindo Mapa Mental');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+
+  const modal = document.getElementById('mapaMentalModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      inicializarMapaMental();
+      renderizarMapasSalvos();
+    }, 100);
+  }
+}
+
+// ===== INICIALIZAR =====
+function inicializarMapaMental() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const canvas = document.getElementById('mapaMentalCanvas');
+  if (!container || !canvas) return;
+
+  setTimeout(() => {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }, 200);
+
+  mapaMentalCanvas = canvas;
+  mapaMentalCtx = canvas.getContext('2d');
+  mapaMentalZoom = 1;
+  mapaMentalNos = [];
+  mapaMentalConexoes = [];
+  mapaMentalHistorico = [];
+
+  const nosContainer = document.getElementById('mapaMentalNosContainer');
+  if (nosContainer) {
+    nosContainer.innerHTML = '';
+    nosContainer.style.transform = 'scale(1)';
+    nosContainer.style.transformOrigin = '0 0';
+  }
+
+  const tituloInput = document.getElementById('mapaMentalTitulo');
+  if (tituloInput) tituloInput.value = '';
+
+  atualizarIndicadorZoom();
+  inicializarEventosZoomPan();
+
+  container.onclick = function (e) {
+    const rect = container.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / mapaMentalZoom;
+    const y = (e.clientY - rect.top) / mapaMentalZoom;
+
+    if (e.target === container || e.target === canvas || e.target.id === 'mapaMentalNosContainer') {
+      adicionarNo(x, y);
+    }
+  };
+}
+
+// ===== ADICIONAR NÓ =====
+function adicionarNo(x, y, texto = '', cor = null, isCentral = false) {
+  salvarEstadoHistorico();
+  const corNo = cor || document.getElementById('mapaMentalCorNo').value;
+
+  const no = {
+    id: mapaMentalIdCounter++,
+    x: x || 300,
+    y: y || 300,
+    titulo: texto || 'Novo tópico',
+    anotacoes: '',
+    cor: corNo,
+    isCentral: isCentral,
+    negrito: false,
+    italico: false,
+    alinhamento: 'center'
+  };
+
+  mapaMentalNos.push(no);
+  renderizarNo(no);
+
+  if (isCentral) {
+    const tituloInput = document.getElementById('mapaMentalTitulo');
+    if (tituloInput && !tituloInput.value) tituloInput.value = no.titulo;
+  }
+  return no;
+}
+
+// ===== ADICIONAR NÓ CENTRAL =====
+function adicionarNoCentral() {
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const tituloInput = document.getElementById('mapaMentalTitulo');
+
+  mapaMentalNos = mapaMentalNos.filter(no => !no.isCentral);
+  document.getElementById('mapaMentalNosContainer').innerHTML = '';
+  mapaMentalNos.forEach(no => renderizarNo(no));
+
+  const x = (container.offsetWidth / 2 / mapaMentalZoom) - 60;
+  const y = (container.offsetHeight / 2 / mapaMentalZoom) - 30;
+
+  const no = adicionarNo(x, y, tituloInput.value || 'Tema Central', '#9f042c', true);
+  if (tituloInput) tituloInput.value = no.titulo;
+  setTimeout(() => editarNo(no.id), 300);
+}
+
+// ===== RENDERIZAR NÓ =====
+function renderizarNo(no) {
+  const container = document.getElementById('mapaMentalNosContainer');
+  if (!container) return;
+
+  const div = document.createElement('div');
+  div.className = `mapa-mental-no ${no.isCentral ? 'central' : ''}`;
+  div.id = `mapa-no-${no.id}`;
+  div.style.left = no.x + 'px';
+  div.style.top = no.y + 'px';
+  div.style.background = no.cor;
+  div.style.color = 'white';
+  div.style.zIndex = 10;
+
+  div.innerHTML = `
+    <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">
+      ${no.titulo}
+    </div>
+    ${no.anotacoes ? `<div style="font-size: 0.7rem; opacity: 0.8; margin-top: 5px;">${no.anotacoes}</div>` : ''}
+  `;
+
+  const btnEditar = document.createElement('button');
+  btnEditar.innerHTML = '✏️';
+  btnEditar.style.cssText = 'position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;background:#3b82f6;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.7rem;z-index:20;';
+  btnEditar.onclick = function (e) { e.stopPropagation(); editarNo(no.id); };
+  div.appendChild(btnEditar);
+
+  const btnDeletar = document.createElement('button');
+  btnDeletar.innerHTML = '×';
+  btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:24px;height:24px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.9rem;font-weight:bold;z-index:20;';
+  btnDeletar.onclick = function (e) { e.stopPropagation(); deletarNo(no.id); };
+  div.appendChild(btnDeletar);
+
+  div.onmouseenter = function () { btnEditar.style.display = 'flex'; btnDeletar.style.display = 'flex'; };
+  div.onmouseleave = function () { btnEditar.style.display = 'none'; btnDeletar.style.display = 'none'; };
+  div.onmousedown = function (e) { if (e.target !== btnEditar && e.target !== btnDeletar) iniciarArrastarNo(e, no.id); };
+  div.ondblclick = function (e) { e.preventDefault(); e.stopPropagation(); editarNo(no.id); };
+  div.onclick = function (e) { e.stopPropagation(); if (mapaMentalNoArrastando === null) selecionarNoParaConectar(no.id, div); };
+
+  container.appendChild(div);
+}
+
+// ===== EDITAR NÓ =====
+function editarNo(id) {
+  const no = mapaMentalNos.find(n => n.id === id);
+  if (!no) return;
+  salvarEstadoHistorico();
+
+  const modal = document.createElement('div');
+  modal.id = 'modalEdicaoNo';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  modal.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:30px;width:100%;max-width:450px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <h3 style="text-align:center;margin-bottom:20px;color:#374151;">✏️ Editar Tópico</h3>
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Título:</label>
+      <input type="text" id="inputEditarTitulo" value="${no.titulo}" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;font-size:0.95rem;">
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Anotações:</label>
+      <textarea id="inputEditarAnotacoes" rows="3" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;font-size:0.85rem;">${no.anotacoes || ''}</textarea>
+      
+      <label style="font-weight:600;color:#4b5563;font-size:0.85rem;">Cor:</label>
+      <input type="color" id="inputEditarCor" value="${no.cor}" style="width:100%;height:40px;border:2px solid #e5e7eb;border-radius:10px;margin-bottom:15px;cursor:pointer;">
+      
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <button onclick="toggleNegritoModal()" id="btnModalNegrito" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-weight:700;"><b>B</b></button>
+        <button onclick="toggleItalicoModal()" id="btnModalItalico" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-style:italic;"><i>I</i></button>
+        <button onclick="toggleAlinhamentoModal()" id="btnModalAlinhamento" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;background:white;cursor:pointer;font-size:0.8rem;">${no.alinhamento === 'center' ? 'Centro' : no.alinhamento === 'left' ? 'Esquerda' : 'Direita'}</button>
+      </div>
+      
+      <div style="display:flex;gap:10px;">
+        <button onclick="fecharModalEdicaoNo()" style="flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:12px;background:white;color:#6b7280;font-weight:600;cursor:pointer;">Cancelar</button>
+        <button onclick="confirmarEdicaoNo(${id})" style="flex:1;padding:12px;border:none;border-radius:12px;background:${no.cor};color:white;font-weight:600;cursor:pointer;">Salvar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  setTimeout(() => { const input = document.getElementById('inputEditarTitulo'); if (input) { input.focus(); input.select(); } }, 100);
+}
+
+// ===== TOGGLES =====
+function obterIdNoEmEdicao() {
+  const modal = document.getElementById('modalEdicaoNo');
+  if (!modal) return null;
+  const btnSalvar = modal.querySelector('button[onclick*="confirmarEdicaoNo"]');
+  if (btnSalvar) {
+    const match = btnSalvar.getAttribute('onclick').match(/confirmarEdicaoNo\((\d+)\)/);
+    if (match) return parseInt(match[1]);
+  }
+  return null;
+}
+
+function toggleNegritoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.negrito = !no.negrito;
+}
+
+function toggleItalicoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.italico = !no.italico;
+}
+
+function toggleAlinhamentoModal() {
+  const no = mapaMentalNos.find(n => n.id === obterIdNoEmEdicao());
+  if (no) no.alinhamento = no.alinhamento === 'center' ? 'left' : no.alinhamento === 'left' ? 'right' : 'center';
+}
+
+// ===== CONFIRMAR EDIÇÃO =====
+function confirmarEdicaoNo(id) {
+  const titulo = document.getElementById('inputEditarTitulo').value.trim();
+  const anotacoes = document.getElementById('inputEditarAnotacoes').value.trim();
+  const cor = document.getElementById('inputEditarCor').value;
+
+  if (!titulo) return;
+
+  const no = mapaMentalNos.find(n => n.id === id);
+  if (no) {
+    no.titulo = titulo;
+    no.anotacoes = anotacoes;
+    no.cor = cor;
+
+    const div = document.getElementById(`mapa-no-${id}`);
+    if (div) {
+      div.style.background = cor;
+      div.innerHTML = `
+        <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">${titulo}</div>
+        ${anotacoes ? `<div style="font-size:0.7rem;opacity:0.8;margin-top:5px;">${anotacoes}</div>` : ''}
+      `;
+    }
+    if (no.isCentral) { const ti = document.getElementById('mapaMentalTitulo'); if (ti) ti.value = titulo; }
+    desenharConexoes();
+  }
+  fecharModalEdicaoNo();
+  mostrarToast('✅ Tópico atualizado!', '#22c55e');
+}
+
+// ===== FECHAR MODAL EDIÇÃO =====
+function fecharModalEdicaoNo() {
+  const modal = document.getElementById('modalEdicaoNo');
+  if (modal) modal.remove();
+}
+
+// ===== DELETAR NÓ =====
+function deletarNo(id) {
+  salvarEstadoHistorico();
+  mapaMentalNos = mapaMentalNos.filter(no => no.id !== id);
+  mapaMentalConexoes = mapaMentalConexoes.filter(con => con.de !== id && con.para !== id);
+  const div = document.getElementById(`mapa-no-${id}`);
+  if (div) div.remove();
+  desenharConexoes();
+}
+
+// ===== ARRASTAR NÓ =====
+function iniciarArrastarNo(e, id) {
+  const div = document.getElementById(`mapa-no-${id}`);
+  if (!div) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const container = document.getElementById('mapaMentalCanvasContainer');
+  const rect = container.getBoundingClientRect();
+  mapaMentalNoArrastando = id;
+  mapaMentalOffsetX = e.clientX - rect.left - div.offsetLeft;
+  mapaMentalOffsetY = e.clientY - rect.top - div.offsetTop;
+  div.classList.add('dragging');
+
+  document.onmousemove = function (e) {
+    if (mapaMentalNoArrastando === null) return;
+    const x = (e.clientX - rect.left - mapaMentalOffsetX) / mapaMentalZoom;
+    const y = (e.clientY - rect.top - mapaMentalOffsetY) / mapaMentalZoom;
+    const no = mapaMentalNos.find(n => n.id === mapaMentalNoArrastando);
+    if (no) {
+      no.x = x;
+      no.y = y;
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      requestAnimationFrame(desenharConexoes);
+    }
+  };
+
+  document.onmouseup = function () {
+    const div = document.getElementById(`mapa-no-${mapaMentalNoArrastando}`);
+    if (div) div.classList.remove('dragging');
+    mapaMentalNoArrastando = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    desenharConexoes();
+  };
+}
+
+// ===== CONECTAR NÓS =====
+function selecionarNoParaConectar(id, div) {
+  salvarEstadoHistorico();
+  document.querySelectorAll('.mapa-mental-no.selecionado').forEach(el => el.classList.remove('selecionado'));
+
+  if (mapaMentalConectando === null) {
+    mapaMentalConectando = id;
+    div.classList.add('selecionado');
+    mostrarToast('🔗 Clique em outro nó para conectar!', '#3b82f6');
+  } else if (mapaMentalConectando === id) {
+    mapaMentalConectando = null;
+    div.classList.remove('selecionado');
+  } else {
+    const existe = mapaMentalConexoes.some(con => (con.de === mapaMentalConectando && con.para === id) || (con.de === id && con.para === mapaMentalConectando));
+    if (!existe) {
+      mapaMentalConexoes.push({ de: mapaMentalConectando, para: id });
+      mostrarToast('✅ Conectado!', '#22c55e');
+    }
+    mapaMentalConectando = null;
+    desenharConexoes();
+  }
+}
+
+// ===== DESENHAR CONEXÕES =====
+function desenharConexoes() {
+  if (!mapaMentalCanvas || !mapaMentalCtx) return;
+  const ctx = mapaMentalCtx;
+  ctx.clearRect(0, 0, mapaMentalCanvas.width, mapaMentalCanvas.height);
+
+  mapaMentalConexoes.forEach(conexao => {
+    const de = mapaMentalNos.find(n => n.id === conexao.de);
+    const para = mapaMentalNos.find(n => n.id === conexao.para);
+    if (!de || !para) return;
+
+    const x1 = de.x * mapaMentalZoom;
+    const y1 = de.y * mapaMentalZoom;
+    const x2 = para.x * mapaMentalZoom;
+    const y2 = para.y * mapaMentalZoom;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    const midX = (x1 + x2) / 2;
+    ctx.bezierCurveTo(midX, y1, midX, y2, x2, y2);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+// ===== SALVAR / GALERIA =====
+function salvarMapaMental() {
+  const titulo = document.getElementById('mapaMentalTitulo').value.trim();
+  if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
+  if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
+
+  const mapa = {
+    id: Date.now(),
+    titulo: titulo,
+    data: new Date().toISOString(),
+    nos: mapaMentalNos.map(no => ({ ...no })),
+    conexoes: mapaMentalConexoes
+  };
+
+  mapasMentaisSalvos.push(mapa);
+  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
+  renderizarMapasSalvos();
+  mostrarToast('✅ Mapa salvo!', '#22c55e');
+}
+
+function renderizarMapasSalvos() {
+  const container = document.getElementById('listaMapasSalvos');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (mapasMentaisSalvos.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum mapa salvo.</p>';
+    return;
+  }
+
+  [...mapasMentaisSalvos].reverse().forEach(mapa => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    div.innerHTML = `
+      <i class="bi bi-diagram-3" style="color:var(--cor-primaria);"></i>
+      <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${mapa.nos.length} tópicos</small></div>
+      <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+    `;
+    div.onclick = () => abrirMapaSalvo(mapa.id);
+    container.appendChild(div);
+  });
+}
+
+function abrirMapaSalvo(id) {
+  const mapa = mapasMentaisSalvos.find(m => m.id === id);
+  if (!mapa) return;
+  abrirMapaMental();
+  setTimeout(() => {
+    document.getElementById('mapaMentalTitulo').value = mapa.titulo;
+    mapaMentalNos = [];
+    mapaMentalConexoes = [];
+    document.getElementById('mapaMentalNosContainer').innerHTML = '';
+    mapa.nos.forEach(no => { mapaMentalNos.push(no); renderizarNo(no); });
+    mapaMentalConexoes = mapa.conexoes || [];
+    desenharConexoes();
+  }, 300);
+}
+
+function excluirMapaSalvo(id) {
+  mapasMentaisSalvos = mapasMentaisSalvos.filter(m => m.id !== id);
+  localStorage.setItem('mapasMentais', JSON.stringify(mapasMentaisSalvos));
+  renderizarMapasSalvos();
+  mostrarToast('🗑️ Mapa excluído!', '#ef4444');
+}
+
+// ===== LIMPAR / FECHAR =====
+function limparMapa() {
+  salvarEstadoHistorico();
+  inicializarMapaMental();
+  mostrarToast('🗑️ Mapa limpo!', '#ef4444');
+}
+
+function fecharMapaMental() {
+  const modal = document.getElementById('mapaMentalModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== EXPORTAR =====
+window.abrirMapaMental = abrirMapaMental;
+window.fecharMapaMental = fecharMapaMental;
+window.adicionarNoCentral = adicionarNoCentral;
+window.limparMapa = limparMapa;
+window.salvarMapaMental = salvarMapaMental;
+window.abrirMapaSalvo = abrirMapaSalvo;
+window.excluirMapaSalvo = excluirMapaSalvo;
+window.editarNo = editarNo;
+window.confirmarEdicaoNo = confirmarEdicaoNo;
+window.fecharModalEdicaoNo = fecharModalEdicaoNo;
+window.toggleNegritoModal = toggleNegritoModal;
+window.toggleItalicoModal = toggleItalicoModal;
+window.toggleAlinhamentoModal = toggleAlinhamentoModal;
+window.desfazerUltimaAcao = desfazerUltimaAcao;
+window.zoomIn = zoomIn;
+window.zoomOut = zoomOut;
+window.resetZoom = resetZoom;
+window.mostrarToast = mostrarToast;
+
+// =============================================
+// ===== DIAGRAMA DE FLUXO - INDEPENDENTE =====
+// =============================================
+
+let diagramaFluxoNos = [];
+let diagramaFluxoConexoes = [];
+let diagramaFluxoIdCounter = 0;
+let diagramaFluxoNoArrastando = null;
+let diagramaFluxoConectando = null;
+let diagramaFluxoOffsetX = 0;
+let diagramaFluxoOffsetY = 0;
+let diagramaFluxoCanvas = null;
+let diagramaFluxoCtx = null;
+let diagramaFluxoHistorico = [];
+let diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
+
+// Cores automáticas por tipo
+const coresFluxo = {
+  inicio: '#22c55e',   // Verde
+  processo: '#3b82f6', // Azul
+  decisao: '#f59e0b',  // Amarelo
+  fim: '#ef4444'       // Vermelho
+};
+
+// ===== ABRIR DIAGRAMA DE FLUXO =====
+function abrirDiagramaFluxo() {
+  console.log('🔀 Abrindo Diagrama de Fluxo');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+
+  const modal = document.getElementById('diagramaFluxoModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      inicializarDiagramaFluxo();
+      renderizarDiagramasSalvos();
+    }, 100);
+  }
+}
+
+// ===== FECHAR DIAGRAMA DE FLUXO =====
+function fecharDiagramaFluxo() {
+  const modal = document.getElementById('diagramaFluxoModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== INICIALIZAR =====
+function inicializarDiagramaFluxo() {
+  diagramasFluxoSalvos = JSON.parse(localStorage.getItem('diagramasFluxo') || '[]');
+
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const canvas = document.getElementById('diagramaFluxoCanvas');
+  if (!container || !canvas) return;
+
+  setTimeout(() => {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }, 200);
+
+  diagramaFluxoCanvas = canvas;
+  diagramaFluxoCtx = canvas.getContext('2d');
+  diagramaFluxoNos = [];
+  diagramaFluxoConexoes = [];
+  diagramaFluxoHistorico = [];
+
+  const nosContainer = document.getElementById('diagramaFluxoNosContainer');
+  if (nosContainer) nosContainer.innerHTML = '';
+
+  const tituloInput = document.getElementById('diagramaFluxoTitulo');
+  if (tituloInput) tituloInput.value = '';
+
+  // Clique no canvas = adicionar processo
+  container.onclick = function (e) {
+    if (e.target === container || e.target === canvas || e.target.id === 'diagramaFluxoNosContainer') {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      adicionarNoFluxo('processo', x - 60, y - 25);
+    }
+  };
+}
+
+// ===== ADICIONAR NÓ =====
+function adicionarNoFluxo(tipo, x, y) {
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const rect = container.getBoundingClientRect();
+
+  // Posição padrão: centro do canvas com leve deslocamento
+  const posX = x || (container.offsetWidth / 2) - 60 + (diagramaFluxoNos.length * 30);
+  const posY = y || (container.offsetHeight / 2) - 25 + (diagramaFluxoNos.length * 20);
+
+  const nomesPadrao = {
+    inicio: 'Início',
+    processo: 'Novo passo',
+    decisao: 'Pergunta?',
+    fim: 'Fim'
+  };
+
+  const no = {
+    id: diagramaFluxoIdCounter++,
+    x: posX,
+    y: posY,
+    titulo: nomesPadrao[tipo] || 'Passo',
+    tipo: tipo,
+    cor: coresFluxo[tipo] || '#3b82f6',
+    labelSim: 'Sim',
+    labelNao: 'Não'
+  };
+
+  diagramaFluxoNos.push(no);
+  renderizarNoFluxo(no);
+  return no;
+}
+
+// ===== RENDERIZAR NÓ =====
+function renderizarNoFluxo(no) {
+  const container = document.getElementById('diagramaFluxoNosContainer');
+  if (!container) return;
+
+  const div = document.createElement('div');
+  div.id = `fluxo-no-${no.id}`;
+  div.style.cssText = `
+    position: absolute;
+    left: ${no.x}px;
+    top: ${no.y}px;
+    background: ${no.cor};
+    color: white;
+    cursor: grab;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-align: center;
+    min-width: 80px;
+    max-width: 160px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10;
+    word-wrap: break-word;
+    transition: box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  // Formato baseado no tipo
+  if (no.tipo === 'inicio' || no.tipo === 'fim') {
+    div.style.borderRadius = '50%';
+    div.style.padding = '25px 30px';
+    div.style.minWidth = '100px';
+    div.style.minHeight = '60px';
+  } else if (no.tipo === 'decisao') {
+    div.style.borderRadius = '0';
+    div.style.transform = 'rotate(45deg)';
+    div.style.padding = '20px';
+    div.style.minWidth = '90px';
+    div.style.minHeight = '90px';
+  } else {
+    div.style.borderRadius = '10px';
+    div.style.padding = '15px 20px';
+  }
+
+  // Conteúdo (rotacionar de volta se for losango)
+  const conteudo = document.createElement('span');
+  conteudo.textContent = no.titulo;
+  if (no.tipo === 'decisao') {
+    conteudo.style.transform = 'rotate(-45deg)';
+  }
+  div.appendChild(conteudo);
+
+  // Botão deletar
+  const btnDeletar = document.createElement('button');
+  btnDeletar.innerHTML = '×';
+  btnDeletar.style.cssText = 'position:absolute;top:-10px;right:-10px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:white;border:2px solid white;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;z-index:20;';
+  btnDeletar.onclick = function (e) { e.stopPropagation(); deletarNoFluxo(no.id); };
+  div.appendChild(btnDeletar);
+
+  div.onmouseenter = function () { btnDeletar.style.display = 'flex'; div.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)'; };
+  div.onmouseleave = function () { btnDeletar.style.display = 'none'; div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; };
+
+  // Eventos
+  div.onmousedown = function (e) { if (e.target !== btnDeletar) iniciarArrastarNoFluxo(e, no.id); };
+  div.ondblclick = function (e) { e.preventDefault(); e.stopPropagation(); editarNoFluxo(no.id); };
+  div.onclick = function (e) { e.stopPropagation(); selecionarNoParaConectarFluxo(no.id, div); };
+
+  container.appendChild(div);
+}
+
+// ===== EDITAR NÓ =====
+function editarNoFluxo(id) {
+  const no = diagramaFluxoNos.find(n => n.id === id);
+  if (!no) return;
+
+  const tipoLabel = {
+    inicio: 'Início',
+    processo: 'Processo',
+    decisao: 'Decisão',
+    fim: 'Fim'
+  };
+
+  Swal.fire({
+    title: `Editar ${tipoLabel[no.tipo] || 'Nó'}`,
+    html: `
+      <label style="font-weight:600;display:block;margin-bottom:5px;text-align:left;">Título:</label>
+      <input id="editFluxoTitulo" class="swal2-input" value="${no.titulo}">
+      
+      <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Tipo:</label>
+      <select id="editFluxoTipo" class="swal2-input">
+        <option value="inicio" ${no.tipo === 'inicio' ? 'selected' : ''}>🟢 Início</option>
+        <option value="processo" ${no.tipo === 'processo' ? 'selected' : ''}>🔵 Processo</option>
+        <option value="decisao" ${no.tipo === 'decisao' ? 'selected' : ''}>🟡 Decisão</option>
+        <option value="fim" ${no.tipo === 'fim' ? 'selected' : ''}>🔴 Fim</option>
+      </select>
+      
+      ${no.tipo === 'decisao' ? `
+        <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Label "Sim":</label>
+        <input id="editFluxoLabelSim" class="swal2-input" value="${no.labelSim || 'Sim'}">
+        <label style="font-weight:600;display:block;margin:15px 0 5px;text-align:left;">Label "Não":</label>
+        <input id="editFluxoLabelNao" class="swal2-input" value="${no.labelNao || 'Não'}">
+      ` : ''}
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: no.cor,
+    preConfirm: () => {
+      const titulo = document.getElementById('editFluxoTitulo').value.trim();
+      if (!titulo) {
+        Swal.showValidationMessage('Digite um título!');
+        return false;
+      }
+      return {
+        titulo: titulo,
+        tipo: document.getElementById('editFluxoTipo').value,
+        labelSim: document.getElementById('editFluxoLabelSim')?.value || 'Sim',
+        labelNao: document.getElementById('editFluxoLabelNao')?.value || 'Não'
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      no.titulo = result.value.titulo;
+      no.tipo = result.value.tipo;
+      no.labelSim = result.value.labelSim;
+      no.labelNao = result.value.labelNao;
+      no.cor = coresFluxo[no.tipo] || '#3b82f6';
+
+      const div = document.getElementById(`fluxo-no-${no.id}`);
+      if (div) div.remove();
+      renderizarNoFluxo(no);
+      desenharConexoesFluxo();
+    }
+  });
+}
+
+// ===== DELETAR NÓ =====
+function deletarNoFluxo(id) {
+  diagramaFluxoNos = diagramaFluxoNos.filter(no => no.id !== id);
+  diagramaFluxoConexoes = diagramaFluxoConexoes.filter(con => con.de !== id && con.para !== id);
+  const div = document.getElementById(`fluxo-no-${id}`);
+  if (div) div.remove();
+  desenharConexoesFluxo();
+}
+
+// ===== ARRASTAR NÓ =====
+function iniciarArrastarNoFluxo(e, id) {
+  const div = document.getElementById(`fluxo-no-${id}`);
+  if (!div) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const container = document.getElementById('diagramaFluxoCanvasContainer');
+  const rect = container.getBoundingClientRect();
+  diagramaFluxoNoArrastando = id;
+  diagramaFluxoOffsetX = e.clientX - rect.left - div.offsetLeft;
+  diagramaFluxoOffsetY = e.clientY - rect.top - div.offsetTop;
+  div.style.cursor = 'grabbing';
+
+  document.onmousemove = function (e) {
+    if (diagramaFluxoNoArrastando === null) return;
+    const x = e.clientX - rect.left - diagramaFluxoOffsetX;
+    const y = e.clientY - rect.top - diagramaFluxoOffsetY;
+    const no = diagramaFluxoNos.find(n => n.id === diagramaFluxoNoArrastando);
+    if (no) {
+      no.x = x;
+      no.y = y;
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      requestAnimationFrame(desenharConexoesFluxo);
+    }
+  };
+
+  document.onmouseup = function () {
+    const div = document.getElementById(`fluxo-no-${diagramaFluxoNoArrastando}`);
+    if (div) div.style.cursor = 'grab';
+    diagramaFluxoNoArrastando = null;
+    document.onmousemove = null;
+    document.onmouseup = null;
+    desenharConexoesFluxo();
+  };
+}
+
+// ===== CONECTAR NÓS (com label) =====
+function selecionarNoParaConectarFluxo(id, div) {
+  document.querySelectorAll('#diagramaFluxoNosContainer > div.selecionado').forEach(el => el.style.outline = 'none');
+
+  if (diagramaFluxoConectando === null) {
+    diagramaFluxoConectando = id;
+    div.style.outline = '3px solid #3b82f6';
+    div.style.outlineOffset = '3px';
+    mostrarToast('🔗 Clique em outro nó para conectar!', '#3b82f6');
+  } else if (diagramaFluxoConectando === id) {
+    diagramaFluxoConectando = null;
+    div.style.outline = 'none';
+  } else {
+    const noOrigem = diagramaFluxoNos.find(n => n.id === diagramaFluxoConectando);
+    const noDestino = diagramaFluxoNos.find(n => n.id === id);
+
+    // Perguntar label da seta
+    Swal.fire({
+      title: 'Label da seta',
+      text: `De "${noOrigem.titulo}" para "${noDestino.titulo}"`,
+      input: 'text',
+      inputValue: noOrigem.tipo === 'decisao' ? noOrigem.labelSim : '',
+      inputPlaceholder: 'Ex: Sim, Não, Próximo passo...',
+      showCancelButton: true,
+      confirmButtonText: 'Conectar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3b82f6'
+    }).then(result => {
+      if (result.isConfirmed) {
+        const existe = diagramaFluxoConexoes.some(con => con.de === diagramaFluxoConectando && con.para === id);
+        if (!existe) {
+          diagramaFluxoConexoes.push({
+            de: diagramaFluxoConectando,
+            para: id,
+            label: result.value || ''
+          });
+          mostrarToast('✅ Conectado!', '#22c55e');
+        }
+        diagramaFluxoConectando = null;
+        desenharConexoesFluxo();
+      }
+    });
+  }
+}
+
+// ===== DESENHAR CONEXÕES COM SETAS E LABELS =====
+function desenharConexoesFluxo() {
+  if (!diagramaFluxoCanvas || !diagramaFluxoCtx) return;
+  const ctx = diagramaFluxoCtx;
+  ctx.clearRect(0, 0, diagramaFluxoCanvas.width, diagramaFluxoCanvas.height);
+
+  diagramaFluxoConexoes.forEach(conexao => {
+    const de = diagramaFluxoNos.find(n => n.id === conexao.de);
+    const para = diagramaFluxoNos.find(n => n.id === conexao.para);
+    if (!de || !para) return;
+
+    const x1 = de.x + 60;
+    const y1 = de.y + 30;
+    const x2 = para.x + 60;
+    const y2 = para.y + 30;
+
+    // Linha
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Seta
+    const angulo = Math.atan2(y2 - y1, x2 - x1);
+    const tamanhoSeta = 12;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - tamanhoSeta * Math.cos(angulo - Math.PI / 6), y2 - tamanhoSeta * Math.sin(angulo - Math.PI / 6));
+    ctx.lineTo(x2 - tamanhoSeta * Math.cos(angulo + Math.PI / 6), y2 - tamanhoSeta * Math.sin(angulo + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = '#232b36ff';
+    ctx.fill();
+
+    // Label
+    if (conexao.label) {
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+      ctx.font = 'bold 11px Poppins, sans-serif';
+      ctx.fillStyle = '#1f2937';
+      ctx.textAlign = 'center';
+
+      // Fundo branco para o label
+      const larguraTexto = ctx.measureText(conexao.label).width + 10;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(midX - larguraTexto / 2, midY - 12, larguraTexto, 18);
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(midX - larguraTexto / 2, midY - 12, larguraTexto, 18);
+
+      // Texto
+      ctx.fillStyle = '#1f2937';
+      ctx.fillText(conexao.label, midX, midY + 1);
+    }
+  });
+}
+
+// ===== SALVAR DIAGRAMA =====
+function salvarDiagramaFluxo() {
+  const titulo = document.getElementById('diagramaFluxoTitulo').value.trim();
+  if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
+  if (diagramaFluxoNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
+
+  const diagrama = {
+    id: Date.now(),
+    titulo: titulo,
+    data: new Date().toISOString(),
+    nos: diagramaFluxoNos.map(no => ({ ...no })),
+    conexoes: diagramaFluxoConexoes
+  };
+
+  diagramasFluxoSalvos.push(diagrama);
+  localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
+  renderizarDiagramasSalvos();
+  mostrarToast('✅ Diagrama salvo!', '#22c55e');
+}
+
+// ===== RENDERIZAR DIAGRAMAS SALVOS =====
+function renderizarDiagramasSalvos() {
+  const container = document.getElementById('listaDiagramasFluxoSalvos');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (diagramasFluxoSalvos.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum diagrama salvo.</p>';
+    return;
+  }
+
+  [...diagramasFluxoSalvos].reverse().forEach(diagrama => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+    div.innerHTML = `
+      <i class="bi bi-arrow-right-circle" style="color:#3b82f6;"></i>
+      <div style="flex:1;">
+        <strong>${diagrama.titulo}</strong><br>
+        <small>${diagrama.nos.length} nós • ${diagrama.conexoes.length} conexões</small>
+      </div>
+      <button onclick="event.stopPropagation();abrirDiagramaSalvo(${diagrama.id})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+      <button onclick="event.stopPropagation();excluirDiagramaSalvo(${diagrama.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+    `;
+    div.onclick = () => abrirDiagramaSalvo(diagrama.id);
+    container.appendChild(div);
+  });
+}
+
+// ===== ABRIR DIAGRAMA SALVO =====
+function abrirDiagramaSalvo(id) {
+  const diagrama = diagramasFluxoSalvos.find(d => d.id === id);
+  if (!diagrama) return;
+
+  abrirDiagramaFluxo();
+  setTimeout(() => {
+    document.getElementById('diagramaFluxoTitulo').value = diagrama.titulo;
+    diagramaFluxoNos = [];
+    diagramaFluxoConexoes = [];
+    document.getElementById('diagramaFluxoNosContainer').innerHTML = '';
+    diagrama.nos.forEach(no => {
+      diagramaFluxoNos.push(no);
+      renderizarNoFluxo(no);
+    });
+    diagramaFluxoConexoes = diagrama.conexoes || [];
+    desenharConexoesFluxo();
+  }, 300);
+}
+
+// ===== EXCLUIR DIAGRAMA SALVO =====
+function excluirDiagramaSalvo(id) {
+  Swal.fire({
+    title: 'Excluir diagrama?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      diagramasFluxoSalvos = diagramasFluxoSalvos.filter(d => d.id !== id);
+      localStorage.setItem('diagramasFluxo', JSON.stringify(diagramasFluxoSalvos));
+      renderizarDiagramasSalvos();
+      mostrarToast('🗑️ Excluído!', '#ef4444');
+    }
+  });
+}
+
+// ===== LIMPAR =====
+function limparDiagramaFluxo() {
+  Swal.fire({
+    title: 'Limpar tudo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, limpar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      inicializarDiagramaFluxo();
+      mostrarToast('🗑️ Limpo!', '#ef4444');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.abrirDiagramaFluxo = abrirDiagramaFluxo;
+window.fecharDiagramaFluxo = fecharDiagramaFluxo;
+window.adicionarNoFluxo = adicionarNoFluxo;
+window.editarNoFluxo = editarNoFluxo;
+window.deletarNoFluxo = deletarNoFluxo;
+window.limparDiagramaFluxo = limparDiagramaFluxo;
+window.salvarDiagramaFluxo = salvarDiagramaFluxo;
+window.abrirDiagramaSalvo = abrirDiagramaSalvo;
+window.excluirDiagramaSalvo = excluirDiagramaSalvo;
+
+// ===== GRAVADOR DE ÁUDIO (Feynman + Podcast) - VERSÃO MODAL =====
+
+let mediaRecorder = null;
+let audioChunks = [];
+let audioUrl = null;
+let gravando = false;
+let pausado = false;
+let segundosGravacao = 0;
+let timerGravacao = null;
+
+const gravacoesSalvas = JSON.parse(localStorage.getItem('gravacoesEstudo') || '[]');
+
+// ===== FUNÇÃO GENÉRICA PARA ABRIR O GRAVADOR COMO MODAL =====
+function abrirGravador(modo) {
+  console.log('🎙️ Abrindo gravador modal no modo:', modo);
+
+  // Salva o modo
+  localStorage.setItem('modoGravadorAtivo', modo);
+
+  // Fecha o modal de métodos (se estiver aberto)
+  if (typeof fecharMetodoModal === 'function') {
+    fecharMetodoModal();
+  }
+
+  // Mostra o modal do gravador
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+
+    // Atualiza o título
+    const tituloGravador = document.getElementById('gravadorTitulo');
+    if (tituloGravador) {
+      if (modo === 'podcast') {
+        tituloGravador.innerHTML = `
+          <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+          Gravação de Podcast
+        `;
+      } else {
+        tituloGravador.innerHTML = `
+          <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
+          Técnica Feynman - Grave sua Explicação
+        `;
+      }
+    }
+
+    // Limpa campos anteriores
+    limparCamposGravador();
+
+    // Renderiza as gravações salvas
+    renderizarGravacoes();
+  } else {
+    console.error('❌ Modal do gravador não encontrado! Verifique o HTML.');
+  }
+}
+
+// ===== FUNÇÃO PARA FECHAR O MODAL DO GRAVADOR =====
+function fecharGravadorModal() {
+  console.log('🔒 Fechando modal do gravador');
+
+  // Para a gravação se estiver gravando
+  if (gravando && mediaRecorder) {
+    mediaRecorder.stop();
+    gravando = false;
+    pausado = false;
+    clearInterval(timerGravacao);
+
+    // Reseta botões
+    const btnGravar = document.getElementById('btnGravar');
+    const btnPausar = document.getElementById('btnPausarAudio');
+    const btnParar = document.getElementById('btnPararAudio');
+
+    if (btnGravar) btnGravar.disabled = false;
+    if (btnPausar) {
+      btnPausar.disabled = true;
+      btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+    }
+    if (btnParar) btnParar.disabled = true;
+  }
+
+  // Esconde o modal
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  // Limpa campos
+  limparCamposGravador();
+}
+
+// ===== FUNÇÃO PARA LIMPAR CAMPOS DO GRAVADOR =====
+function limparCamposGravador() {
+  const checkPalavrasSimples = document.getElementById('checkPalavrasSimples');
+  const checkAnalogias = document.getElementById('checkAnalogias');
+  const checkLacunas = document.getElementById('checkLacunas');
+  const checkSimplificado = document.getElementById('checkSimplificado');
+  const anotacoesGravacao = document.getElementById('anotacoesGravacao');
+  const tempoGravacao = document.getElementById('tempoGravacao');
+  const audioGravadoArea = document.getElementById('audioGravadoArea');
+  const nomeGravacao = document.getElementById('nomeGravacao'); // ⬅️ NOVO
+
+  if (checkPalavrasSimples) checkPalavrasSimples.checked = false;
+  if (checkAnalogias) checkAnalogias.checked = false;
+  if (checkLacunas) checkLacunas.checked = false;
+  if (checkSimplificado) checkSimplificado.checked = false;
+  if (anotacoesGravacao) anotacoesGravacao.value = '';
+  if (tempoGravacao) tempoGravacao.textContent = '00:00';
+  if (audioGravadoArea) audioGravadoArea.style.display = 'none';
+  if (nomeGravacao) nomeGravacao.value = ''; // ⬅️ NOVO
+
+  audioUrl = null;
+  segundosGravacao = 0;
+}
+// ===== FUNÇÕES ESPECÍFICAS =====
+function abrirGravadorPodcast() {
+  abrirGravador('podcast');
+}
+
+function abrirGravadorFeynman() {
+  abrirGravador('feynman');
+}
+
+// ===== FUNÇÕES DE GRAVAÇÃO =====
+async function iniciarGravacao() {
+  console.log('🎤 Iniciando gravação...');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      console.log('⏹️ Gravação parada');
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      audioUrl = URL.createObjectURL(audioBlob);
+
+      const audioPlayer = document.getElementById('audioGravadoPlayer');
+      const audioArea = document.getElementById('audioGravadoArea');
+      if (audioPlayer && audioArea) {
+        audioPlayer.src = audioUrl;
+        audioArea.style.display = 'block';
+      }
+
+      const btnGravar = document.getElementById('btnGravar');
+      const btnPausar = document.getElementById('btnPausarAudio');
+      const btnParar = document.getElementById('btnPararAudio');
+
+      if (btnGravar) btnGravar.disabled = false;
+      if (btnPausar) btnPausar.disabled = true;
+      if (btnParar) btnParar.disabled = true;
+
+      clearInterval(timerGravacao);
+
+      // Para as tracks do stream
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    gravando = true;
+
+    const btnGravar = document.getElementById('btnGravar');
+    const btnPausar = document.getElementById('btnPausarAudio');
+    const btnParar = document.getElementById('btnPararAudio');
+    const tempoGravacao = document.getElementById('tempoGravacao');
+
+    if (btnGravar) btnGravar.disabled = true;
+    if (btnPausar) btnPausar.disabled = false;
+    if (btnParar) btnParar.disabled = false;
+
+    segundosGravacao = 0;
+    if (tempoGravacao) tempoGravacao.textContent = '00:00';
+
+    timerGravacao = setInterval(() => {
+      segundosGravacao++;
+      const min = String(Math.floor(segundosGravacao / 60)).padStart(2, '0');
+      const seg = String(segundosGravacao % 60).padStart(2, '0');
+      const tempoEl = document.getElementById('tempoGravacao');
+      if (tempoEl) tempoEl.textContent = `${min}:${seg}`;
+    }, 1000);
+
+  } catch (err) {
+    console.error('❌ Erro ao acessar microfone:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Não foi possível acessar o microfone. Verifique as permissões do navegador.',
+      confirmButtonColor: '#9f042c'
+    });
+  }
+}
+
+function pausarGravacao() {
+  if (!mediaRecorder || !gravando) return;
+
+  const btnPausar = document.getElementById('btnPausarAudio');
+
+  if (!pausado) {
+    mediaRecorder.pause();
+    pausado = true;
+    clearInterval(timerGravacao);
+    if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-play-circle"></i> Continuar';
+  } else {
+    mediaRecorder.resume();
+    pausado = false;
+    timerGravacao = setInterval(() => {
+      segundosGravacao++;
+      const min = String(Math.floor(segundosGravacao / 60)).padStart(2, '0');
+      const seg = String(segundosGravacao % 60).padStart(2, '0');
+      const tempoEl = document.getElementById('tempoGravacao');
+      if (tempoEl) tempoEl.textContent = `${min}:${seg}`;
+    }, 1000);
+    if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+}
+
+function pararGravacao() {
+  if (!mediaRecorder || !gravando) return;
+
+  mediaRecorder.stop();
+  gravando = false;
+  pausado = false;
+
+  const btnPausar = document.getElementById('btnPausarAudio');
+  if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+}
+
+function salvarGravacao() {
+  if (!audioUrl) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atenção!',
+      text: 'Grave um áudio primeiro!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const modoAtivo = localStorage.getItem('modoGravadorAtivo') || 'feynman';
+  const nomeGravacao = document.getElementById('nomeGravacao').value.trim();
+
+  const gravacao = {
+    id: Date.now(),
+    data: new Date().toISOString(),
+    url: audioUrl,
+    modo: modoAtivo,
+    nome: nomeGravacao || `Gravação ${modoAtivo === 'podcast' ? 'Podcast' : 'Feynman'} ${new Date().toLocaleDateString('pt-BR')}`,
+    checkPalavrasSimples: document.getElementById('checkPalavrasSimples')?.checked || false,
+    checkAnalogias: document.getElementById('checkAnalogias')?.checked || false,
+    checkLacunas: document.getElementById('checkLacunas')?.checked || false,
+    checkSimplificado: document.getElementById('checkSimplificado')?.checked || false,
+    anotacoes: document.getElementById('anotacoesGravacao')?.value || '',
+    duracao: segundosGravacao
+  };
+
+  gravacoesSalvas.push(gravacao);
+  localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+
+  renderizarGravacoes();
+
+  // Limpar campos
+  limparCamposGravador();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Gravação salva!',
+    text: `"${gravacao.nome}" foi salva com sucesso.`,
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+function renderizarGravacoes() {
+  const container = document.getElementById('listaGravacoes');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (gravacoesSalvas.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Nenhuma gravação ainda.</p>';
+    return;
+  }
+
+  const ordenadas = [...gravacoesSalvas].reverse();
+
+  ordenadas.forEach(grav => {
+    const data = new Date(grav.data);
+    const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const modoIcone = grav.modo === 'podcast' ? '🎙️' : '📝';
+    const modoNome = grav.modo === 'podcast' ? 'Podcast' : 'Feynman';
+    const nomeExibicao = grav.nome || 'Gravação sem nome';
+
+    // Formata a duração
+    const minutos = Math.floor(grav.duracao / 60);
+    const segundos = grav.duracao % 60;
+    const duracaoFormatada = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+
+    const div = document.createElement('div');
+    div.className = 'gravacao-item';
+
+    const checkboxes = [];
+    if (grav.checkPalavrasSimples) checkboxes.push('✅ Palavras simples');
+    if (grav.checkAnalogias) checkboxes.push('✅ Analogias');
+    if (grav.checkLacunas) checkboxes.push('✅ Lacunas');
+    if (grav.checkSimplificado) checkboxes.push('✅ Simplificado');
+
+    div.innerHTML = `
+      <div class="gravacao-info">
+        <div style="flex: 1;">
+          <strong style="display: block; font-size: 0.95rem; color: #374151; margin-bottom: 4px;">
+            ${nomeExibicao}
+          </strong>
+          <span class="gravacao-data">
+            ${modoIcone} ${modoNome} | ${dataFormatada} | ⏱ ${duracaoFormatada}
+          </span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <button class="btn-editar-gravacao" onclick="editarGravacao(${grav.id})" 
+                  title="Editar">
+            ✏️
+          </button>
+          <button class="btn-excluir-gravacao" onclick="excluirGravacao(${grav.id})" 
+                  title="Excluir">
+            🗑
+          </button>
+        </div>
+      </div>
+      <audio controls src="${grav.url}" style="width: 100%; margin: 10px 0;"></audio>
+      ${checkboxes.length > 0 ? `<div class="gravacao-checkboxes">${checkboxes.join(' | ')}</div>` : ''}
+      ${grav.anotacoes ? `
+        <div class="gravacao-anotacoes" style="background: #f9fafb; padding: 10px; border-radius: 8px; margin-top: 8px;">
+          <p style="font-size: 0.8rem; color: #6b7280; margin: 0;">
+            <strong>📝 Anotações:</strong> ${grav.anotacoes}
+          </p>
+        </div>
+      ` : ''}
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function excluirGravacao(id) {
+  const index = gravacoesSalvas.findIndex(g => g.id === id);
+  if (index !== -1) {
+    gravacoesSalvas.splice(index, 1);
+    localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+    renderizarGravacoes();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Excluída!',
+      timer: 1000,
+      showConfirmButton: false
+    });
+  }
+}
+
+// ===== EXPOR FUNÇÕES GLOBALMENTE =====
+window.abrirGravador = abrirGravador;
+window.abrirGravadorPodcast = abrirGravadorPodcast;
+window.abrirGravadorFeynman = abrirGravadorFeynman;
+window.fecharGravadorModal = fecharGravadorModal;
+window.iniciarGravacao = iniciarGravacao;
+window.pausarGravacao = pausarGravacao;
+window.pararGravacao = pararGravacao;
+window.salvarGravacao = salvarGravacao;
+window.excluirGravacao = excluirGravacao;
+window.editarGravacao = editarGravacao;
+
+// ===== INICIALIZAR =====
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('🎙️ Gravador modal inicializado!');
+});
+
+// =============================================
+// ===== REDEFINIÇÃO FORÇADA DO GRAVADOR =====
+// =============================================
+console.log('🔄 Aplicando correção final do gravador...');
+
+// Sobrescreve TODAS as funções anteriores
+window.abrirGravador = function (modo) {
+  console.log('🎙️ [FINAL] Abrindo gravador:', modo);
+
+  // Salva o modo
+  localStorage.setItem('modoGravadorAtivo', modo);
+
+  // Fecha o modal de métodos
+  const metodoModal = document.getElementById('metodoModalOverlay');
+  if (metodoModal) {
+    metodoModal.style.display = 'none';
+  }
+
+  // Mostra o modal do gravador
+  const gravadorModal = document.getElementById('gravadorModalOverlay');
+  if (gravadorModal) {
+    gravadorModal.style.display = 'flex';
+
+    // Atualiza título
+    const titulo = document.getElementById('gravadorTitulo');
+    if (titulo) {
+      if (modo === 'podcast') {
+        titulo.innerHTML = '<i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i> Gravação de Podcast';
+      } else {
+        titulo.innerHTML = '<i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i> Técnica Feynman - Grave sua Explicação';
+      }
+    }
+
+    // Limpa campos
+    const checkboxes = ['checkPalavrasSimples', 'checkAnalogias', 'checkLacunas', 'checkSimplificado'];
+    checkboxes.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+
+    const anotacoes = document.getElementById('anotacoesGravacao');
+    if (anotacoes) anotacoes.value = '';
+
+    const tempo = document.getElementById('tempoGravacao');
+    if (tempo) tempo.textContent = '00:00';
+
+    const audioArea = document.getElementById('audioGravadoArea');
+    if (audioArea) audioArea.style.display = 'none';
+
+    // Renderiza gravações
+    if (typeof renderizarGravacoes === 'function') {
+      renderizarGravacoes();
+    }
+  } else {
+    console.error('❌ Modal do gravador NÃO encontrado no HTML!');
+    alert('Erro: Modal do gravador não encontrado. Verifique se o HTML está correto.');
+  }
+};
+
+window.abrirGravadorPodcast = function () {
+  console.log('🎙️ [FINAL] Abrindo Podcast');
+  window.abrirGravador('podcast');
+};
+
+window.abrirGravadorFeynman = function () {
+  console.log('📝 [FINAL] Abrindo Feynman');
+  window.abrirGravador('feynman');
+};
+
+window.fecharGravadorModal = function () {
+  console.log('🔒 [FINAL] Fechando gravador');
+
+  // Para gravação se estiver ativa
+  if (typeof gravando !== 'undefined' && gravando && typeof mediaRecorder !== 'undefined' && mediaRecorder) {
+    try {
+      mediaRecorder.stop();
+    } catch (e) { }
+    gravando = false;
+    pausado = false;
+    clearInterval(timerGravacao);
+  }
+
+  // Esconde modal
+  const modal = document.getElementById('gravadorModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  // Reseta botões
+  const btnGravar = document.getElementById('btnGravar');
+  const btnPausar = document.getElementById('btnPausarAudio');
+  const btnParar = document.getElementById('btnPararAudio');
+
+  if (btnGravar) btnGravar.disabled = false;
+  if (btnPausar) {
+    btnPausar.disabled = true;
+    btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+  if (btnParar) btnParar.disabled = true;
+};
+
+console.log('✅ Correção final aplicada!');
+
+// =============================================
+// ===== CORREÇÃO FINAL DOS MÉTODOS ============
+// =============================================
+console.log('🔄 Aplicando correção final dos métodos...');
+
+// Verifica se metodosPorInteligencia existe
+if (typeof metodosPorInteligencia === 'undefined') {
+  console.error('❌ metodosPorInteligencia NÃO encontrado!');
+} else {
+  console.log('✅ metodosPorInteligencia encontrado com', Object.keys(metodosPorInteligencia).length, 'inteligências');
+}
+
+// Redefine a função renderizarMetodosEstudo
+window.renderizarMetodosEstudo = function () {
+  console.log('🎨 Renderizando métodos de estudo...');
+
+  let tipoInteligencia = localStorage.getItem('inteligenciaUsuario');
+  console.log('📌 Inteligência salva:', tipoInteligencia);
+
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.tipo_dom) {
+      tipoInteligencia = normalizarInteligencia(user.tipo_dom);
+      console.log('📌 Inteligência do usuário:', tipoInteligencia);
+    }
+  }
+
+  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+    tipoInteligencia = 'logico';
+    console.log('📌 Usando inteligência padrão: logico');
+  }
+
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  console.log('📌 Dados da inteligência:', metodosData.nome, '| Cor:', metodosData.cor);
+
+  document.documentElement.style.setProperty('--cor-primaria', metodosData.cor);
+
+  const badgeNome = document.getElementById("inteligenciaBadgeNome");
+  const badgeIcon = document.getElementById("inteligenciaBadgeIcon");
+  const badgeDiv = document.getElementById("inteligenciaBadge");
+  const badgeDescricao = document.getElementById("inteligenciaBadgeDescricao");
+
+  if (badgeNome) badgeNome.textContent = `Inteligência ${metodosData.nome}`;
+  if (badgeIcon) badgeIcon.src = iconesInteligencia[tipoInteligencia] || "Icones/logico.png";
+  if (badgeDiv) badgeDiv.style.background = metodosData.cor;
+  if (badgeDescricao) badgeDescricao.textContent = metodosData.descricao;
+
+  const containerRecomendados = document.getElementById("listaMetodosRecomendados");
+  if (containerRecomendados) {
+    containerRecomendados.innerHTML = "";
+
+    metodosData.metodos.forEach(metodo => {
+      console.log('📌 Adicionando método:', metodo.titulo);
+
+      containerRecomendados.innerHTML += `
+        <div class="metodo-card" onclick="window.verDetalhesMetodo('${tipoInteligencia}', ${metodo.id})">
+          <div class="metodo-card-header">
+            <h3>${metodo.titulo}</h3>
+            <div class="metodo-tags">
+              <span class="tag-tempo">
+                <i class="bi bi-clock"></i> ${metodo.tempo}
+              </span>
+              <span class="tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">
+                ${metodo.dificuldade}
+              </span>
+            </div>
+          </div>
+          <p class="metodo-descricao">${metodo.descricao}</p>
+          <button class="btn-ver-mais" style="color: ${metodosData.cor}">
+            Ver método completo <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    });
+
+    console.log('✅ Métodos renderizados:', metodosData.metodos.length);
+  } else {
+    console.error('❌ Container de métodos não encontrado!');
+  }
+};
+
+// Chama a função imediatamente
+setTimeout(() => {
+  renderizarMetodosEstudo();
+}, 500);
+
+console.log('✅ Correção dos métodos aplicada!');
+
+// ===== FUNÇÃO PARA EDITAR GRAVAÇÃO =====
+function editarGravacao(id) {
+  console.log('✏️ Editando gravação:', id);
+
+  const gravacao = gravacoesSalvas.find(g => g.id === id);
+  if (!gravacao) return;
+
+  Swal.fire({
+    title: 'Editar Gravação',
+    html: `
+      <div style="text-align: left;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+          <i class="bi bi-tag"></i> Nome:
+        </label>
+        <input id="swalNomeGravacao" class="swal2-input" 
+               value="${gravacao.nome || ''}" 
+               placeholder="Nome da gravação">
+        
+        <label style="display: block; margin-bottom: 8px; margin-top: 15px; font-weight: 600; color: #4b5563;">
+          <i class="bi bi-pencil"></i> Anotações:
+        </label>
+        <textarea id="swalAnotacoesGravacao" class="swal2-textarea" 
+                  placeholder="Suas anotações..." 
+                  style="height: 120px;">${gravacao.anotacoes || ''}</textarea>
+        
+        <div style="margin-top: 15px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #4b5563;">
+            <i class="bi bi-clipboard-check"></i> Autoavaliação:
+          </label>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckPalavras" ${gravacao.checkPalavrasSimples ? 'checked' : ''}>
+              <span>Expliquei com palavras simples?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckAnalogias" ${gravacao.checkAnalogias ? 'checked' : ''}>
+              <span>Usei analogias ou exemplos?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckLacunas" ${gravacao.checkLacunas ? 'checked' : ''}>
+              <span>Identifiquei lacunas no entendimento?</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="swalCheckSimplificado" ${gravacao.checkSimplificado ? 'checked' : ''}>
+              <span>Consegui simplificar o conceito?</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-save"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const nome = document.getElementById('swalNomeGravacao').value.trim();
+      const anotacoes = document.getElementById('swalAnotacoesGravacao').value;
+      const checkPalavras = document.getElementById('swalCheckPalavras').checked;
+      const checkAnalogias = document.getElementById('swalCheckAnalogias').checked;
+      const checkLacunas = document.getElementById('swalCheckLacunas').checked;
+      const checkSimplificado = document.getElementById('swalCheckSimplificado').checked;
+
+      if (!nome) {
+        Swal.showValidationMessage('Dê um nome para a gravação!');
+        return false;
+      }
+
+      return {
+        nome: nome,
+        anotacoes: anotacoes,
+        checkPalavrasSimples: checkPalavras,
+        checkAnalogias: checkAnalogias,
+        checkLacunas: checkLacunas,
+        checkSimplificado: checkSimplificado
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Atualiza a gravação
+      gravacao.nome = result.value.nome;
+      gravacao.anotacoes = result.value.anotacoes;
+      gravacao.checkPalavrasSimples = result.value.checkPalavrasSimples;
+      gravacao.checkAnalogias = result.value.checkAnalogias;
+      gravacao.checkLacunas = result.value.checkLacunas;
+      gravacao.checkSimplificado = result.value.checkSimplificado;
+
+      // Salva no localStorage
+      localStorage.setItem('gravacoesEstudo', JSON.stringify(gravacoesSalvas));
+
+      // Re-renderiza a lista
+      renderizarGravacoes();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Atualizada!',
+        text: 'Gravação atualizada com sucesso.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+// =============================================
+// ===== BIBLIOTECA DE VÍDEOS =================
+// =============================================
+
+let bibliotecaVideos = JSON.parse(localStorage.getItem('bibliotecaVideos') || '[]');
+
+// ===== ABRIR BIBLIOTECA =====
+function abrirBibliotecaVideos() {
+  console.log('🎬 Abrindo Biblioteca de Vídeos');
+
+  if (typeof fecharMetodoModal === 'function') {
+    fecharMetodoModal();
+  }
+
+  const modal = document.getElementById('bibliotecaVideosModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    popularFiltroMateriasVideos();
+    renderizarBibliotecaVideos();
+  }
+}
+
+// ===== FECHAR BIBLIOTECA =====
+function fecharBibliotecaVideos() {
+  const modal = document.getElementById('bibliotecaVideosModalOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== ABRIR MODAL ADICIONAR =====
+function abrirModalAdicionarVideo() {
+  const modal = document.getElementById('modalAdicionarVideoOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    popularSelectMateriasVideos();
+
+    // Limpa campos
+    document.getElementById('videoTitulo').value = '';
+    document.getElementById('videoUrl').value = '';
+    document.getElementById('videoTema').value = '';
+    document.getElementById('videoAnotacoes').value = '';
+    document.getElementById('videoThumbnailPreview').style.display = 'none';
+    document.getElementById('novaMateriaVideo').value = '';
+    document.getElementById('campoNovaMateriaVideo').style.display = 'none';
+    document.getElementById('videoMateria').value = '';
+  }
+}
+
+// ===== FECHAR MODAL ADICIONAR =====
+function fecharModalAdicionarVideo() {
+  const modal = document.getElementById('modalAdicionarVideoOverlay');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===== POPULAR FILTRO =====
+function popularFiltroMateriasVideos() {
+  const select = document.getElementById('filtroMateriaVideos');
+  if (!select) return;
+  const materiasUnicas = [...new Set(bibliotecaVideos.map(v => v.materia).filter(Boolean))];
+  select.innerHTML = '<option value="todas">Todas as matérias</option>';
+  materiasUnicas.forEach(materia => {
+    select.innerHTML += `<option value="${materia}">${materia}</option>`;
+  });
+}
+
+// ===== POPULAR SELECT DE MATÉRIAS (ADICIONAR) =====
+function popularSelectMateriasVideos() {
+  const select = document.getElementById('videoMateria');
+  if (!select) return;
+
+  // Pega matérias do sistema
+  const materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
+
+  select.innerHTML = '<option value="">Selecione uma matéria</option>';
+
+  materiasSistema.forEach(materia => {
+    select.innerHTML += `<option value="${materia.nome}">${materia.nome}</option>`;
+  });
+
+  // Adiciona opção "Nova matéria"
+  select.innerHTML += '<option value="__nova__">➕ Nova matéria...</option>';
+
+  // Evento para mostrar campo de nova matéria
+  select.onchange = function () {
+    const campoNovaMateria = document.getElementById('campoNovaMateriaVideo');
+
+    if (select.value === '__nova__') {
+      if (campoNovaMateria) {
+        campoNovaMateria.style.display = 'block';
+      }
+    } else {
+      if (campoNovaMateria) {
+        campoNovaMateria.style.display = 'none';
+      }
+    }
+  };
+}
+// ===== EXTRAIR ID YOUTUBE =====
+function extrairYouTubeId(url) {
+  if (!url) return null;
+  const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+// ===== CARREGAR THUMBNAIL =====
+function carregarThumbnailPreview() {
+  const url = document.getElementById('videoUrl').value;
+  const videoId = extrairYouTubeId(url);
+  if (videoId) {
+    const preview = document.getElementById('videoThumbnailPreview');
+    const img = document.getElementById('videoThumbnailImg');
+    img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    preview.style.display = 'block';
+  }
+}
+
+// ===== SALVAR VÍDEO =====
+function salvarVideo() {
+  let materia = document.getElementById('videoMateria').value;
+  const titulo = document.getElementById('videoTitulo').value.trim();
+  const url = document.getElementById('videoUrl').value.trim();
+  const tema = document.getElementById('videoTema').value.trim();
+  const anotacoes = document.getElementById('videoAnotacoes').value.trim();
+
+  // Verifica se é nova matéria
+  if (materia === '__nova__') {
+    const novaMateriaNome = document.getElementById('novaMateriaVideo').value.trim();
+
+    if (!novaMateriaNome) {
+      mostrarToast('⚠️ Digite o nome da nova matéria!', '#f59e0b');
+      return;
+    }
+
+    materia = novaMateriaNome;
+
+    // Salva a nova matéria no sistema
+    salvarNovaMateriaNoSistema(novaMateriaNome);
+  }
+
+  if (!materia) { mostrarToast('⚠️ Selecione a matéria!', '#f59e0b'); return; }
+  if (!titulo) { mostrarToast('⚠️ Digite o título!', '#f59e0b'); return; }
+  if (!url || !extrairYouTubeId(url)) { mostrarToast('⚠️ Link inválido!', '#ef4444'); return; }
+
+  const videoId = extrairYouTubeId(url);
+
+  const video = {
+    id: Date.now(),
+    materia: materia,
+    titulo: titulo,
+    url: url,
+    videoId: videoId,
+    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+    tema: tema || 'Geral',
+    anotacoes: anotacoes,
+    assistido: false,
+    nota: 0,
+    dataAdicionado: new Date().toISOString()
+  };
+
+  bibliotecaVideos.push(video);
+  localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+
+  fecharModalAdicionarVideo();
+  popularFiltroMateriasVideos();
+  renderizarBibliotecaVideos();
+  mostrarToast('✅ Vídeo adicionado!', '#22c55e');
+}
+
+// ===== SALVAR NOVA MATÉRIA NO SISTEMA =====
+function salvarNovaMateriaNoSistema(nomeMateria) {
+  // Pega matérias existentes
+  let materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
+
+  // Verifica se já existe
+  const materiaExiste = materiasSistema.some(m => m.nome.toLowerCase() === nomeMateria.toLowerCase());
+
+  if (!materiaExiste) {
+    // Cria nova matéria
+    const novaMateria = {
+      id: Date.now().toString(),
+      nome: nomeMateria,
+      cor: '#' + Math.floor(Math.random() * 16777215).toString(16) // cor aleatória
+    };
+
+    materiasSistema.push(novaMateria);
+    localStorage.setItem('materias', JSON.stringify(materiasSistema));
+
+    console.log('✅ Nova matéria salva:', novaMateria);
+
+    // Tenta salvar no backend se possível
+    if (typeof apiFetch === 'function') {
+      apiFetch('materias', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: nomeMateria,
+          cor: novaMateria.cor
+        })
+      }).then(response => {
+        if (response.ok) {
+          console.log('✅ Matéria salva no backend!');
+        }
+      }).catch(err => {
+        console.log('ℹ️ Matéria salva apenas localmente (sem backend)');
+      });
+    }
+  }
+}
+
+// ===== RENDERIZAR =====
+function renderizarBibliotecaVideos() {
+  const container = document.getElementById('listaVideosEstudo');
+  if (!container) return;
+
+  const filtroMateria = document.getElementById('filtroMateriaVideos')?.value || 'todas';
+  const filtroStatus = document.getElementById('filtroStatusVideos')?.value || 'todos';
+  const busca = document.getElementById('buscaVideos')?.value.toLowerCase() || '';
+
+  let videosFiltrados = [...bibliotecaVideos];
+
+  if (filtroMateria !== 'todas') {
+    videosFiltrados = videosFiltrados.filter(v => v.materia === filtroMateria);
+  }
+  if (filtroStatus === 'assistidos') {
+    videosFiltrados = videosFiltrados.filter(v => v.assistido);
+  } else if (filtroStatus === 'nao_assistidos') {
+    videosFiltrados = videosFiltrados.filter(v => !v.assistido);
+  }
+  if (busca) {
+    videosFiltrados = videosFiltrados.filter(v =>
+      v.titulo.toLowerCase().includes(busca) ||
+      v.tema.toLowerCase().includes(busca) ||
+      v.anotacoes.toLowerCase().includes(busca)
+    );
+  }
+
+  container.innerHTML = '';
+
+  if (videosFiltrados.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #9ca3af;">
+        <i class="bi bi-collection-play" style="font-size: 3rem; display: block; margin-bottom: 15px;"></i>
+        <p>Nenhum vídeo encontrado.</p>
+        <p style="font-size: 0.8rem;">Clique em "Adicionar Vídeo" para começar!</p>
+      </div>
+    `;
+    return;
+  }
+
+  const grupos = {};
+  videosFiltrados.forEach(video => {
+    if (!grupos[video.materia]) grupos[video.materia] = [];
+    grupos[video.materia].push(video);
+  });
+
+  Object.keys(grupos).forEach(materia => {
+    const grupoDiv = document.createElement('div');
+    grupoDiv.style.marginBottom = '30px';
+    grupoDiv.innerHTML = `
+      <h3 style="color: #374151; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-book" style="color: var(--cor-primaria);"></i>
+        ${materia}
+        <span style="font-size: 0.7rem; color: #9ca3af; font-weight: normal;">(${grupos[materia].length} vídeos)</span>
+      </h3>
+    `;
+
+    const videosGrid = document.createElement('div');
+    videosGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;';
+
+    grupos[materia].forEach(video => {
+      videosGrid.appendChild(criarCardVideo(video));
+    });
+
+    grupoDiv.appendChild(videosGrid);
+    container.appendChild(grupoDiv);
+  });
+}
+
+// ===== CARD DO VÍDEO =====
+function criarCardVideo(video) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: 0.2s; cursor: pointer;';
+  card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)'; };
+  card.onmouseout = () => { card.style.transform = 'translateY(0)'; card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)'; };
+
+  const estrelas = '⭐'.repeat(video.nota) + '☆'.repeat(5 - video.nota);
+
+  card.innerHTML = `
+    <div style="position: relative;">
+      <img src="${video.thumbnail}" alt="${video.titulo}" style="width: 100%; height: 160px; object-fit: cover; cursor: pointer;" onclick="abrirVideoEstudo('${video.url}')">
+      ${video.assistido ? `<div style="position: absolute; top: 10px; right: 10px; background: #22c55e; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">✓ Assistido</div>` : ''}
+      <div style="position: absolute; top: 10px; left: 10px; background: #3b82f6; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">${video.tema}</div>
+    </div>
+    <div style="padding: 15px;">
+      <h4 style="margin: 0 0 8px; font-size: 0.9rem; color: #374151; cursor: pointer;" onclick="abrirVideoEstudo('${video.url}')">${video.titulo}</h4>
+      <div style="font-size: 0.8rem; color: #f59e0b; margin-bottom: 8px;">${estrelas}</div>
+      ${video.anotacoes ? `<p style="font-size: 0.75rem; color: #6b7280; margin: 0 0 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${video.anotacoes}</p>` : ''}
+      <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+        <button onclick="event.stopPropagation(); abrirVideoEstudo('${video.url}')" style="flex: 1; padding: 8px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+          <i class="bi bi-play-fill"></i> Assistir
+        </button>
+        <button onclick="event.stopPropagation(); alternarAssistido(${video.id})" style="padding: 8px; background: ${video.assistido ? '#22c55e' : '#f3f4f6'}; color: ${video.assistido ? 'white' : '#6b7280'}; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">✓</button>
+        <button onclick="event.stopPropagation(); editarVideo(${video.id})" style="padding: 8px; background: #e0f2fe; color: #0284c7; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">✏️</button>
+        <button onclick="event.stopPropagation(); avaliarVideo(${video.id})" style="padding: 8px; background: #fef3c7; color: #d97706; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">⭐</button>
+        <button onclick="event.stopPropagation(); excluirVideo(${video.id})" style="padding: 8px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; cursor: pointer; font-size: 0.75rem;">🗑</button>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+// ===== AÇÕES =====
+function abrirVideoEstudo(url) { window.open(url, '_blank'); }
+
+function alternarAssistido(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (video) {
+    video.assistido = !video.assistido;
+    localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+    renderizarBibliotecaVideos();
+    mostrarToast(video.assistido ? '✅ Marcado como assistido!' : '↩️ Desmarcado!', video.assistido ? '#22c55e' : '#6b7280');
+  }
+}
+
+function avaliarVideo(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (!video) return;
+
+  Swal.fire({
+    title: 'Avaliar vídeo',
+    text: `Como você avalia "${video.titulo}"?`,
+    input: 'range',
+    inputAttributes: { min: '1', max: '5', step: '1' },
+    inputValue: video.nota || 3,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#f59e0b'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      video.nota = parseInt(result.value);
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      renderizarBibliotecaVideos();
+      mostrarToast(`${'⭐'.repeat(video.nota)} Avaliação salva!`, '#f59e0b');
+    }
+  });
+}
+
+function editarVideo(id) {
+  const video = bibliotecaVideos.find(v => v.id === id);
+  if (!video) return;
+
+  Swal.fire({
+    title: 'Editar Vídeo',
+    html: `
+      <div style="text-align: left;">
+        <label style="font-weight: 600; font-size: 0.85rem;">Título:</label>
+        <input id="swalVideoTitulo" class="swal2-input" value="${video.titulo}">
+        <label style="font-weight: 600; font-size: 0.85rem; margin-top: 10px;">Tema:</label>
+        <input id="swalVideoTema" class="swal2-input" value="${video.tema}">
+        <label style="font-weight: 600; font-size: 0.85rem; margin-top: 10px;">Anotações:</label>
+        <textarea id="swalVideoAnotacoes" class="swal2-textarea" rows="4">${video.anotacoes || ''}</textarea>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    preConfirm: () => {
+      const titulo = document.getElementById('swalVideoTitulo').value.trim();
+      const tema = document.getElementById('swalVideoTema').value.trim();
+      const anotacoes = document.getElementById('swalVideoAnotacoes').value.trim();
+      if (!titulo) { Swal.showValidationMessage('Digite um título!'); return false; }
+      return { titulo, tema, anotacoes };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      video.titulo = result.value.titulo;
+      video.tema = result.value.tema;
+      video.anotacoes = result.value.anotacoes;
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      renderizarBibliotecaVideos();
+      mostrarToast('✅ Vídeo atualizado!', '#22c55e');
+    }
+  });
+}
+
+function excluirVideo(id) {
+  Swal.fire({
+    title: 'Excluir vídeo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      bibliotecaVideos = bibliotecaVideos.filter(v => v.id !== id);
+      localStorage.setItem('bibliotecaVideos', JSON.stringify(bibliotecaVideos));
+      popularFiltroMateriasVideos();
+      renderizarBibliotecaVideos();
+      mostrarToast('🗑️ Vídeo excluído!', '#ef4444');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.abrirBibliotecaVideos = abrirBibliotecaVideos;
+window.fecharBibliotecaVideos = fecharBibliotecaVideos;
+window.abrirModalAdicionarVideo = abrirModalAdicionarVideo;
+window.fecharModalAdicionarVideo = fecharModalAdicionarVideo;
+window.carregarThumbnailPreview = carregarThumbnailPreview;
+window.salvarVideo = salvarVideo;
+window.renderizarBibliotecaVideos = renderizarBibliotecaVideos;
+window.abrirVideoEstudo = abrirVideoEstudo;
+window.alternarAssistido = alternarAssistido;
+window.avaliarVideo = avaliarVideo;
+window.editarVideo = editarVideo;
+window.excluirVideo = excluirVideo;
+
+// =============================================
+// ===== FUNÇÃO verDetalhesMetodo FINAL ========
+// =============================================
+
+window.verDetalhesMetodo = function (tipoInteligencia, metodoId) {
+  console.log('🔍 [FINAL] Abrindo método:', tipoInteligencia, metodoId);
+
+  const metodosData = metodosPorInteligencia[tipoInteligencia];
+  if (!metodosData) return;
+
+  const metodo = metodosData.metodos.find(m => m.id === metodoId);
+  if (!metodo) return;
+
+  console.log('📌 [FINAL] Método:', metodo.titulo);
+
+  const modalTitulo = document.getElementById("modalMetodoTitulo");
+  const modalTempo = document.getElementById("modalMetodoTempo");
+  const modalDificuldade = document.getElementById("modalMetodoDificuldade");
+  const passosList = document.getElementById("modalMetodoPassos");
+  const beneficiosContainer = document.getElementById("modalMetodoBeneficiosContainer");
+  const beneficiosList = document.getElementById("modalMetodoBeneficios");
+  const modalDica = document.getElementById("modalMetodoDica");
+  const footer = document.getElementById("modalMetodoFooter");
+
+  if (modalTitulo) modalTitulo.textContent = metodo.titulo;
+  if (modalTempo) modalTempo.innerHTML = `<i class="bi bi-clock"></i> ${metodo.tempo}`;
+
+  if (modalDificuldade) {
+    modalDificuldade.textContent = metodo.dificuldade;
+    modalDificuldade.className = `tag-dificuldade ${metodo.dificuldade.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
+  }
+
+  if (passosList) {
+    passosList.innerHTML = metodo.passos.map(passo => `<li>${passo}</li>`).join("");
+  }
+
+  if (beneficiosList && beneficiosContainer) {
+    if (metodo.beneficios && metodo.beneficios.length > 0) {
+      beneficiosContainer.style.display = "block";
+      beneficiosList.innerHTML = metodo.beneficios.map(b => `<li>${b}</li>`).join("");
+    } else {
+      beneficiosContainer.style.display = "none";
+    }
+  }
+
+  if (modalDica) {
+    modalDica.textContent = "Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.";
+  }
+
+  if (footer) {
+    footer.innerHTML = "";
+
+    console.log('🔘 [FINAL] Botão para:', metodo.titulo);
+
+    // 1. PODCAST
+    if (metodo.titulo.includes("Podcast") || metodo.titulo.includes("podcast")) {
+      console.log('✅ Podcast');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Podcast`;
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirGravadorPodcast(); };
+      footer.appendChild(btn);
+    }
+    // 2. FEYNMAN
+    else if (metodo.titulo.includes("Feynman") || metodo.titulo.includes("feynman")) {
+      console.log('✅ Feynman');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-mic-fill"></i> Gravar Explicação`;
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirGravadorFeynman(); };
+      footer.appendChild(btn);
+    }
+    // 3. POMODORO
+    else if (metodo.titulo.includes("Pomodoro") || metodo.titulo.includes("pomodoro")) {
+      console.log('✅ Pomodoro');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> Usar Pomodoro`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        if (typeof mostrarTela === 'function') mostrarTela('relogio');
+        setTimeout(() => {
+          const cardPomodoro = document.getElementById('cardPomodoro');
+          if (cardPomodoro) {
+            cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardPomodoro.classList.add('destaque-pomodoro');
+            setTimeout(() => cardPomodoro.classList.remove('destaque-pomodoro'), 3000);
+          }
+        }, 500);
+      };
+      footer.appendChild(btn);
+    }
+    // 4. MAPA MENTAL
+    else if (metodo.titulo.includes("Mapa Mental") || metodo.titulo.includes("mapa mental")) {
+      console.log('✅ Mapa Mental');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-diagram-3"></i> Criar Mapa Mental`;
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirMapaMental(); };
+      footer.appendChild(btn);
+    }
+    // 4. DIAGRAMA DE FLUXOS
+    else if (metodo.titulo.includes("Diagrama de Fluxos") || metodo.titulo.includes("diagrama de fluxos") ||
+      metodo.titulo.includes("Fluxos") || metodo.titulo.includes("fluxos")) {
+      console.log('✅ Diagrama de Fluxos');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-right-circle"></i> Criar Diagrama de Fluxo`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirDiagramaFluxo();
+      };
+      footer.appendChild(btn);
+    }
+    // 5. ESTUDO COM VÍDEOS
+    else if (metodo.titulo.includes("Vídeos") || metodo.titulo.includes("Videos") ||
+      metodo.titulo.includes("vídeos") || metodo.titulo.includes("videos")) {
+      console.log('✅ Biblioteca de Vídeos');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-collection-play"></i> Minha Biblioteca de Vídeos`;
+      btn.onclick = function () { window.fecharMetodoModal(); window.abrirBibliotecaVideos(); };
+      footer.appendChild(btn);
+    }
+    // 6. CORNELL
+    else if (metodo.titulo.includes("Cornell") || metodo.titulo.includes("cornell")) {
+      console.log('✅ Cornell');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-journal-text"></i> Usar Cornell com Notas`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        if (typeof window.abrirCornell === 'function') window.abrirCornell();
+      };
+      footer.appendChild(btn);
+    }
+    // 7. TESTE PRÁTICO
+    else if (metodo.titulo.includes("Teste Prático") || metodo.titulo.includes("Teste Pratico") ||
+      metodo.titulo.includes("teste prático") || metodo.titulo.includes("teste pratico")) {
+      console.log('✅ Teste Prático - Ir para Simulado');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-pencil-square"></i> Ir para Simulado`;
+      btn.onclick = function () {
+        window.irParaRevisao("simulado", metodo.titulo);
+      };
+      footer.appendChild(btn);
+    }
+    // 8. MNEMÔNICA
+    else if (metodo.titulo.includes("Mnemônica") || metodo.titulo.includes("Mnemonica") ||
+      metodo.titulo.includes("mnemônica") || metodo.titulo.includes("mnemonica")) {
+      console.log('✅ Mnemônica - Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = function () { window.fecharMetodoModal(); };
+      footer.appendChild(btn);
+    }
+    // 9. FLASHCARDS
+    else if (metodo.titulo.includes("Flashcards") || metodo.titulo.includes("flashcards")) {
+      console.log('✅ Flashcards');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)`;
+      btn.onclick = function () { window.irParaRevisao("flashcards", metodo.titulo); };
+      footer.appendChild(btn);
+    }
+    // 10. LEITURA SAVORING
+    else if (metodo.titulo.includes("Leitura Savoring") ||
+      metodo.titulo.includes("leitura savoring") ||
+      metodo.titulo.includes("Leitura") && metodo.titulo.includes("Savoring")) {
+      console.log('✅ Leitura Savoring');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-book"></i> Iniciar Leitura Savoring`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirLeituraSavoring();
+      };
+      footer.appendChild(btn);
+    }
+    // 11. REVISÃO
+    else if (metodo.irParaRevisao) {
+      console.log('✅ Revisão');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> Ir para Revisão`;
+      btn.onclick = function () { window.irParaRevisao(metodo.tipoRevisao || "revisao_normal", metodo.titulo); };
+      footer.appendChild(btn);
+    }
+    // 12. GRUPO DE ESTUDO
+    else if (metodo.titulo.includes("Grupos de Estudo") || metodo.titulo.includes("grupos de estudo") ||
+      metodo.titulo.includes("Grupo de Estudo") || metodo.titulo.includes("grupo de estudo")) {
+      console.log('✅ Grupos de Estudo');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-people-fill"></i> Abrir Grupos de Estudo`;
+      btn.onclick = function () {
+        window.fecharMetodoModal();
+        window.abrirGruposEstudo();
+      };
+      footer.appendChild(btn);
+    }
+    // 13. ENTENDI
+    else {
+      console.log('✅ Entendi');
+      const btn = document.createElement("button");
+      btn.className = "btn-aplicar";
+      btn.style.background = metodosData.cor;
+      btn.innerHTML = `<i class="bi bi-check-circle-fill"></i> Entendi`;
+      btn.onclick = window.fecharMetodoModal;
+      footer.appendChild(btn);
+    }
+  }
+
+  const modalOverlay = document.getElementById("metodoModalOverlay");
+  if (modalOverlay) {
+    modalOverlay.style.display = "flex";
+  }
+};
+
+console.log('✅ Função verDetalhesMetodo FINAL carregada!');
+
+// ===== FORÇAR RENDERIZAÇÃO DOS MÉTODOS =====
+console.log('🔄 Forçando renderização dos métodos...');
+
+// Verifica se a função existe
+if (typeof window.renderizarMetodosEstudo === 'function') {
+  console.log('✅ Função renderizarMetodosEstudo encontrada');
+
+  // Chama após 1 segundo
+  setTimeout(() => {
+    window.renderizarMetodosEstudo();
+    console.log('✅ Renderização forçada executada');
+  }, 1000);
+} else {
+  console.error('❌ Função renderizarMetodosEstudo NÃO encontrada!');
+}
+
+// Verifica se o container existe
+const containerCheck = document.getElementById('listaMetodosRecomendados');
+if (containerCheck) {
+  console.log('✅ Container de métodos encontrado');
+  console.log('📌 Número de cards:', containerCheck.children.length);
+} else {
+  console.error('❌ Container de métodos NÃO encontrado!');
+}
+
+// =============================================
+// ===== REVISÃO INTELIGENTE - VERSÃO FINAL ====
+// =============================================
+
+let flashcards = [];
+let revisoesEmAndamento = [];
+let indiceAtualFoco = 0;
+
+const intervalosRevisao = [1, 3, 7, 14, 30];
+
+function hoje() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function formatarData(dataStr) {
+  if (!dataStr) return 'Sem data';
+  const data = new Date(dataStr + 'T12:00:00');
+  return data.toLocaleDateString('pt-BR');
+}
+
+// ===== SALVAR =====
+function salvarFlashcards() {
+  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+}
+// ===== CONFIGURAR ABAS =====
+function configurarAbasRevisao() {
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      trocarAbaRevisao(btn.dataset.aba);
+    });
+  });
+}
+
+// ===== CARREGAR FLASHCARDS (compatibilidade) =====
+function carregarFlashcards() {
+  carregarFlashcardsDoBackend();
+}
+
+// ===== CARREGAR FLASHCARDS =====
+async function carregarFlashcardsDoBackend() {
+  try {
+    const response = await apiFetch("flashcards");
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        flashcards = data.map(f => {
+          let parsedTema = {
+            tema: "Geral",
+            nivel: 0,
+            dataProxima: new Date().toISOString().split("T")[0],
+            acertos: 0,
+            erros: 0
+          };
+
+          const rawTema = decodeHtmlEntities(f.tema || "");
+
+          try {
+            if (rawTema && rawTema.trim().startsWith('{')) {
+              parsedTema = JSON.parse(rawTema);
+            } else if (rawTema) {
+              parsedTema.tema = rawTema;
+            }
+          } catch (e) {
+            console.error("Erro ao fazer parse do tema JSON:", e);
+            if (rawTema) parsedTema.tema = rawTema;
+          }
+
+          return {
+            id: Number(f.id_flash),
+            materiaId: Number(f.id_materia),
+            materiaNome: decodeHtmlEntities(f.nome_materia || "Sem matéria"),
+            tema: parsedTema.tema || "Geral",
+            pergunta: decodeHtmlEntities(f.pergunta || ""),
+            resposta: decodeHtmlEntities(f.resposta || ""),
+            nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
+            dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
+            acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
+            erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
+          };
+        });
+
+        localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      } else {
+        // Backend vazio, usa localStorage
+        const salvos = localStorage.getItem('flashcards_sistema');
+        if (salvos) {
+          flashcards = JSON.parse(salvos);
+        }
+      }
+    } else {
+      // Backend com erro, usa localStorage
+      const salvos = localStorage.getItem('flashcards_sistema');
+      if (salvos) {
+        flashcards = JSON.parse(salvos);
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao carregar flashcards:", err);
+    // Fallback para localStorage
+    const salvos = localStorage.getItem('flashcards_sistema');
+    if (salvos) {
+      flashcards = JSON.parse(salvos);
+    }
+  }
+
+  // Renderiza tudo
+  if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+  if (typeof renderizarFlashcardsAgrupados === 'function') renderizarFlashcardsAgrupados();
+  if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+  if (typeof atualizarMensagemRevisar === 'function') atualizarMensagemRevisar();
+  if (typeof verificarCardsAtrasados === 'function') verificarCardsAtrasados();
+}
+
+// ===== VERIFICAR CARDS ATRASADOS =====
+function verificarCardsAtrasados() {
+  const hojeData = hoje();
+  const atrasados = flashcards.filter(f => f.dataProxima && f.dataProxima < hojeData);
+  const aviso = document.getElementById('avisoCardsAtrasados');
+
+  if (aviso) {
+    if (atrasados.length > 0) {
+      aviso.style.display = 'block';
+      const detalhes = document.getElementById('detalhesAtrasados');
+      if (detalhes) detalhes.textContent = atrasados.length + ' card(s) precisam de revisão!';
+    } else {
+      aviso.style.display = 'none';
+    }
+  }
+}
+
+// ===== VERIFICAR PROVAS =====
+function verificarProvasProximas() {
+  let eventos = [];
+  if (typeof calendar !== 'undefined' && calendar && typeof calendar.getEvents === 'function') {
+    eventos = calendar.getEvents();
+  }
+
+  const hojeDate = new Date();
+
+  eventos.forEach(evento => {
+    const tipo = evento.extendedProps?.tipo || '';
+    const titulo = evento.title || '';
+
+    if (tipo === 'prova' || titulo.toLowerCase().includes('prova')) {
+      const dataEvento = new Date(evento.start);
+      const dias = Math.ceil((dataEvento - hojeDate) / (1000 * 60 * 60 * 24));
+
+      if (dias <= 7 && dias > 0) {
+        const aviso = document.getElementById('avisoProva');
+        const texto = document.getElementById('textoAvisoProva');
+        if (aviso && texto) {
+          texto.innerHTML = titulo + ' - Faltam ' + dias + ' dias!';
+          aviso.style.display = 'block';
+          window.provaAtual = { titulo, dias };
+        }
+      }
+    }
+  });
+}
+
+// ===== FECHAR AVISO =====
+function fecharAviso(tipo) {
+  const aviso = document.getElementById(tipo);
+  if (aviso) {
+    aviso.style.display = 'none';
+    aviso.style.visibility = 'hidden';
+    aviso.style.height = '0';
+    aviso.style.padding = '0';
+    aviso.style.margin = '0';
+    aviso.style.overflow = 'hidden';
+  }
+  localStorage.setItem('aviso_' + tipo + '_fechado', 'true');
+}
+
+// ===== CRIAR REVISÃO POR PROVA =====
+function criarRevisaoPorProva() {
+  if (window.provaAtual) {
+    abrirModalFlashcardComProva(window.provaAtual.titulo);
+    const aviso = document.getElementById('avisoProva');
+    if (aviso) aviso.style.display = 'none';
+    localStorage.setItem('aviso_avisoProva_fechado', 'true');
+  }
+}
+
+// ===== IR PARA ABA REVISAR =====
+function irParaAbaRevisar() {
+  document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('[data-aba="revisar"]');
+  if (btn) btn.classList.add('active');
+
+  document.getElementById('abaMeusCards').style.display = 'none';
+  document.getElementById('abaRevisar').style.display = 'block';
+  document.getElementById('abaHistorico').style.display = 'none';
+
+  atualizarMensagemRevisar();
+
+  const aviso = document.getElementById('avisoCardsAtrasados');
+  if (aviso) aviso.style.display = 'none';
+  localStorage.setItem('aviso_avisoCardsAtrasados_fechado', 'true');
+}
+
+// ===== CONFIGURAR FILTRO =====
+function configurarFiltroRevisao() {
+  const filtro = document.getElementById('filtroMateriaRevisao');
+  if (filtro) {
+    filtro.addEventListener('change', () => {
+      renderizarFlashcardsAgrupados();
+      atualizarMensagemRevisar();
+    });
+  }
+}
+
+// ===== POPULAR FILTRO =====
+// ===== POPULAR FILTRO DE MATÉRIAS (APENAS BACKEND) =====
+async function popularFiltroMaterias() {
+  console.log('📚 [FILTRO] Carregando matérias para os filtros...');
+
+  // Garantir que materias está carregado
+  if (!materias || materias.length === 0) {
+    await carregarMateriasDoBackend();
+  }
+
+  const select = document.getElementById('filtroMateriaRevisao');
+  if (!select) return;
+
+  select.innerHTML = '<option value="todas">📚 Todas as matérias</option>';
+
+  if (materias && materias.length > 0) {
+    const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
+    nomesOrdenados.forEach(materia => {
+      if (materia && materia !== 'undefined') {
+        select.innerHTML += `<option value="${materia}">${materia}</option>`;
+      }
+    });
+  }
+
+  // Atualizar filtro do modo de revisão
+  const selectModo = document.getElementById('filtroMateriaRevisaoModo');
+  if (selectModo) {
+    selectModo.innerHTML = '<option value="todas">Todas as matérias</option>';
+
+    if (materias && materias.length > 0) {
+      const nomesOrdenados = [...new Set(materias.map(m => m.nome))].sort();
+      nomesOrdenados.forEach(materia => {
+        if (materia && materia !== 'undefined') {
+          selectModo.innerHTML += `<option value="${materia}">${materia}</option>`;
+        }
+      });
+    }
+  }
+}
+
+// ===== RENDERIZAR FLASHCARDS =====
+function renderizarFlashcardsAgrupados() {
+  const container = document.getElementById('listaFlashcardsAgrupada');
+  if (!container) return;
+
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+
+  let cardsFiltrados = [...flashcards];
+
+  if (filtroMateria !== 'todas') {
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  if (cardsFiltrados.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px;">Nenhum flashcard encontrado!</p>';
+    return;
+  }
+
+  const porMateria = {};
+  cardsFiltrados.forEach(f => {
+    if (!porMateria[f.materiaNome]) porMateria[f.materiaNome] = { temas: {}, count: 0 };
+    if (!porMateria[f.materiaNome].temas[f.tema]) porMateria[f.materiaNome].temas[f.tema] = [];
+    porMateria[f.materiaNome].temas[f.tema].push(f);
+    porMateria[f.materiaNome].count++;
+  });
+
+  let html = '';
+  let index = 0;
+
+  for (const materia in porMateria) {
+    const materiaData = porMateria[materia];
+    const materiaId = 'materia-' + index;
+
+    html += '<div class="materia-acordeon">' +
+      '<div class="materia-header" onclick="toggleAcordeon(\'' + materiaId + '\')">' +
+      '<div class="materia-titulo">' +
+      '<i class="bi bi-journal-bookmark-fill"></i>' +
+      '<h3>' + materia + '</h3>' +
+      '<span class="materia-badge-count">' + materiaData.count + '</span>' +
+      '</div>' +
+      '<span class="materia-seta" id="' + materiaId + '-seta">▶</span>' +
+      '</div>' +
+      '<div class="materia-conteudo" id="' + materiaId + '-conteudo" style="display:none;">';
+
+    for (const tema in materiaData.temas) {
+      const cards = materiaData.temas[tema];
+
+      html += '<div class="tema-grupo">' +
+        '<div class="tema-header">' +
+        '<i class="bi bi-folder2"></i>' +
+        '<h4>' + tema + '</h4>' +
+        '<span class="tema-badge-count">' + cards.length + '</span>' +
+        '</div>';
+
+      cards.forEach(f => {
+        const isAtrasada = f.dataProxima < hoje();
+        const isHoje = f.dataProxima === hoje();
+        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
+
+        html += '<div class="card-flashcard ' + classeDestaque + '">' +
+          '<div class="card-pergunta">' + f.pergunta + '</div>' +
+          '<div class="card-data">📅 ' + formatarData(f.dataProxima) + ' | Nível: ' + (f.nivel || 0) + '</div>' +
+          '<div class="card-acoes">' +
+          '<button onclick="editarFlashcard(' + f.id + ')"><i class="bi bi-pencil"></i></button>' +
+          '<button onclick="excluirFlashcard(' + f.id + ')"><i class="bi bi-trash"></i></button>' +
+          '</div>' +
+          '</div>';
+      });
+
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    index++;
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== TOGGLE ACORDEON =====
+function toggleAcordeon(materiaId) {
+  const conteudo = document.getElementById(materiaId + '-conteudo');
+  const seta = document.getElementById(materiaId + '-seta');
+  if (conteudo.style.display === 'block') {
+    conteudo.style.display = 'none';
+    seta.textContent = '▶';
+  } else {
+    conteudo.style.display = 'block';
+    seta.textContent = '▼';
+  }
+}
+
+// ===== ATUALIZAR ESTATÍSTICAS =====
+function atualizarEstatisticas() {
+  const hojeData = hoje();
+  const revisoesHoje = flashcards.filter(f => f.dataProxima === hojeData).length;
+  const atrasadas = flashcards.filter(f => f.dataProxima < hojeData).length;
+  const concluidas = flashcards.filter(f => f.nivel > 0).length;
+  const totalAcertos = flashcards.reduce((sum, f) => sum + (f.acertos || 0), 0);
+  const totalRespostas = flashcards.reduce((sum, f) => sum + (f.acertos || 0) + (f.erros || 0), 0);
+  const taxa = totalRespostas > 0 ? Math.round((totalAcertos / totalRespostas) * 100) : 0;
+
+  const elHoje = document.getElementById("totalHoje");
+  const elAtrasadas = document.getElementById("totalAtrasadas");
+  const elConcluidas = document.getElementById("totalConcluidas");
+  const elTaxa = document.getElementById("taxaAcertoGeral");
+
+  if (elHoje) elHoje.textContent = revisoesHoje;
+  if (elAtrasadas) elAtrasadas.textContent = atrasadas;
+  if (elConcluidas) elConcluidas.textContent = concluidas;
+  if (elTaxa) elTaxa.textContent = taxa + '%';
+}
+
+// ===== ABRIR MODAL FLASHCARD (APENAS BACKEND) =====
+async function abrirModalFlashcard() {
+  console.log('📝 [FLASHCARD] Abrindo modal...');
+
+  // Garantir que materias está carregado
+  if (!materias || materias.length === 0) {
+    await carregarMateriasDoBackend();
+  }
+
+  const select = document.getElementById("revisaoMateria");
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Selecione uma matéria</option>';
+
+  if (materias && materias.length > 0) {
+    materias.forEach(m => {
+      if (m && m.id && m.nome && m.nome !== 'undefined') {
+        select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+      }
+    });
+  }
+
+  document.getElementById("revisaoTema").value = "";
+  document.getElementById("revisaoPergunta").value = "";
+  document.getElementById("revisaoResposta").value = "";
+
+  const modal = new bootstrap.Modal(document.getElementById("modalRevisao"));
+  modal.show();
+}
+
+// ===== ABRIR MODAL COM PROVA =====
+function abrirModalFlashcardComProva(tituloProva) {
+  abrirModalFlashcard();
+  document.getElementById("revisaoTema").value = "Prova";
+  document.getElementById("revisaoPergunta").value = 'Revisar conteúdo da prova: ' + tituloProva;
+  document.getElementById("revisaoResposta").value = "Revisar todos os conteúdos relacionados";
+}
+
+// ===== SALVAR FLASHCARD =====
+function salvarFlashcard() {
+  const materiaId = document.getElementById("revisaoMateria").value;
+  const tema = document.getElementById("revisaoTema").value.trim();
+  const pergunta = document.getElementById("revisaoPergunta").value.trim();
+  const resposta = document.getElementById("revisaoResposta").value.trim();
+
+  if (!materiaId) { mostrarToast('⚠️ Selecione uma matéria!', '#f59e0b'); return; }
+  if (!pergunta || !resposta) { mostrarToast('⚠️ Preencha pergunta e resposta!', '#f59e0b'); return; }
+
+  const materia = materias.find(m => m.id == materiaId);
+
+  const novoCard = {
+    id: Date.now(),
+    materiaId: Number(materiaId),
+    materiaNome: materia ? materia.nome : "Sem matéria",
+    tema: tema || "Geral",
+    pergunta: pergunta,
+    resposta: resposta,
+    nivel: 0,
+    dataProxima: hoje(),
+    acertos: 0,
+    erros: 0
+  };
+
+  flashcards.push(novoCard);
+  salvarFlashcards();
+  popularFiltroMaterias();
+  renderizarFlashcardsAgrupados();
+  atualizarEstatisticas();
+
+  const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
+  if (modal) modal.hide();
+
+  Swal.fire({ icon: 'success', title: 'Flashcard criado!', timer: 1500, showConfirmButton: false });
+}
+
+// ===== MOSTRAR CARD FOCO =====
+function mostrarCardFoco() {
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+    return;
+  }
+
+  const card = revisoesEmAndamento[indiceAtualFoco];
+
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = '📂 ' + card.tema;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+  document.getElementById('focoResposta').innerHTML = card.resposta;
+  document.getElementById('focoResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+
+  const nivelAtual = card.nivel || 0;
+  const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
+  document.getElementById('focoNivelAtual').textContent = 'Nível: ' + nivelAtual;
+  document.getElementById('focoSugestao').textContent = 'Sugestão: revise em ' + proximoIntervalo + ' dia(s)';
+  document.getElementById('focoInfoNivel').style.display = 'block';
+
+  document.getElementById('focoContador').textContent = 'Card ' + (indiceAtualFoco + 1) + ' de ' + revisoesEmAndamento.length;
+  document.getElementById('focoProgressoBarra').style.width = (((indiceAtualFoco + 1) / revisoesEmAndamento.length) * 100) + '%';
+
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'flex';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+  }
+}
+
+// ===== MOSTRAR RESPOSTA =====
+function mostrarRespostaFoco() {
+  document.getElementById('focoResposta').style.display = 'block';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'flex';
+}
+
+// ===== FINALIZAR REVISÃO =====
+function finalizarRevisao() {
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'none';
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+  }
+  document.body.style.overflow = 'auto';
+
+  localStorage.setItem('aviso_avisoCardsAtrasados_fechado', 'true');
+
+  renderizarFlashcardsAgrupados();
+  atualizarMensagemRevisar();
+  verificarCardsAtrasados();
+
+  Swal.fire({ icon: 'success', title: '🎉 Revisão concluída!', timer: 1500, showConfirmButton: false });
+}
+
+// ===== FECHAR MODO FOCO =====
+function fecharModoFoco() {
+  console.log('🚪 [FOCO] Fechando modo foco...');
+
+  // Limpar timer do simulado
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+
+  // Limpar timer da revisão normal
+  if (window.timerRevisao) {
+    clearInterval(window.timerRevisao);
+    window.timerRevisao = null;
+  }
+
+  const container = document.getElementById('modoFocoContainer');
+  if (container) {
+    container.style.display = 'none';
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+  }
+
+  document.body.style.overflow = 'auto';
+
+  // RESETAR O ESTADO DO SIMULADO
+  simuladoAtual = {
+    cards: [],
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: 60,
+    timer: null,
+    tempoRestante: 0,
+    modo: 'treino',
+    respondido: false
+  };
+
+  // Resetar revisão normal também
+  revisoesEmAndamento = [];
+  indiceAtualFoco = 0;
+
+  console.log('✅ [FOCO] Modo foco fechado e estado resetado');
+}
+function reiniciarSimulado() {
+  console.log('🔄 [SIMULADO] Reiniciando simulado...');
+
+  // Resetar estado
+  simuladoAtual = {
+    cards: [],
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: 60,
+    timer: null,
+    tempoRestante: 0,
+    modo: 'treino',
+    respondido: false
+  };
+
+  // Esconder resultado
+  document.getElementById('simuladoResultado').style.display = 'none';
+
+  // Mostrar pergunta novamente
+  document.getElementById('focoPergunta').style.display = 'block';
+
+  // Esconder modo foco
+  document.getElementById('modoFocoContainer').style.display = 'none';
+
+  // Voltar para a aba de simulado
+  trocarAbaRevisao('simulado');
+
+  // Recarregar opções
+  carregarOpcoesSimulado();
+
+  console.log('✅ [SIMULADO] Pronto para novo simulado!');
+}
+
+// Exportar
+window.reiniciarSimulado = reiniciarSimulado;
+
+// ===== EDITAR FLASHCARD =====
+function editarFlashcard(id) {
+  const flashcard = flashcards.find(f => f.id == id);
+  if (!flashcard) return;
+
+  Swal.fire({
+    title: 'Editar Flashcard',
+    html: '<input id="editPergunta" class="swal2-input" value="' + flashcard.pergunta.replace(/"/g, '&quot;') + '">' +
+      '<textarea id="editResposta" class="swal2-textarea" rows="3">' + flashcard.resposta.replace(/"/g, '&quot;') + '</textarea>' +
+      '<input id="editTema" class="swal2-input" value="' + flashcard.tema + '">',
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    preConfirm: () => {
+      const pergunta = document.getElementById('editPergunta').value;
+      const resposta = document.getElementById('editResposta').value;
+      const tema = document.getElementById('editTema').value;
+      if (!pergunta || !resposta) { Swal.showValidationMessage('Preencha todos!'); return false; }
+      return { pergunta, resposta, tema };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      flashcard.pergunta = result.value.pergunta;
+      flashcard.resposta = result.value.resposta;
+      flashcard.tema = result.value.tema || "Geral";
+      salvarFlashcards();
+      renderizarFlashcardsAgrupados();
+      Swal.fire('Atualizado!', '', 'success');
+    }
+  });
+}
+
+// ===== EXCLUIR FLASHCARD =====
+function excluirFlashcard(id) {
+  Swal.fire({
+    title: 'Excluir flashcard?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim',
+    cancelButtonText: 'Cancelar'
+  }).then(result => {
+    if (result.isConfirmed) {
+      flashcards = flashcards.filter(f => f.id != id);
+      salvarFlashcards();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
+      Swal.fire('Excluído!', '', 'success');
+    }
+  });
+}
+
+// ===== EXPORTAR =====
+window.iniciarRevisao = iniciarRevisao;
+window.iniciarRevisaoLivre = iniciarRevisaoLivre;
+window.mostrarRespostaFoco = mostrarRespostaFoco;
+window.responderFlashcard = responderFlashcard;
+window.fecharModoFoco = fecharModoFoco;
+window.abrirModalFlashcard = abrirModalFlashcard;
+window.salvarFlashcard = salvarFlashcard;
+window.editarFlashcard = editarFlashcard;
+window.excluirFlashcard = excluirFlashcard;
+window.toggleAcordeon = toggleAcordeon;
+window.irParaAbaRevisar = irParaAbaRevisar;
+window.criarRevisaoPorProva = criarRevisaoPorProva;
+window.fecharAviso = fecharAviso;
+window.configurarFiltroRevisao = configurarFiltroRevisao;
+window.renderizarFlashcardsAgrupados = renderizarFlashcardsAgrupados;
+window.salvarFlashcards = salvarFlashcards;
+window.atualizarEstatisticas = atualizarEstatisticas;
+
+console.log('✅ REVISÃO COMPLETA CARREGADA!');
+
+
+// ===== SALVAR NO BACKEND TAMBÉM =====
+function salvarFlashcardNoBackend(card) {
+  apiFetch("flashcards", {
+    method: "POST",
+    body: JSON.stringify({
+      id_materia: card.materiaId,
+      pergunta: card.pergunta,
+      resposta: card.resposta,
+      tema: JSON.stringify({
+        tema: card.tema,
+        nivel: card.nivel,
+        dataProxima: card.dataProxima,
+        acertos: card.acertos,
+        erros: card.erros
+      })
+    })
+  }).then(res => {
+    if (res.ok) {
+      console.log('✅ Card salvo no backend!');
+    }
+  }).catch(err => {
+    console.log('⚠️ Não salvou no backend, mas salvou localmente.');
+  });
+}
+
+// Exporta
+window.salvarFlashcardNoBackend = salvarFlashcardNoBackend;
+
+console.log('✅ INTEGRAÇÃO COM BACKEND PRONTA!');
+
+// ===== NOVAS FUNÇÕES PARA A REFORMA =====
+// Trocar de aba
+function trocarAbaRevisao(aba) {
+  document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-aba="${aba}"]`).classList.add('active');
+
+  document.getElementById('abaMeusCards').style.display = aba === 'meusCards' ? 'block' : 'none';
+  document.getElementById('abaRevisar').style.display = aba === 'revisar' ? 'block' : 'none';
+  document.getElementById('abaSimulado').style.display = aba === 'simulado' ? 'block' : 'none';
+  document.getElementById('abaHistorico').style.display = aba === 'historico' ? 'block' : 'none';
+
+  if (aba === 'revisar') {
+    atualizarContadoresRevisao();
+  } else if (aba === 'simulado') {
+    carregarOpcoesSimulado();
+  } else if (aba === 'historico') {
+    renderizarHistoricoCompleto();
+  }
+}
+
+// Verificar se usuário tem método Teste Prático
+function verificarAcessoSimulado() {
+  const inteligenciaAtual = localStorage.getItem('inteligenciaAtiva') || 'linguistica';
+  const metodosData = metodosPorInteligencia[inteligenciaAtual];
+
+  if (!metodosData) return false;
+
+  const temTestePratico = metodosData.metodos.some(m =>
+    m.titulo.includes("Teste Prático") || m.titulo.includes("Teste Pratico")
+  );
+
+  const abaSimuladoBtn = document.getElementById('abaSimuladoBtn');
+  if (abaSimuladoBtn) {
+    abaSimuladoBtn.style.display = temTestePratico ? 'block' : 'none';
+  }
+
+  return temTestePratico;
+}
+
+// Atualizar contadores de revisão
+function atualizarContadoresRevisao() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  const countEl = document.getElementById('countPendentes');
+  if (countEl) {
+    countEl.textContent = cardsPendentes.length;
+    countEl.style.color = cardsPendentes.length === 0 ? '#22c55e' : cardsPendentes.length > 10 ? '#ef4444' : '#f59e0b';
+  }
+
+  // Atualizar texto de próxima revisão
+  const textoProxima = document.getElementById('textoProximaRevisao');
+  if (textoProxima && cardsPendentes.length > 0) {
+    const proximaData = cardsPendentes[0].dataProxima;
+    if (proximaData < hojeData) {
+      textoProxima.textContent = '⚠️ Você tem cards atrasados!';
+    } else if (proximaData === hojeData) {
+      textoProxima.textContent = '📅 Revisão de hoje!';
+    }
+  }
+}
+
+// ===== SIMULADO (TESTE PRÁTICO) =====
+let simuladoAtual = {
+  cards: [],
+  indice: 0,
+  acertos: 0,
+  erros: 0,
+  tempoPorQuestao: 60,
+  timer: null,
+  tempoRestante: 0,
+  modo: 'treino',
+  respondido: false
+};
+
+function carregarOpcoesSimulado() {
+  const selectMateria = document.getElementById('simuladoMateria');
+
+  if (selectMateria) {
+    selectMateria.innerHTML = '<option value="todas">Todas as matérias</option>';
+    const materiasUnicas = [...new Set(flashcards.map(f => f.materiaNome))].sort();
+    materiasUnicas.forEach(m => {
+      selectMateria.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+  }
+}
+
+function selecionarNumQuestoes(btn) {
+  document.querySelectorAll('[data-num]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function iniciarSimulado() {
+  console.log('🎯 [SIMULADO] Iniciando simulado...');
+
+  // Limpar timer anterior se existir
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+
+  const materia = document.getElementById('simuladoMateria').value;
+  // REMOVA ESTA LINHA - não existe mais o select de tema
+  // const tema = document.getElementById('simuladoTema').value;
+
+  const numBtn = document.querySelector('[data-num].active');
+  const numQuestoes = numBtn ? numBtn.dataset.num : '10';
+  const tempo = parseInt(document.getElementById('simuladoTempo').value);
+  const modo = document.getElementById('modoTreino').checked ? 'treino' : 'prova';
+
+  console.log('📊 Config:', { materia, numQuestoes, tempo, modo });
+
+  let cardsSimulado = [...flashcards];
+
+  if (materia !== 'todas') {
+    cardsSimulado = cardsSimulado.filter(f => f.materiaNome === materia);
+  }
+
+  console.log('📚 Cards após filtro:', cardsSimulado.length);
+
+  // Embaralhar
+  cardsSimulado = cardsSimulado.sort(() => Math.random() - 0.5);
+
+  // Limitar número
+  if (numQuestoes !== 'todas') {
+    cardsSimulado = cardsSimulado.slice(0, parseInt(numQuestoes));
+  }
+
+  console.log('📝 Cards selecionados:', cardsSimulado.length);
+
+  if (cardsSimulado.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Sem cards!',
+      text: 'Crie flashcards primeiro para fazer o simulado.'
+    });
+    return;
+  }
+
+  simuladoAtual = {
+    cards: cardsSimulado,
+    indice: 0,
+    acertos: 0,
+    erros: 0,
+    tempoPorQuestao: tempo,
+    timer: null,
+    tempoRestante: tempo,
+    modo: modo,
+    respondido: false
+  };
+
+  // Esconder resultado anterior
+  document.getElementById('simuladoResultado').style.display = 'none';
+  document.getElementById('focoPergunta').style.display = 'block';
+  document.getElementById('simuladoTimer').style.display = 'none';
+
+  mostrarCardSimulado();
+}
+
+
+function mostrarCardSimulado() {
+  console.log('📝 [SIMULADO] Mostrando questão:', simuladoAtual.indice + 1);
+
+  if (simuladoAtual.indice >= simuladoAtual.cards.length) {
+    finalizarSimulado();
+    return;
+  }
+
+  const card = simuladoAtual.cards[simuladoAtual.indice];
+
+  document.getElementById('focoMateria').textContent = card.materiaNome;
+  document.getElementById('focoTema').textContent = '📂 ' + card.tema;
+  document.getElementById('focoPergunta').textContent = card.pergunta;
+
+  // MOSTRAR A RESPOSTA CORRETA (escondida)
+  document.getElementById('focoResposta').innerHTML = card.resposta;
+  document.getElementById('focoResposta').style.display = 'none';
+
+  // MOSTRAR BOTÃO "MOSTRAR RESPOSTA"
+  document.getElementById('btnMostrarResposta').style.display = 'block';
+
+  // RESETAR OS BOTÕES DE RESPOSTA
+  const botoesResposta = document.getElementById('botoesResposta');
+  botoesResposta.innerHTML = `
+    <button class="btn-errei" onclick="responderSimulado('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderSimulado('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
+  `;
+  botoesResposta.style.display = 'none';
+
+  // RESETAR FLAG DE RESPONDIDO
+  simuladoAtual.respondido = false;
+
+  // Mostrar timer se houver limite
+  if (simuladoAtual.tempoPorQuestao > 0) {
+    document.getElementById('simuladoTimer').style.display = 'block';
+    iniciarTimerSimulado();
+  } else {
+    document.getElementById('simuladoTimer').style.display = 'none';
+  }
+
+  document.getElementById('focoContador').textContent =
+    `Questão ${simuladoAtual.indice + 1} de ${simuladoAtual.cards.length}`;
+
+  document.getElementById('focoProgressoBarra').style.width =
+    ((simuladoAtual.indice / simuladoAtual.cards.length) * 100) + '%';
+
+  document.getElementById('modoFocoContainer').style.display = 'flex';
+
+  console.log('✅ [SIMULADO] Questão mostrada, respondido =', simuladoAtual.respondido);
+}
+
+
+function iniciarTimerSimulado() {
+  // Limpar timer anterior
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+  }
+  simuladoAtual.tempoRestante = simuladoAtual.tempoPorQuestao;
+  atualizarTimerSimulado();
+
+  simuladoAtual.timer = setInterval(() => {
+    simuladoAtual.tempoRestante--;
+    atualizarTimerSimulado();
+
+    if (simuladoAtual.tempoRestante <= 0) {
+      clearInterval(simuladoAtual.timer);
+      simuladoAtual.timer = null;
+
+      // Tempo esgotado, conta como erro automaticamente
+      if (!simuladoAtual.respondido) {
+        simuladoAtual.respondido = true;
+
+        // Mostrar resposta correta
+        document.getElementById('focoResposta').style.display = 'block';
+        document.getElementById('btnMostrarResposta').style.display = 'none';
+
+        // Contar como erro
+        simuladoAtual.erros++;
+        const card = simuladoAtual.cards[simuladoAtual.indice];
+        const original = flashcards.find(f => f.id === card.id);
+        if (original) {
+          original.nivel = 0;
+          original.erros = (original.erros || 0) + 1;
+        }
+        salvarFlashcards();
+
+        // Mostrar botão para próxima
+        setTimeout(() => {
+          proximaQuestaoSimulado();
+        }, 2000); // Espera 2 segundos para o usuário ver a resposta
+      }
+    }
+  }, 1000);
+}
+
+function atualizarTimerSimulado() {
+  const minutos = Math.floor(simuladoAtual.tempoRestante / 60);
+  const segundos = simuladoAtual.tempoRestante % 60;
+  document.getElementById('simuladoTempoRestante').textContent =
+    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+}
+
+
+
+function responderSimulado(resultado) {
+  console.log('🎯 [SIMULADO] Resposta:', resultado);
+
+  // Verificar se já respondeu
+  if (simuladoAtual.respondido) {
+    console.log('⚠️ Já respondeu esta questão!');
+    return;
+  }
+
+  // Marcar como respondido
+  simuladoAtual.respondido = true;
+
+  // LIMPAR O TIMER IMEDIATAMENTE
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+
+  const card = simuladoAtual.cards[simuladoAtual.indice];
+  const original = flashcards.find(f => f.id === card.id);
+
+  // MOSTRAR A RESPOSTA
+  document.getElementById('focoResposta').style.display = 'block';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+
+  // VARIÁVEIS PARA FEEDBACK
+  let feedbackMsg = '';
+  let feedbackCor = '';
+
+  if (resultado === 'acertei') {
+    simuladoAtual.acertos++;
+    feedbackMsg = '✅ Acertou!';
+    feedbackCor = '#22c55e';
+    if (original) {
+      original.nivel = Math.min((original.nivel || 0) + 1, 4);
+      original.acertos = (original.acertos || 0) + 1;
+    }
+  } else if (resultado === 'errei') {
+    simuladoAtual.erros++;
+    feedbackMsg = '❌ Errou!';
+    feedbackCor = '#ef4444';
+    if (original) {
+      original.nivel = 0;
+      original.erros = (original.erros || 0) + 1;
+    }
+  } else if (resultado === 'facil') {
+    simuladoAtual.acertos++;
+    feedbackMsg = '🚀 Muito Fácil!';
+    feedbackCor = '#3b82f6';
+    if (original) {
+      original.nivel = Math.min((original.nivel || 0) + 2, 4);
+      original.acertos = (original.acertos || 0) + 1;
+    }
+  }
+
+  salvarFlashcards();
+
+  // Mostrar feedback visual
+  mostrarToast(feedbackMsg, feedbackCor);
+
+  // Substituir botões por botão "Próxima" COM CLASSE ESPECÍFICA
+  const botoesContainer = document.getElementById('botoesResposta');
+  botoesContainer.innerHTML = `
+    <button class="btn-proxima-questao" onclick="proximaQuestaoSimulado()" 
+            style="background: #3b82f6; color: white; border: none; padding: 15px 30px; 
+                   border-radius: 50px; font-weight: 700; cursor: pointer; width: 100%;
+                   font-size: 1.1rem; transition: all 0.3s; letter-spacing: 1px;
+                   text-transform: uppercase;">
+      ➡️ Próxima Questão
+    </button>
+  `;
+  botoesContainer.style.display = 'block';
+
+  console.log('✅ [SIMULADO] Resposta registrada:', feedbackMsg);
+}
+
+function proximaQuestaoSimulado() {
+  console.log('➡️ [SIMULADO] Indo para próxima questão...');
+  console.log('📊 Índice antes:', simuladoAtual.indice);
+
+  // Limpar timer
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+
+  simuladoAtual.indice++;
+
+  console.log('📊 Índice depois:', simuladoAtual.indice);
+  console.log('📊 Total de cards:', simuladoAtual.cards.length);
+
+  if (simuladoAtual.indice >= simuladoAtual.cards.length) {
+    console.log('🏁 [SIMULADO] Finalizando...');
+    finalizarSimulado();
+  } else {
+    console.log('📝 [SIMULADO] Mostrando próxima questão...');
+    // Resetar respondido ANTES de mostrar
+    simuladoAtual.respondido = false;
+    mostrarCardSimulado();
+  }
+}
+
+// Exportar
+window.proximaQuestaoSimulado = proximaQuestaoSimulado;
+
+
+function finalizarSimulado() {
+  console.log('🏁 [SIMULADO] Finalizando simulado...');
+
+  // Limpar timer
+  if (simuladoAtual.timer) {
+    clearInterval(simuladoAtual.timer);
+    simuladoAtual.timer = null;
+  }
+
+  const total = simuladoAtual.acertos + simuladoAtual.erros;
+  const taxa = total > 0 ? Math.round((simuladoAtual.acertos / total) * 100) : 0;
+
+  document.getElementById('simuladoAcertos').textContent = simuladoAtual.acertos;
+  document.getElementById('simuladoErros').textContent = simuladoAtual.erros;
+  document.getElementById('simuladoTaxa').textContent = taxa + '%';
+
+  document.getElementById('simuladoTimer').style.display = 'none';
+  document.getElementById('focoPergunta').style.display = 'none';
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+  document.getElementById('botoesResposta').style.display = 'none';
+  document.getElementById('simuladoResultado').style.display = 'block';
+
+  // Salvar no histórico
+  const historicoSimulado = {
+    data: new Date().toISOString(),
+    materia: document.getElementById('simuladoMateria').value,
+    acertos: simuladoAtual.acertos,
+    erros: simuladoAtual.erros,
+    taxa: taxa,
+    total: total
+  };
+
+  let historico = JSON.parse(localStorage.getItem('historicoSimulados') || '[]');
+  historico.push(historicoSimulado);
+  localStorage.setItem('historicoSimulados', JSON.stringify(historico));
+
+  // RESETAR O ESTADO DO SIMULADO
+  setTimeout(() => {
+    simuladoAtual = {
+      cards: [],
+      indice: 0,
+      acertos: 0,
+      erros: 0,
+      tempoPorQuestao: 60,
+      timer: null,
+      tempoRestante: 0,
+      modo: 'treino',
+      respondido: false
+    };
+    console.log('✅ [SIMULADO] Estado resetado para novo simulado');
+  }, 500);
+}
+
+
+function mostrarRespostaFoco() {
+  console.log('👁️ [SIMULADO] Mostrando resposta...');
+
+  // Mostrar a resposta
+  document.getElementById('focoResposta').style.display = 'block';
+
+  // Esconder botão "Mostrar Resposta"
+  document.getElementById('btnMostrarResposta').style.display = 'none';
+
+  // Mostrar botões de resposta
+  const botoesResposta = document.getElementById('botoesResposta');
+  botoesResposta.innerHTML = `
+    <button class="btn-errei" onclick="responderSimulado('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderSimulado('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
+  `;
+  botoesResposta.style.display = 'flex';
+}
+
+// ===== INICIALIZAÇÃO =====
+async function initRevisao() {
+  console.log('🚀 Inicializando sistema de revisão...');
+
+  // Carregar matérias primeiro (aguardar completar)
+  await carregarMateriasDoBackend();
+  console.log('✅ Matérias carregadas:', materias);
+
+  // Depois carregar flashcards
+  await carregarFlashcardsDoBackend();
+  console.log('✅ Flashcards carregados:', flashcards);
+
+  // Popular filtros
+  await popularFiltroMaterias();
+
+  // Renderizar cards
+  renderizarFlashcardsAgrupados();
+
+  // Atualizar estatísticas
+  atualizarEstatisticas();
+
+  // Configurar abas
+  configurarAbasRevisao();
+
+  // Verificações
+  verificarAcessoSimulado();
+  verificarProvasProximas();
+  verificarCardsAtrasados();
+
+  console.log('✅ Sistema de revisão inicializado com sucesso!');
+}
+
+// ===== RENDERIZAR HISTÓRICO COMPLETO =====
+function renderizarHistoricoCompleto() {
+  const container = document.getElementById('historicoRevisoes');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // Coletar todas as revisões
+  let todasRevisoes = [];
+  flashcards.forEach(f => {
+    if (f.historico) {
+      f.historico.forEach(h => {
+        todasRevisoes.push({
+          ...h,
+          pergunta: f.pergunta,
+          materia: f.materiaNome,
+          tema: f.tema
+        });
+      });
+    }
+  });
+
+  // Ordenar por data (mais recente primeiro)
+  todasRevisoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+  if (todasRevisoes.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;">Nenhuma revisão ainda.</p>';
+    return;
+  }
+
+  // Agrupar por data
+  const porData = {};
+  todasRevisoes.forEach(rev => {
+    const data = new Date(rev.data).toLocaleDateString('pt-BR');
+    if (!porData[data]) porData[data] = [];
+    porData[data].push(rev);
+  });
+
+  // Renderizar agrupado por data
+  for (const data in porData) {
+    const revisoes = porData[data];
+    const acertos = revisoes.filter(r => r.resultado === 'acertei' || r.resultado === 'facil').length;
+    const taxa = Math.round((acertos / revisoes.length) * 100);
+
+    let html = `
+      <div style="margin-bottom: 20px; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+        <div style="background: #f9fafb; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;">
+          <strong style="color: #374151;">
+            <i class="bi bi-calendar3"></i> ${data}
+          </strong>
+          <span style="font-size: 0.85rem; color: ${taxa >= 70 ? '#22c55e' : taxa >= 50 ? '#f59e0b' : '#ef4444'};">
+            ${acertos}/${revisoes.length} acertos (${taxa}%)
+          </span>
+        </div>
+        <div style="padding: 10px 15px;">
+    `;
+
+    revisoes.forEach(rev => {
+      const icone = rev.resultado === 'acertei' ? '✅' : rev.resultado === 'facil' ? '🚀' : '❌';
+      const cor = rev.resultado === 'acertei' ? '#22c55e' : rev.resultado === 'facil' ? '#3b82f6' : '#ef4444';
+
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+          <div style="flex: 1;">
+            <p style="margin: 0; font-size: 0.85rem; color: #374151;">${rev.pergunta.substring(0, 60)}...</p>
+            <small style="color: #9ca3af;">${rev.materia} | ${rev.tema}</small>
+          </div>
+          <span style="font-size: 1.2rem; margin-left: 10px;">${icone}</span>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    container.innerHTML += html;
+  }
+}
+// ===== APLICAR FILTROS NOS CARDS =====
+function aplicarFiltrosCards() {
+  const busca = document.getElementById('buscaFlashcard')?.value.toLowerCase() || '';
+  const filtroMateria = document.getElementById('filtroMateriaRevisao')?.value || 'todas';
+
+  let cardsFiltrados = [...flashcards];
+
+  // Filtrar por matéria
+  if (filtroMateria !== 'todas') {
+    cardsFiltrados = cardsFiltrados.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  // Filtrar por busca
+  if (busca) {
+    cardsFiltrados = cardsFiltrados.filter(f =>
+      f.pergunta.toLowerCase().includes(busca) ||
+      f.resposta.toLowerCase().includes(busca) ||
+      f.tema.toLowerCase().includes(busca)
+    );
+  }
+
+  const container = document.getElementById('listaFlashcardsAgrupada');
+  if (!container) return;
+
+  if (cardsFiltrados.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px;">Nenhum flashcard encontrado!</p>';
+    return;
+  }
+
+  // Agrupar por matéria
+  const porMateria = {};
+  cardsFiltrados.forEach(f => {
+    if (!porMateria[f.materiaNome]) porMateria[f.materiaNome] = { temas: {}, count: 0 };
+    if (!porMateria[f.materiaNome].temas[f.tema]) porMateria[f.materiaNome].temas[f.tema] = [];
+    porMateria[f.materiaNome].temas[f.tema].push(f);
+    porMateria[f.materiaNome].count++;
+  });
+
+  let html = '';
+  let index = 0;
+
+  for (const materia in porMateria) {
+    const materiaData = porMateria[materia];
+    const materiaId = 'materia-' + index;
+
+    html += `
+      <div class="materia-acordeon">
+        <div class="materia-header" onclick="toggleAcordeon('${materiaId}')">
+          <div class="materia-titulo">
+            <i class="bi bi-journal-bookmark-fill"></i>
+            <h3>${materia}</h3>
+            <span class="materia-badge-count">${materiaData.count}</span>
+          </div>
+          <span class="materia-seta" id="${materiaId}-seta">▶</span>
+        </div>
+        <div class="materia-conteudo" id="${materiaId}-conteudo" style="display:none;">
+    `;
+
+    for (const tema in materiaData.temas) {
+      const cards = materiaData.temas[tema];
+
+      html += `
+        <div class="tema-grupo">
+          <div class="tema-header">
+            <i class="bi bi-folder2"></i>
+            <h4>${tema}</h4>
+            <span class="tema-badge-count">${cards.length}</span>
+          </div>
+      `;
+
+      cards.forEach(f => {
+        const isAtrasada = f.dataProxima < hoje();
+        const isHoje = f.dataProxima === hoje();
+        const classeDestaque = isAtrasada ? 'atrasada' : (isHoje ? 'hoje' : '');
+
+        html += `
+          <div class="card-flashcard ${classeDestaque}">
+            <div class="card-pergunta">${f.pergunta}</div>
+            <div class="card-data">📅 ${formatarData(f.dataProxima)} | Nível: ${f.nivel || 0}</div>
+            <div class="card-acoes">
+              <button onclick="editarFlashcard(${f.id})"><i class="bi bi-pencil"></i></button>
+              <button onclick="excluirFlashcard(${f.id})"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    index++;
+  }
+
+  container.innerHTML = html;
+}
+// ===== ATUALIZAR MENSAGEM (VERSÃO ATUALIZADA) =====
+function atualizarMensagemRevisar() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let pendentes = flashcards.filter(f => f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    pendentes = pendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  const countEl = document.getElementById('countPendentes');
+  if (countEl) {
+    countEl.textContent = pendentes.length;
+    countEl.style.color = pendentes.length === 0 ? '#22c55e' : pendentes.length > 10 ? '#ef4444' : '#f59e0b';
+  }
+
+  // Atualizar texto de próxima revisão
+  const textoProxima = document.getElementById('textoProximaRevisao');
+  if (textoProxima) {
+    if (pendentes.length === 0) {
+      textoProxima.textContent = '✨ Tudo revisado por hoje!';
+    } else {
+      const atrasados = pendentes.filter(f => f.dataProxima < hojeData).length;
+      if (atrasados > 0) {
+        textoProxima.textContent = `⚠️ ${atrasados} card(s) atrasado(s)!`;
+      } else {
+        textoProxima.textContent = '📅 Revisão de hoje!';
+      }
+    }
+  }
+}
+// ===== INICIAR REVISÃO (COM FILTRO) =====
+function iniciarRevisao() {
+  const hojeData = hoje();
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsPendentes = flashcards.filter(f => !f.dataProxima || f.dataProxima <= hojeData);
+  if (filtroMateria !== 'todas') {
+    cardsPendentes = cardsPendentes.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  if (cardsPendentes.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nada para revisar!',
+      text: 'Todos os cards foram revisados!'
+    });
+    return;
+  }
+
+  revisoesEmAndamento = cardsPendentes.sort(() => Math.random() - 0.5);
+  indiceAtualFoco = 0;
+  mostrarCardFoco();
+}
+
+// ===== INICIAR REVISÃO LIVRE (COM FILTRO) =====
+function iniciarRevisaoLivre() {
+  const filtroMateria = document.getElementById('filtroMateriaRevisaoModo')?.value || 'todas';
+
+  let cardsLivres = [...flashcards];
+  if (filtroMateria !== 'todas') {
+    cardsLivres = cardsLivres.filter(f => f.materiaNome === filtroMateria);
+  }
+
+  revisoesEmAndamento = cardsLivres;
+  indiceAtualFoco = 0;
+
+  if (revisoesEmAndamento.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Nenhum card!',
+      text: 'Crie flashcards primeiro.'
+    });
+    return;
+  }
+
+  mostrarCardFoco();
+}
+// ===== RESPONDER FLASHCARD (COM AVISO DE PRÓXIMA REVISÃO) =====
+function responderFlashcard(resultado) {
+  const card = revisoesEmAndamento[indiceAtualFoco];
+  const original = flashcards.find(f => f.id === card.id);
+  if (!original) return;
+
+  let dias = 1;
+
+  if (resultado === 'acertei') {
+    original.nivel = Math.min((original.nivel || 0) + 1, 4);
+    original.acertos = (original.acertos || 0) + 1;
+    dias = intervalosRevisao[original.nivel] || 1;
+  } else if (resultado === 'errei') {
+    original.nivel = 0;
+    original.erros = (original.erros || 0) + 1;
+    dias = 1;
+  } else if (resultado === 'facil') {
+    original.nivel = Math.min((original.nivel || 0) + 2, 4);
+    original.acertos = (original.acertos || 0) + 1;
+    dias = intervalosRevisao[original.nivel] || 1;
+  }
+
+  const novaData = new Date();
+  novaData.setDate(novaData.getDate() + dias);
+  original.dataProxima = novaData.toISOString().split('T')[0];
+
+  if (!original.historico) original.historico = [];
+  original.historico.push({
+    data: new Date().toISOString(),
+    resultado: resultado,
+    intervalo: dias
+  });
+
+  salvarFlashcards();
+  atualizarEstatisticas();
+
+  // Mostrar aviso de próxima revisão (apenas na revisão inteligente)
+  if (resultado === 'acertei' || resultado === 'facil') {
+    const proximaData = formatarData(original.dataProxima);
+    mostrarToast(`📅 Revise novamente em ${dias} dia(s) - ${proximaData}`, '#22c55e');
+  } else {
+    mostrarToast('🔄 Revise amanhã para fixar melhor!', '#f59e0b');
+  }
+
+  indiceAtualFoco++;
+
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    finalizarRevisao();
+  } else {
+    mostrarCardFoco();
+  }
+}
+// ===== MOSTRAR TOAST =====
+function mostrarToast(mensagem, cor = '#22c55e') {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'info',
+    title: mensagem,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true,
+    background: '#fff',
+    customClass: {
+      popup: 'colored-toast'
+    }
+  });
+}
+
+// ===== EXPORTAR NOVAS FUNÇÕES =====
+window.trocarAbaRevisao = trocarAbaRevisao;
+window.verificarAcessoSimulado = verificarAcessoSimulado;
+window.atualizarContadoresRevisao = atualizarContadoresRevisao;
+window.carregarOpcoesSimulado = carregarOpcoesSimulado;
+window.selecionarNumQuestoes = selecionarNumQuestoes;
+window.iniciarSimulado = iniciarSimulado;
+window.responderSimulado = responderSimulado;
+window.finalizarSimulado = finalizarSimulado;
+window.renderizarHistoricoCompleto = renderizarHistoricoCompleto;
+window.aplicarFiltrosCards = aplicarFiltrosCards;
+window.mostrarToast = mostrarToast;
+
+
+// ===== ABRIR MODAL NOVA MATÉRIA =====
+function abrirModalNovaMateria() {
+  console.log('📚 [ABRIR] Abrindo modal de nova matéria...');
+
+  // Fecha o modal de flashcard se estiver aberto
+  const modalFlashcard = document.getElementById('modalRevisao');
+  if (modalFlashcard) {
+    const modalFlashcardInstance = bootstrap.Modal.getInstance(modalFlashcard);
+    if (modalFlashcardInstance) modalFlashcardInstance.hide();
+  }
+
+  // Limpa os campos usando os IDs CORRETOS do HTML
+  const nomeInput = document.getElementById('novaMateriaRevisaoNome');
+  const corInput = document.getElementById('novaMateriaRevisaoCor');
+
+  if (nomeInput) nomeInput.value = '';
+  if (corInput) corInput.value = '#9f042c';
+
+  // Abre o modal de nova matéria usando o ID CORRETO
+  const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+  if (modalNovaMateria) {
+    const modalInstance = new bootstrap.Modal(modalNovaMateria);
+    modalInstance.show();
+    console.log('✅ Modal de nova matéria aberto!');
+  } else {
+    console.error('❌ Modal modalNovaMateriaRevisao não encontrado!');
+  }
+}
+
+// ===== SALVAR NOVA MATÉRIA =====
+async function salvarNovaMateriaRevisao() {
+  console.log('💾 [SALVAR] Salvando nova matéria...');
+
+  // Usando os IDs CORRETOS do HTML
+  const nomeInput = document.getElementById('novaMateriaRevisaoNome');
+  const corInput = document.getElementById('novaMateriaRevisaoCor');
+
+  if (!nomeInput || !corInput) {
+    console.error('❌ Campos não encontrados!');
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro!',
+      text: 'Campos não encontrados!'
+    });
+    return;
+  }
+
+  const nome = nomeInput.value.trim();
+  const cor = corInput.value;
+
+  if (!nome) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Digite um nome!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    nomeInput.focus();
+    return;
+  }
+
+  // Verifica se já existe
+  if (materias && materias.some(m => m.nome.toLowerCase() === nome.toLowerCase())) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Matéria já existe!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  try {
+    // Tentar salvar no backend
+    let novaMateria = null;
+
+    if (typeof apiFetch === 'function') {
+      const response = await apiFetch('materias', {
+        method: 'POST',
+        body: JSON.stringify({ nome: nome, cor: cor })
+      });
+
+      if (response.ok) {
+        novaMateria = await response.json();
+        console.log('✅ Matéria salva no backend:', novaMateria);
+      }
+    }
+
+    // Se não salvou no backend, cria localmente
+    if (!novaMateria) {
+      novaMateria = {
+        id: Date.now(),
+        nome: nome,
+        cor: cor
+      };
+      console.log('📦 Matéria criada localmente:', novaMateria);
+    }
+
+    // Adiciona na lista local
+    if (!materias) materias = [];
+    materias.push(novaMateria);
+
+    // Salva no localStorage como backup
+    localStorage.setItem('materias_sistema', JSON.stringify(materias));
+
+    // Fecha o modal usando o ID CORRETO
+    const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+    if (modalNovaMateria) {
+      const modalInstance = bootstrap.Modal.getInstance(modalNovaMateria);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    // Atualiza os filtros e listas
+    if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+    if (typeof renderMaterias === 'function') renderMaterias();
+
+    // Limpa os campos
+    nomeInput.value = '';
+    corInput.value = '#9f042c';
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Matéria criada!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+  } catch (err) {
+    console.error('❌ Erro ao criar matéria:', err);
+
+    // Fallback local
+    const novaMateria = {
+      id: Date.now(),
+      nome: nome,
+      cor: cor
+    };
+
+    if (!materias) materias = [];
+    materias.push(novaMateria);
+
+    localStorage.setItem('materias_sistema', JSON.stringify(materias));
+
+    // Fecha o modal
+    const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
+    if (modalNovaMateria) {
+      const modalInstance = bootstrap.Modal.getInstance(modalNovaMateria);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    // Atualiza os filtros
+    if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
+    if (typeof renderMaterias === 'function') renderMaterias();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Matéria criada!',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+}
+// ===== INICIALIZAÇÃO DA REVISÃO =====
+// Chama initRevisao quando a página carregar
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('📄 Página carregada, iniciando sistema...');
+
+  // Inicia a revisão apenas se a seção estiver visível
+  const revisaoSection = document.getElementById('revisaoSection');
+  if (revisaoSection && revisaoSection.style.display !== 'none') {
+    initRevisao();
+  }
+});
+
+// Função para mostrar a seção de revisão (chame quando navegar para revisão)
+function mostrarSecaoRevisao() {
+  const revisaoSection = document.getElementById('revisaoSection');
+  if (revisaoSection) {
+    revisaoSection.style.display = 'block';
+    initRevisao(); // Inicializa a revisão
+  }
+}
+
+// ===== FUNÇÃO UNIVERSAL DE RESPOSTA =====
+function responderContexto(resultado) {
+  console.log('🎯 [RESPOSTA] Contexto:', simuladoAtual.cards.length > 0 ? 'simulado' : 'revisao');
+
+  // Verifica se está em modo simulado
+  if (simuladoAtual && simuladoAtual.cards && simuladoAtual.cards.length > 0 &&
+    document.getElementById('simuladoTimer').style.display === 'block') {
+    // Está no simulado
+    responderSimulado(resultado);
+  } else {
+    // Está na revisão normal
+    responderFlashcard(resultado);
+  }
+}
+
+// ===== EXPORTAR =====
+window.responderContexto = responderContexto;
+window.abrirModalNovaMateria = abrirModalNovaMateria;
+window.salvarNovaMateriaRevisao = salvarNovaMateriaRevisao;
+window.mostrarSecaoRevisao = mostrarSecaoRevisao;
+
+// =============================================
+// ===== LEITURA SAVORING - VERSÃO FINAL =====
+// =============================================
+
+let leituraSavoringAtual = {
+  titulo: '',
+  texto: '',
+  trechos: [],
+  trechoAtual: 0,
+  anotacoes: [],
+  timer: null,
+  tempoRestante: 0,
+  tempoPorTrecho: 2,
+  pausado: false,
+  leituraSalva: false,
+  idLeituraSalva: null
+};
+
+// ===== ABRIR MODAL =====
+function abrirLeituraSavoring() {
+  console.log('📖 [LEITURA] Abrindo Leitura Savoring...');
+  
+  // Resetar campos
+  document.getElementById('leituraTitulo').value = '';
+  document.getElementById('leituraTexto').value = '';
+  document.getElementById('leituraTempoTrecho').value = '2';
+  
+  // Resetar estado
+  leituraSavoringAtual = {
+    titulo: '',
+    texto: '',
+    trechos: [],
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: 0,
+    tempoPorTrecho: 2,
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
+  };
+  
+  // Mostrar passo 1
+  document.getElementById('leituraInicio').style.display = 'block';
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Resetar histórico
+  const listaHistorico = document.getElementById('leituraHistoricoLista');
+  if (listaHistorico) listaHistorico.style.display = 'none';
+  const setaHistorico = document.getElementById('leituraHistoricoSeta');
+  if (setaHistorico) setaHistorico.style.transform = 'rotate(0deg)';
+  carregarHistoricoLeituras();
+  
+  // Mostrar modal
+  document.getElementById('leituraSavoringModalOverlay').style.display = 'flex';
+}
+
+// ===== FECHAR MODAL =====
+function fecharLeituraSavoring() {
+  console.log('📖 [LEITURA] Fechando Leitura Savoring...');
+  
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  document.getElementById('leituraSavoringModalOverlay').style.display = 'none';
+}
+
+// ===== INICIAR LEITURA =====
+function iniciarLeituraSavoring() {
+  const titulo = document.getElementById('leituraTitulo').value.trim();
+  const texto = document.getElementById('leituraTexto').value.trim();
+  const tempoPorTrecho = parseInt(document.getElementById('leituraTempoTrecho').value);
+  
+  console.log('⏱️ Tempo selecionado:', tempoPorTrecho, 'minutos');
+  
+  if (!titulo) {
+    Swal.fire({ icon: 'warning', title: 'Digite um título!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+  
+  if (!texto) {
+    Swal.fire({ icon: 'warning', title: 'Cole o texto para leitura!', timer: 1500, showConfirmButton: false });
+    return;
+  }
+  
+  const trechos = dividirTextoEmTrechos(texto);
+  
+  leituraSavoringAtual = {
+    titulo: titulo,
+    texto: texto,
+    trechos: trechos,
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: tempoPorTrecho * 60, // ← USA O VALOR CORRETO
+    tempoPorTrecho: tempoPorTrecho,
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
+  };
+  
+  // Mostrar modo leitura
+  document.getElementById('leituraInicio').style.display = 'none';
+  document.getElementById('leituraModo').style.display = 'block';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Mostrar primeiro trecho
+  mostrarTrechoLeitura();
+}
+
+// ===== MOSTRAR TRECHO ATUAL (CORRIGIDO) =====
+function mostrarTrechoLeitura() {
+  const { trechos, trechoAtual, titulo, tempoPorTrecho } = leituraSavoringAtual;
+  
+  if (trechoAtual >= trechos.length) {
+    mostrarResumoLeitura();
+    return;
+  }
+  
+  document.getElementById('leituraTituloAtual').textContent = titulo;
+  document.getElementById('leituraTrechoAtual').textContent = trechoAtual + 1;
+  document.getElementById('leituraTrechoTotal').textContent = trechos.length;
+  document.getElementById('leituraTrechoTexto').textContent = trechos[trechoAtual];
+  
+  // USAR O VALOR CORRETO DE tempoPorTrecho
+  leituraSavoringAtual.tempoRestante = leituraSavoringAtual.tempoPorTrecho * 60;
+  leituraSavoringAtual.pausado = false;
+  
+  console.log('⏱️ Timer iniciado com:', leituraSavoringAtual.tempoPorTrecho, 'minutos =', leituraSavoringAtual.tempoRestante, 'segundos');
+  
+  // ATUALIZAR O DISPLAY DO TIMER IMEDIATAMENTE
+  atualizarTimerLeitura();
+  
+  document.getElementById('btnPausarLeitura').innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+  document.getElementById('btnPausarLeitura').style.background = '#f59e0b';
+  
+  iniciarTimerLeitura();
+}
+
+// ===== INICIAR TIMER (CORRIGIDO) =====
+function iniciarTimerLeitura() {
+  // LIMPAR TIMER ANTERIOR
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  // ATUALIZAR DISPLAY ANTES DE INICIAR
+  atualizarTimerLeitura();
+  
+  leituraSavoringAtual.timer = setInterval(() => {
+    if (!leituraSavoringAtual.pausado) {
+      leituraSavoringAtual.tempoRestante--;
+      atualizarTimerLeitura();
+      
+      if (leituraSavoringAtual.tempoRestante <= 0) {
+        clearInterval(leituraSavoringAtual.timer);
+        leituraSavoringAtual.timer = null;
+        
+        Swal.fire({
+          icon: 'info',
+          title: 'Tempo esgotado!',
+          text: 'Hora de refletir sobre o que leu.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        setTimeout(() => {
+          mostrarReflexaoLeitura();
+        }, 2000);
+      }
+    }
+  }, 1000);
+}
+
+// ===== ATUALIZAR TIMER (CORRIGIDO) =====
+function atualizarTimerLeitura() {
+  const minutos = Math.floor(leituraSavoringAtual.tempoRestante / 60);
+  const segundos = leituraSavoringAtual.tempoRestante % 60;
+  const display = document.getElementById('leituraTimer');
+  
+  if (display) {
+    display.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+  }
+}
+
+// ===== DIVIDIR TEXTO EM TRECHOS =====
+function dividirTextoEmTrechos(texto) {
+  const paragrafos = texto.split('\n').filter(p => p.trim().length > 0);
+  
+  if (paragrafos.length <= 1) {
+    const frases = texto.split(/(?<=[.!?])\s+/).filter(f => f.trim().length > 0);
+    const trechos = [];
+    for (let i = 0; i < frases.length; i += 3) {
+      trechos.push(frases.slice(i, i + 3).join(' '));
+    }
+    return trechos.length > 0 ? trechos : [texto];
+  }
+  
+  return paragrafos;
+}
+
+// ===== PAUSAR LEITURA =====
+function pausarLeituraSavoring() {
+  leituraSavoringAtual.pausado = !leituraSavoringAtual.pausado;
+  
+  const btn = document.getElementById('btnPausarLeitura');
+  if (leituraSavoringAtual.pausado) {
+    btn.innerHTML = '<i class="bi bi-play-fill"></i> Continuar';
+    btn.style.background = '#22c55e';
+  } else {
+    btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pausar';
+    btn.style.background = '#f59e0b';
+  }
+}
+
+// ===== PRÓXIMO TRECHO =====
+function proximoTrechoLeitura() {
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  mostrarReflexaoLeitura();
+}
+
+// ===== MOSTRAR REFLEXÃO =====
+function mostrarReflexaoLeitura() {
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'block';
+  document.getElementById('leituraAnotacao').value = '';
+  document.getElementById('leituraAnotacao').focus();
+}
+
+// ===== SALVAR REFLEXÃO =====
+function salvarReflexaoLeitura() {
+  const anotacao = document.getElementById('leituraAnotacao').value.trim();
+  const { trechos, trechoAtual } = leituraSavoringAtual;
+  
+  if (anotacao) {
+    leituraSavoringAtual.anotacoes.push({
+      id: Date.now(),
+      trecho: trechoAtual + 1,
+      texto: anotacao,
+      data: new Date().toISOString()
+    });
+  }
+  
+  leituraSavoringAtual.trechoAtual++;
+  
+  if (leituraSavoringAtual.trechoAtual >= trechos.length) {
+    mostrarResumoLeitura();
+  } else {
+    document.getElementById('leituraReflexao').style.display = 'none';
+    document.getElementById('leituraModo').style.display = 'block';
+    mostrarTrechoLeitura();
+  }
+}
+
+// ===== PULAR REFLEXÃO =====
+function pularReflexaoLeitura() {
+  leituraSavoringAtual.trechoAtual++;
+  
+  if (leituraSavoringAtual.trechoAtual >= leituraSavoringAtual.trechos.length) {
+    mostrarResumoLeitura();
+  } else {
+    document.getElementById('leituraReflexao').style.display = 'none';
+    document.getElementById('leituraModo').style.display = 'block';
+    mostrarTrechoLeitura();
+  }
+}
+
+// ===== MOSTRAR RESUMO (NÃO FECHA) =====
+function mostrarResumoLeitura() {
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'block';
+  
+  renderizarResumoAnotacoes();
+  
+  // Salvar no histórico APENAS UMA VEZ
+  if (!leituraSavoringAtual.leituraSalva) {
+    salvarLeituraNoHistorico();
+    leituraSavoringAtual.leituraSalva = true;
+  }
+}
+
+// ===== RENDERIZAR RESUMO COM ANOTAÇÕES (COM TEXTO DO TRECHO) =====
+function renderizarResumoAnotacoes() {
+  const container = document.getElementById('leituraResumoAnotacoes');
+  
+  if (leituraSavoringAtual.anotacoes.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
+  } else {
+    container.innerHTML = leituraSavoringAtual.anotacoes.map((a, index) => {
+      // Buscar o texto do trecho correspondente
+      const textoTrecho = leituraSavoringAtual.trechos[a.trecho - 1] || 'Texto não disponível';
+      
+      return `
+        <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--cor-primaria);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <strong style="color: #4b5563; font-size: 0.8rem;">📖 Trecho ${a.trecho}:</strong>
+            <div style="display: flex; gap: 5px;">
+              <button onclick="editarAnotacaoLeitura(${index})" 
+                      style="background: #e0f2fe; color: #0284c7; border: none; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+                <i class="bi bi-pencil"></i> Editar
+              </button>
+              <button onclick="excluirAnotacaoLeitura(${index})" 
+                      style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- TEXTO DO TRECHO -->
+          <div style="background: white; border-radius: 8px; padding: 10px; margin: 10px 0; font-size: 0.8rem; color: #6b7280; border: 1px solid #e5e7eb; max-height: 80px; overflow-y: auto;">
+            ${textoTrecho}
+          </div>
+          
+          <!-- ANOTAÇÃO -->
+          <div style="background: #f0fdf4; border-radius: 8px; padding: 10px; border: 1px solid #bbf7d0;">
+            <strong style="color: #16a34a; font-size: 0.75rem;">✏️ Minha anotação:</strong>
+            <p style="margin: 5px 0 0; color: #374151; font-size: 0.9rem;">${a.texto}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ===== SALVAR NO HISTÓRICO (COM TEXTO DOS TRECHOS) =====
+function salvarLeituraNoHistorico() {
+  const leitura = {
+    id: Date.now(),
+    titulo: leituraSavoringAtual.titulo,
+    data: new Date().toISOString(),
+    totalTrechos: leituraSavoringAtual.trechos.length,
+    trechos: leituraSavoringAtual.trechos.map((texto, index) => ({
+      numero: index + 1,
+      texto: texto
+    })),
+    anotacoes: JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes)),
+    textoCompleto: leituraSavoringAtual.texto
+  };
+  
+  leituraSavoringAtual.idLeituraSalva = leitura.id;
+  
+  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  historico.push(leitura);
+  localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+  
+  console.log('✅ [LEITURA] Salva:', leitura);
+  carregarHistoricoLeituras();
+  
+  mostrarToast('✅ Leitura salva com sucesso!', '#22c55e');
+}
+
+// ===== RENDERIZAR LEITURA SALVA (COM TEXTO DO TRECHO) =====
+function renderizarLeituraSalva(leitura) {
+  let html = `
+    <div style="margin-bottom: 20px; text-align: center;">
+      <h4 style="color: #374151; margin-bottom: 5px;">${leitura.titulo}</h4>
+      <small style="color: #9ca3af;">${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s)</small>
+    </div>
+  `;
+  
+  if (leitura.anotacoes && leitura.anotacoes.length > 0) {
+    html += leitura.anotacoes.map((a, index) => {
+      // Encontrar o texto do trecho correspondente
+      const trechoInfo = leitura.trechos ? leitura.trechos.find(t => t.numero === a.trecho) : null;
+      const textoTrecho = trechoInfo ? trechoInfo.texto : 'Texto do trecho não disponível';
+      
+      return `
+        <div style="background: #f9fafb; border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--cor-primaria);">
+          <!-- CABEÇALHO COM NÚMERO DO TRECHO E BOTÃO EDITAR -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #4b5563; font-size: 0.85rem;">
+              📖 Trecho ${a.trecho}
+            </strong>
+            <button onclick="editarAnotacaoDoHistorico(${leitura.id}, ${index})" 
+                    style="background: #e0f2fe; color: #0284c7; border: none; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 0.7rem;">
+              <i class="bi bi-pencil"></i> Editar
+            </button>
+          </div>
+          
+          <!-- TEXTO DO TRECHO -->
+          <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.8rem; color: #6b7280; border: 1px solid #e5e7eb; max-height: 100px; overflow-y: auto;">
+            ${textoTrecho}
+          </div>
+          
+          <!-- ANOTAÇÃO DO USUÁRIO -->
+          <div style="background: #f0fdf4; border-radius: 8px; padding: 10px; border: 1px solid #bbf7d0;">
+            <strong style="color: #16a34a; font-size: 0.75rem;">✏️ Minha anotação:</strong>
+            <p style="margin: 5px 0 0; color: #374151; font-size: 0.85rem;">${a.texto}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    html += '<p style="color: #9ca3af; text-align: center;">Nenhuma anotação feita.</p>';
+  }
+  
+  Swal.fire({
+    title: '📖 Leitura Salva',
+    html: html,
+    showConfirmButton: true,
+    confirmButtonText: 'Fechar',
+    confirmButtonColor: '#9f042c',
+    width: '650px',
+    customClass: {
+      htmlContainer: 'swal-texto-trecho'
+    }
+  });
+}
+
+// ===== EDITAR ANOTAÇÃO DO HISTÓRICO (MOSTRANDO O TRECHO) =====
+function editarAnotacaoDoHistorico(leituraId, anotacaoIndex) {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const leitura = historico.find(l => l.id === leituraId);
+  
+  if (!leitura || !leitura.anotacoes[anotacaoIndex]) return;
+  
+  const anotacao = leitura.anotacoes[anotacaoIndex];
+  
+  // Encontrar o texto do trecho
+  const trechoInfo = leitura.trechos ? leitura.trechos.find(t => t.numero === anotacao.trecho) : null;
+  const textoTrecho = trechoInfo ? trechoInfo.texto : '';
+  
+  Swal.fire({
+    title: `✏️ Editar - Trecho ${anotacao.trecho}`,
+    html: `
+      <div style="text-align: left; margin-bottom: 15px;">
+        <strong style="color: #4b5563; font-size: 0.8rem;">📖 Texto do trecho:</strong>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; margin-top: 5px; max-height: 100px; overflow-y: auto; font-size: 0.8rem; color: #6b7280;">
+          ${textoTrecho || 'Texto não disponível'}
+        </div>
+      </div>
+      
+      <div style="text-align: left;">
+        <strong style="color: #16a34a; font-size: 0.8rem;">✏️ Sua anotação:</strong>
+      </div>
+    `,
+    input: 'textarea',
+    inputValue: anotacao.texto,
+    inputPlaceholder: 'Edite sua reflexão...',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    width: '600px',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'A anotação não pode ficar vazia!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      leitura.anotacoes[anotacaoIndex].texto = result.value.trim();
+      leitura.anotacoes[anotacaoIndex].data = new Date().toISOString();
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+      
+      renderizarLeituraSalva(leitura);
+      renderizarHistoricoLeituras();
+      
+      mostrarToast('✅ Anotação atualizada!', '#22c55e');
+    }
+  });
+}
+
+// ===== ATUALIZAR NO HISTÓRICO =====
+function atualizarLeituraNoHistorico() {
+  let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  
+  if (leituraSavoringAtual.idLeituraSalva) {
+    const index = historico.findIndex(l => l.id === leituraSavoringAtual.idLeituraSalva);
+    if (index !== -1) {
+      historico[index].anotacoes = JSON.parse(JSON.stringify(leituraSavoringAtual.anotacoes));
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+    }
+  }
+}
+
+// ===== EDITAR ANOTAÇÃO (DO RESUMO) =====
+function editarAnotacaoLeitura(index) {
+  const anotacao = leituraSavoringAtual.anotacoes[index];
+  if (!anotacao) return;
+  
+  Swal.fire({
+    title: `✏️ Editar Anotação - Trecho ${anotacao.trecho}`,
+    input: 'textarea',
+    inputValue: anotacao.texto,
+    inputPlaceholder: 'Edite sua reflexão...',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'A anotação não pode ficar vazia!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      leituraSavoringAtual.anotacoes[index].texto = result.value.trim();
+      leituraSavoringAtual.anotacoes[index].data = new Date().toISOString();
+      
+      atualizarLeituraNoHistorico();
+      renderizarResumoAnotacoes();
+      
+      mostrarToast('✅ Anotação atualizada!', '#22c55e');
+    }
+  });
+}
+
+// ===== EXCLUIR ANOTAÇÃO =====
+function excluirAnotacaoLeitura(index) {
+  Swal.fire({
+    title: 'Excluir anotação?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      leituraSavoringAtual.anotacoes.splice(index, 1);
+      atualizarLeituraNoHistorico();
+      renderizarResumoAnotacoes();
+      mostrarToast('🗑️ Anotação excluída!', '#ef4444');
+    }
+  });
+}
+
+// ===== CARREGAR HISTÓRICO =====
+function carregarHistoricoLeituras() {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const count = document.getElementById('leituraHistoricoCount');
+  if (count) count.textContent = historico.length;
+  return historico;
+}
+
+// ===== TOGGLE HISTÓRICO =====
+function toggleHistoricoLeituras() {
+  const lista = document.getElementById('leituraHistoricoLista');
+  const seta = document.getElementById('leituraHistoricoSeta');
+  
+  if (lista.style.display === 'none') {
+    lista.style.display = 'block';
+    seta.style.transform = 'rotate(180deg)';
+    renderizarHistoricoLeituras();
+  } else {
+    lista.style.display = 'none';
+    seta.style.transform = 'rotate(0deg)';
+  }
+}
+
+// ===== RENDERIZAR HISTÓRICO =====
+function renderizarHistoricoLeituras() {
+  const container = document.getElementById('leituraHistoricoLista');
+  if (!container) return;
+  
+  const historico = carregarHistoricoLeituras();
+  
+  if (historico.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; text-align: center; font-size: 0.8rem;">Nenhuma leitura salva ainda.</p>';
+    return;
+  }
+  
+  historico.sort((a, b) => new Date(b.data) - new Date(a.data));
+  
+  container.innerHTML = historico.map(leitura => `
+    <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid #e5e7eb; cursor: pointer; transition: 0.2s;"
+         onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
+         onmouseout="this.style.boxShadow='none'"
+         onclick="verLeituraSalva(${leitura.id})">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <strong style="font-size: 0.85rem; color: #374151; display: block;">${leitura.titulo}</strong>
+          <small style="color: #9ca3af; font-size: 0.7rem;">
+            ${new Date(leitura.data).toLocaleDateString('pt-BR')} • ${leitura.totalTrechos} trecho(s) • ${leitura.anotacoes.length} anotação(ões)
+          </small>
+        </div>
+        <button onclick="event.stopPropagation(); excluirLeituraSalva(${leitura.id})"
+                style="background: #fee2e2; color: #dc2626; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; font-size: 0.7rem;">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== VER LEITURA SALVA (COM EDIÇÃO) =====
+function verLeituraSalva(id) {
+  const historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+  const leitura = historico.find(l => l.id === id);
+  
+  if (!leitura) return;
+  
+  renderizarLeituraSalva(leitura);
+}
+
+// ===== EXCLUIR LEITURA SALVA =====
+function excluirLeituraSalva(id) {
+  Swal.fire({
+    title: 'Excluir leitura?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then(result => {
+    if (result.isConfirmed) {
+      let historico = JSON.parse(localStorage.getItem('historicoLeituras') || '[]');
+      historico = historico.filter(l => l.id !== id);
+      localStorage.setItem('historicoLeituras', JSON.stringify(historico));
+      
+      renderizarHistoricoLeituras();
+      carregarHistoricoLeituras();
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Excluída!',
+        timer: 1000,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+// ===== NOVA LEITURA (VOLTA AO INÍCIO SEM FECHAR) =====
+function novaLeituraSavoring() {
+  console.log('📖 [LEITURA] Iniciando nova leitura...');
+  
+  // Limpar timer
+  if (leituraSavoringAtual.timer) {
+    clearInterval(leituraSavoringAtual.timer);
+    leituraSavoringAtual.timer = null;
+  }
+  
+  // Resetar campos
+  document.getElementById('leituraTitulo').value = '';
+  document.getElementById('leituraTexto').value = '';
+  document.getElementById('leituraTempoTrecho').value = '2';
+  
+  // Resetar estado
+  leituraSavoringAtual = {
+    titulo: '',
+    texto: '',
+    trechos: [],
+    trechoAtual: 0,
+    anotacoes: [],
+    timer: null,
+    tempoRestante: 0,
+    tempoPorTrecho: 2,
+    pausado: false,
+    leituraSalva: false,
+    idLeituraSalva: null
+  };
+  
+  // Mostrar passo 1 (início)
+  document.getElementById('leituraInicio').style.display = 'block';
+  document.getElementById('leituraModo').style.display = 'none';
+  document.getElementById('leituraReflexao').style.display = 'none';
+  document.getElementById('leituraResumo').style.display = 'none';
+  
+  // Atualizar histórico
+  carregarHistoricoLeituras();
+  renderizarHistoricoLeituras();
+  
+  // Focar no campo de título
+  setTimeout(() => {
+    document.getElementById('leituraTitulo').focus();
+  }, 300);
+  
+  mostrarToast('📖 Pronto para nova leitura!', '#3b82f6');
+}
+
+// ===== EXPORTAR =====
+window.novaLeituraSavoring = novaLeituraSavoring;
+
+// ===== EXPORTAR TODAS AS FUNÇÕES =====
+window.abrirLeituraSavoring = abrirLeituraSavoring;
+window.fecharLeituraSavoring = fecharLeituraSavoring;
+window.iniciarLeituraSavoring = iniciarLeituraSavoring;
+window.pausarLeituraSavoring = pausarLeituraSavoring;
+window.proximoTrechoLeitura = proximoTrechoLeitura;
+window.salvarReflexaoLeitura = salvarReflexaoLeitura;
+window.pularReflexaoLeitura = pularReflexaoLeitura;
+window.editarAnotacaoLeitura = editarAnotacaoLeitura;
+window.excluirAnotacaoLeitura = excluirAnotacaoLeitura;
+window.editarAnotacaoDoHistorico = editarAnotacaoDoHistorico;
+window.toggleHistoricoLeituras = toggleHistoricoLeituras;
+window.renderizarHistoricoLeituras = renderizarHistoricoLeituras;
+window.verLeituraSalva = verLeituraSalva;
+window.excluirLeituraSalva = excluirLeituraSalva;
+window.carregarHistoricoLeituras = carregarHistoricoLeituras;
+window.mostrarResumoLeitura = mostrarResumoLeitura;
+// =============================================
+// ===== GRUPOS DE ESTUDO - COMPLETO ==========
+// =============================================
+
+let gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
+let grupoAtual = null;
+
+// ===== ABRIR MODAL =====
+function abrirGruposEstudo() {
+  console.log('👥 Abrindo Grupos de Estudo');
+  if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
+
+  const modal = document.getElementById('gruposEstudoModalOverlay');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderizarListaGrupos();
+  }
+}
+
+// ===== FECHAR MODAL =====
+function fecharGruposEstudo() {
+  const modal = document.getElementById('gruposEstudoModalOverlay');
+  if (modal) modal.style.display = 'none';
+}
+
+// ===== RENDERIZAR LISTA DE GRUPOS =====
+function renderizarListaGrupos() {
+  const container = document.getElementById('listaGruposEstudo');
+  if (!container) return;
+
+  gruposEstudo = JSON.parse(localStorage.getItem('gruposEstudo') || '[]');
+
+  document.getElementById('detalheGrupoEstudo').style.display = 'none';
+  container.style.display = 'block';
+
+  if (gruposEstudo.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 50px 20px;">
+        <i class="bi bi-people" style="font-size: 4rem; color: #d1d5db;"></i>
+        <h3 style="color: #6b7280; margin: 15px 0;">Nenhum grupo criado</h3>
+        <p style="color: #9ca3af; margin-bottom: 20px;">Crie um grupo ou entre com um código de convite</p>
+        <button onclick="abrirCriarGrupo()" style="background: var(--cor-primaria); color: white; border: none; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-plus-lg"></i> Criar Grupo
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = gruposEstudo.map(grupo => `
+    <div style="background: white; border: 2px solid #e5e7eb; border-radius: 15px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.3s;"
+         onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)'; this.style.borderColor='var(--cor-primaria)'"
+         onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb'"
+         onclick="abrirDetalheGrupo(${grupo.id})">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="margin: 0; color: #1f2937;">${grupo.nome}</h3>
+          <small style="color: #9ca3af;">Código: <strong>${grupo.codigo}</strong></small>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+            <i class="bi bi-people"></i> ${grupo.membros.length} membro(s)
+          </span>
+          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+            <i class="bi bi-chat-dots"></i> ${grupo.duvidas ? grupo.duvidas.length : 0} dúvida(s)
+          </span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== CRIAR GRUPO =====
+function abrirCriarGrupo() {
+  Swal.fire({
+    title: '👥 Criar Grupo de Estudo',
+    html: `
+      <input id="inputNomeGrupo" class="swal2-input" placeholder="Nome do grupo" style="margin-bottom: 10px;">
+      <input id="inputMateriaGrupo" class="swal2-input" placeholder="Matéria principal (opcional)">
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-check-lg"></i> Criar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#9f042c',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const nome = document.getElementById('inputNomeGrupo').value.trim();
+      if (!nome) {
+        Swal.showValidationMessage('Digite um nome!');
+        return false;
+      }
+      return {
+        nome: nome,
+        materia: document.getElementById('inputMateriaGrupo').value.trim()
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const codigo = gerarCodigoGrupo();
+      const novoGrupo = {
+        id: Date.now(),
+        nome: result.value.nome,
+        materia: result.value.materia || 'Geral',
+        codigo: codigo,
+        linkMeet: '',
+        membros: [{ nome: 'Você (Criador)', email: '', papel: 'Líder' }],
+        temas: [],
+        duvidas: [],
+        reunioes: [],
+        notas: '',
+        flashcardsCompartilhados: [],
+        dataCriacao: new Date().toISOString()
+      };
+
+      gruposEstudo.push(novoGrupo);
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Grupo criado!',
+        html: `
+          <p>Código do grupo: <strong style="font-size: 1.5rem;">${codigo}</strong></p>
+          <p>Compartilhe este código com seus amigos!</p>
+          <button onclick="copiarCodigo('${codigo}')" class="swal2-confirm swal2-styled" style="background: #3b82f6;">
+            <i class="bi bi-clipboard"></i> Copiar Código
+          </button>
+        `,
+        confirmButtonText: 'OK'
+      });
+
+      renderizarListaGrupos();
+    }
+  });
+}
+
+// ===== ENTRAR COM CÓDIGO =====
+function abrirEntrarGrupo() {
+  Swal.fire({
+    title: '🔑 Entrar no Grupo',
+    input: 'text',
+    inputPlaceholder: 'Digite o código do grupo',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-in-right"></i> Entrar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#6b7280',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'Digite o código!';
+      }
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const codigo = result.value.trim().toUpperCase();
+      const grupo = gruposEstudo.find(g => g.codigo === codigo);
+
+      if (!grupo) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Grupo não encontrado!',
+          text: 'Verifique o código e tente novamente.'
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'Digite seu nome',
+        input: 'text',
+        inputPlaceholder: 'Seu nome',
+        showCancelButton: true,
+        confirmButtonText: 'Entrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        preConfirm: (nome) => {
+          if (!nome || !nome.trim()) {
+            Swal.showValidationMessage('Digite seu nome!');
+            return false;
+          }
+          return nome;
+        }
+      }).then(res => {
+        if (res.isConfirmed) {
+          grupo.membros.push({ nome: res.value, email: '', papel: 'Membro' });
+          localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+          Swal.fire({
+            icon: 'success',
+            title: `Bem-vindo ao ${grupo.nome}!`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+          renderizarListaGrupos();
+        }
+      });
+    }
+  });
+}
+
+// ===== GERAR CÓDIGO =====
+function gerarCodigoGrupo() {
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let codigo = '';
+  for (let i = 0; i < 6; i++) {
+    codigo += letras[Math.floor(Math.random() * letras.length)];
+  }
+  return codigo;
+}
+
+// ===== COPIAR CÓDIGO =====
+function copiarCodigo(codigo) {
+  navigator.clipboard.writeText(codigo).then(() => {
+    mostrarToast('📋 Código copiado!', '#22c55e');
+  });
+}
+
+// ===== ABRIR DETALHE DO GRUPO =====
+function abrirDetalheGrupo(id) {
+  const grupo = gruposEstudo.find(g => g.id === id);
+  if (!grupo) return;
+
+  grupoAtual = grupo;
+
+  document.getElementById('listaGruposEstudo').style.display = 'none';
+  const detalhe = document.getElementById('detalheGrupoEstudo');
+  detalhe.style.display = 'block';
+
+  renderizarDetalheGrupo(grupo);
+}
+
+// ===== RENDERIZAR DETALHE DO GRUPO =====
+function renderizarDetalheGrupo(grupo) {
+  const container = document.getElementById('detalheGrupoEstudo');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <button onclick="voltarListaGrupos()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 0.9rem;">
+          <i class="bi bi-arrow-left"></i> Voltar
+        </button>
+        <h2 style="margin: 5px 0 0; color: #1f2937;">${grupo.nome}</h2>
+        <small style="color: #9ca3af;">📚 ${grupo.materia} | Código: <strong>${grupo.codigo}</strong></small>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button onclick="iniciarChamadaVideo(${grupo.id})"
+          style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-camera-video"></i> Chamada de Vídeo
+        </button>
+        <button onclick="copiarCodigo('${grupo.codigo}')"
+          style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-clipboard"></i> Copiar Código
+        </button>
+      </div>
+    </div>
+
+    <!-- ABAS DO GRUPO -->
+    <div style="display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto;">
+      <button onclick="trocarAbaGrupo('membros')" class="aba-grupo-btn active" id="abaMembros"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: var(--cor-primaria); border-bottom: 3px solid var(--cor-primaria); white-space: nowrap;">
+        <i class="bi bi-people"></i> Membros (${grupo.membros.length})
+      </button>
+      <button onclick="trocarAbaGrupo('temas')" class="aba-grupo-btn" id="abaTemas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-journal-bookmark"></i> Temas
+      </button>
+      <button onclick="trocarAbaGrupo('duvidas')" class="aba-grupo-btn" id="abaDuvidas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-question-circle"></i> Dúvidas (${grupo.duvidas ? grupo.duvidas.length : 0})
+      </button>
+      <button onclick="trocarAbaGrupo('notas')" class="aba-grupo-btn" id="abaNotas"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-journal-text"></i> Notas
+      </button>
+      <button onclick="trocarAbaGrupo('reunioes')" class="aba-grupo-btn" id="abaReunioes"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-calendar-event"></i> Reuniões
+      </button>
+      <button onclick="trocarAbaGrupo('flashcards')" class="aba-grupo-btn" id="abaFlashcards"
+        style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
+        <i class="bi bi-collection"></i> Flashcards
+      </button>
+    </div>
+
+    <div id="conteudoAbaGrupo">
+      ${renderizarAbaMembros(grupo)}
+    </div>
+  `;
+}
+
+// ===== TROCAR ABA =====
+function trocarAbaGrupo(aba) {
+  document.querySelectorAll('.aba-grupo-btn').forEach(btn => {
+    btn.style.color = '#6b7280';
+    btn.style.borderBottom = 'none';
+  });
+
+  const btnAtivo = document.getElementById('aba' + aba.charAt(0).toUpperCase() + aba.slice(1));
+  if (btnAtivo) {
+    btnAtivo.style.color = 'var(--cor-primaria)';
+    btnAtivo.style.borderBottom = '3px solid var(--cor-primaria)';
+  }
+
+  const grupo = grupoAtual;
+  if (!grupo) return;
+
+  const conteudo = document.getElementById('conteudoAbaGrupo');
+
+  switch (aba) {
+    case 'membros':
+      conteudo.innerHTML = renderizarAbaMembros(grupo);
+      break;
+    case 'temas':
+      conteudo.innerHTML = renderizarAbaTemas(grupo);
+      break;
+    case 'duvidas':
+      conteudo.innerHTML = renderizarAbaDuvidas(grupo);
+      break;
+    case 'notas':
+      conteudo.innerHTML = renderizarAbaNotas(grupo);
+      break;
+    case 'reunioes':
+      conteudo.innerHTML = renderizarAbaReunioes(grupo);
+      break;
+    case 'flashcards':
+      conteudo.innerHTML = renderizarAbaFlashcards(grupo);
+      break;
+  }
+}
+
+// ===== ABA MEMBROS =====
+function renderizarAbaMembros(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Membros do Grupo</h3>
+      <button onclick="adicionarMembro(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Adicionar
+      </button>
+    </div>
+    ${grupo.membros.map((m, i) => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: ${i === 0 ? '#9f042c' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            ${m.nome.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <strong>${m.nome}</strong>
+            <br><small style="color: #9ca3af;">${m.papel || 'Membro'}</small>
+          </div>
+        </div>
+        ${i !== 0 ? `<button onclick="removerMembro(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
+      </div>
+    `).join('')}
+  `;
+}
+
+// ===== ABA TEMAS =====
+function renderizarAbaTemas(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Divisão de Temas</h3>
+      <button onclick="adicionarTema(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Adicionar Tema
+      </button>
+    </div>
+    ${grupo.temas && grupo.temas.length > 0 ? grupo.temas.map((tema, i) => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
+        <div>
+          <strong>${tema.titulo}</strong>
+          <br><small style="color: #9ca3af;">Responsável: ${tema.responsavel || 'Não definido'}</small>
+        </div>
+        <button onclick="removerTema(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhum tema definido ainda.</p>'}
+  `;
+}
+
+// ===== ABA DÚVIDAS =====
+function renderizarAbaDuvidas(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Quadro de Dúvidas</h3>
+      <button onclick="adicionarDuvida(${grupo.id})"
+        style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-plus"></i> Nova Dúvida
+      </button>
+    </div>
+    ${grupo.duvidas && grupo.duvidas.length > 0 ? grupo.duvidas.map((d, i) => `
+      <div style="padding: 15px; background: ${d.resposta ? '#f0fdf4' : '#fef3c7'}; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${d.resposta ? '#22c55e' : '#f59e0b'};">
+        <strong>${d.pergunta}</strong>
+        <br><small style="color: #9ca3af;">Por: ${d.autor}</small>
+        ${d.resposta ? `<br><span style="color: #16a34a;">✅ Respondido: ${d.resposta}</span>` : ''}
+        ${!d.resposta ? `<br><button onclick="responderDuvida(${grupo.id}, ${i})" style="margin-top: 8px; background: #22c55e; color: white; border: none; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8rem;">Responder</button>` : ''}
+        <button onclick="removerDuvida(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer; float: right;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhuma dúvida ainda.</p>'}
+  `;
+}
+
+// ===== ABA NOTAS =====
+function renderizarAbaNotas(grupo) {
+  return `
+    <h3 style="margin-bottom: 15px;">Notas do Grupo</h3>
+    <textarea id="notasGrupoTexto" rows="8" style="width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; resize: vertical; font-family: 'Poppins', sans-serif;">${grupo.notas || ''}</textarea>
+    <button onclick="salvarNotasGrupo(${grupo.id})"
+      style="margin-top: 10px; background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 600;">
+      <i class="bi bi-save"></i> Salvar Notas
+    </button>
+  `;
+}
+
+// ===== ABA REUNIÕES =====
+function renderizarAbaReunioes(grupo) {
+  return `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Reuniões</h3>
+      <button onclick="agendarReuniao(${grupo.id})"
+        style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-calendar-plus"></i> Agendar
+      </button>
+    </div>
+    ${grupo.reunioes && grupo.reunioes.length > 0 ? grupo.reunioes.map((r, i) => `
+      <div style="padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>${r.titulo}</strong>
+          <br><small style="color: #9ca3af;">${new Date(r.data).toLocaleDateString('pt-BR')} às ${r.hora}</small>
+        </div>
+        <button onclick="removerReuniao(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('') : '<p style="color: #9ca3af;">Nenhuma reunião agendada.</p>'}
+  `;
+}
+
+// ===== ABA FLASHCARDS =====
+function renderizarAbaFlashcards(grupo) {
+  return `
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+      <button onclick="exportarFlashcardsGrupo(${grupo.id})"
+        style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-download"></i> Exportar Flashcards
+      </button>
+      <button onclick="importarFlashcardsGrupo(${grupo.id})"
+        style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+        <i class="bi bi-upload"></i> Importar Flashcards
+      </button>
+    </div>
+    <h4>Flashcards Compartilhados (${grupo.flashcardsCompartilhados ? grupo.flashcardsCompartilhados.length : 0})</h4>
+    ${grupo.flashcardsCompartilhados && grupo.flashcardsCompartilhados.length > 0 ?
+      grupo.flashcardsCompartilhados.map(f => `
+        <div style="padding: 10px; background: #f9fafb; border-radius: 8px; margin-bottom: 5px;">
+          <strong>${f.pergunta}</strong> → ${f.resposta}
+        </div>
+      `).join('') :
+      '<p style="color: #9ca3af;">Nenhum flashcard compartilhado.</p>'}
+  `;
+}
+
+// ===== AÇÕES DO GRUPO =====
+function iniciarChamadaVideo(id) {
+  const grupo = gruposEstudo.find(g => g.id === id);
+  if (!grupo) return;
+
+  Swal.fire({
+    title: '📹 Chamada de Vídeo',
+    text: 'Deseja abrir o Google Meet?',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-camera-video"></i> Abrir Meet',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
+    if (result.isConfirmed) {
+      // Registrar reunião
+      grupo.reunioes.push({
+        titulo: `Chamada - ${grupo.nome}`,
+        data: new Date().toISOString(),
+        hora: new Date().toLocaleTimeString('pt-BR')
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+
+      // Abrir Google Meet
+      window.open('https://meet.google.com/new', '_blank');
+
+      mostrarToast('📹 Abrindo Google Meet...', '#22c55e');
+    }
+  });
+}
+
+function adicionarMembro(id) {
+  Swal.fire({
+    title: 'Adicionar Membro',
+    input: 'text',
+    inputPlaceholder: 'Nome do membro',
+    showCancelButton: true,
+    confirmButtonText: 'Adicionar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      grupo.membros.push({ nome: result.value.trim(), email: '', papel: 'Membro' });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Membro adicionado!', '#22c55e');
+    }
+  });
+}
+
+function adicionarTema(id) {
+  Swal.fire({
+    title: 'Adicionar Tema',
+    html: `
+      <input id="inputTemaTitulo" class="swal2-input" placeholder="Tema (ex: Citologia)">
+      <input id="inputTemaResponsavel" class="swal2-input" placeholder="Responsável (nome)">
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Adicionar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    preConfirm: () => {
+      const titulo = document.getElementById('inputTemaTitulo').value.trim();
+      if (!titulo) {
+        Swal.showValidationMessage('Digite o tema!');
+        return false;
+      }
+      return {
+        titulo: titulo,
+        responsavel: document.getElementById('inputTemaResponsavel').value.trim()
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.temas) grupo.temas = [];
+      grupo.temas.push(result.value);
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Tema adicionado!', '#22c55e');
+    }
+  });
+}
+
+function adicionarDuvida(id) {
+  Swal.fire({
+    title: 'Nova Dúvida',
+    input: 'text',
+    inputPlaceholder: 'Digite sua dúvida...',
+    showCancelButton: true,
+    confirmButtonText: 'Perguntar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#f59e0b',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) return 'Digite sua dúvida!';
+      return null;
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.duvidas) grupo.duvidas = [];
+      grupo.duvidas.push({
+        pergunta: result.value.trim(),
+        autor: 'Você',
+        resposta: ''
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Dúvida enviada!', '#f59e0b');
+    }
+  });
+}
+
+function responderDuvida(id, index) {
+  Swal.fire({
+    title: 'Responder Dúvida',
+    input: 'text',
+    inputPlaceholder: 'Digite a resposta...',
+    showCancelButton: true,
+    confirmButtonText: 'Responder',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      grupo.duvidas[index].resposta = result.value.trim();
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Dúvida respondida!', '#22c55e');
+    }
+  });
+}
+
+function agendarReuniao(id) {
+  Swal.fire({
+    title: 'Agendar Reunião',
+    html: `
+      <input id="inputReuniaoTitulo" class="swal2-input" placeholder="Título da reunião">
+      <input id="inputReuniaoData" type="date" class="swal2-input">
+      <input id="inputReuniaoHora" type="time" class="swal2-input">
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Agendar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const grupo = gruposEstudo.find(g => g.id === id);
+      if (!grupo.reunioes) grupo.reunioes = [];
+      grupo.reunioes.push({
+        titulo: document.getElementById('inputReuniaoTitulo').value || 'Reunião',
+        data: document.getElementById('inputReuniaoData').value,
+        hora: document.getElementById('inputReuniaoHora').value
+      });
+      localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+      renderizarDetalheGrupo(grupo);
+      mostrarToast('✅ Reunião agendada!', '#3b82f6');
+    }
+  });
+}
+
+function salvarNotasGrupo(id) {
+  const notas = document.getElementById('notasGrupoTexto').value;
+  const grupo = gruposEstudo.find(g => g.id === id);
+  grupo.notas = notas;
+  localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+  mostrarToast('✅ Notas salvas!', '#22c55e');
+}
+
+function exportarFlashcardsGrupo(id) {
+  if (flashcards.length === 0) {
+    alertAviso('Sem flashcards', 'Crie flashcards primeiro!');
+    return;
+  }
+  const data = JSON.stringify(flashcards);
+  navigator.clipboard.writeText(data).then(() => {
+    mostrarToast('📋 Flashcards copiados!', '#3b82f6');
+  });
+}
+
+function importarFlashcardsGrupo(id) {
+  Swal.fire({
+    title: 'Importar Flashcards',
+    input: 'textarea',
+    inputPlaceholder: 'Cole os flashcards aqui (JSON)...',
+    showCancelButton: true,
+    confirmButtonText: 'Importar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e'
+  }).then(result => {
+    if (result.isConfirmed && result.value.trim()) {
+      try {
+        const cardsImportados = JSON.parse(result.value);
+        const grupo = gruposEstudo.find(g => g.id === id);
+        if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
+        grupo.flashcardsCompartilhados = grupo.flashcardsCompartilhados.concat(cardsImportados);
+        localStorage.setItem('gruposEstudo', JSON.stringify(gruposEstudo));
+        renderizarDetalheGrupo(grupo);
+        mostrarToast('✅ Flashcards importados!', '#22c55e');
+      } catch (e) {
+        alertErro('Erro', 'JSON inválido!');
+      }
+    }
+  });
+}
+
+function voltarListaGrupos() {
+  renderizarListaGrupos();
+}
+
+// ===== EXPORTAR =====
+window.abrirGruposEstudo = abrirGruposEstudo;
+window.fecharGruposEstudo = fecharGruposEstudo;
+window.abrirCriarGrupo = abrirCriarGrupo;
+window.abrirEntrarGrupo = abrirEntrarGrupo;
+window.copiarCodigo = copiarCodigo;
+window.abrirDetalheGrupo = abrirDetalheGrupo;
+window.trocarAbaGrupo = trocarAbaGrupo;
+window.iniciarChamadaVideo = iniciarChamadaVideo;
+window.adicionarMembro = adicionarMembro;
+window.adicionarTema = adicionarTema;
+window.adicionarDuvida = adicionarDuvida;
+window.responderDuvida = responderDuvida;
+window.agendarReuniao = agendarReuniao;
+window.salvarNotasGrupo = salvarNotasGrupo;
+window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
+window.importarFlashcardsGrupo = importarFlashcardsGrupo;
+window.voltarListaGrupos = voltarListaGrupos;
