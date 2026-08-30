@@ -90,13 +90,16 @@ async function carregarPerfilUsuario() {
       window.usuarioLogadoPerfil = data;
 
       if (data.tipo_dom) {
-        aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
+        const tipoNorm = normalizarInteligencia(data.tipo_dom);
+        aplicarTemaInteligencia(tipoNorm);
+        storage.setItem("inteligenciaUsuario", tipoNorm);
       }
 
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
       if (typeof aplicarBloqueiosPlano === 'function') aplicarBloqueiosPlano();
+      if (typeof renderizarMetodosEstudo === 'function') renderizarMetodosEstudo();
     }
   } catch (err) {
     console.error(err);
@@ -8441,14 +8444,15 @@ if (typeof metodosPorInteligencia === 'undefined') {
 window.renderizarMetodosEstudo = function () {
   console.log('🎨 Renderizando métodos de estudo...');
 
-  let tipoInteligencia = sessionStorage.getItem('inteligenciaUsuario') || localStorage.getItem('inteligenciaUsuario');
-  console.log('📌 Inteligência salva:', tipoInteligencia);
-
-  if (!tipoInteligencia || !metodosPorInteligencia[tipoInteligencia]) {
+  let tipoInteligencia = null;
+  if (window.usuarioLogadoPerfil && window.usuarioLogadoPerfil.tipo_dom) {
+    tipoInteligencia = normalizarInteligencia(window.usuarioLogadoPerfil.tipo_dom);
+  } else {
     const user = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
-    if (user.tipo_dom) {
+    if (user && user.tipo_dom) {
       tipoInteligencia = normalizarInteligencia(user.tipo_dom);
-      console.log('📌 Inteligência do usuário:', tipoInteligencia);
+    } else {
+      tipoInteligencia = sessionStorage.getItem('inteligenciaUsuario') || localStorage.getItem('inteligenciaUsuario');
     }
   }
 
