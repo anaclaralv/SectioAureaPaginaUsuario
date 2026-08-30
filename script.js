@@ -306,6 +306,8 @@ if (cadastroForm) {
           const loginData = await loginResp.json();
           sessionStorage.setItem("token", loginData.token);
           sessionStorage.setItem("user", JSON.stringify(loginData.user));
+          sessionStorage.setItem("planoUsuario", (loginData.user?.plano || "gratuito").toLowerCase());
+          localStorage.removeItem("planoUsuario");
           
           const modalCadastroEl = document.getElementById("cadastro");
           const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
@@ -369,18 +371,21 @@ if (loginForm) {
         sessionStorage.removeItem("corPrimaria");
         sessionStorage.removeItem("token");
         sessionStorage.removeItem("user");
+        sessionStorage.removeItem("planoUsuario");
         
         localStorage.removeItem("userFoto");
         localStorage.removeItem("inteligenciaUsuario");
         localStorage.removeItem("corPrimaria");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("planoUsuario");
 
         const lembrar = document.getElementById("loginLembrar")?.checked;
         const storage = lembrar ? localStorage : sessionStorage;
 
         storage.setItem("token", data.token);
         storage.setItem("user", JSON.stringify(data.user));
+        storage.setItem("planoUsuario", (data.user?.plano || "gratuito").toLowerCase());
 
         if (data.user && data.user.tipo_dom) {
           const tipoSlug = normalizarInteligencia(data.user.tipo_dom);

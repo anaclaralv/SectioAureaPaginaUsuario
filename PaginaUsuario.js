@@ -86,6 +86,7 @@ async function carregarPerfilUsuario() {
         storage.removeItem("userFoto");
       }
       storage.setItem("user", JSON.stringify(data));
+      storage.setItem("planoUsuario", (data.plano || "gratuito").toLowerCase());
       window.usuarioLogadoPerfil = data;
 
       if (data.tipo_dom) {
@@ -95,13 +96,8 @@ async function carregarPerfilUsuario() {
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
+      if (typeof aplicarBloqueiosPlano === 'function') aplicarBloqueiosPlano();
     }
-    if (typeof aplicarBloqueiosPlano === 'function') {
-        aplicarBloqueiosPlano();
-      }
-      if (typeof atualizarBotoesPlanos === 'function') {
-        atualizarBotoesPlanos();
-      }
   } catch (err) {
     console.error(err);
   }
@@ -2557,9 +2553,15 @@ function sairDaConta() {
       fecharModalSeguro('configModal');
       
       // Limpar dados
+      sessionStorage.clear();
       localStorage.removeItem('usuarioLogado');
       localStorage.removeItem('usuarioId');
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('planoUsuario');
+      localStorage.removeItem('userFoto');
+      localStorage.removeItem('inteligenciaUsuario');
+      localStorage.removeItem('corPrimaria');
       
       // Redirecionar
       window.location.href = 'ProjetoIntegrador.html';
@@ -5470,7 +5472,9 @@ setTimeout(forcarAtualizacaoImediata, 10);
 
 // ===== PLANOS =====
 function verificarPlano() {
-  const plano = localStorage.getItem("planoUsuario") || "gratuito";
+  const user = window.usuarioLogadoPerfil || JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
+  const planoDb = user.plano || sessionStorage.getItem("planoUsuario") || localStorage.getItem("planoUsuario") || "gratuito";
+  const plano = String(planoDb).toLowerCase();
 
   const permissoes = {
     gratuito: {
@@ -5497,7 +5501,7 @@ function verificarPlano() {
   };
 
   return {
-    plano,
+    plano: permissoes[plano] ? plano : 'gratuito',
     permissoes: permissoes[plano] || permissoes.gratuito
   };
 }
@@ -5530,7 +5534,7 @@ function verificarAcesso(funcionalidade) {
 }
 
 function escolherPlano(tipo) {
-  const planoAtual = localStorage.getItem("planoUsuario") || "gratuito";
+  const { plano: planoAtual } = verificarPlano();
 
   if (tipo === planoAtual) {
     Swal.fire({
@@ -5558,7 +5562,17 @@ function escolherPlano(tipo) {
         body: JSON.stringify({ plano: planoDb })
       }).then(response => {
         if (response.ok) {
-          localStorage.setItem("planoUsuario", tipo);
+          if (window.usuarioLogadoPerfil) {
+            window.usuarioLogadoPerfil.plano = planoDb;
+          }
+          const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
+          storage.setItem("planoUsuario", tipo.toLowerCase());
+          try {
+            const u = JSON.parse(storage.getItem("user") || "{}");
+            u.plano = planoDb;
+            storage.setItem("user", JSON.stringify(u));
+          } catch (e) {}
+
           atualizarBotoesPlanos();
           atualizarBadgePlano();
           aplicarBloqueiosPlano();
