@@ -101,12 +101,19 @@ class GrupoEstudoController {
         $this->grupo->link_meet = $data->linkMeet ?? '';
         
         $membrosDefault = [["nome" => "Você (Criador)", "email" => "", "papel" => "Líder"]];
-        $this->grupo->membros = isset($data->membros) ? json_encode($data->membros) : json_encode($membrosDefault);
-        $this->grupo->temas = isset($data->temas) ? json_encode($data->temas) : '[]';
-        $this->grupo->duvidas = isset($data->duvidas) ? json_encode($data->duvidas) : '[]';
-        $this->grupo->reunioes = isset($data->reunioes) ? json_encode($data->reunioes) : '[]';
+        $this->grupo->membros = isset($data->membros) ? (is_string($data->membros) ? $data->membros : json_encode($data->membros, JSON_UNESCAPED_UNICODE)) : json_encode($membrosDefault, JSON_UNESCAPED_UNICODE);
+        $this->grupo->temas = isset($data->temas) ? (is_string($data->temas) ? $data->temas : json_encode($data->temas, JSON_UNESCAPED_UNICODE)) : '[]';
+        $this->grupo->duvidas = isset($data->duvidas) ? (is_string($data->duvidas) ? $data->duvidas : json_encode($data->duvidas, JSON_UNESCAPED_UNICODE)) : '[]';
+        $this->grupo->reunioes = isset($data->reunioes) ? (is_string($data->reunioes) ? $data->reunioes : json_encode($data->reunioes, JSON_UNESCAPED_UNICODE)) : '[]';
         $this->grupo->notas = $data->notas ?? '';
-        $this->grupo->flashcards_compartilhados = isset($data->flashcardsCompartilhados) ? json_encode($data->flashcardsCompartilhados) : '[]';
+        
+        if (isset($data->flashcardsCompartilhados)) {
+            $this->grupo->flashcards_compartilhados = is_string($data->flashcardsCompartilhados) ? $data->flashcardsCompartilhados : json_encode($data->flashcardsCompartilhados, JSON_UNESCAPED_UNICODE);
+        } elseif (isset($data->flashcards_compartilhados)) {
+            $this->grupo->flashcards_compartilhados = is_string($data->flashcards_compartilhados) ? $data->flashcards_compartilhados : json_encode($data->flashcards_compartilhados, JSON_UNESCAPED_UNICODE);
+        } else {
+            $this->grupo->flashcards_compartilhados = '[]';
+        }
         
         $data_criacao = $data->dataCriacao ?? date('Y-m-d H:i:s');
         $timestamp = strtotime($data_criacao);
@@ -138,13 +145,29 @@ class GrupoEstudoController {
         
         $this->grupo->nome = $data->nome ?? $this->grupo->nome;
         $this->grupo->materia = $data->materia ?? $this->grupo->materia;
-        $this->grupo->link_meet = $data->linkMeet ?? $this->grupo->link_meet;
-        $this->grupo->membros = isset($data->membros) ? json_encode($data->membros) : $this->grupo->membros;
-        $this->grupo->temas = isset($data->temas) ? json_encode($data->temas) : $this->grupo->temas;
-        $this->grupo->duvidas = isset($data->duvidas) ? json_encode($data->duvidas) : $this->grupo->duvidas;
-        $this->grupo->reunioes = isset($data->reunioes) ? json_encode($data->reunioes) : $this->grupo->reunioes;
-        $this->grupo->notas = $data->notas ?? $this->grupo->notas;
-        $this->grupo->flashcards_compartilhados = isset($data->flashcardsCompartilhados) ? json_encode($data->flashcardsCompartilhados) : $this->grupo->flashcards_compartilhados;
+        $this->grupo->link_meet = $data->linkMeet ?? ($data->link_meet ?? $this->grupo->link_meet);
+        
+        if (isset($data->membros)) {
+            $this->grupo->membros = is_string($data->membros) ? $data->membros : json_encode($data->membros, JSON_UNESCAPED_UNICODE);
+        }
+        if (isset($data->temas)) {
+            $this->grupo->temas = is_string($data->temas) ? $data->temas : json_encode($data->temas, JSON_UNESCAPED_UNICODE);
+        }
+        if (isset($data->duvidas)) {
+            $this->grupo->duvidas = is_string($data->duvidas) ? $data->duvidas : json_encode($data->duvidas, JSON_UNESCAPED_UNICODE);
+        }
+        if (isset($data->reunioes)) {
+            $this->grupo->reunioes = is_string($data->reunioes) ? $data->reunioes : json_encode($data->reunioes, JSON_UNESCAPED_UNICODE);
+        }
+        if (isset($data->notas)) {
+            $this->grupo->notas = $data->notas;
+        }
+        
+        if (isset($data->flashcardsCompartilhados)) {
+            $this->grupo->flashcards_compartilhados = is_string($data->flashcardsCompartilhados) ? $data->flashcardsCompartilhados : json_encode($data->flashcardsCompartilhados, JSON_UNESCAPED_UNICODE);
+        } elseif (isset($data->flashcards_compartilhados)) {
+            $this->grupo->flashcards_compartilhados = is_string($data->flashcards_compartilhados) ? $data->flashcards_compartilhados : json_encode($data->flashcards_compartilhados, JSON_UNESCAPED_UNICODE);
+        }
         
         if($this->grupo->update()) {
             echo json_encode(["message" => "Grupo de estudo atualizado com sucesso"]);

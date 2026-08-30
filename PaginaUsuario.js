@@ -11662,13 +11662,23 @@ window.mostrarResumoLeitura = mostrarResumoLeitura;
 
 let gruposEstudo = [];
 let grupoAtual = null;
+let abaAtivaGrupoAtual = 'membros';
+let cardsPraticaGrupo = [];
+let indicePraticaGrupo = 0;
 
 async function carregarGruposServidor() {
   try {
     const response = await apiFetch("gruposestudo");
     if (response.ok) {
       gruposEstudo = await response.json();
-      gruposEstudo.forEach(g => g.id = g.id_grupo);
+      gruposEstudo.forEach(g => {
+        g.id = g.id_grupo || g.id;
+        g.flashcardsCompartilhados = g.flashcardsCompartilhados || g.flashcards_compartilhados || [];
+        g.membros = g.membros || [];
+        g.temas = g.temas || [];
+        g.duvidas = g.duvidas || [];
+        g.reunioes = g.reunioes || [];
+      });
       renderizarListaGrupos();
     }
   } catch (err) {
@@ -11676,31 +11686,41 @@ async function carregarGruposServidor() {
   }
 }
 
-async function salvarGrupoServidor(grupo) {
+async function salvarGrupoServidor(grupo, manterAba = null) {
   try {
-    const response = await apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+    const groupId = grupo.id_grupo || grupo.id;
+    const payload = {
+      nome: grupo.nome,
+      materia: grupo.materia,
+      linkMeet: grupo.linkMeet || grupo.link_meet || '',
+      membros: grupo.membros || [],
+      temas: grupo.temas || [],
+      duvidas: grupo.duvidas || [],
+      reunioes: grupo.reunioes || [],
+      notas: grupo.notas || '',
+      flashcardsCompartilhados: grupo.flashcardsCompartilhados || grupo.flashcards_compartilhados || []
+    };
+
+    const response = await apiFetch(`gruposestudo/${groupId}`, {
       method: "PUT",
-      body: JSON.stringify({
-        nome: grupo.nome,
-        materia: grupo.materia,
-        linkMeet: grupo.linkMeet,
-        membros: grupo.membros,
-        temas: grupo.temas,
-        duvidas: grupo.duvidas,
-        reunioes: grupo.reunioes,
-        notas: grupo.notas,
-        flashcardsCompartilhados: grupo.flashcardsCompartilhados
-      })
+      body: JSON.stringify(payload)
     });
+
     if (response.ok) {
       await carregarGruposServidor();
-      if (grupoAtual && grupoAtual.id_grupo === grupo.id_grupo) {
-        grupoAtual = gruposEstudo.find(g => g.id_grupo === grupo.id_grupo);
-        abrirDetalheGrupo(grupoAtual.id_grupo);
+      if (grupoAtual && (grupoAtual.id_grupo == groupId || grupoAtual.id == groupId)) {
+        grupoAtual = gruposEstudo.find(g => (g.id_grupo == groupId || g.id == groupId)) || grupo;
+        const abaParaRenderizar = manterAba || abaAtivaGrupoAtual || 'membros';
+        renderizarDetalheGrupo(grupoAtual);
+        trocarAbaGrupo(abaParaRenderizar);
       }
+    } else {
+      console.error("Erro ao atualizar grupo no servidor:", await response.text());
+      mostrarToast('❌ Erro ao salvar grupo no servidor', '#ef4444');
     }
   } catch (err) {
     console.error("Erro ao salvar grupo no servidor:", err);
+    mostrarToast('❌ Erro de conexão ao salvar grupo', '#ef4444');
   }
 }
 
@@ -11727,7 +11747,8 @@ function renderizarListaGrupos() {
   const container = document.getElementById('listaGruposEstudo');
   if (!container) return;
 
-  document.getElementById('detalheGrupoEstudo').style.display = 'none';
+  const detalhe = document.getElementById('detalheGrupoEstudo');
+  if (detalhe) detalhe.style.display = 'none';
   container.style.display = 'block';
 
   if (gruposEstudo.length === 0) {
@@ -11744,27 +11765,34 @@ function renderizarListaGrupos() {
     return;
   }
 
-  container.innerHTML = gruposEstudo.map(grupo => `
-    <div style="background: white; border: 2px solid #e5e7eb; border-radius: 15px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.3s;"
-         onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)'; this.style.borderColor='var(--cor-primaria)'"
-         onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb'"
-         onclick="abrirDetalheGrupo(${grupo.id})">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div>
-          <h3 style="margin: 0; color: #1f2937;">${grupo.nome}</h3>
-          <small style="color: #9ca3af;">Código: <strong>${grupo.codigo}</strong></small>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
-            <i class="bi bi-people"></i> ${grupo.membros.length} membro(s)
-          </span>
-          <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
-            <i class="bi bi-chat-dots"></i> ${grupo.duvidas ? grupo.duvidas.length : 0} dúvida(s)
-          </span>
+  container.innerHTML = gruposEstudo.map(grupo => {
+    const groupId = grupo.id_grupo || grupo.id;
+    const totalCards = grupo.flashcardsCompartilhados ? grupo.flashcardsCompartilhados.length : 0;
+    return `
+      <div style="background: white; border: 2px solid #e5e7eb; border-radius: 15px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.3s;"
+           onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)'; this.style.borderColor='var(--cor-primaria)'"
+           onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e5e7eb'"
+           onclick="abrirDetalheGrupo(${groupId})">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="margin: 0; color: #1f2937;">${grupo.nome}</h3>
+            <small style="color: #9ca3af;">Matéria: <strong>${grupo.materia || 'Geral'}</strong> | Código: <strong>${grupo.codigo}</strong></small>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+              <i class="bi bi-people"></i> ${grupo.membros ? grupo.membros.length : 0} membro(s)
+            </span>
+            <span style="background: #f3f4f6; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;">
+              <i class="bi bi-chat-dots"></i> ${grupo.duvidas ? grupo.duvidas.length : 0} dúvida(s)
+            </span>
+            <span style="background: #e0e7ff; color: #3730a3; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+              <i class="bi bi-collection"></i> ${totalCards} flashcard(s)
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // ===== CRIAR GRUPO =====
@@ -11797,11 +11825,11 @@ function abrirCriarGrupo() {
       
       let userEmail = '';
       let userName = 'Criador';
-      const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
-      if (userObj) {
+      try {
+        const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
         if (userObj.email) userEmail = userObj.email;
         if (userObj.nome) userName = userObj.nome;
-      }
+      } catch (e) {}
       
       apiFetch("gruposestudo", {
         method: "POST",
@@ -11825,8 +11853,8 @@ function abrirCriarGrupo() {
             icon: 'success',
             title: 'Grupo criado!',
             html: `
-              <p>Código do grupo: <strong style="font-size: 1.5rem;">${codigo}</strong></p>
-              <p>Compartilhe este código com seus amigos!</p>
+              <p>Código do grupo: <strong style="font-size: 1.5rem; letter-spacing: 2px;">${codigo}</strong></p>
+              <p>Compartilhe este código com seus colegas para eles entrarem no grupo!</p>
               <button onclick="copiarCodigo('${codigo}')" class="swal2-confirm swal2-styled" style="background: #3b82f6;">
                 <i class="bi bi-clipboard"></i> Copiar Código
               </button>
@@ -11849,7 +11877,7 @@ function abrirEntrarGrupo() {
   Swal.fire({
     title: '🔑 Entrar no Grupo',
     input: 'text',
-    inputPlaceholder: 'Digite o código do grupo',
+    inputPlaceholder: 'Digite o código do grupo (6 dígitos)',
     showCancelButton: true,
     confirmButtonText: '<i class="bi bi-box-arrow-in-right"></i> Entrar',
     cancelButtonText: 'Cancelar',
@@ -11870,39 +11898,49 @@ function abrirEntrarGrupo() {
           Swal.fire({
             icon: 'error',
             title: 'Grupo não encontrado!',
-            text: 'Verifique o código e tente novamente.'
+            text: 'Verifique o código digitado e tente novamente.'
           });
           return;
         }
         
         response.json().then(grupo => {
+          let userName = '';
+          let userEmail = '';
+          try {
+            const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+            if (userObj.nome) userName = userObj.nome;
+            if (userObj.email) userEmail = userObj.email;
+          } catch (e) {}
+
           Swal.fire({
-            title: 'Digite seu nome',
-            input: 'text',
+            title: 'Confirmar Entrada',
+            text: `Deseja entrar no grupo "${grupo.nome}"?`,
+            input: userName ? undefined : 'text',
             inputPlaceholder: 'Seu nome',
             showCancelButton: true,
-            confirmButtonText: 'Entrar',
+            confirmButtonText: 'Entrar no Grupo',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#22c55e',
-            preConfirm: (nome) => {
-              if (!nome || !nome.trim()) {
+            preConfirm: (inputNome) => {
+              const nomeFinal = userName || (inputNome && inputNome.trim());
+              if (!nomeFinal) {
                 Swal.showValidationMessage('Digite seu nome!');
                 return false;
               }
-              return nome;
+              return nomeFinal;
             }
           }).then(res => {
             if (res.isConfirmed) {
-              let userEmail = '';
-              const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
-              if (userObj && userObj.email) {
-                userEmail = userObj.email;
+              const nomeFinal = res.value || userName || 'Membro';
+              const membros = grupo.membros || [];
+              
+              const jaEsta = membros.some(m => (m.email && m.email === userEmail) || (m.nome && m.nome.toLowerCase() === nomeFinal.toLowerCase()));
+              if (!jaEsta) {
+                membros.push({ nome: nomeFinal, email: userEmail, papel: 'Membro' });
               }
               
-              const membros = grupo.membros || [];
-              membros.push({ nome: res.value, email: userEmail, papel: 'Membro' });
-              
-              apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+              const groupId = grupo.id_grupo || grupo.id;
+              apiFetch(`gruposestudo/${groupId}`, {
                 method: "PUT",
                 body: JSON.stringify({ membros: membros })
               }).then(resPut => {
@@ -11910,8 +11948,8 @@ function abrirEntrarGrupo() {
                   carregarGruposServidor();
                   Swal.fire({
                     icon: 'success',
-                    title: `Bem-vindo ao ${grupo.nome}!`,
-                    timer: 1500,
+                    title: `Bem-vindo ao grupo ${grupo.nome}!`,
+                    timer: 1800,
                     showConfirmButton: false
                   });
                 } else {
@@ -11926,7 +11964,7 @@ function abrirEntrarGrupo() {
         Swal.fire({
           icon: 'error',
           title: 'Erro de conexão!',
-          text: 'Não foi possível buscar o grupo.'
+          text: 'Não foi possível buscar as informações do grupo.'
         });
       });
     }
@@ -11952,14 +11990,16 @@ function copiarCodigo(codigo) {
 
 // ===== ABRIR DETALHE DO GRUPO =====
 function abrirDetalheGrupo(id) {
-  const grupo = gruposEstudo.find(g => g.id === id);
+  const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
   if (!grupo) return;
 
   grupoAtual = grupo;
 
-  document.getElementById('listaGruposEstudo').style.display = 'none';
+  const lista = document.getElementById('listaGruposEstudo');
+  if (lista) lista.style.display = 'none';
+
   const detalhe = document.getElementById('detalheGrupoEstudo');
-  detalhe.style.display = 'block';
+  if (detalhe) detalhe.style.display = 'block';
 
   renderizarDetalheGrupo(grupo);
 }
@@ -11969,22 +12009,25 @@ function renderizarDetalheGrupo(grupo) {
   const container = document.getElementById('detalheGrupoEstudo');
   if (!container) return;
 
+  const groupId = grupo.id_grupo || grupo.id;
+  const totalCards = grupo.flashcardsCompartilhados ? grupo.flashcardsCompartilhados.length : (grupo.flashcards_compartilhados ? grupo.flashcards_compartilhados.length : 0);
+
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
       <div>
-        <button onclick="voltarListaGrupos()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 0.9rem;">
-          <i class="bi bi-arrow-left"></i> Voltar
+        <button onclick="voltarListaGrupos()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 0.9rem; font-weight: 500;">
+          <i class="bi bi-arrow-left"></i> Voltar para Lista
         </button>
         <h2 style="margin: 5px 0 0; color: #1f2937;">${grupo.nome}</h2>
-        <small style="color: #9ca3af;">📚 ${grupo.materia} | Código: <strong>${grupo.codigo}</strong></small>
+        <small style="color: #9ca3af;">📚 Matéria: <strong>${grupo.materia || 'Geral'}</strong> | Código: <strong>${grupo.codigo}</strong></small>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button onclick="iniciarChamadaVideo(${grupo.id})"
+        <button onclick="iniciarChamadaVideo(${groupId})"
           style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
           <i class="bi bi-camera-video"></i> Chamada de Vídeo
         </button>
         <button onclick="copiarCodigo('${grupo.codigo}')"
-          style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600;">
+          style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
           <i class="bi bi-clipboard"></i> Copiar Código
         </button>
       </div>
@@ -11994,11 +12037,11 @@ function renderizarDetalheGrupo(grupo) {
     <div style="display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto;">
       <button onclick="trocarAbaGrupo('membros')" class="aba-grupo-btn active" id="abaMembros"
         style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: var(--cor-primaria); border-bottom: 3px solid var(--cor-primaria); white-space: nowrap;">
-        <i class="bi bi-people"></i> Membros (${grupo.membros.length})
+        <i class="bi bi-people"></i> Membros (${grupo.membros ? grupo.membros.length : 0})
       </button>
       <button onclick="trocarAbaGrupo('temas')" class="aba-grupo-btn" id="abaTemas"
         style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
-        <i class="bi bi-journal-bookmark"></i> Temas
+        <i class="bi bi-journal-bookmark"></i> Temas (${grupo.temas ? grupo.temas.length : 0})
       </button>
       <button onclick="trocarAbaGrupo('duvidas')" class="aba-grupo-btn" id="abaDuvidas"
         style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
@@ -12010,11 +12053,11 @@ function renderizarDetalheGrupo(grupo) {
       </button>
       <button onclick="trocarAbaGrupo('reunioes')" class="aba-grupo-btn" id="abaReunioes"
         style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
-        <i class="bi bi-calendar-event"></i> Reuniões
+        <i class="bi bi-calendar-event"></i> Reuniões (${grupo.reunioes ? grupo.reunioes.length : 0})
       </button>
       <button onclick="trocarAbaGrupo('flashcards')" class="aba-grupo-btn" id="abaFlashcards"
         style="background: none; border: none; padding: 10px 18px; cursor: pointer; font-weight: 600; color: #6b7280; white-space: nowrap;">
-        <i class="bi bi-collection"></i> Flashcards
+        <i class="bi bi-collection"></i> Flashcards (${totalCards})
       </button>
     </div>
 
@@ -12026,6 +12069,7 @@ function renderizarDetalheGrupo(grupo) {
 
 // ===== TROCAR ABA =====
 function trocarAbaGrupo(aba) {
+  abaAtivaGrupoAtual = aba;
   document.querySelectorAll('.aba-grupo-btn').forEach(btn => {
     btn.style.color = '#6b7280';
     btn.style.borderBottom = 'none';
@@ -12041,6 +12085,7 @@ function trocarAbaGrupo(aba) {
   if (!grupo) return;
 
   const conteudo = document.getElementById('conteudoAbaGrupo');
+  if (!conteudo) return;
 
   switch (aba) {
     case 'membros':
@@ -12067,20 +12112,31 @@ function trocarAbaGrupo(aba) {
 // ===== ABA MEMBROS =====
 function renderizarAbaMembros(grupo) {
   let currentUserEmail = '';
-  const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
-  if (userObj && userObj.email) {
-    currentUserEmail = userObj.email;
-  }
+  try {
+    const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+    if (userObj && userObj.email) {
+      currentUserEmail = userObj.email;
+    }
+  } catch (e) {}
   
+  const groupId = grupo.id_grupo || grupo.id;
+  const membros = grupo.membros || [];
+
   return `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <h3 style="margin: 0;">Membros do Grupo</h3>
-      <button onclick="adicionarMembro(${grupo.id})"
-        style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
-        <i class="bi bi-plus"></i> Adicionar
-      </button>
+      <h3 style="margin: 0;">Membros do Grupo (${membros.length})</h3>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="adicionarMembro(${groupId})"
+          style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-plus"></i> Adicionar
+        </button>
+        <button onclick="sairDoGrupo(${groupId})"
+          style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+          <i class="bi bi-box-arrow-left"></i> Sair do Grupo
+        </button>
+      </div>
     </div>
-    ${grupo.membros.map((m, i) => {
+    ${membros.map((m, i) => {
       const isMe = (m.email && m.email === currentUserEmail);
       const labelNome = isMe ? `${m.nome} (Você)` : m.nome;
       return `
@@ -12094,7 +12150,7 @@ function renderizarAbaMembros(grupo) {
               <br><small style="color: #9ca3af;">${m.papel || 'Membro'}</small>
             </div>
           </div>
-          ${i !== 0 ? `<button onclick="removerMembro(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
+          ${i !== 0 ? `<button onclick="removerMembro(${groupId}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>` : ''}
         </div>
       `;
     }).join('')}
@@ -12103,21 +12159,24 @@ function renderizarAbaMembros(grupo) {
 
 // ===== ABA TEMAS =====
 function renderizarAbaTemas(grupo) {
+  const groupId = grupo.id_grupo || grupo.id;
+  const temas = grupo.temas || [];
+
   return `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <h3 style="margin: 0;">Divisão de Temas</h3>
-      <button onclick="adicionarTema(${grupo.id})"
+      <button onclick="adicionarTema(${groupId})"
         style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
         <i class="bi bi-plus"></i> Adicionar Tema
       </button>
     </div>
-    ${grupo.temas && grupo.temas.length > 0 ? grupo.temas.map((tema, i) => `
+    ${temas.length > 0 ? temas.map((tema, i) => `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px;">
         <div>
           <strong>${tema.titulo}</strong>
           <br><small style="color: #9ca3af;">Responsável: ${tema.responsavel || 'Não definido'}</small>
         </div>
-        <button onclick="removerTema(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+        <button onclick="removerTema(${groupId}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
       </div>
     `).join('') : '<p style="color: #9ca3af;">Nenhum tema definido ainda.</p>'}
   `;
@@ -12125,32 +12184,38 @@ function renderizarAbaTemas(grupo) {
 
 // ===== ABA DÚVIDAS =====
 function renderizarAbaDuvidas(grupo) {
+  const groupId = grupo.id_grupo || grupo.id;
+  const duvidas = grupo.duvidas || [];
+
   return `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <h3 style="margin: 0;">Quadro de Dúvidas</h3>
-      <button onclick="adicionarDuvida(${grupo.id})"
+      <button onclick="adicionarDuvida(${groupId})"
         style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
         <i class="bi bi-plus"></i> Nova Dúvida
       </button>
     </div>
-    ${grupo.duvidas && grupo.duvidas.length > 0 ? grupo.duvidas.map((d, i) => `
+    ${duvidas.length > 0 ? duvidas.map((d, i) => `
       <div style="padding: 15px; background: ${d.resposta ? '#f0fdf4' : '#fef3c7'}; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${d.resposta ? '#22c55e' : '#f59e0b'};">
         <strong>${d.pergunta}</strong>
-        <br><small style="color: #9ca3af;">Por: ${d.autor}</small>
-        ${d.resposta ? `<br><span style="color: #16a34a;">✅ Respondido: ${d.resposta}</span>` : ''}
-        ${!d.resposta ? `<br><button onclick="responderDuvida(${grupo.id}, ${i})" style="margin-top: 8px; background: #22c55e; color: white; border: none; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8rem;">Responder</button>` : ''}
-        <button onclick="removerDuvida(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer; float: right;"><i class="bi bi-trash"></i></button>
+        <br><small style="color: #9ca3af;">Por: ${d.autor || 'Membro'}</small>
+        ${d.resposta ? `<br><span style="color: #16a34a; font-weight: 500;">✅ Respondido: ${d.resposta}</span>` : ''}
+        ${!d.resposta ? `<br><button onclick="responderDuvida(${groupId}, ${i})" style="margin-top: 8px; background: #22c55e; color: white; border: none; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Responder</button>` : ''}
+        <button onclick="removerDuvida(${groupId}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer; float: right;"><i class="bi bi-trash"></i></button>
       </div>
-    `).join('') : '<p style="color: #9ca3af;">Nenhuma dúvida ainda.</p>'}
+    `).join('') : '<p style="color: #9ca3af;">Nenhuma dúvida cadastrada ainda.</p>'}
   `;
 }
 
 // ===== ABA NOTAS =====
 function renderizarAbaNotas(grupo) {
+  const groupId = grupo.id_grupo || grupo.id;
+
   return `
-    <h3 style="margin-bottom: 15px;">Notas do Grupo</h3>
-    <textarea id="notasGrupoTexto" rows="8" style="width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; resize: vertical; font-family: 'Poppins', sans-serif;">${grupo.notas || ''}</textarea>
-    <button onclick="salvarNotasGrupo(${grupo.id})"
+    <h3 style="margin-bottom: 15px;">Notas Coletivas do Grupo</h3>
+    <textarea id="notasGrupoTexto" rows="8" placeholder="Escreva notas, resumos ou anotações compartilhadas aqui..."
+      style="width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.9rem; resize: vertical; font-family: 'Poppins', sans-serif;">${grupo.notas || ''}</textarea>
+    <button onclick="salvarNotasGrupo(${groupId})"
       style="margin-top: 10px; background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 600;">
       <i class="bi bi-save"></i> Salvar Notas
     </button>
@@ -12159,21 +12224,24 @@ function renderizarAbaNotas(grupo) {
 
 // ===== ABA REUNIÕES =====
 function renderizarAbaReunioes(grupo) {
+  const groupId = grupo.id_grupo || grupo.id;
+  const reunioes = grupo.reunioes || [];
+
   return `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <h3 style="margin: 0;">Reuniões</h3>
-      <button onclick="agendarReuniao(${grupo.id})"
+      <h3 style="margin: 0;">Reuniões Agendadas</h3>
+      <button onclick="agendarReuniao(${groupId})"
         style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
         <i class="bi bi-calendar-plus"></i> Agendar
       </button>
     </div>
-    ${grupo.reunioes && grupo.reunioes.length > 0 ? grupo.reunioes.map((r, i) => `
+    ${reunioes.length > 0 ? reunioes.map((r, i) => `
       <div style="padding: 12px; background: #f9fafb; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong>${r.titulo}</strong>
-          <br><small style="color: #9ca3af;">${new Date(r.data).toLocaleDateString('pt-BR')} às ${r.hora}</small>
+          <br><small style="color: #9ca3af;">📅 ${r.data ? new Date(r.data).toLocaleDateString('pt-BR') : 'Sem data'} às ${r.hora || 'Horário a definir'}</small>
         </div>
-        <button onclick="removerReuniao(${grupo.id}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
+        <button onclick="removerReuniao(${groupId}, ${i})" style="background: none; border: none; color: #ef4444; cursor: pointer;"><i class="bi bi-trash"></i></button>
       </div>
     `).join('') : '<p style="color: #9ca3af;">Nenhuma reunião agendada.</p>'}
   `;
@@ -12181,31 +12249,511 @@ function renderizarAbaReunioes(grupo) {
 
 // ===== ABA FLASHCARDS =====
 function renderizarAbaFlashcards(grupo) {
-  return `
-    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-      <button onclick="exportarFlashcardsGrupo(${grupo.id})"
-        style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
-        <i class="bi bi-download"></i> Exportar Flashcards
-      </button>
-      <button onclick="importarFlashcardsGrupo(${grupo.id})"
-        style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600;">
-        <i class="bi bi-upload"></i> Importar Flashcards
-      </button>
+  const cards = grupo.flashcardsCompartilhados || grupo.flashcards_compartilhados || [];
+  const groupId = grupo.id_grupo || grupo.id;
+
+  let html = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="exportarFlashcardsGrupo(${groupId})"
+          style="background: #3b82f6; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(59,130,246,0.2);">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Compartilhar Meus Flashcards
+        </button>
+        <button onclick="importarFlashcardsGrupo(${groupId})"
+          style="background: #22c55e; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(34,197,94,0.2);">
+          <i class="bi bi-cloud-arrow-down-fill"></i> Importar Todos para Minha Conta
+        </button>
+        ${cards.length > 0 ? `
+          <button onclick="praticarFlashcardsGrupo(${groupId})"
+            style="background: #8b5cf6; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(139,92,246,0.2);">
+            <i class="bi bi-play-circle-fill"></i> Praticar com o Grupo
+          </button>
+        ` : ''}
+      </div>
+      <span style="font-size: 0.85rem; color: #6b7280; font-weight: 500;">
+        Total: <strong>${cards.length}</strong> card(s)
+      </span>
     </div>
-    <h4>Flashcards Compartilhados (${grupo.flashcardsCompartilhados ? grupo.flashcardsCompartilhados.length : 0})</h4>
-    ${grupo.flashcardsCompartilhados && grupo.flashcardsCompartilhados.length > 0 ?
-      grupo.flashcardsCompartilhados.map(f => `
-        <div style="padding: 10px; background: #f9fafb; border-radius: 8px; margin-bottom: 5px;">
-          <strong>${f.pergunta}</strong> → ${f.resposta}
-        </div>
-      `).join('') :
-      '<p style="color: #9ca3af;">Nenhum flashcard compartilhado.</p>'}
   `;
+
+  if (cards.length === 0) {
+    html += `
+      <div style="text-align: center; padding: 40px 20px; background: #f9fafb; border-radius: 12px; border: 2px dashed #e5e7eb;">
+        <i class="bi bi-collection" style="font-size: 2.5rem; color: #d1d5db;"></i>
+        <h4 style="color: #4b5563; margin: 10px 0 5px;">Nenhum flashcard compartilhado</h4>
+        <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 15px;">Compartilhe flashcards do seu sistema para estudar junto com seus colegas!</p>
+        <button onclick="exportarFlashcardsGrupo(${groupId})"
+          style="background: #3b82f6; color: white; border: none; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">
+          <i class="bi bi-plus-lg"></i> Compartilhar Flashcards
+        </button>
+      </div>
+    `;
+    return html;
+  }
+
+  html += `<div style="display: grid; gap: 12px;">`;
+
+  cards.forEach((f, index) => {
+    const cardId = `grupoCard_${index}`;
+    const materia = f.materiaNome || grupo.materia || 'Geral';
+    const tema = f.tema || 'Geral';
+    const autor = f.compartilhadoPor || 'Membro';
+
+    html += `
+      <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <span style="background: #e0e7ff; color: #3730a3; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 6px;">
+              ${materia}
+            </span>
+            ${tema !== 'Geral' ? `
+              <span style="background: #f3f4f6; color: #4b5563; font-size: 0.75rem; font-weight: 500; padding: 3px 8px; border-radius: 6px;">
+                📂 ${tema}
+              </span>
+            ` : ''}
+            <small style="color: #9ca3af; font-size: 0.75rem;">👤 ${autor}</small>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="importarFlashcardIndividual(${groupId}, ${index})" title="Importar este flashcard para meu sistema"
+              style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500;">
+              <i class="bi bi-download"></i> Salvar
+            </button>
+            <button onclick="removerFlashcardGrupo(${groupId}, ${index})" title="Remover do grupo"
+              style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin: 10px 0 6px; font-weight: 600; color: #1f2937; font-size: 0.95rem;">
+          ❓ ${f.pergunta}
+        </div>
+
+        <div id="${cardId}_resposta" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb; color: #059669; font-size: 0.9rem; font-weight: 500;">
+          💡 <strong>Resposta:</strong> ${f.resposta}
+        </div>
+
+        <button onclick="
+          const resp = document.getElementById('${cardId}_resposta');
+          if (resp.style.display === 'none') {
+            resp.style.display = 'block';
+            this.innerHTML = '<i class=\\'bi bi-eye-slash\\'></i> Ocultar Resposta';
+          } else {
+            resp.style.display = 'none';
+            this.innerHTML = '<i class=\\'bi bi-eye\\'></i> Ver Resposta';
+          }
+        " style="background: none; border: none; color: #3b82f6; cursor: pointer; font-size: 0.8rem; padding: 0; margin-top: 4px; font-weight: 500;">
+          <i class="bi bi-eye"></i> Ver Resposta
+        </button>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+// ===== EXPORTAR FLASHCARDS PARA O GRUPO =====
+async function exportarFlashcardsGrupo(id) {
+  // Garantir que os flashcards estão carregados
+  if (!flashcards || flashcards.length === 0) {
+    const salvos = localStorage.getItem("flashcards_sistema");
+    if (salvos) {
+      try {
+        flashcards = JSON.parse(salvos);
+      } catch (e) {
+        flashcards = [];
+      }
+    }
+  }
+
+  if (!flashcards || flashcards.length === 0) {
+    try {
+      await carregarFlashcardsDoBackend();
+    } catch (e) {}
+  }
+
+  if (!flashcards || flashcards.length === 0) {
+    Swal.fire({
+      title: 'Nenhum Flashcard Encontrado',
+      text: 'Você não possui flashcards cadastrados no seu sistema pessoal. Crie alguns flashcards na aba de Revisão para poder compartilhá-los com seu grupo!',
+      icon: 'info',
+      confirmButtonColor: '#3b82f6'
+    });
+    return;
+  }
+
+  const grupo = gruposEstudo.find(g => (g.id_grupo == id || g.id == id)) || grupoAtual;
+  if (!grupo) {
+    mostrarToast('❌ Grupo não encontrado', '#ef4444');
+    return;
+  }
+
+  // Agrupar matérias existentes nos flashcards do usuário
+  const materiasMap = new Map();
+  flashcards.forEach(f => {
+    const matNome = f.materiaNome || 'Geral';
+    materiasMap.set(matNome, (materiasMap.get(matNome) || 0) + 1);
+  });
+
+  let optionsHtml = `<option value="todos">🌟 Todos os flashcards (${flashcards.length} cards)</option>`;
+  materiasMap.forEach((qtd, matNome) => {
+    optionsHtml += `<option value="${matNome}">📚 ${matNome} (${qtd} card${qtd > 1 ? 's' : ''})</option>`;
+  });
+
+  Swal.fire({
+    title: '📤 Compartilhar com o Grupo',
+    html: `
+      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 12px; text-align: left;">
+        Escolha quais flashcards do seu acervo pessoal você deseja enviar para o grupo <strong>${grupo.nome}</strong>:
+      </p>
+      <select id="selectExportMateria" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 15px 0;">
+        ${optionsHtml}
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-cloud-arrow-up"></i> Compartilhar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      return document.getElementById('selectExportMateria').value;
+    }
+  }).then(async result => {
+    if (result.isConfirmed) {
+      const materiaSelecionada = result.value;
+      
+      let cardsFiltrados = flashcards;
+      if (materiaSelecionada !== 'todos') {
+        cardsFiltrados = flashcards.filter(f => 
+          (f.materiaNome && f.materiaNome.trim().toLowerCase() === materiaSelecionada.trim().toLowerCase()) ||
+          f.materiaNome === materiaSelecionada
+        );
+      }
+
+      if (cardsFiltrados.length === 0) {
+        Swal.fire('Nenhum flashcard', `Nenhum flashcard encontrado na matéria "${materiaSelecionada}".`, 'warning');
+        return;
+      }
+
+      if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
+
+      let userObj = {};
+      try {
+        userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+      } catch (e) {}
+      const autorNome = userObj.nome || 'Você';
+
+      let adicionados = 0;
+      cardsFiltrados.forEach(cf => {
+        const perguntaNorm = (cf.pergunta || '').trim().toLowerCase();
+        const existe = grupo.flashcardsCompartilhados.some(f => (f.pergunta || '').trim().toLowerCase() === perguntaNorm);
+        if (!existe) {
+          grupo.flashcardsCompartilhados.push({
+            id: cf.id || (Date.now() + Math.random()),
+            pergunta: cf.pergunta,
+            resposta: cf.resposta,
+            materiaNome: cf.materiaNome || materiaSelecionada || 'Geral',
+            tema: cf.tema || 'Geral',
+            compartilhadoPor: autorNome,
+            dataCompartilhamento: new Date().toISOString()
+          });
+          adicionados++;
+        }
+      });
+
+      if (adicionados > 0) {
+        await salvarGrupoServidor(grupo, 'flashcards');
+        Swal.fire({
+          icon: 'success',
+          title: 'Flashcards Compartilhados!',
+          text: `${adicionados} flashcard(s) foram adicionados ao grupo com sucesso.`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire('Nenhum card novo', 'Todos os flashcards selecionados já foram compartilhados neste grupo anteriormente.', 'info');
+      }
+    }
+  });
+}
+
+// ===== IMPORTAR TODOS OS FLASHCARDS DO GRUPO =====
+function importarFlashcardsGrupo(id) {
+  const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id)) || grupoAtual;
+  if (!grupo || !grupo.flashcardsCompartilhados || grupo.flashcardsCompartilhados.length === 0) {
+    Swal.fire({
+      title: 'Lista Vazia',
+      text: 'Este grupo não possui flashcards compartilhados para importar.',
+      icon: 'info'
+    });
+    return;
+  }
+
+  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
+  if (materiasLista.length === 0) {
+    Swal.fire({
+      title: 'Nenhuma Matéria',
+      text: 'Você precisa criar pelo menos uma matéria no seu cronograma para importar flashcards.',
+      icon: 'warning'
+    });
+    return;
+  }
+
+  let optionsHtml = '';
+  materiasLista.forEach(mat => {
+    optionsHtml += `<option value="${mat.id}">${mat.nome}</option>`;
+  });
+
+  Swal.fire({
+    title: '📥 Importar para meu Sistema',
+    html: `
+      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px; text-align: left;">
+        Selecione em qual das suas matérias os <strong>${grupo.flashcardsCompartilhados.length}</strong> flashcards deste grupo serão salvos:
+      </p>
+      <select id="selectImportMateria" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 auto 15px;">
+        ${optionsHtml}
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Importar Todos',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280',
+    preConfirm: () => {
+      const select = document.getElementById('selectImportMateria');
+      return {
+        id: select.value,
+        nome: select.options[select.selectedIndex].text
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const materiaDestino = result.value;
+      
+      let adicionadosCount = 0;
+      grupo.flashcardsCompartilhados.forEach(f => {
+        const perguntaNorm = (f.pergunta || '').trim().toLowerCase();
+        const existe = flashcards.some(pf => (pf.pergunta || '').trim().toLowerCase() === perguntaNorm);
+        if (!existe) {
+          const novoCard = {
+            id: Date.now() + Math.random(),
+            materiaId: Number(materiaDestino.id),
+            materiaNome: materiaDestino.nome,
+            tema: f.tema || "Importado do Grupo",
+            pergunta: f.pergunta,
+            resposta: f.resposta,
+            nivel: 0,
+            dataProxima: new Date().toISOString().split("T")[0],
+            acertos: 0,
+            erros: 0
+          };
+          
+          flashcards.push(novoCard);
+          if (typeof salvarFlashcardNoBackend === 'function') {
+            salvarFlashcardNoBackend(novoCard);
+          }
+          adicionadosCount++;
+        }
+      });
+
+      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      
+      if (typeof renderizarFlashcardsAgrupados === 'function') {
+        renderizarFlashcardsAgrupados();
+      }
+
+      Swal.fire({
+        title: 'Importação Concluída!',
+        text: `${adicionadosCount} novos flashcards foram salvos na matéria "${materiaDestino.nome}".`,
+        icon: 'success'
+      });
+    }
+  });
+}
+
+// ===== IMPORTAR FLASHCARD INDIVIDUAL =====
+function importarFlashcardIndividual(id, index) {
+  const grupo = gruposEstudo.find(g => (g.id_grupo == id || g.id == id)) || grupoAtual;
+  if (!grupo || !grupo.flashcardsCompartilhados || !grupo.flashcardsCompartilhados[index]) {
+    mostrarToast('❌ Flashcard não encontrado', '#ef4444');
+    return;
+  }
+
+  const card = grupo.flashcardsCompartilhados[index];
+  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
+
+  let optionsHtml = '';
+  if (materiasLista.length > 0) {
+    materiasLista.forEach(mat => {
+      const selected = (card.materiaNome && mat.nome.toLowerCase() === card.materiaNome.toLowerCase()) ? 'selected' : '';
+      optionsHtml += `<option value="${mat.id}" ${selected}>${mat.nome}</option>`;
+    });
+  } else {
+    optionsHtml = '<option value="1">Geral</option>';
+  }
+
+  Swal.fire({
+    title: '📥 Salvar Flashcard',
+    html: `
+      <p style="font-size: 0.9rem; color: #4b5563; text-align: left; margin-bottom: 8px;">
+        <strong>Pergunta:</strong> ${card.pergunta}
+      </p>
+      <p style="font-size: 0.85rem; color: #6b7280; text-align: left; margin-bottom: 15px;">
+        Selecione a matéria de destino para salvar na sua conta:
+      </p>
+      <select id="selectImportMatIndiv" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0;">
+        ${optionsHtml}
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Salvar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#22c55e',
+    preConfirm: () => {
+      const sel = document.getElementById('selectImportMatIndiv');
+      return {
+        id: sel.value,
+        nome: sel.options[sel.selectedIndex].text
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed) {
+      const matDestino = result.value;
+      const perguntaNorm = (card.pergunta || '').trim().toLowerCase();
+      const existe = flashcards.some(pf => (pf.pergunta || '').trim().toLowerCase() === perguntaNorm);
+
+      if (existe) {
+        mostrarToast('⚠️ Você já possui este flashcard no seu sistema!', '#f59e0b');
+        return;
+      }
+
+      const novoCard = {
+        id: Date.now(),
+        materiaId: Number(matDestino.id),
+        materiaNome: matDestino.nome,
+        tema: card.tema || "Importado do Grupo",
+        pergunta: card.pergunta,
+        resposta: card.resposta,
+        nivel: 0,
+        dataProxima: new Date().toISOString().split("T")[0],
+        acertos: 0,
+        erros: 0
+      };
+
+      flashcards.push(novoCard);
+      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+      if (typeof salvarFlashcardNoBackend === 'function') {
+        salvarFlashcardNoBackend(novoCard);
+      }
+      if (typeof renderizarFlashcardsAgrupados === 'function') {
+        renderizarFlashcardsAgrupados();
+      }
+
+      mostrarToast('✅ Flashcard importado para sua conta!', '#22c55e');
+    }
+  });
+}
+
+// ===== REMOVER FLASHCARD DO GRUPO =====
+function removerFlashcardGrupo(id, index) {
+  const grupo = gruposEstudo.find(g => (g.id_grupo == id || g.id == id)) || grupoAtual;
+  if (!grupo || !grupo.flashcardsCompartilhados) return;
+
+  Swal.fire({
+    title: 'Remover Flashcard',
+    text: 'Deseja remover este flashcard compartilhado do grupo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remover',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280'
+  }).then(async result => {
+    if (result.isConfirmed) {
+      grupo.flashcardsCompartilhados.splice(index, 1);
+      await salvarGrupoServidor(grupo, 'flashcards');
+      mostrarToast('🗑️ Flashcard removido do grupo!', '#22c55e');
+    }
+  });
+}
+
+// ===== PRATICAR FLASHCARDS COM O GRUPO =====
+function praticarFlashcardsGrupo(id) {
+  const grupo = gruposEstudo.find(g => (g.id_grupo == id || g.id == id)) || grupoAtual;
+  if (!grupo || !grupo.flashcardsCompartilhados || grupo.flashcardsCompartilhados.length === 0) {
+    mostrarToast('Nenhum flashcard para praticar', '#f59e0b');
+    return;
+  }
+
+  cardsPraticaGrupo = [...grupo.flashcardsCompartilhados];
+  indicePraticaGrupo = 0;
+  abrirModalPraticaGrupo(grupo.nome);
+}
+
+function abrirModalPraticaGrupo(nomeGrupo) {
+  if (cardsPraticaGrupo.length === 0) return;
+  const total = cardsPraticaGrupo.length;
+  const card = cardsPraticaGrupo[indicePraticaGrupo];
+
+  Swal.fire({
+    title: `🎴 Estudo em Grupo - ${nomeGrupo}`,
+    html: `
+      <div style="text-align: left; padding: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #6b7280; margin-bottom: 12px;">
+          <span>Card <strong>${indicePraticaGrupo + 1}</strong> de <strong>${total}</strong></span>
+          <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${card.materiaNome || 'Geral'}</span>
+        </div>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
+          <small style="color: #9ca3af; text-transform: uppercase; font-weight: 700; font-size: 0.7rem;">Pergunta</small>
+          <p style="font-size: 1.05rem; font-weight: 600; color: #1f2937; margin: 5px 0 0;">${card.pergunta}</p>
+        </div>
+        <div id="praticaRespostaContainer" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
+          <small style="color: #059669; text-transform: uppercase; font-weight: 700; font-size: 0.7rem;">Resposta</small>
+          <p style="font-size: 1rem; font-weight: 500; color: #065f46; margin: 5px 0 0;">${card.resposta}</p>
+        </div>
+        <button id="btnRevelarPratica" onclick="
+          document.getElementById('praticaRespostaContainer').style.display='block';
+          this.style.display='none';
+        " style="width: 100%; background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+          <i class="bi bi-eye"></i> Revelar Resposta
+        </button>
+      </div>
+    `,
+    showDenyButton: indicePraticaGrupo > 0,
+    showCancelButton: true,
+    confirmButtonText: (indicePraticaGrupo + 1 < total) ? 'Próximo Card ➔' : 'Concluir Estudo 🏁',
+    denyButtonText: '⬅ Anterior',
+    cancelButtonText: 'Sair',
+    confirmButtonColor: '#22c55e',
+    denyButtonColor: '#6b7280',
+    cancelButtonColor: '#ef4444',
+    allowOutsideClick: false
+  }).then(result => {
+    if (result.isConfirmed) {
+      if (indicePraticaGrupo + 1 < total) {
+        indicePraticaGrupo++;
+        abrirModalPraticaGrupo(nomeGrupo);
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: '🎉 Parabéns!',
+          text: `Vocês completaram a revisão de todos os ${total} flashcards do grupo!`,
+          confirmButtonColor: '#22c55e'
+        });
+      }
+    } else if (result.isDenied) {
+      if (indicePraticaGrupo > 0) {
+        indicePraticaGrupo--;
+        abrirModalPraticaGrupo(nomeGrupo);
+      }
+    }
+  });
 }
 
 // ===== AÇÕES DO GRUPO =====
 function iniciarChamadaVideo(id) {
-  const grupo = gruposEstudo.find(g => g.id === id);
+  const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
   if (!grupo) return;
 
   Swal.fire({
@@ -12218,17 +12766,15 @@ function iniciarChamadaVideo(id) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      // Registrar reunião
+      if (!grupo.reunioes) grupo.reunioes = [];
       grupo.reunioes.push({
         titulo: `Chamada - ${grupo.nome}`,
         data: new Date().toISOString(),
         hora: new Date().toLocaleTimeString('pt-BR')
       });
-      salvarGrupoServidor(grupo);
+      salvarGrupoServidor(grupo, 'reunioes');
 
-      // Abrir Google Meet
       window.open('https://meet.google.com/new', '_blank');
-
       mostrarToast('📹 Abrindo Google Meet...', '#22c55e');
     }
   });
@@ -12245,10 +12791,13 @@ function adicionarMembro(id) {
     confirmButtonColor: '#22c55e'
   }).then(result => {
     if (result.isConfirmed && result.value.trim()) {
-      const grupo = gruposEstudo.find(g => g.id === id);
-      grupo.membros.push({ nome: result.value.trim(), email: '', papel: 'Membro' });
-      salvarGrupoServidor(grupo);
-      mostrarToast('✅ Membro adicionado!', '#22c55e');
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+      if (grupo) {
+        if (!grupo.membros) grupo.membros = [];
+        grupo.membros.push({ nome: result.value.trim(), email: '', papel: 'Membro' });
+        salvarGrupoServidor(grupo, 'membros');
+        mostrarToast('✅ Membro adicionado!', '#22c55e');
+      }
     }
   });
 }
@@ -12277,11 +12826,13 @@ function adicionarTema(id) {
     }
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
-      if (!grupo.temas) grupo.temas = [];
-      grupo.temas.push(result.value);
-      salvarGrupoServidor(grupo);
-      mostrarToast('✅ Tema adicionado!', '#22c55e');
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+      if (grupo) {
+        if (!grupo.temas) grupo.temas = [];
+        grupo.temas.push(result.value);
+        salvarGrupoServidor(grupo, 'temas');
+        mostrarToast('✅ Tema adicionado!', '#22c55e');
+      }
     }
   });
 }
@@ -12301,15 +12852,22 @@ function adicionarDuvida(id) {
     }
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
-      if (!grupo.duvidas) grupo.duvidas = [];
-      grupo.duvidas.push({
-        pergunta: result.value.trim(),
-        autor: 'Você',
-        resposta: ''
-      });
-      salvarGrupoServidor(grupo);
-      mostrarToast('✅ Dúvida enviada!', '#f59e0b');
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+      if (grupo) {
+        if (!grupo.duvidas) grupo.duvidas = [];
+        let userName = 'Você';
+        try {
+          const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+          if (userObj.nome) userName = userObj.nome;
+        } catch (e) {}
+        grupo.duvidas.push({
+          pergunta: result.value.trim(),
+          autor: userName,
+          resposta: ''
+        });
+        salvarGrupoServidor(grupo, 'duvidas');
+        mostrarToast('✅ Dúvida enviada!', '#f59e0b');
+      }
     }
   });
 }
@@ -12325,10 +12883,12 @@ function responderDuvida(id, index) {
     confirmButtonColor: '#22c55e'
   }).then(result => {
     if (result.isConfirmed && result.value.trim()) {
-      const grupo = gruposEstudo.find(g => g.id === id);
-      grupo.duvidas[index].resposta = result.value.trim();
-      salvarGrupoServidor(grupo);
-      mostrarToast('✅ Dúvida respondida!', '#22c55e');
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+      if (grupo && grupo.duvidas && grupo.duvidas[index]) {
+        grupo.duvidas[index].resposta = result.value.trim();
+        salvarGrupoServidor(grupo, 'duvidas');
+        mostrarToast('✅ Dúvida respondida!', '#22c55e');
+      }
     }
   });
 }
@@ -12347,190 +12907,29 @@ function agendarReuniao(id) {
     confirmButtonColor: '#3b82f6'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
-      if (!grupo.reunioes) grupo.reunioes = [];
-      grupo.reunioes.push({
-        titulo: document.getElementById('inputReuniaoTitulo').value || 'Reunião',
-        data: document.getElementById('inputReuniaoData').value,
-        hora: document.getElementById('inputReuniaoHora').value
-      });
-      salvarGrupoServidor(grupo);
-      mostrarToast('✅ Reunião agendada!', '#3b82f6');
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+      if (grupo) {
+        if (!grupo.reunioes) grupo.reunioes = [];
+        grupo.reunioes.push({
+          titulo: document.getElementById('inputReuniaoTitulo').value || 'Reunião',
+          data: document.getElementById('inputReuniaoData').value,
+          hora: document.getElementById('inputReuniaoHora').value
+        });
+        salvarGrupoServidor(grupo, 'reunioes');
+        mostrarToast('✅ Reunião agendada!', '#3b82f6');
+      }
     }
   });
 }
 
 function salvarNotasGrupo(id) {
-  const notas = document.getElementById('notasGrupoTexto').value;
-  const grupo = gruposEstudo.find(g => g.id === id);
-  grupo.notas = notas;
-  salvarGrupoServidor(grupo);
-  mostrarToast('✅ Notas salvas!', '#22c55e');
-}
-
-function exportarFlashcardsGrupo(id) {
-  const materiasLista = typeof materias !== 'undefined' ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
-  if (flashcards.length === 0) {
-    Swal.fire({
-      title: 'Nenhum Flashcard',
-      text: 'Você não possui flashcards no seu sistema para compartilhar.',
-      icon: 'info'
-    });
-    return;
+  const notas = document.getElementById('notasGrupoTexto') ? document.getElementById('notasGrupoTexto').value : '';
+  const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
+  if (grupo) {
+    grupo.notas = notas;
+    salvarGrupoServidor(grupo, 'notas');
+    mostrarToast('✅ Notas salvas!', '#22c55e');
   }
-
-  let optionsHtml = '<option value="todos">Todos os flashcards</option>';
-  materiasLista.forEach(mat => {
-    optionsHtml += `<option value="${mat.nome}">${mat.nome}</option>`;
-  });
-
-  Swal.fire({
-    title: '📤 Compartilhar com o Grupo',
-    html: `
-      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
-        Selecione quais flashcards do seu sistema pessoal você deseja enviar para este grupo de estudos:
-      </p>
-      <select id="selectExportMateria" class="swal2-input" style="width: 80%; margin: 0 auto 15px;">
-        ${optionsHtml}
-      </select>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Compartilhar',
-    cancelButtonText: 'Cancelar',
-    confirmButtonColor: '#3b82f6',
-    cancelButtonColor: '#6b7280',
-    preConfirm: () => {
-      return document.getElementById('selectExportMateria').value;
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const materiaSelecionada = result.value;
-      
-      let cardsFiltrados = flashcards;
-      if (materiaSelecionada !== 'todos') {
-        cardsFiltrados = flashcards.filter(f => f.materiaNome === materiaSelecionada);
-      }
-
-      if (cardsFiltrados.length === 0) {
-        Swal.fire('Nenhum flashcard', `Você não possui flashcards na matéria "${materiaSelecionada}".`, 'warning');
-        return;
-      }
-
-      const grupo = gruposEstudo.find(g => g.id === id);
-      if (grupo) {
-        if (!grupo.flashcardsCompartilhados) grupo.flashcardsCompartilhados = [];
-        
-        let adicionados = 0;
-        cardsFiltrados.forEach(cf => {
-          const existe = grupo.flashcardsCompartilhados.some(f => f.pergunta === cf.pergunta);
-          if (!existe) {
-            grupo.flashcardsCompartilhados.push({
-              pergunta: cf.pergunta,
-              resposta: cf.resposta
-            });
-            adicionados++;
-          }
-        });
-
-        if (adicionados > 0) {
-          salvarGrupoServidor(grupo);
-          mostrarToast(`✅ ${adicionados} flashcards compartilhados!`, '#22c55e');
-        } else {
-          Swal.fire('Nenhum card novo', 'Todos os flashcards selecionados já estão no grupo.', 'info');
-        }
-      }
-    }
-  });
-}
-
-function importarFlashcardsGrupo(id) {
-  const grupo = gruposEstudo.find(g => g.id === id);
-  if (!grupo || !grupo.flashcardsCompartilhados || grupo.flashcardsCompartilhados.length === 0) {
-    Swal.fire({
-      title: 'Lista Vazia',
-      text: 'Este grupo não possui flashcards compartilhados para importar.',
-      icon: 'info'
-    });
-    return;
-  }
-
-  const materiasLista = typeof materias !== 'undefined' ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
-  if (materiasLista.length === 0) {
-    Swal.fire({
-      title: 'Nenhuma Matéria',
-      text: 'Você precisa criar pelo menos uma matéria no seu cronograma para importar flashcards.',
-      icon: 'warning'
-    });
-    return;
-  }
-
-  let optionsHtml = '';
-  materiasLista.forEach(mat => {
-    optionsHtml += `<option value="${mat.id}">${mat.nome}</option>`;
-  });
-
-  Swal.fire({
-    title: '📥 Importar para meu Sistema',
-    html: `
-      <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
-        Selecione em qual das suas matérias os ${grupo.flashcardsCompartilhados.length} flashcards compartilhados deste grupo serão salvos:
-      </p>
-      <select id="selectImportMateria" class="swal2-input" style="width: 80%; margin: 0 auto 15px;">
-        ${optionsHtml}
-      </select>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Importar',
-    cancelButtonText: 'Cancelar',
-    confirmButtonColor: '#22c55e',
-    cancelButtonColor: '#6b7280',
-    preConfirm: () => {
-      const select = document.getElementById('selectImportMateria');
-      return {
-        id: select.value,
-        nome: select.options[select.selectedIndex].text
-      };
-    }
-  }).then(result => {
-    if (result.isConfirmed) {
-      const materiaDestino = result.value;
-      
-      let adicionadosCount = 0;
-      grupo.flashcardsCompartilhados.forEach(f => {
-        const existe = flashcards.some(pf => pf.pergunta === f.pergunta);
-        if (!existe) {
-          const novoCard = {
-            id: Date.now() + Math.random(),
-            materiaId: Number(materiaDestino.id),
-            materiaNome: materiaDestino.nome,
-            tema: "Importado do Grupo",
-            pergunta: f.pergunta,
-            resposta: f.resposta,
-            nivel: 1,
-            dataProxima: new Date().toISOString().split("T")[0],
-            acertos: 0,
-            erros: 0
-          };
-          
-          flashcards.push(novoCard);
-          salvarFlashcardNoBackend(novoCard);
-          adicionadosCount++;
-        }
-      });
-
-      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-      
-      if (typeof renderizarFlashcardsAgrupados === 'function') {
-        renderizarFlashcardsAgrupados();
-      }
-
-      Swal.fire({
-        title: 'Importação Concluída!',
-        text: `${adicionadosCount} novos flashcards foram salvos na matéria "${materiaDestino.nome}".`,
-        icon: 'success'
-      });
-    }
-  });
 }
 
 function removerMembro(id, index) {
@@ -12545,10 +12944,10 @@ function removerMembro(id, index) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
       if (grupo && grupo.membros) {
         grupo.membros.splice(index, 1);
-        salvarGrupoServidor(grupo);
+        salvarGrupoServidor(grupo, 'membros');
         mostrarToast('✅ Membro removido!', '#22c55e');
       }
     }
@@ -12567,10 +12966,10 @@ function removerTema(id, index) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
       if (grupo && grupo.temas) {
         grupo.temas.splice(index, 1);
-        salvarGrupoServidor(grupo);
+        salvarGrupoServidor(grupo, 'temas');
         mostrarToast('✅ Tema removido!', '#22c55e');
       }
     }
@@ -12589,10 +12988,10 @@ function removerDuvida(id, index) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
       if (grupo && grupo.duvidas) {
         grupo.duvidas.splice(index, 1);
-        salvarGrupoServidor(grupo);
+        salvarGrupoServidor(grupo, 'duvidas');
         mostrarToast('✅ Dúvida removida!', '#22c55e');
       }
     }
@@ -12611,10 +13010,10 @@ function removerReuniao(id, index) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
       if (grupo && grupo.reunioes) {
         grupo.reunioes.splice(index, 1);
-        salvarGrupoServidor(grupo);
+        salvarGrupoServidor(grupo, 'reunioes');
         mostrarToast('✅ Reunião removida!', '#22c55e');
       }
     }
@@ -12633,15 +13032,20 @@ function sairDoGrupo(id) {
     cancelButtonColor: '#6b7280'
   }).then(result => {
     if (result.isConfirmed) {
-      const grupo = gruposEstudo.find(g => g.id === id);
+      const grupo = gruposEstudo.find(g => (g.id == id || g.id_grupo == id));
       if (grupo && grupo.membros) {
-        const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
-        const email = userObj.email;
+        let email = '';
+        try {
+          const userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+          email = userObj.email;
+        } catch (e) {}
+
         const idx = grupo.membros.findIndex(m => m.email === email);
         if (idx !== -1) {
           grupo.membros.splice(idx, 1);
           
-          apiFetch(`gruposestudo/${grupo.id_grupo}`, {
+          const groupId = grupo.id_grupo || grupo.id;
+          apiFetch(`gruposestudo/${groupId}`, {
             method: "PUT",
             body: JSON.stringify({ membros: grupo.membros })
           }).then(resPut => {
@@ -12663,7 +13067,7 @@ function voltarListaGrupos() {
   renderizarListaGrupos();
 }
 
-// ===== EXPORTAR =====
+// ===== EXPORTAR FUNÇÕES GLOBALMENTE =====
 window.abrirGruposEstudo = abrirGruposEstudo;
 window.fecharGruposEstudo = fecharGruposEstudo;
 window.abrirCriarGrupo = abrirCriarGrupo;
@@ -12680,6 +13084,10 @@ window.agendarReuniao = agendarReuniao;
 window.salvarNotasGrupo = salvarNotasGrupo;
 window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
 window.importarFlashcardsGrupo = importarFlashcardsGrupo;
+window.importarFlashcardIndividual = importarFlashcardIndividual;
+window.removerFlashcardGrupo = removerFlashcardGrupo;
+window.praticarFlashcardsGrupo = praticarFlashcardsGrupo;
+window.abrirModalPraticaGrupo = abrirModalPraticaGrupo;
 window.removerMembro = removerMembro;
 window.removerTema = removerTema;
 window.removerDuvida = removerDuvida;
