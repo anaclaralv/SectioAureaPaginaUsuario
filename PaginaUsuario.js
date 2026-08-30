@@ -2374,6 +2374,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await carregarTarefasDoBackend();
   await carregarNotasDoBackend();
   await carregarCornellDoBackend();
+  await carregarMapasMentaisServidor();
   await carregarMateriasDoBackend();
   await carregarCronogramaDoBackend();
   await carregarSessoesDoBackend();
@@ -7083,53 +7084,64 @@ function desenharConexoes() {
 }
 
 // ===== SALVAR / GALERIA =====
-function salvarMapaMental() {
-  const titulo = document.getElementById('mapaMentalTitulo').value.trim();
-  if (!titulo) { mostrarToast('⚠️ Dê um nome!', '#f59e0b'); return; }
-  if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós!', '#f59e0b'); return; }
+async function salvarMapaMental() {
+  const tituloInput = document.getElementById('mapaMentalTitulo');
+  const titulo = tituloInput ? tituloInput.value.trim() : '';
+  if (!titulo) { mostrarToast('⚠️ Dê um nome ao mapa!', '#f59e0b'); return; }
+  if (mapaMentalNos.length === 0) { mostrarToast('⚠️ Adicione nós ao mapa!', '#f59e0b'); return; }
 
-  apiFetch("mapasmentais", {
-    method: "POST",
-    body: JSON.stringify({
-      titulo: titulo,
-      nos: mapaMentalNos.map(no => ({ ...no })),
-      conexoes: mapaMentalConexoes
-    })
-  }).then(response => {
+  try {
+    const response = await apiFetch("mapasmentais", {
+      method: "POST",
+      body: JSON.stringify({
+        titulo: titulo,
+        nos: mapaMentalNos.map(no => ({ ...no })),
+        conexoes: mapaMentalConexoes
+      })
+    });
+
     if (response.ok) {
-      carregarMapasMentaisServidor();
+      await carregarMapasMentaisServidor();
       mostrarToast('✅ Mapa salvo!', '#22c55e');
     } else {
-      mostrarToast('❌ Erro ao salvar mapa', '#ef4444');
+      const err = await response.json().catch(() => ({}));
+      mostrarToast('❌ Erro ao salvar: ' + (err.message || ''), '#ef4444');
     }
-  }).catch(err => {
-    console.error(err);
+  } catch (err) {
+    console.error("Erro ao salvar mapa:", err);
     mostrarToast('❌ Erro ao salvar mapa', '#ef4444');
-  });
+  }
 }
 
 function renderizarMapasSalvos() {
-  const container = document.getElementById('listaMapasSalvos');
-  if (!container) return;
-  container.innerHTML = '';
+  const containers = [
+    document.getElementById('listaMapasSalvos'),
+    document.getElementById('listaMapasSalvosGeral')
+  ].filter(Boolean);
 
-  if (mapasMentaisSalvos.length === 0) {
-    container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum mapa salvo.</p>';
-    return;
-  }
+  if (containers.length === 0) return;
 
-  [...mapasMentaisSalvos].reverse().forEach(mapa => {
-    const div = document.createElement('div');
-    div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
-    const totalNos = mapa.nos ? mapa.nos.length : 0;
-    div.innerHTML = `
-      <i class="bi bi-diagram-3" style="color:var(--cor-primaria);"></i>
-      <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${totalNos} tópicos</small></div>
-      <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id_mapa})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
-      <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id_mapa})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
-    `;
-    div.onclick = () => abrirMapaSalvo(mapa.id_mapa);
-    container.appendChild(div);
+  containers.forEach(container => {
+    container.innerHTML = '';
+
+    if (mapasMentaisSalvos.length === 0) {
+      container.innerHTML = '<p style="color:#9ca3af;font-size:0.8rem;">Nenhum mapa salvo.</p>';
+      return;
+    }
+
+    [...mapasMentaisSalvos].reverse().forEach(mapa => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:white;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:10px;min-width:150px;';
+      const totalNos = Array.isArray(mapa.nos) ? mapa.nos.length : (mapa.nos ? JSON.parse(mapa.nos).length : 0);
+      div.innerHTML = `
+        <i class="bi bi-diagram-3" style="color:var(--cor-primaria);"></i>
+        <div style="flex:1;"><strong>${mapa.titulo}</strong><br><small>${totalNos} tópicos</small></div>
+        <button onclick="event.stopPropagation();abrirMapaSalvo(${mapa.id_mapa})" style="background:#e0f2fe;color:#0284c7;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">Abrir</button>
+        <button onclick="event.stopPropagation();excluirMapaSalvo(${mapa.id_mapa})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">🗑</button>
+      `;
+      div.onclick = () => abrirMapaSalvo(mapa.id_mapa);
+      container.appendChild(div);
+    });
   });
 }
 
