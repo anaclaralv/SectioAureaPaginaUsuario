@@ -1039,7 +1039,7 @@ export default function Relogio() {
           </div>
 
           <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
-            <div onClick={() => setAcordeonAberto(!acordeonAberto)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+            <div onClick={() => setAcordeonAberto(!acordeonAberto)} className="historico-acordeon-header" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: '8px' }}>
               <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
                 Histórico <span style={{ color: 'var(--cor-primaria)' }}>({historicoCronometro.length})</span>
               </span>
@@ -1052,10 +1052,10 @@ export default function Relogio() {
                     <p style={{ textAlign: 'center', padding: '10px' }}>Nenhum tempo registrado</p>
                   ) : (
                     historicoCronometro.map(reg => (
-                      <div key={reg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', borderBottom: '1px solid #f3f4f6' }}>
+                      <div key={reg.id} className="historico-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px' }}>
                         <div>
                           <div style={{ fontWeight: '600' }}>{reg.tempoFormatado}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>{reg.data} às {reg.hora}</div>
+                          <div style={{ fontSize: '0.7rem' }}>{reg.data} às {reg.hora}</div>
                         </div>
                         <button onClick={() => excluirRegistroCronometro(reg.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>✕</button>
                       </div>
@@ -1115,16 +1115,16 @@ export default function Relogio() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', width: '100%' }}>
-            <button onClick={() => setModoEstudo('auto')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: 'none', background: 'var(--cor-primaria)', color: 'white', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
+            <button className="btn-modo-auto" onClick={() => setModoEstudo('auto')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: 'none', background: 'var(--cor-primaria)', color: 'white', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
               Modo Automático
             </button>
-            <button onClick={() => setModoEstudo('manual')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: '2px solid var(--cor-primaria)', background: 'white', color: 'var(--cor-primaria)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
+            <button className="btn-pausar-auto" onClick={() => setModoEstudo('manual')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: '2px solid var(--cor-primaria)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
               Pausar Automático
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '12px', padding: '8px 12px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-            <span style={{ fontSize: '0.75rem', color: '#374151' }}>Notificar ao iniciar matéria</span>
+          <div className="relogio-notificacao-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '12px', padding: '8px 12px', borderRadius: '12px' }}>
+            <span style={{ fontSize: '0.75rem' }}>Notificar ao iniciar matéria</span>
             <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px', cursor: 'pointer' }}>
               <input type="checkbox" checked={notificacoesAtivas} onChange={(e) => setNotificacoesAtivas(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
               <span style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: notificacoesAtivas ? '#22c55e' : '#d1d5db', borderRadius: '22px', transition: '0.3s' }}>
@@ -1137,8 +1137,8 @@ export default function Relogio() {
             {modoEstudo === 'auto' ? 'Modo automático ativo - Seguindo o cronograma' : 'Modo automático pausado - Controle manual ativo'}
           </p>
 
-          <div style={{ marginTop: '12px', padding: '10px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb', width: '100%' }}>
-            <p style={{ fontSize: '0.7rem', color: '#6b7280', margin: 0, textAlign: 'left' }}>
+          <div className="relogio-explicacao-box" style={{ marginTop: '12px', padding: '10px', borderRadius: '12px', width: '100%' }}>
+            <p style={{ fontSize: '0.7rem', margin: 0, textAlign: 'left' }}>
               <strong>Conectado ao Cronograma:</strong> Este relógio identifica automaticamente qual matéria você deveria estar estudando agora, baseado no dia da semana e horário.
             </p>
           </div>

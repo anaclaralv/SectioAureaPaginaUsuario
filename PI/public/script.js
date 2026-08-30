@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= NAVBAR DINÂMICA ================= */
   function updateNavbarColor() {
-
+    if (!navbar) return;
+    const isDark = document.body.classList.contains("dark");
     const centerY = window.innerHeight / 2;
     let applied = false;
 
@@ -33,14 +34,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const rect = s.getBoundingClientRect();
 
       if (rect.top <= centerY && rect.bottom >= centerY) {
+        navbar.style.setProperty("background-color", s.dataset.color, "important");
 
-        navbar.style.backgroundColor = s.dataset.color;
-
-        if (logo.getAttribute("src") !== "Icones/LogoBranca.png") {
-          logo.setAttribute("src", "Icones/LogoBranca.png");
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
+          logo.setAttribute("src", "Icones/logoBranca.png");
         }
 
-        titulo.style.color = "white";
+        if (titulo) {
+          titulo.style.setProperty("color", "white", "important");
+        }
 
         applied = true;
         break;
@@ -48,16 +50,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!applied) {
-
-      navbar.style.backgroundColor = defaultColor;
-
-      if (logo.getAttribute("src") !== "Icones/LogoPreta.png") {
-        logo.setAttribute("src", "Icones/LogoPreta.png");
+      if (isDark) {
+        navbar.style.setProperty("background-color", "#1e1e1e", "important");
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
+          logo.setAttribute("src", "Icones/logoBranca.png");
+        }
+        if (titulo) {
+          titulo.style.setProperty("color", "white", "important");
+        }
+      } else {
+        navbar.style.setProperty("background-color", "#f4f1eb", "important");
+        if (logo && logo.getAttribute("src") !== "Icones/LogoPreta.png") {
+          logo.setAttribute("src", "Icones/LogoPreta.png");
+        }
+        if (titulo) {
+          titulo.style.setProperty("color", "black", "important");
+        }
       }
-
-      titulo.style.color = "black";
     }
   }
+  window.updateNavbarColor = updateNavbarColor;
 
   updateNavbarColor();
   window.addEventListener("scroll", updateNavbarColor, { passive: true });

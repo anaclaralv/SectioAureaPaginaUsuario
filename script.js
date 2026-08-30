@@ -95,14 +95,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const rect = s.getBoundingClientRect();
 
       if (rect.top <= centerY && rect.bottom >= centerY) {
-        navbar.style.backgroundColor = s.dataset.color;
+        navbar.style.setProperty("background-color", s.dataset.color, "important");
 
         if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
           logo.setAttribute("src", "Icones/logoBranca.png");
         }
 
         if (titulo) {
-          titulo.style.color = "white";
+          titulo.style.setProperty("color", "white", "important");
         }
 
         applied = true;
@@ -112,20 +112,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!applied) {
       if (isDark) {
-        navbar.style.backgroundColor = "#1e1e1e";
+        navbar.style.setProperty("background-color", "#1e1e1e", "important");
         if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
           logo.setAttribute("src", "Icones/logoBranca.png");
         }
         if (titulo) {
-          titulo.style.color = "white";
+          titulo.style.setProperty("color", "white", "important");
         }
       } else {
-        navbar.style.backgroundColor = "#f4f1eb";
+        navbar.style.setProperty("background-color", "#f4f1eb", "important");
         if (logo && logo.getAttribute("src") !== "Icones/LogoPreta.png") {
           logo.setAttribute("src", "Icones/LogoPreta.png");
         }
         if (titulo) {
-          titulo.style.color = "black";
+          titulo.style.setProperty("color", "black", "important");
         }
       }
     }

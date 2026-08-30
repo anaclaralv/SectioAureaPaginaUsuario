@@ -446,16 +446,16 @@
               style="flex: 1; padding: 10px; border-radius: 40px; border: none; background: var(--cor-primaria); color: white; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;">
               Modo Automatico
             </button>
-            <button id="btnPausarAuto" onclick="pausarModoAuto()"
-              style="flex: 1; padding: 10px; border-radius: 40px; border: 2px solid var(--cor-primaria); background: white; color: var(--cor-primaria); cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;">
+            <button id="btnPausarAuto" class="btn-pausar-auto" onclick="pausarModoAuto()"
+              style="flex: 1; padding: 10px; border-radius: 40px; border: 2px solid var(--cor-primaria); cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;">
               Pausar Automatico
             </button>
           </div>
 
           <!-- TOGGLE DE NOTIFICAÇÕES -->
-          <div
-            style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
-            <span style="font-size: 0.75rem; color: #374151;">Notificar ao iniciar materia</span>
+          <div class="relogio-notificacao-box"
+            style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 12px; padding: 8px 12px; border-radius: 12px;">
+            <span style="font-size: 0.75rem;">Notificar ao iniciar materia</span>
             <label style="position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer;">
               <input type="checkbox" id="toggleNotificacoes" onchange="toggleNotificacoes()" checked
                 style="opacity: 0; width: 0; height: 0;">
@@ -473,9 +473,9 @@
           </p>
 
           <!-- EXPLICAÇÃO INTEGRADA -->
-          <div
-            style="margin-top: 12px; padding: 10px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%;">
-            <p style="font-size: 0.7rem; color: #6b7280; margin: 0; text-align: left;">
+          <div class="relogio-explicacao-box"
+            style="margin-top: 12px; padding: 10px; border-radius: 12px; width: 100%;">
+            <p style="font-size: 0.7rem; margin: 0; text-align: left;">
               <strong>Conectado ao Cronograma:</strong> Este relogio identifica automaticamente qual materia voce
               deveria estar estudando agora, baseado no dia da semana e horario. O estudo inicia e pausa automaticamente
               conforme seu cronograma.
