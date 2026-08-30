@@ -5948,6 +5948,7 @@ let cornellModoRevisao = false;
 // ===== ABRIR CORNELL =====
 async function abrirCornell() {
   console.log('📝 Abrindo Cornell');
+  cornellEditandoId = null;
   if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
 
   await carregarCornellDoBackend();
@@ -6299,10 +6300,11 @@ function inicializarEventosCornell(listaNotas) {
 // ===== SALVAR NOTA CORNELL =====
 async function salvarNotaCornell() {
   console.log("💾 Iniciando salvamento de nota Cornell...");
-  const tituloInput = document.getElementById('cornellTituloInput');
-  const perguntaInput = document.getElementById('cornellPerguntaInput');
-  const respostaInput = document.getElementById('cornellRespostaInput');
-  const resumoInput = document.getElementById('cornellResumoInput');
+  const modal = document.getElementById('cornellModalOverlay');
+  const tituloInput = modal ? modal.querySelector('#cornellTituloInput') : document.getElementById('cornellTituloInput');
+  const perguntaInput = modal ? modal.querySelector('#cornellPerguntaInput') : document.getElementById('cornellPerguntaInput');
+  const respostaInput = modal ? modal.querySelector('#cornellRespostaInput') : document.getElementById('cornellRespostaInput');
+  const resumoInput = modal ? modal.querySelector('#cornellResumoInput') : document.getElementById('cornellResumoInput');
 
   if (!perguntaInput && !respostaInput && !tituloInput && !resumoInput) {
     console.warn("⚠️ Inputs do Cornell não encontrados.");
@@ -6332,32 +6334,33 @@ async function salvarNotaCornell() {
     resumo: resumo
   };
 
-  const endpoint = cornellEditandoId ? `cornell/${cornellEditandoId}` : "cornell";
-  const metodo = cornellEditandoId ? "PUT" : "POST";
+  let endpoint = cornellEditandoId ? `cornell/${cornellEditandoId}` : "cornell";
+  let metodo = cornellEditandoId ? "PUT" : "POST";
 
   try {
-    const response = await apiFetch(endpoint, {
+    let response = await apiFetch(endpoint, {
       method: metodo,
       body: JSON.stringify(payload)
     });
+
+    // Se falhar PUT (ex: ID inexistente), tenta criar como nova nota via POST
+    if (!response.ok && cornellEditandoId) {
+      cornellEditandoId = null;
+      response = await apiFetch("cornell", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    }
+
     if (response.ok) {
       const resData = await response.json().catch(() => ({}));
       console.log("✅ Nota Cornell salva com sucesso:", resData);
       cornellEditandoId = null;
       await carregarCornellDoBackend();
 
-      if (tituloInput) tituloInput.value = '';
-      if (perguntaInput) perguntaInput.value = '';
-      if (respostaInput) respostaInput.value = '';
-      if (resumoInput) resumoInput.value = '';
-      const contP = document.getElementById('cornellContadorPergunta');
-      const contR = document.getElementById('cornellContadorResposta');
-      if (contP) contP.textContent = '0';
-      if (contR) contR.textContent = '0';
-
-      const modal = document.getElementById('cornellModalOverlay');
-      if (modal) {
-        modal.innerHTML = criarHtmlCornell(notasCornell);
+      const modalOverlay = document.getElementById('cornellModalOverlay');
+      if (modalOverlay) {
+        modalOverlay.innerHTML = criarHtmlCornell(notasCornell);
         inicializarEventosCornell(notasCornell);
       }
 
@@ -6370,15 +6373,15 @@ async function salvarNotaCornell() {
       });
     } else {
       const errData = await response.json().catch(() => ({}));
-      console.error("❌ Erro do servidor:", errData);
+      console.error("❌ Erro do servidor ao salvar Cornell:", errData);
       Swal.fire({
         icon: 'error',
         title: 'Erro ao salvar',
-        text: errData.message || 'O servidor retornou um erro ao tentar salvar.'
+        text: errData.message || 'O servidor não conseguiu salvar a anotação.'
       });
     }
   } catch (err) {
-    console.error("Erro ao salvar nota Cornell:", err);
+    console.error("❌ Exceção ao salvar nota Cornell:", err);
     Swal.fire({
       icon: 'error',
       title: 'Erro de conexão',
