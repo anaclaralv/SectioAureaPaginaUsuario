@@ -6286,12 +6286,16 @@ function inicializarEventosCornell(listaNotas) {
 
 // ===== SALVAR NOTA CORNELL =====
 async function salvarNotaCornell() {
+  console.log("💾 Iniciando salvamento de nota Cornell...");
   const tituloInput = document.getElementById('cornellTituloInput');
   const perguntaInput = document.getElementById('cornellPerguntaInput');
   const respostaInput = document.getElementById('cornellRespostaInput');
   const resumoInput = document.getElementById('cornellResumoInput');
 
-  if (!perguntaInput && !respostaInput && !tituloInput && !resumoInput) return;
+  if (!perguntaInput && !respostaInput && !tituloInput && !resumoInput) {
+    console.warn("⚠️ Inputs do Cornell não encontrados.");
+    return;
+  }
 
   const titulo = tituloInput ? tituloInput.value.trim() : '';
   const pergunta = perguntaInput ? perguntaInput.value.trim() : '';
@@ -6325,6 +6329,8 @@ async function salvarNotaCornell() {
       body: JSON.stringify(payload)
     });
     if (response.ok) {
+      const resData = await response.json().catch(() => ({}));
+      console.log("✅ Nota Cornell salva com sucesso:", resData);
       cornellEditandoId = null;
       await carregarCornellDoBackend();
 
@@ -6343,13 +6349,29 @@ async function salvarNotaCornell() {
         inicializarEventosCornell(notasCornell);
       }
 
-      mostrarToast('✅ Nota salva!', '#22c55e');
+      Swal.fire({
+        icon: 'success',
+        title: 'Nota salva!',
+        text: 'Anotação Cornell registrada com sucesso.',
+        timer: 1500,
+        showConfirmButton: false
+      });
     } else {
-      mostrarToast('❌ Erro ao salvar nota', '#ef4444');
+      const errData = await response.json().catch(() => ({}));
+      console.error("❌ Erro do servidor:", errData);
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro ao salvar',
+        text: errData.message || 'O servidor retornou um erro ao tentar salvar.'
+      });
     }
   } catch (err) {
     console.error("Erro ao salvar nota Cornell:", err);
-    mostrarToast('❌ Erro de conexão', '#ef4444');
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro de conexão',
+      text: 'Não foi possível se comunicar com o backend.'
+    });
   }
 }
 
