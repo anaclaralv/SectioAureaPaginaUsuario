@@ -134,29 +134,50 @@ async function carregarNotasDoBackend() {
       notas = data.map(n => {
         let parsed = {};
         try {
-          parsed = (typeof n.conteudo === 'string') ? JSON.parse(n.conteudo) : (n.conteudo || {});
+          let conteudoStr = n.conteudo;
+          if (typeof conteudoStr === 'string' && conteudoStr.includes('&quot;')) {
+            conteudoStr = decodeHtmlEntities(conteudoStr);
+          }
+          parsed = (typeof conteudoStr === 'string') ? JSON.parse(conteudoStr) : (conteudoStr || {});
         } catch (e) {
           parsed = { texto: n.conteudo };
         }
         return {
           id: n.id_anotacao,
           titulo: parsed.titulo || "",
-          texto: parsed.texto || (typeof parsed === 'string' ? parsed : ""),
+          texto: parsed.texto || (typeof parsed === 'string' ? parsed : (n.conteudo || "")),
           cor: n.cor_nota || "#ffffff",
           corTexto: parsed.corTexto || "#000000",
           checklist: parsed.checklist || [],
           anexos: parsed.anexos || [],
           favorito: n.favorito == 1 || parsed.favorito || false,
-          dataCriacao: parsed.dataCriacao || "",
-          tipo: parsed.tipo || (parsed.pergunta ? "cornell" : "padrao"),
-          pergunta: parsed.pergunta || "",
-          resposta: parsed.resposta || "",
-          resumo: parsed.resumo || ""
+          dataCriacao: parsed.dataCriacao || ""
         };
       });
     }
   } catch (err) {
     console.error("Erro ao carregar notas:", err);
+  }
+}
+
+let notasCornell = [];
+
+async function carregarCornellDoBackend() {
+  try {
+    const response = await apiFetch("cornell");
+    if (response.ok) {
+      const data = await response.json();
+      notasCornell = data.map(n => ({
+        id: n.id_cornell,
+        titulo: n.titulo || "Nota Cornell",
+        pergunta: n.pergunta || "",
+        resposta: n.resposta || "",
+        resumo: n.resumo || "",
+        dataCriacao: n.data_criacao ? new Date(n.data_criacao).toLocaleDateString('pt-BR') : ""
+      }));
+    }
+  } catch (err) {
+    console.error("Erro ao carregar notas Cornell:", err);
   }
 }
 
@@ -5917,12 +5938,7 @@ async function abrirCornell() {
   console.log('📝 Abrindo Cornell');
   if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
 
-  if (typeof carregarNotasDoBackend === 'function') {
-    await carregarNotasDoBackend();
-  }
-
-  // Filtra apenas notas Cornell carregadas do banco de dados
-  const notasCornell = (typeof notas !== 'undefined' && Array.isArray(notas)) ? notas.filter(nota => nota.tipo === 'cornell') : [];
+  await carregarCornellDoBackend();
 
   // Cria ou atualiza o modal
   let modal = document.getElementById('cornellModalOverlay');
@@ -5950,7 +5966,8 @@ async function abrirCornell() {
   inicializarEventosCornell(notasCornell);
 }
 
-function criarHtmlCornell(notasCornell) {
+function criarHtmlCornell(listaNotas) {
+  const notasAtuais = Array.isArray(listaNotas) ? listaNotas : [];
   let inteligencia = 'logico';
   if (window.usuarioLogadoPerfil && window.usuarioLogadoPerfil.tipo_dom) {
     inteligencia = normalizarInteligencia(window.usuarioLogadoPerfil.tipo_dom);
@@ -5971,14 +5988,14 @@ function criarHtmlCornell(notasCornell) {
 
   // Lista de notas salvas
   let notasHtml = '';
-  if (notasCornell.length === 0) {
+  if (notasAtuais.length === 0) {
     notasHtml = `
       <div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">
         Nenhuma nota salva ainda
       </div>
     `;
   } else {
-    notasHtml = notasCornell.map(nota => `
+    notasHtml = notasAtuais.map(nota => `
       <div style="
         background: white;
         border-radius: 6px;
@@ -5989,24 +6006,25 @@ function criarHtmlCornell(notasCornell) {
         border: 1px solid #eee;
         transition: all 0.2s;
         cursor: pointer;
-      " onmouseover="this.style.borderColor='${cor}'; this.style.background='#fafafa'"
+      " onclick="abrirNotaCornell(${nota.id})"
+         onmouseover="this.style.borderColor='${cor}'; this.style.background='#fafafa'"
          onmouseout="this.style.borderColor='#eee'; this.style.background='white'">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <div style="font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${nota.titulo || 'Nota sem título'}
           </div>
           <span style="font-size:9px;color:#999;flex-shrink:0;">
-            ${nota.dataCriacao || new Date().toLocaleDateString('pt-BR')}
+            ${nota.dataCriacao || ''}
           </span>
         </div>
         <div style="display:flex;gap:2px;flex-shrink:0;margin-left:6px;">
-          <button onclick="event.stopPropagation(); abrirNotaCornell('${nota.id}')" style="
+          <button onclick="event.stopPropagation(); abrirNotaCornell(${nota.id})" style="
             background:none;border:none;color:#999;cursor:pointer;padding:2px 5px;border-radius:3px;font-size:12px;
           " onmouseover="this.style.background='#f0f0f0'"
              onmouseout="this.style.background='transparent'">
             <i class="bi bi-eye"></i>
           </button>
-          <button onclick="event.stopPropagation(); excluirNotaCornell('${nota.id}')" style="
+          <button onclick="event.stopPropagation(); excluirNotaCornell(${nota.id})" style="
             background:none;border:none;color:#999;cursor:pointer;padding:2px 5px;border-radius:3px;font-size:12px;
           " onmouseover="this.style.background='#fee';this.style.color='#dc3545'"
              onmouseout="this.style.background='transparent';this.style.color='#999'">
@@ -6134,7 +6152,7 @@ function criarHtmlCornell(notasCornell) {
               <!-- Direita -->
               <div>
                 <div style="font-size:10px;font-weight:600;color:${cor};text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px;">
-                  Respostas
+                  Respostas / Anotações
                 </div>
                 <textarea id="cornellRespostaInput" style="
                   width:100%;min-height:160px;
@@ -6210,9 +6228,9 @@ function criarHtmlCornell(notasCornell) {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span style="font-size:12px;color:#5a6a7a;font-weight:500;display:flex;align-items:center;gap:6px;">
               <i class="bi bi-archive" style="color:${cor};font-size:14px;"></i>
-              Minhas Notas
+              Minhas Notas Cornell
               <span id="cornellTotalNotas" style="font-size:10px;font-weight:normal;color:#b0a89c;">
-                (${notasCornell.length})
+                (${notasAtuais.length})
               </span>
             </span>
           </div>
@@ -6227,7 +6245,7 @@ function criarHtmlCornell(notasCornell) {
 }
 
 // ===== INICIALIZAR EVENTOS =====
-function inicializarEventosCornell(notasCornell) {
+function inicializarEventosCornell(listaNotas) {
   // Contadores de caracteres
   const perguntaInput = document.getElementById('cornellPerguntaInput');
   const respostaInput = document.getElementById('cornellRespostaInput');
@@ -6291,54 +6309,14 @@ async function salvarNotaCornell() {
 
   const tituloFinal = titulo || (pergunta ? `📝 Cornell: ${pergunta.substring(0, 30)}${pergunta.length > 30 ? '...' : ''}` : 'Nota Cornell');
 
-  const textoHtml = `
-<div style="padding: 20px; background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb;">
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-    <div style="border-right: 3px solid #dc3545; padding-right: 20px;">
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-        <strong style="color: #dc3545; font-size: 13px;">Pergunta</strong>
-      </div>
-      <p style="margin: 0; color: #dc3545; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${pergunta || '<em>(Sem perguntas)</em>'}</p>
-    </div>
-    <div>
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-        <strong style="color: #28a745; font-size: 13px;">Resposta / Anotações</strong>
-      </div>
-      <p style="margin: 0; color: #28a745; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resposta || '<em>(Sem respostas)</em>'}</p>
-    </div>
-  </div>
-  ${resumo ? `
-  <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
-    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-      <strong style="color: #6c757d; font-size: 13px;">Resumo</strong>
-    </div>
-    <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resumo}</p>
-  </div>
-  ` : ''}
-  <div style="margin-top: 12px; padding: 6px 12px; background: #f0f0f0; border-radius: 6px; font-size: 11px; color: #666; display: inline-block;">
-    <i class="bi bi-tag"></i> Método Cornell
-  </div>
-</div>
-  `;
-
   const payload = {
-    conteudo: JSON.stringify({
-      titulo: tituloFinal,
-      texto: textoHtml,
-      corTexto: '#000000',
-      checklist: [],
-      anexos: [],
-      favorito: false,
-      dataCriacao: new Date().toLocaleString('pt-BR'),
-      tipo: 'cornell',
-      pergunta: pergunta,
-      resposta: resposta,
-      resumo: resumo
-    }),
-    cor_nota: '#ffffff'
+    titulo: tituloFinal,
+    pergunta: pergunta,
+    resposta: resposta,
+    resumo: resumo
   };
 
-  const endpoint = cornellEditandoId ? `blocos/${cornellEditandoId}` : "blocos";
+  const endpoint = cornellEditandoId ? `cornell/${cornellEditandoId}` : "cornell";
   const metodo = cornellEditandoId ? "PUT" : "POST";
 
   try {
@@ -6348,7 +6326,7 @@ async function salvarNotaCornell() {
     });
     if (response.ok) {
       cornellEditandoId = null;
-      await carregarNotasDoBackend();
+      await carregarCornellDoBackend();
 
       if (tituloInput) tituloInput.value = '';
       if (perguntaInput) perguntaInput.value = '';
@@ -6359,15 +6337,10 @@ async function salvarNotaCornell() {
       if (contP) contP.textContent = '0';
       if (contR) contR.textContent = '0';
 
-      const notasCornell = notas.filter(n => n.tipo === 'cornell');
       const modal = document.getElementById('cornellModalOverlay');
       if (modal) {
         modal.innerHTML = criarHtmlCornell(notasCornell);
         inicializarEventosCornell(notasCornell);
-      }
-
-      if (typeof renderNotas === 'function') {
-        renderNotas();
       }
 
       mostrarToast('✅ Nota salva!', '#22c55e');
@@ -6382,7 +6355,7 @@ async function salvarNotaCornell() {
 
 // ===== ABRIR NOTA CORNELL =====
 function abrirNotaCornell(id) {
-  const nota = notas.find(n => n.id == id);
+  const nota = notasCornell.find(n => n.id == id);
   if (!nota) return;
 
   const tituloInput = document.getElementById('cornellTituloInput');
@@ -6402,10 +6375,37 @@ function abrirNotaCornell(id) {
 
   cornellEditandoId = nota.id;
 
+  const textoHtml = `
+<div style="padding: 20px; background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb; text-align: left;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div style="border-right: 3px solid #dc3545; padding-right: 20px;">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+        <strong style="color: #dc3545; font-size: 13px;">Pergunta</strong>
+      </div>
+      <p style="margin: 0; color: #dc3545; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${nota.pergunta || '<em>(Sem perguntas)</em>'}</p>
+    </div>
+    <div>
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+        <strong style="color: #28a745; font-size: 13px;">Resposta / Anotações</strong>
+      </div>
+      <p style="margin: 0; color: #28a745; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${nota.resposta || '<em>(Sem respostas)</em>'}</p>
+    </div>
+  </div>
+  ${nota.resumo ? `
+  <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+      <strong style="color: #6c757d; font-size: 13px;">Resumo</strong>
+    </div>
+    <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${nota.resumo}</p>
+  </div>
+  ` : ''}
+</div>
+  `;
+
   if (typeof Swal !== 'undefined') {
     Swal.fire({
       title: nota.titulo || 'Nota Cornell',
-      html: nota.texto,
+      html: textoHtml,
       confirmButtonText: 'Fechar',
       confirmButtonColor: 'var(--cor-primaria)',
       width: '700px'
@@ -6426,18 +6426,17 @@ function excluirNotaCornell(id) {
   }).then(async result => {
     if (result.isConfirmed) {
       try {
-        const response = await apiFetch(`blocos/${id}`, { method: "DELETE" });
+        const response = await apiFetch(`cornell/${id}`, { method: "DELETE" });
         if (response.ok) {
-          await carregarNotasDoBackend();
-          const notasCornell = notas.filter(n => n.tipo === 'cornell');
+          if (cornellEditandoId == id) {
+            cornellEditandoId = null;
+            limparCamposCornell();
+          }
+          await carregarCornellDoBackend();
           const modal = document.getElementById('cornellModalOverlay');
           if (modal) {
             modal.innerHTML = criarHtmlCornell(notasCornell);
             inicializarEventosCornell(notasCornell);
-          }
-
-          if (typeof renderNotas === 'function') {
-            renderNotas();
           }
 
           mostrarToast('🗑️ Anotação excluída!', '#22c55e');
@@ -6453,15 +6452,20 @@ function excluirNotaCornell(id) {
 
 // ===== LIMPAR CAMPOS =====
 function limparCamposCornell() {
+  cornellEditandoId = null;
+  const titulo = document.getElementById('cornellTituloInput');
   const pergunta = document.getElementById('cornellPerguntaInput');
   const resposta = document.getElementById('cornellRespostaInput');
   const resumo = document.getElementById('cornellResumoInput');
 
+  if (titulo) titulo.value = '';
   if (pergunta) pergunta.value = '';
   if (resposta) resposta.value = '';
   if (resumo) resumo.value = '';
-  document.getElementById('cornellContadorPergunta').textContent = '0';
-  document.getElementById('cornellContadorResposta').textContent = '0';
+  const cp = document.getElementById('cornellContadorPergunta');
+  const cr = document.getElementById('cornellContadorResposta');
+  if (cp) cp.textContent = '0';
+  if (cr) cr.textContent = '0';
 
   if (typeof Swal !== 'undefined') {
     Swal.fire({
