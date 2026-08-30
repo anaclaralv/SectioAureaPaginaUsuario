@@ -167,14 +167,25 @@ async function carregarCornellDoBackend() {
     const response = await apiFetch("cornell");
     if (response.ok) {
       const data = await response.json();
-      notasCornell = data.map(n => ({
-        id: n.id_cornell,
-        titulo: n.titulo || "Nota Cornell",
-        pergunta: n.pergunta || "",
-        resposta: n.resposta || "",
-        resumo: n.resumo || "",
-        dataCriacao: n.data_criacao ? new Date(n.data_criacao).toLocaleDateString('pt-BR') : ""
-      }));
+      notasCornell = data.map(n => {
+        let dataFormatada = "";
+        if (n.data_criacao) {
+          try {
+            const d = new Date(String(n.data_criacao).replace(' ', 'T'));
+            dataFormatada = isNaN(d.getTime()) ? String(n.data_criacao) : d.toLocaleDateString('pt-BR');
+          } catch (e) {
+            dataFormatada = String(n.data_criacao);
+          }
+        }
+        return {
+          id: n.id_cornell,
+          titulo: n.titulo || "Nota Cornell",
+          pergunta: n.pergunta || "",
+          resposta: n.resposta || "",
+          resumo: n.resumo || "",
+          dataCriacao: dataFormatada
+        };
+      });
     }
   } catch (err) {
     console.error("Erro ao carregar notas Cornell:", err);
