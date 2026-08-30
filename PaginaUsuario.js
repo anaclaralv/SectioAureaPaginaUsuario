@@ -7805,14 +7805,18 @@ async function iniciarGravacao() {
       console.log('⏹️ Gravação parada');
 
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      audioUrl = URL.createObjectURL(audioBlob);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        audioUrl = reader.result;
 
-      const audioPlayer = document.getElementById('audioGravadoPlayer');
-      const audioArea = document.getElementById('audioGravadoArea');
-      if (audioPlayer && audioArea) {
-        audioPlayer.src = audioUrl;
-        audioArea.style.display = 'block';
-      }
+        const audioPlayer = document.getElementById('audioGravadoPlayer');
+        const audioArea = document.getElementById('audioGravadoArea');
+        if (audioPlayer && audioArea) {
+          audioPlayer.src = audioUrl;
+          audioArea.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(audioBlob);
 
       const btnGravar = document.getElementById('btnGravar');
       const btnPausar = document.getElementById('btnPausarAudio');
