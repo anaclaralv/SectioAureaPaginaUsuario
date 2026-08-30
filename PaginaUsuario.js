@@ -287,6 +287,11 @@ async function carregarMateriasDoBackend() {
         nome: m.nome,
         cor: m.cor
       }));
+      try {
+        localStorage.setItem("materias_cache", JSON.stringify(materias));
+      } catch (e) {}
+      if (typeof renderMaterias === 'function') renderMaterias();
+      if (typeof renderTabelaMaterias === 'function') renderTabelaMaterias();
     }
   } catch (err) {
     console.error("Erro ao carregar matérias:", err);
@@ -2369,23 +2374,36 @@ function atualizarTudo() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Carrega os dados do backend antes de renderizar
-  await carregarPerfilUsuario();
-  await carregarTarefasDoBackend();
-  await carregarNotasDoBackend();
-  await carregarCornellDoBackend();
-  await carregarMapasMentaisServidor();
-  await carregarMateriasDoBackend();
-  await carregarCronogramaDoBackend();
-  await carregarSessoesDoBackend();
-  await carregarFlashcardsDoBackend();
-  await carregarInteligenciasDoBackend();
+  // Renderização inicial imediata baseada no cache local
+  renderMaterias();
+  mostrarTela("inicio");
+
+  // Carrega os dados do backend em paralelo para velocidade máxima
+  try {
+    await Promise.all([
+      carregarPerfilUsuario(),
+      carregarTarefasDoBackend(),
+      carregarNotasDoBackend(),
+      carregarCornellDoBackend(),
+      carregarMapasMentaisServidor(),
+      carregarMateriasDoBackend(),
+      carregarFlashcardsDoBackend(),
+      carregarInteligenciasDoBackend()
+    ]);
+
+    // Carrega dados dependentes de matérias
+    await Promise.all([
+      carregarCronogramaDoBackend(),
+      carregarSessoesDoBackend()
+    ]);
+  } catch (err) {
+    console.error("Erro no carregamento paralelo:", err);
+  }
 
   configurarFiltroRevisao();
   initToggleNotificacoes();
   configurarFiltroPrioridade();
   migrarDadosAntigos();
-  mostrarTela("inicio");
   renderMaterias();
   renderCronogramaNovo();
   renderizarResumoHoje();
@@ -2664,8 +2682,14 @@ let materiaAnterior = null;
 let notificarMudanca = true;
 let estudoAtual = null;
 let segundosSessaoAtual = 0;
-let modoEstudo = "auto";
-let materias = [];  // APENAS UM ARRAY para todas as matérias
+let materias = (() => {
+  try {
+    const cached = localStorage.getItem("materias_cache");
+    return cached ? JSON.parse(cached) : [];
+  } catch (e) {
+    return [];
+  }
+})();  // APENAS UM ARRAY para todas as matérias
 let cronogramaNovo = [];
 let notas = [];
 let anexosTemp = [];
