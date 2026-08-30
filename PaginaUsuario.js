@@ -85,6 +85,7 @@ async function carregarPerfilUsuario() {
       if (data.plano) {
         localStorage.setItem("planoUsuario", data.plano.toLowerCase());
       }
+
       localStorage.setItem("user", JSON.stringify(data));
 
       if (data.tipo_dom) {
@@ -94,8 +95,13 @@ async function carregarPerfilUsuario() {
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
-      if (typeof aplicarBloqueiosPlano === 'function') aplicarBloqueiosPlano();
     }
+    if (typeof aplicarBloqueiosPlano === 'function') {
+        aplicarBloqueiosPlano();
+      }
+      if (typeof atualizarBotoesPlanos === 'function') {
+        atualizarBotoesPlanos();
+      }
   } catch (err) {
     console.error(err);
   }
@@ -850,12 +856,11 @@ window.abrirLightbox = function (src) {
 };
 function mostrarTela(tela) {
   console.log('🔄 Mostrando tela:', tela);
+  
+  // Verificar acesso ANTES de mostrar
   if (tela === "estatistica" && !verificarAcesso('estatisticas')) return;
   if (tela === "cronogramaNovo" && !verificarAcesso('cronograma')) return;
-  const telas = [
-    "inicio", "tarefas", "notas", "calendario", "relogio",
-    "estatistica", "cronogramaNovo", "metodos", "revisao", "planos"
-  ];
+  const telas = ["inicio", "tarefas", "notas", "calendario", "relogio", "estatistica", "cronogramaNovo", "metodos", "revisao"];
 
   telas.forEach(t => {
     const el = document.getElementById(t + "Section");
@@ -891,9 +896,6 @@ function mostrarTela(tela) {
 
   if (tela === "relogio") {
     renderTabelaMaterias();
-  }
-  if (tela === "planos") {
-    atualizarBotoesPlanos();
   }
   if (tela === "metodos") {
     console.log('🎨 Chamando renderizarMetodosEstudo');
@@ -2525,7 +2527,10 @@ async function salvarConfiguracao() {
         timer: 1500,
         showConfirmButton: false
       });
-
+  // Fechar com segurança
+  fecharModalSeguro('configModal');
+  
+  mostrarToast('✅ Dados salvos!', '#22c55e');
       const modalEl = document.getElementById('configModal');
       const modalInstance = bootstrap.Modal.getInstance(modalEl);
       if (modalInstance) modalInstance.hide();
@@ -2551,21 +2556,24 @@ async function salvarConfiguracao() {
 function sairDaConta() {
   Swal.fire({
     title: 'Sair da conta?',
-    text: 'Você precisará fazer login novamente para acessar seus dados.',
+    text: 'Você será desconectado deste dispositivo.',
     icon: 'warning',
     showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-right"></i> Sair',
+    cancelButtonText: 'Cancelar',
     confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Sim, sair',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
     if (result.isConfirmed) {
+      // Fechar modal primeiro
+      fecharModalSeguro('configModal');
+      
+      // Limpar dados
+      localStorage.removeItem('usuarioLogado');
+      localStorage.removeItem('usuarioId');
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userFoto');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('inteligenciaUsuario');
-      localStorage.removeItem('corPrimaria');
+      
+      // Redirecionar
       window.location.href = 'ProjetoIntegrador.html';
     }
   });
@@ -5554,26 +5562,24 @@ function verificarPlano() {
 
 function verificarAcesso(funcionalidade) {
   const { plano, permissoes } = verificarPlano();
-
+  
+  console.log('🔍 Verificando acesso:', funcionalidade, '| Plano:', plano);
+  
   if (!permissoes[funcionalidade]) {
     Swal.fire({
       icon: 'info',
       title: 'Recurso Premium',
       html: `
-        <p>Esta funcionalidade esta disponivel nos planos <strong>Basico</strong> e <strong>Pro</strong>.</p>
+        <p>Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.</p>
         <p style="font-size: 0.8rem; color: #6b7280;">Seu plano atual: <strong>${plano.charAt(0).toUpperCase() + plano.slice(1)}</strong></p>
       `,
-      confirmButtonText: 'Ver Planos',
+      confirmButtonText: '<i class="bi bi-star-fill me-1"></i> Ver Planos',
       confirmButtonColor: '#9f042c',
       showCancelButton: true,
       cancelButtonText: 'Fechar'
     }).then(result => {
       if (result.isConfirmed) {
-        mostrarTela('planos');
-        const links = document.querySelectorAll('#menuLateral .nav-link');
-        links.forEach(link => link.classList.remove('active'));
-        const linkPlanos = document.querySelector('#menuLateral .nav-link[onclick*="planos"]');
-        if (linkPlanos) linkPlanos.classList.add('active');
+        abrirModalConfiguracoes();
       }
     });
     return false;
@@ -5646,29 +5652,46 @@ function escolherPlano(tipo) {
 function atualizarBotoesPlanos() {
   const { plano } = verificarPlano();
 
-  const btnGratuito = document.getElementById("btnGratuito");
-  const btnBasico = document.getElementById("btnBasico");
-  const btnPro = document.getElementById("btnPro");
+  const planos = ['gratuito', 'basico', 'pro'];
+  
+  planos.forEach(p => {
+    const nomeCap = p.charAt(0).toUpperCase() + p.slice(1);
+    const card = document.getElementById(`cardPlano${nomeCap}`);
+    const badge = document.getElementById(`badgePlano${nomeCap}`);
+    const btn = document.getElementById(`btnPlano${nomeCap}`);
 
-  if (btnGratuito) {
-    btnGratuito.textContent = plano === "gratuito" ? "Plano atual" : "Mudar para Gratuito";
-    btnGratuito.disabled = plano === "gratuito";
-    btnGratuito.style.opacity = plano === "gratuito" ? "0.6" : "1";
+    if (card) {
+      if (plano === p) {
+        card.classList.add('ativo');
+        card.style.border = '2px solid var(--cor-primaria)';
+      } else {
+        card.classList.remove('ativo');
+        card.style.border = '1px solid #e5e7eb';
+      }
+    }
+
+    if (badge) {
+      badge.style.display = (plano === p) ? 'inline-block' : 'none';
+    }
+
+    if (btn) {
+      if (plano === p) {
+        btn.textContent = 'Plano Atual';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+      } else {
+        btn.textContent = (p === 'gratuito') ? 'Mudar para Gratuito' : `Assinar ${nomeCap}`;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+  });
+
+  // Badge no topo
+  const badgeTopo = document.getElementById('badgePlano');
+  if (badgeTopo) {
+    badgeTopo.textContent = 'Seu plano: ' + plano.charAt(0).toUpperCase() + plano.slice(1);
   }
-
-  if (btnBasico) {
-    btnBasico.textContent = plano === "basico" ? "Plano atual" : "Assinar Basico";
-    btnBasico.disabled = plano === "basico";
-    btnBasico.style.opacity = plano === "basico" ? "0.6" : "1";
-  }
-
-  if (btnPro) {
-    btnPro.textContent = plano === "pro" ? "Plano atual" : "Assinar Pro";
-    btnPro.disabled = plano === "pro";
-    btnPro.style.opacity = plano === "pro" ? "0.6" : "1";
-  }
-
-  atualizarBadgePlano();
 }
 
 function atualizarBadgePlano() {
@@ -5683,25 +5706,44 @@ function atualizarBadgePlano() {
 }
 // ===== APLICAR BLOQUEIOS DO PLANO =====
 function aplicarBloqueiosPlano() {
-  const { permissoes } = verificarPlano();
-
+  const { plano, permissoes } = verificarPlano();
+  
+  console.log('🔒 Aplicando bloqueios do plano:', plano);
+  
+  // Mapa de telas que precisam de permissão
   const mapaBloqueios = {
     'estatistica': 'estatisticas',
     'cronogramaNovo': 'cronograma'
   };
-
+  
   document.querySelectorAll('#menuLateral .nav-link').forEach(link => {
     const onclick = link.getAttribute('onclick') || '';
-
+    
+    // Remover bloqueio anterior
     link.classList.remove('bloqueado');
-
+    link.style.pointerEvents = 'auto';
+    link.style.opacity = '1';
+    
+    // Verificar se precisa bloquear
     for (const [tela, permissao] of Object.entries(mapaBloqueios)) {
       if (onclick.includes(tela) && !permissoes[permissao]) {
         link.classList.add('bloqueado');
+        link.style.pointerEvents = 'none';
+        link.style.opacity = '0.5';
+        console.log('🔒 Bloqueado:', tela);
       }
     }
   });
 }
+
+// Chamar na inicialização
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    if (typeof aplicarBloqueiosPlano === 'function') {
+      aplicarBloqueiosPlano();
+    }
+  }, 500);
+});
 
 function mostrarTourBoasVindas() {
   const jaViu = localStorage.getItem("tourBoasVindas");
@@ -12138,3 +12180,72 @@ window.salvarNotasGrupo = salvarNotasGrupo;
 window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
 window.importarFlashcardsGrupo = importarFlashcardsGrupo;
 window.voltarListaGrupos = voltarListaGrupos;
+
+function abrirModalConfiguracoes() {
+  console.log('⚙️ Abrindo configurações...');
+  
+   limparBackdropModal();
+
+  // Atualizar botões dos planos
+  if (typeof atualizarBotoesPlanos === 'function') {
+    atualizarBotoesPlanos();
+  }
+  
+  // Preencher dados do usuário
+  const userData = JSON.parse(localStorage.getItem('user') || '{}');
+  if (userData.nome) document.getElementById('novoNome').value = userData.nome;
+  if (userData.email) document.getElementById('novoEmail').value = userData.email;
+  
+  // Abrir modal
+  const modal = new bootstrap.Modal(document.getElementById('configModal'));
+  modal.show();
+}
+window.abrirModalConfiguracoes = abrirModalConfiguracoes;
+
+function fecharConfigModal() {
+  const modalElement = document.getElementById('configModal');
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) {
+    modal.hide();
+  }
+  // Remover backdrop manualmente se necessário
+  setTimeout(() => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '';
+  }, 300);
+}
+window.fecharConfigModal = fecharConfigModal;
+// ===== FORÇAR LIMPEZA DO BACKDROP =====
+function limparBackdropModal() {
+  // Remover TODOS os backdrops
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  
+  // Remover classes do body
+  document.body.classList.remove('modal-open');
+  document.body.style.overflow = 'auto';
+  document.body.style.paddingRight = '';
+  
+  console.log('🧹 Backdrop removido!');
+}
+
+// ===== FECHAR MODAL DE FORMA SEGURA =====
+function fecharModalSeguro(modalId) {
+  const modalElement = document.getElementById(modalId);
+  if (!modalElement) return;
+  
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) {
+    modal.hide();
+  }
+  
+  // Limpar backdrop após a animação
+  setTimeout(() => {
+    limparBackdropModal();
+  }, 300);
+}
+
+// ===== EXPORTAR =====
+window.limparBackdropModal = limparBackdropModal;
+window.fecharModalSeguro = fecharModalSeguro;

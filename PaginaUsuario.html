@@ -46,7 +46,8 @@
       </div>
 
       <!-- Lado DIREITO: info do usuário -->
-      <div id="userInfo" class="navbar-right">
+
+      <div id="userInfo" class="navbar-right" onclick="abrirModalConfiguracoes()">
         <img id="sidebarFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="user-avatar">
         <div class="user-text">
           <span class="user-name" id="sidebarNome">Usuário</span>
@@ -113,13 +114,6 @@
           <i class="bi bi-arrow-repeat me-2"></i> Revisão
         </a>
       </li>
-
-      <li class="nav-item">
-        <a href="#" class="nav-link" onclick="event.preventDefault(); mostrarTela('planos'); mudarPagina(this)">
-          <i class="bi bi-star-fill me-2"></i> Planos
-        </a>
-      </li>
-
     </ul>
     </ul>
   </div>
@@ -1886,31 +1880,33 @@
         onclick="event.stopPropagation()">
 
         <!-- CABEÇALHO (ajustado) -->
-<div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
-  <div style="flex: 1; min-width: 150px;">
-    <h2 style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: clamp(1rem, 2vw, 1.3rem);">
-      <i class="bi bi-people-fill" style="color: var(--cor-primaria);"></i>
-      Grupos de Estudo
-    </h2>
-    <p style="margin: 5px 0 0; font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #9ca3af;">
-      Estude em grupo, compartilhe conhecimento e evolua junto
-    </p>
-  </div>
-  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-    <button onclick="abrirCriarGrupo()"
-      style="background: var(--cor-primaria); color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
-      <i class="bi bi-plus-lg"></i> Criar Grupo
-    </button>
-    <button onclick="abrirEntrarGrupo()"
-      style="background: #3b82f6; color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
-      <i class="bi bi-box-arrow-in-right"></i> Entrar com Código
-    </button>
-    <button onclick="fecharGruposEstudo()"
-      style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
-      <i class="bi bi-x-lg"></i>
-    </button>
-  </div>
-</div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 2px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
+          <div style="flex: 1; min-width: 150px;">
+            <h2
+              style="margin: 0; color: #374151; display: flex; align-items: center; gap: 10px; font-size: clamp(1rem, 2vw, 1.3rem);">
+              <i class="bi bi-people-fill" style="color: var(--cor-primaria);"></i>
+              Grupos de Estudo
+            </h2>
+            <p style="margin: 5px 0 0; font-size: clamp(0.7rem, 1.5vw, 0.8rem); color: #9ca3af;">
+              Estude em grupo, compartilhe conhecimento e evolua junto
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button onclick="abrirCriarGrupo()"
+              style="background: var(--cor-primaria); color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
+              <i class="bi bi-plus-lg"></i> Criar Grupo
+            </button>
+            <button onclick="abrirEntrarGrupo()"
+              style="background: #3b82f6; color: white; border: none; padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px); border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: clamp(0.7rem, 1.2vw, 0.85rem); white-space: nowrap;">
+              <i class="bi bi-box-arrow-in-right"></i> Entrar com Código
+            </button>
+            <button onclick="fecharGruposEstudo()"
+              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
 
         <!-- CONTEÚDO PRINCIPAL -->
         <div style="flex: 1; overflow-y: auto; padding: 25px;">
@@ -2025,121 +2021,189 @@
       </div>
     </div>
 
-    <!-- ==================== PLANOS ==================== -->
-    <section id="planosSection" style="display:none;">
-      <h1>Planos</h1>
+    <!-- MODAL CONFIGURAÇÕES DO USUÁRIO -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content modal-config-custom">
 
-      <div id="planoAtualBadge" style="text-align: center; margin-bottom: 30px;">
-        <span id="badgePlano" style="padding: 8px 20px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
-          Seu plano: Gratuito
-        </span>
-      </div>
-
-      <div class="row g-4 justify-content-center" style="max-width: 1100px; margin: 0 auto;">
-
-        <!-- GRATUITO -->
-        <div class="col-md-4">
-          <div class="card card-planos text-center">
-            <h3>Gratuito</h3>
-            <h2 class="preco">R$0</h2>
-            <ul class="lista-planos">
-              <li>Funcionalidades de cada inteligencia</li>
-              <li>Chat com IA (5 por semana)</li>
-              <li>Revisao de conteudos</li>
-            </ul>
-            <button class="btn btn-dark w-100" onclick="escolherPlano('gratuito')" id="btnGratuito">
-              Plano atual
-            </button>
+          <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+            <h4 class="modal-title fw-bold" style="font-size: 1.45rem; color: #1e1e1e;">Configurações</h4>
+           <button type="button" class="btn-close" onclick="fecharModalSeguro('configModal')" aria-label="Fechar"></button>
           </div>
-        </div>
 
-        <!-- BASICO -->
-        <div class="col-md-4">
-          <div class="card card-planos destaque text-center">
-            <span class="badge-destaque">MAIS POPULAR</span>
-            <h3>Basico</h3>
-            <h2 class="preco">R$19<span class="periodo">/mes</span></h2>
-            <ul class="lista-planos">
-              <li>Funcionalidades de cada inteligencia</li>
-              <li>Chat com IA (20 por semana)</li>
-              <li>Revisao de conteudos</li>
-              <li>Personalizacao no guia de estudos</li>
-              <li>Edicao do tempo pomodoro</li>
-              <li>Cronograma inteligente</li>
-              <li>Estatisticas mensais e semanais</li>
-            </ul>
-            <button class="btn btn-destaque w-100" onclick="escolherPlano('basico')" id="btnBasico">
-              Assinar Basico
-            </button>
-          </div>
-        </div>
+          <div class="modal-body pt-3 px-4">
 
-        <!-- PRO -->
-        <div class="col-md-4">
-          <div class="card card-planos text-center">
-            <h3>Pro</h3>
-            <h2 class="preco">R$39<span class="periodo">/mes</span></h2>
-            <ul class="lista-planos">
-              <li>Funcionalidades de cada inteligencia</li>
-              <li>Chat com IA ilimitado</li>
-              <li>Revisao de conteudos</li>
-              <li>Personalizacao no guia de estudos</li>
-              <li>Edicao do tempo pomodoro</li>
-              <li>Cronograma inteligente</li>
-              <li>Estatisticas mensais e semanais</li>
-              <li>IA para criacao de flashcard</li>
-              <li>Desenvolvimento de inteligencias secundarias</li>
-            </ul>
-            <button class="btn btn-dark w-100" onclick="escolherPlano('pro')" id="btnPro">
-              Assinar Pro
-            </button>
-          </div>
-        </div>
+            <!-- LINHA MODO ESCURO -->
+            <div class="config-row-tema d-flex justify-content-between align-items-center mb-4 p-3 rounded-4"
+              style="background: #f8fafc; border: 1px solid #eef2ff;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="config-icon-box">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                  </svg>
+                </div>
+                <span class="fw-bold" style="font-size: 1.05rem;">Modo Escuro</span>
+              </div>
 
-      </div>
-    </section>
-
-
-    <!-- MODAL CONFIGURAÇÃO DO USUÁRIO -->
-    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-      data-bs-keyboard="false">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Configurações do Usuário</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="text-center mb-4">
-              <div class="foto-usuario-container">
-                <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                  alt="Foto do Usuário">
-                <input type="file" id="novaFoto" accept="image/*" class="form-control mt-2"
-                  onchange="previewFotoSelecionada()">
+              <!-- SWITCH TOGGLE TEMA -->
+              <div class="theme-toggle-switch" onclick="alternarModoEscuroUsuario()">
+                <div class="theme-toggle-track">
+                  <div class="theme-toggle-thumb"></div>
+                </div>
               </div>
             </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Nome</label>
-              <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+
+            <!-- SEÇÃO PLANOS DE ASSINATURA -->
+            <div id="secaoPlanosModal" class="mb-4">
+              <h5 class="fw-bold mb-3" style="font-size: 1.15rem; color: #1e1e1e;">Planos de Assinatura</h5>
+
+              <div class="d-flex flex-column gap-3">
+
+                <!-- CARD GRATUITO -->
+                <div class="plano-card-item" id="cardPlanoGratuito" onclick="escolherPlano('gratuito')">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="plano-titulo-tipo">GRATUITO</span>
+                    <span class="badge-plano-atual" id="badgePlanoGratuito">Plano Atual</span>
+                  </div>
+                  <div class="plano-preco-texto text-success">R$ 0</div>
+                  <div class="plano-features-lista">
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Revisão de
+                      conteúdos</div>
+                  </div>
+                  <div class="mt-2 text-end">
+                    <button class="btn btn-sm btn-plano-action" id="btnPlanoGratuito"
+                      onclick="event.stopPropagation(); escolherPlano('gratuito')">
+                      Plano Atual
+                    </button>
+                  </div>
+                </div>
+
+                <!-- CARD BÁSICO -->
+                <div class="plano-card-item" id="cardPlanoBasico" onclick="escolherPlano('basico')">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="plano-titulo-tipo">BÁSICO</span>
+                    <span class="badge-plano-atual" id="badgePlanoBasico">Plano Atual</span>
+                  </div>
+                  <div class="plano-preco-texto">R$ 19<span class="plano-periodo-sub">/mês</span></div>
+                  <div class="plano-features-lista">
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Revisão de
+                      conteúdos</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Personalização
+                      no guia de estudos</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Edição do tempo
+                      pomodoro</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Cronograma
+                      inteligente</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Estatísticas
+                      mensais e semanais</div>
+                  </div>
+                  <div class="mt-2 text-end">
+                    <button class="btn btn-sm btn-plano-action" id="btnPlanoBasico"
+                      onclick="event.stopPropagation(); escolherPlano('basico')">
+                      Assinar Básico
+                    </button>
+                  </div>
+                </div>
+
+                <!-- CARD PRO -->
+                <div class="plano-card-item" id="cardPlanoPro" onclick="escolherPlano('pro')">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="plano-titulo-tipo">PRO</span>
+                    <span class="badge-plano-atual" id="badgePlanoPro">Plano Atual</span>
+                  </div>
+                  <div class="plano-preco-texto">R$ 39<span class="plano-periodo-sub">/mês</span></div>
+                  <div class="plano-features-lista">
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Revisão de
+                      conteúdos</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Personalização
+                      no guia de estudos</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Edição do tempo
+                      pomodoro</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Cronograma
+                      Inteligente</div>
+                    <div class="plano-feature"><i class="bi bi-check-circle-fill text-success me-2"></i> Estatísticas
+                      mensais e semanais</div>
+                  </div>
+                  <div class="mt-2 text-end">
+                    <button class="btn btn-sm btn-plano-action" id="btnPlanoPro"
+                      onclick="event.stopPropagation(); escolherPlano('pro')">
+                      Assinar Pro
+                    </button>
+                  </div>
+                </div>
+
+              </div>
             </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Email</label>
-              <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+
+            <!-- ACORDEÃO / SEÇÃO EDITAR PERFIL -->
+            <div class="card mb-4 border rounded-4 overflow-hidden" style="background: #f8fafc;">
+              <div
+                class="card-header bg-transparent border-0 py-3 px-3 cursor-pointer d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse" data-bs-target="#collapseEditarPerfil" aria-expanded="false"
+                style="cursor: pointer;">
+                <span class="fw-bold"><i class="bi bi-person-gear me-2"></i> Editar Perfil</span>
+                <i class="bi bi-chevron-down"></i>
+              </div>
+              <div class="collapse" id="collapseEditarPerfil">
+                <div class="card-body pt-0 px-3 pb-3">
+                  <div class="text-center mb-3">
+                    <div class="foto-usuario-container">
+                      <img id="previewFoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                        alt="Foto do Usuário">
+                      <input type="file" id="novaFoto" accept="image/*" class="form-control form-control-sm mt-2"
+                        onchange="previewFotoSelecionada()">
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-bold small">Nome</label>
+                    <input type="text" id="novoNome" class="form-control" placeholder="Digite seu nome">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-bold small">Email</label>
+                    <input type="email" id="novoEmail" class="form-control" placeholder="Digite seu email">
+                  </div>
+                  <button type="button" class="btn btn-primary w-100 fw-bold"
+                    style="background: var(--cor-primaria); border: none; border-radius: 20px; padding: 8px;"
+                    onclick="salvarConfiguracao()">
+                    Salvar Dados
+                  </button>
+                </div>
+              </div>
             </div>
+
+            <!-- BOTÃO SAIR DA CONTA -->
+            <div
+              class="d-flex justify-content-between align-items-center p-3 rounded-4 border border-danger-subtle bg-danger-subtle bg-opacity-10 mb-2">
+              <div>
+                <span class="fw-bold text-danger"><i class="bi bi-box-arrow-right me-2"></i> Sair da Conta</span>
+                <div class="small text-muted">Encerrar sessão neste dispositivo</div>
+              </div>
+              <button type="button" class="btn btn-outline-danger btn-sm px-3 fw-bold rounded-pill"
+                onclick="sairDaConta()">
+                Sair
+              </button>
+            </div>
+
           </div>
-          <div class="modal-footer d-flex justify-content-between align-items-center">
-            <button type="button" class="btn btn-outline-danger" onclick="sairDaConta()">
-              <i class="bi bi-box-arrow-right me-1"></i> Sair da Conta
-            </button>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" onclick="salvarConfiguracao()">Salvar Alterações</button>
-            </div>
+
+          <div class="modal-footer border-0 pt-0 pb-3 pe-4">
+            <button type="button" class="btn btn-dark px-4 rounded-pill fw-bold" onclick="fecharModalSeguro('configModal')">
+  OK
+</button>
           </div>
+
         </div>
       </div>
     </div>
-
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <!-- Container para loaders e modais dinâmicos -->
