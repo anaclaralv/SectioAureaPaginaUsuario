@@ -5519,34 +5519,21 @@ function verificarPlano() {
 function verificarAcesso(funcionalidade) {
   const { plano, permissoes } = verificarPlano();
   
-  console.log('🔍 Verificando acesso:', funcionalidade, '| Plano:', plano);
-  
   if (!permissoes || !permissoes[funcionalidade]) {
     Swal.fire({
       icon: 'info',
       title: 'Recurso Premium',
       html: `
-        <p style="font-size: 1rem; color: #374151; margin-bottom: 8px;">
-          Esta funcionalidade é exclusiva para assinantes dos planos <strong>Básico</strong> e <strong>Pro</strong>.
-        </p>
-        <p style="font-size: 0.85rem; color: #6b7280; margin: 0;">
-          Seu plano atual: <span class="badge bg-secondary">${plano.charAt(0).toUpperCase() + plano.slice(1)}</span>
-        </p>
+        <p>Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.</p>
+        <p style="font-size: 0.8rem; color: #6b7280;">Seu plano atual: <strong>${plano.charAt(0).toUpperCase() + plano.slice(1)}</strong></p>
       `,
       confirmButtonText: '<i class="bi bi-star-fill me-1"></i> Ver Planos',
       confirmButtonColor: '#9f042c',
       showCancelButton: true,
-      cancelButtonText: 'Fechar',
-      cancelButtonColor: '#6b7280'
+      cancelButtonText: 'Fechar'
     }).then(result => {
       if (result.isConfirmed) {
         abrirModalConfiguracoes();
-        setTimeout(() => {
-          const secaoPlanos = document.getElementById('secaoPlanosModal');
-          if (secaoPlanos) {
-            secaoPlanos.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 400);
       }
     });
     return false;
@@ -5685,8 +5672,6 @@ function atualizarBadgePlano() {
 function aplicarBloqueiosPlano() {
   const { plano, permissoes } = verificarPlano();
   
-  console.log('🔒 Aplicando bloqueios do plano:', plano);
-  
   // Mapa de telas que precisam de permissão
   const mapaBloqueios = {
     'estatistica': 'estatisticas',
@@ -5696,7 +5681,7 @@ function aplicarBloqueiosPlano() {
   document.querySelectorAll('#menuLateral .nav-link').forEach(link => {
     const onclick = link.getAttribute('onclick') || '';
     
-    // Remover bloqueio anterior
+    // Remover bloqueio anterior e tags
     link.classList.remove('bloqueado');
     link.style.pointerEvents = 'auto';
     link.style.opacity = '1';
@@ -5704,23 +5689,10 @@ function aplicarBloqueiosPlano() {
     const badgeAnterior = link.querySelector('.badge-recurso-pro');
     if (badgeAnterior) badgeAnterior.remove();
     
-    // Verificar se precisa bloquear
+    // Marcar como bloqueado se não tiver permissão
     for (const [tela, permissao] of Object.entries(mapaBloqueios)) {
       if (onclick.includes(tela) && permissoes && !permissoes[permissao]) {
         link.classList.add('bloqueado');
-        link.style.pointerEvents = 'auto'; // Mantém clicável para abrir o modal de Recurso Premium
-        link.style.opacity = '0.9';
-        
-        const tag = document.createElement('span');
-        tag.className = 'badge-recurso-pro badge bg-warning text-dark ms-auto';
-        tag.style.fontSize = '0.65rem';
-        tag.style.marginLeft = 'auto';
-        tag.style.fontWeight = '700';
-        tag.innerHTML = '<i class="bi bi-lock-fill"></i> PRO';
-        link.style.display = 'flex';
-        link.style.alignItems = 'center';
-        link.appendChild(tag);
-        console.log('🔒 Bloqueado visualmente:', tela);
       }
     }
   });
