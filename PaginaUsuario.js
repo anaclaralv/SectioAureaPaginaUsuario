@@ -134,20 +134,24 @@ async function carregarNotasDoBackend() {
       notas = data.map(n => {
         let parsed = {};
         try {
-          parsed = JSON.parse(n.conteudo);
+          parsed = (typeof n.conteudo === 'string') ? JSON.parse(n.conteudo) : (n.conteudo || {});
         } catch (e) {
           parsed = { texto: n.conteudo };
         }
         return {
           id: n.id_anotacao,
           titulo: parsed.titulo || "",
-          texto: parsed.texto || "",
+          texto: parsed.texto || (typeof parsed === 'string' ? parsed : ""),
           cor: n.cor_nota || "#ffffff",
           corTexto: parsed.corTexto || "#000000",
           checklist: parsed.checklist || [],
           anexos: parsed.anexos || [],
-          favorito: parsed.favorito || false,
-          dataCriacao: parsed.dataCriacao || ""
+          favorito: n.favorito == 1 || parsed.favorito || false,
+          dataCriacao: parsed.dataCriacao || "",
+          tipo: parsed.tipo || (parsed.pergunta ? "cornell" : "padrao"),
+          pergunta: parsed.pergunta || "",
+          resposta: parsed.resposta || "",
+          resumo: parsed.resumo || ""
         };
       });
     }
