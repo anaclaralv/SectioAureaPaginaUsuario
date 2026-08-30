@@ -9516,31 +9516,49 @@ function salvarFlashcard() {
 }
 
 // ===== MOSTRAR CARD FOCO =====
+// ===== MOSTRAR CARD FOCO (CORRIGIDA) =====
 function mostrarCardFoco() {
+  console.log('📝 [REVISÃO] Mostrando card:', indiceAtualFoco);
+  
   if (indiceAtualFoco >= revisoesEmAndamento.length) {
     finalizarRevisao();
     return;
   }
-
+  
   const card = revisoesEmAndamento[indiceAtualFoco];
-
+  console.log('📋 Card:', card);
+  
   document.getElementById('focoMateria').textContent = card.materiaNome;
   document.getElementById('focoTema').textContent = '📂 ' + card.tema;
   document.getElementById('focoPergunta').textContent = card.pergunta;
   document.getElementById('focoResposta').innerHTML = card.resposta;
   document.getElementById('focoResposta').style.display = 'none';
-  document.getElementById('botoesResposta').style.display = 'none';
+  
+  // RESETAR BOTÕES DE RESPOSTA
+  const botoesResposta = document.getElementById('botoesResposta');
+  botoesResposta.innerHTML = `
+    <button class="btn-errei" onclick="responderContexto('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderContexto('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderContexto('facil')">🚀 Muito Fácil!</button>
+  `;
+  botoesResposta.style.display = 'none';
+  
+  // Mostrar botão "Mostrar Resposta"
   document.getElementById('btnMostrarResposta').style.display = 'block';
-
+  
+  // Esconder timer do simulado
+  document.getElementById('simuladoTimer').style.display = 'none';
+  
+  // Mostrar info do nível
   const nivelAtual = card.nivel || 0;
   const proximoIntervalo = intervalosRevisao[Math.min(nivelAtual + 1, intervalosRevisao.length - 1)];
   document.getElementById('focoNivelAtual').textContent = 'Nível: ' + nivelAtual;
   document.getElementById('focoSugestao').textContent = 'Sugestão: revise em ' + proximoIntervalo + ' dia(s)';
   document.getElementById('focoInfoNivel').style.display = 'block';
-
+  
   document.getElementById('focoContador').textContent = 'Card ' + (indiceAtualFoco + 1) + ' de ' + revisoesEmAndamento.length;
   document.getElementById('focoProgressoBarra').style.width = (((indiceAtualFoco + 1) / revisoesEmAndamento.length) * 100) + '%';
-
+  
   const container = document.getElementById('modoFocoContainer');
   if (container) {
     container.style.display = 'flex';
@@ -10188,21 +10206,19 @@ function finalizarSimulado() {
 }
 
 
+// ===== MOSTRAR RESPOSTA (CORRIGIDA) =====
 function mostrarRespostaFoco() {
-  console.log('👁️ [SIMULADO] Mostrando resposta...');
-
-  // Mostrar a resposta
+  console.log('👁️ Mostrando resposta...');
+  
   document.getElementById('focoResposta').style.display = 'block';
-
-  // Esconder botão "Mostrar Resposta"
   document.getElementById('btnMostrarResposta').style.display = 'none';
-
+  
   // Mostrar botões de resposta
   const botoesResposta = document.getElementById('botoesResposta');
   botoesResposta.innerHTML = `
-    <button class="btn-errei" onclick="responderSimulado('errei')">❌ Errei</button>
-    <button class="btn-acertei" onclick="responderSimulado('acertei')">✅ Acertei</button>
-    <button class="btn-facil" onclick="responderSimulado('facil')">🚀 Muito Fácil!</button>
+    <button class="btn-errei" onclick="responderContexto('errei')">❌ Errei</button>
+    <button class="btn-acertei" onclick="responderContexto('acertei')">✅ Acertei</button>
+    <button class="btn-facil" onclick="responderContexto('facil')">🚀 Muito Fácil!</button>
   `;
   botoesResposta.style.display = 'flex';
 }
@@ -10494,13 +10510,28 @@ function iniciarRevisaoLivre() {
   mostrarCardFoco();
 }
 // ===== RESPONDER FLASHCARD (COM AVISO DE PRÓXIMA REVISÃO) =====
+// ===== RESPONDER FLASHCARD (CORRIGIDA) =====
 function responderFlashcard(resultado) {
+  console.log('🔄 [REVISÃO] Respondendo:', resultado);
+  console.log('📊 Índice atual:', indiceAtualFoco);
+  console.log('📊 Total cards:', revisoesEmAndamento.length);
+  
+  if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    console.log('⚠️ Índice fora do limite!');
+    return;
+  }
+  
   const card = revisoesEmAndamento[indiceAtualFoco];
+  console.log('📋 Card:', card);
+  
   const original = flashcards.find(f => f.id === card.id);
-  if (!original) return;
-
+  if (!original) {
+    console.log('❌ Card original não encontrado!');
+    return;
+  }
+  
   let dias = 1;
-
+  
   if (resultado === 'acertei') {
     original.nivel = Math.min((original.nivel || 0) + 1, 4);
     original.acertos = (original.acertos || 0) + 1;
@@ -10514,34 +10545,36 @@ function responderFlashcard(resultado) {
     original.acertos = (original.acertos || 0) + 1;
     dias = intervalosRevisao[original.nivel] || 1;
   }
-
+  
   const novaData = new Date();
   novaData.setDate(novaData.getDate() + dias);
   original.dataProxima = novaData.toISOString().split('T')[0];
-
+  
   if (!original.historico) original.historico = [];
   original.historico.push({
     data: new Date().toISOString(),
     resultado: resultado,
     intervalo: dias
   });
-
+  
   salvarFlashcards();
   atualizarEstatisticas();
-
-  // Mostrar aviso de próxima revisão (apenas na revisão inteligente)
+  
+  // Mostrar aviso
   if (resultado === 'acertei' || resultado === 'facil') {
-    const proximaData = formatarData(original.dataProxima);
-    mostrarToast(`📅 Revise novamente em ${dias} dia(s) - ${proximaData}`, '#22c55e');
+    mostrarToast(`📅 Revise novamente em ${dias} dia(s)`, '#22c55e');
   } else {
-    mostrarToast('🔄 Revise amanhã para fixar melhor!', '#f59e0b');
+    mostrarToast('🔄 Revise amanhã!', '#f59e0b');
   }
-
+  
+  // AVANÇAR PARA O PRÓXIMO CARD
   indiceAtualFoco++;
-
+  
   if (indiceAtualFoco >= revisoesEmAndamento.length) {
+    console.log('🏁 Finalizando revisão...');
     finalizarRevisao();
   } else {
+    console.log('➡️ Mostrando próximo card...');
     mostrarCardFoco();
   }
 }
@@ -10763,20 +10796,29 @@ function mostrarSecaoRevisao() {
 }
 
 // ===== FUNÇÃO UNIVERSAL DE RESPOSTA =====
+// ===== FUNÇÃO UNIVERSAL DE RESPOSTA (CORRIGIDA) =====
 function responderContexto(resultado) {
-  console.log('🎯 [RESPOSTA] Contexto:', simuladoAtual.cards.length > 0 ? 'simulado' : 'revisao');
-
+  console.log('🎯 [RESPOSTA] Resultado:', resultado);
+  console.log('📊 Simulado cards:', simuladoAtual.cards.length);
+  console.log('📊 Revisões em andamento:', revisoesEmAndamento.length);
+  console.log('📊 Índice foco:', indiceAtualFoco);
+  
   // Verifica se está em modo simulado
-  if (simuladoAtual && simuladoAtual.cards && simuladoAtual.cards.length > 0 &&
-    document.getElementById('simuladoTimer').style.display === 'block') {
+  const containerSimulado = document.getElementById('modoFocoContainer');
+  const timerSimulado = document.getElementById('simuladoTimer');
+  
+  if (timerSimulado && timerSimulado.style.display === 'block') {
     // Está no simulado
+    console.log('✅ Modo: Simulado');
     responderSimulado(resultado);
-  } else {
+  } else if (revisoesEmAndamento.length > 0) {
     // Está na revisão normal
+    console.log('✅ Modo: Revisão Normal');
     responderFlashcard(resultado);
+  } else {
+    console.log('⚠️ Nenhum modo ativo!');
   }
 }
-
 // ===== EXPORTAR =====
 window.responderContexto = responderContexto;
 window.abrirModalNovaMateria = abrirModalNovaMateria;
