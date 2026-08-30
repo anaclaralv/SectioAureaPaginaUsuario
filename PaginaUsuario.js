@@ -85,10 +85,8 @@ async function carregarPerfilUsuario() {
         if (previewFoto) previewFoto.src = defaultAvatar;
         storage.removeItem("userFoto");
       }
-      if (data.plano) {
-        storage.setItem("planoUsuario", data.plano.toLowerCase());
-      }
       storage.setItem("user", JSON.stringify(data));
+      window.usuarioLogadoPerfil = data;
 
       if (data.tipo_dom) {
         aplicarTemaInteligencia(normalizarInteligencia(data.tipo_dom));
@@ -97,8 +95,13 @@ async function carregarPerfilUsuario() {
       // Atualizar badge, botões e bloqueios de planos
       if (typeof atualizarBadgePlano === 'function') atualizarBadgePlano();
       if (typeof atualizarBotoesPlanos === 'function') atualizarBotoesPlanos();
-      if (typeof aplicarBloqueiosPlano === 'function') aplicarBloqueiosPlano();
     }
+    if (typeof aplicarBloqueiosPlano === 'function') {
+        aplicarBloqueiosPlano();
+      }
+      if (typeof atualizarBotoesPlanos === 'function') {
+        atualizarBotoesPlanos();
+      }
   } catch (err) {
     console.error(err);
   }
@@ -252,7 +255,6 @@ async function carregarMateriasDoBackend() {
         nome: m.nome,
         cor: m.cor
       }));
-      localStorage.setItem("materias", JSON.stringify(materias));
     }
   } catch (err) {
     console.error("Erro ao carregar matérias:", err);
@@ -278,7 +280,6 @@ async function carregarCronogramaDoBackend() {
           fim: c.hora_final.substring(0, 5)
         };
       });
-      localStorage.setItem("cronogramaNovo", JSON.stringify(cronogramaNovo));
     }
   } catch (err) {
     console.error("Erro ao carregar cronograma:", err);
@@ -312,7 +313,6 @@ async function carregarSessoesDoBackend() {
         }
         tempoEstudo[matId].historico[dataStr] += segundos;
       });
-      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     }
   } catch (err) {
     console.error("Erro ao carregar sessões de estudo:", err);
@@ -853,12 +853,11 @@ window.abrirLightbox = function (src) {
 };
 function mostrarTela(tela) {
   console.log('🔄 Mostrando tela:', tela);
+  
+  // Verificar acesso ANTES de mostrar
   if (tela === "estatistica" && !verificarAcesso('estatisticas')) return;
   if (tela === "cronogramaNovo" && !verificarAcesso('cronograma')) return;
-  const telas = [
-    "inicio", "tarefas", "notas", "calendario", "relogio",
-    "estatistica", "cronogramaNovo", "metodos", "revisao", "planos"
-  ];
+  const telas = ["inicio", "tarefas", "notas", "calendario", "relogio", "estatistica", "cronogramaNovo", "metodos", "revisao"];
 
   telas.forEach(t => {
     const el = document.getElementById(t + "Section");
@@ -894,9 +893,6 @@ function mostrarTela(tela) {
 
   if (tela === "relogio") {
     renderTabelaMaterias();
-  }
-  if (tela === "planos") {
-    atualizarBotoesPlanos();
   }
   if (tela === "metodos") {
     console.log('🎨 Chamando renderizarMetodosEstudo');
@@ -957,17 +953,13 @@ function mudarPagina(elemento) {
 }
 // ---------- TAREFAS ----------
 let tarefas = [];
-try {
-  tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
-} catch (e) {
-  tarefas = [];
-}
+
 function ordenarPorPrioridade(arrayTarefas) {
   const prioridadeValor = { "alta": 1, "media": 2, "baixa": 3 };
   return arrayTarefas.sort((a, b) => prioridadeValor[a.prioridade] - prioridadeValor[b.prioridade]);
 }
 function salvarTarefas() {
-  localStorage.setItem("tarefas", JSON.stringify(tarefas));
+  // Sincronizado diretamente no banco de dados via API
 }
 function hojeFormatado() {
   const hoje = new Date();
@@ -1296,13 +1288,12 @@ function atualizarAposMudancaCalendario() {
   }, 200);
 }
 
-// Carregar eventos do localStorage
+// Carregar eventos de tarefas para o calendário
 function carregarEventos() {
-  const eventosSalvos = JSON.parse(localStorage.getItem("eventosCalendario")) || [];
-  const tarefasLS = JSON.parse(localStorage.getItem("tarefas")) || [];
+  const listaTarefas = (typeof tarefas !== 'undefined' && Array.isArray(tarefas)) ? tarefas : [];
 
   // Mapeia apenas tarefas não concluídas com flag EXPLÍCITA
-  const eventosTarefas = tarefasLS
+  const eventosTarefas = listaTarefas
     .filter(t => t.data && !t.concluida)
     .map(t => ({
       title: `${t.titulo} - ${t.prioridade.toUpperCase()}`,
@@ -1315,20 +1306,7 @@ function carregarEventos() {
       }
     }));
 
-  // Remover duplicações
-  const todosEventos = [...eventosSalvos, ...eventosTarefas];
-  const eventosUnicos = [];
-  const ids = new Set();
-
-  todosEventos.forEach(ev => {
-    const id = ev.extendedProps?.tarefaId || ev.title + ev.start;
-    if (!ids.has(id)) {
-      ids.add(id);
-      eventosUnicos.push(ev);
-    }
-  });
-
-  return eventosUnicos;
+  return eventosTarefas;
 }
 
 function atualizarEventosTarefas() {
@@ -1645,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', function () {
     events: async function (info, successCallback, failureCallback) {
       try {
         const eventosBackend = await carregarEventosDoBackend();
-        const listaTarefas = (tarefas && tarefas.length > 0) ? tarefas : (JSON.parse(localStorage.getItem("tarefas")) || []);
+        const listaTarefas = (tarefas && tarefas.length > 0) ? tarefas : [];
 
         const eventosTarefas = listaTarefas
           .filter(t => t.data && !t.concluida)
@@ -2270,7 +2248,15 @@ function atualizarResumoInicio() {
         tarefa.concluida = checkbox.checked;
         if (tarefa.concluida) span.classList.add("concluida");
         else span.classList.remove("concluida");
-        localStorage.setItem("tarefas", JSON.stringify(tarefas));
+        apiFetch(`tarefas/${tarefa.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            titulo: tarefa.titulo,
+            data_tarefa: tarefa.data,
+            prioridade: tarefa.prioridade,
+            concluida: tarefa.concluida ? 1 : 0
+          })
+        }).catch(err => console.error("Erro ao sincronizar tarefa:", err));
       });
       renderizarResumoHoje();
       li.appendChild(checkbox);
@@ -2529,7 +2515,10 @@ async function salvarConfiguracao() {
         timer: 1500,
         showConfirmButton: false
       });
-
+  // Fechar com segurança
+  fecharModalSeguro('configModal');
+  
+  mostrarToast('✅ Dados salvos!', '#22c55e');
       const modalEl = document.getElementById('configModal');
       const modalInstance = bootstrap.Modal.getInstance(modalEl);
       if (modalInstance) modalInstance.hide();
@@ -2555,21 +2544,24 @@ async function salvarConfiguracao() {
 function sairDaConta() {
   Swal.fire({
     title: 'Sair da conta?',
-    text: 'Você precisará fazer login novamente para acessar seus dados.',
+    text: 'Você será desconectado deste dispositivo.',
     icon: 'warning',
     showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-box-arrow-right"></i> Sair',
+    cancelButtonText: 'Cancelar',
     confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Sim, sair',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
+    cancelButtonColor: '#6b7280'
+  }).then(result => {
     if (result.isConfirmed) {
+      // Fechar modal primeiro
+      fecharModalSeguro('configModal');
+      
+      // Limpar dados
+      localStorage.removeItem('usuarioLogado');
+      localStorage.removeItem('usuarioId');
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userFoto');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('inteligenciaUsuario');
-      localStorage.removeItem('corPrimaria');
+      
+      // Redirecionar
       window.location.href = 'ProjetoIntegrador.html';
     }
   });
@@ -2629,16 +2621,8 @@ let notas = [];
 let anexosTemp = [];
 let materiasCronograma = [];
 let materiasRelogio = [];
-let tempoEstudo = JSON.parse(localStorage.getItem("tempoEstudo")) || {};
+let tempoEstudo = {};
 
-// Carregar do localStorage
-try {
-  materias = JSON.parse(localStorage.getItem("materias")) || [];
-  cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-} catch (e) {
-  materias = [];
-  cronogramaNovo = [];
-}
 function allowDrop(ev) {
   ev.preventDefault();
 }
@@ -2675,39 +2659,15 @@ function setupNotaTextFormatting() {
 }
 /*MIGRAR DADOS ANTIGOS */
 function migrarDadosAntigos() {
-  let precisaSalvar = false;
-
-  Object.keys(tempoEstudo).forEach(id => {
-    const dado = tempoEstudo[id];
-    if (typeof dado === 'number') {
-      const hoje = new Date().toISOString().split('T')[0];
-      tempoEstudo[id] = {
-        total: dado,
-        historico: { [hoje]: dado }
-      };
-      precisaSalvar = true;
-    }
-  });
-
-  if (precisaSalvar) {
-    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
-  }
+  // Sincronizado diretamente no banco de dados via API
 }
 
-// ---------- CARREGAR DO LOCALSTORAGE ----------
-try {
-  materias = JSON.parse(localStorage.getItem("materias")) || [];
-  cronogramaNovo = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
-} catch (e) {
-  materias = [];
-  cronogramaNovo = [];
-}
 // ---------- SALVAR ----------
 function salvarMaterias() {
-  localStorage.setItem("materias", JSON.stringify(materias));
+  // Sincronizado diretamente no banco de dados via API
 }
 function salvarCronogramaNovo() {
-  localStorage.setItem("cronogramaNovo", JSON.stringify(cronogramaNovo));
+  // Sincronizado diretamente no banco de dados via API
 }
 // ===== ADICIONAR MATÉRIA (NOVA) =====
 function adicionarMateria() {
@@ -3079,12 +3039,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function atualizarMateriaAgora() {
-  if (typeof materias === 'undefined') {
-    try {
-      materias = JSON.parse(localStorage.getItem("materias")) || [];
-    } catch (e) {
-      materias = [];
-    }
+  if (typeof materias === 'undefined' || !Array.isArray(materias)) {
+    materias = [];
   }
   const el = document.getElementById("materiaAgoraInicio");
   if (!el) return;
@@ -3094,7 +3050,7 @@ function atualizarMateriaAgora() {
   const agora = new Date();
   const horaAtual = String(agora.getHours()).padStart(2, '0') + ":" + String(agora.getMinutes()).padStart(2, '0');
 
-  const cronogramaNovoLocal = JSON.parse(localStorage.getItem("cronogramaNovo")) || [];
+  const cronogramaNovoLocal = (typeof cronogramaNovo !== 'undefined' && Array.isArray(cronogramaNovo)) ? cronogramaNovo : [];
   const blocoAtual = cronogramaNovoLocal.find(b =>
     b.dia === hojeSemana &&
     horaAtual >= b.inicio &&
@@ -3220,15 +3176,8 @@ let cronometroInterval;
 let cronometroRodando = false;
 let historicoCronometro = [];
 
-// Carregar histórico do localStorage
-try {
-  historicoCronometro = JSON.parse(localStorage.getItem("historicoCronometro")) || [];
-} catch (e) {
-  historicoCronometro = [];
-}
-
 function salvarHistoricoCronometro() {
-  localStorage.setItem("historicoCronometro", JSON.stringify(historicoCronometro));
+  // Mantido em memória e sincronizado nas sessões do banco de dados
 }
 
 function iniciarCronometro() {
@@ -4111,16 +4060,6 @@ function atualizarMeta() {
   atualizarDisplayMetas();
 }
 function carregarMetas() {
-  const metasSalvas = localStorage.getItem("metas");
-  if (metasSalvas) {
-    metas = JSON.parse(metasSalvas);
-  } else {
-    localStorage.setItem("metas", JSON.stringify(metas));
-  }
-  const metaAtivaSalva = localStorage.getItem("metaAtiva");
-  if (metaAtivaSalva) {
-    metaAtiva = metaAtivaSalva;
-  }
   atualizarDisplayMetas();
   atualizarMeta();
   atualizarBotoesMeta();
@@ -4135,7 +4074,6 @@ function atualizarBotoesMeta() {
     }
     btn.onclick = () => {
       metaAtiva = btn.dataset.tipo;
-      localStorage.setItem("metaAtiva", metaAtiva);
       atualizarBotoesMeta();
       atualizarMeta();
     };
@@ -4177,7 +4115,6 @@ function salvarMeta() {
       showConfirmButton: false
     }); return;
   }
-  localStorage.setItem("metas", JSON.stringify(metas));
   atualizarMeta();
   atualizarDisplayMetas();
   bootstrap.Modal.getInstance(document.getElementById('modalMeta')).hide();
@@ -4195,19 +4132,10 @@ function salvarMeta() {
 }
 /* ================= STREAK ================= */
 function atualizarStreak() {
-  const hoje = new Date().toDateString();
-  let ultimoDia = localStorage.getItem("ultimoDiaEstudo");
-  let streak = parseInt(localStorage.getItem("streak")) || 0;
-  if (!ultimoDia) {
-    localStorage.setItem("ultimoDiaEstudo", hoje);
-    localStorage.setItem("streak", 1);
-    return;
-  } const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
-  if (new Date(ultimoDia).toDateString() === ontem.toDateString()) {
-    streak++; localStorage.setItem("streak", streak);
-  } else if (ultimoDia !== hoje) {
-    streak = 1; localStorage.setItem("streak", streak);
-  } localStorage.setItem("ultimoDiaEstudo", hoje);
+  // Streak agora é calculado dinamicamente no banco a partir das sessões de estudo
+  if (typeof carregarEstatisticas === 'function') {
+    carregarEstatisticas();
+  }
 }/* ================= RELOGIO INTELIGENTE ================= */
 function atualizarRelogioInfo() {
   const materiaEl = document.getElementById("materiaRelogio");
@@ -4265,7 +4193,7 @@ function atualizarRelogioInfo() {
   if (tempoHojeEl) {
     tempoHojeEl.textContent = h + ":" + m + ":" + s;
   }
-  const streak = localStorage.getItem("streak") || 0;
+  const { maiorStreak: streak } = (typeof calcularTotais === 'function') ? calcularTotais() : { maiorStreak: 0 };
   if (streakEl) {
     streakEl.textContent = streak + " dias";
   }
@@ -4278,14 +4206,13 @@ function atualizarRelogioInfo() {
     if (segundosSessaoAtual > 0) {
       salvarSessaoEstudoNoBackend(estudoAtual, segundosSessaoAtual, "Estudo Manual (Pausado)");
     }
-    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
     const materia = materias.find(m => m.id == estudoAtual);
     const nomeMateria = materia ? materia.nome : 'Desconhecida';
     console.log(`⏸ Estudo pausado: ${nomeMateria}`);
     Swal.fire({
       icon: 'info',
       title: 'Estudo pausado',
-      text: `${nomeMateria} - Tempo salvo!`,
+      text: `${nomeMateria} - Tempo salvo no banco de dados!`,
       timer: 2000,
       showConfirmButton: false,
       position: 'top-end',
@@ -4330,14 +4257,13 @@ function adicionarMateriaRelogio() {
         cor: cor
       };
       materias.push(novaMateria);
-      localStorage.setItem("materias", JSON.stringify(materias));
       if (nomeInput) nomeInput.value = "";
       renderTabelaMaterias();
       renderMaterias(); // atualiza o cronograma também
       if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
       if (typeof carregarMateriasRevisao === 'function') carregarMateriasRevisao();
       if (typeof renderizarSelectMateriasVideos === 'function') renderizarSelectMateriasVideos();
-      Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: "success", title: "Matéria salva no banco de dados!", timer: 1500, showConfirmButton: false });
     } else {
       Swal.fire({ icon: "error", title: "Erro ao adicionar matéria!", timer: 1500, showConfirmButton: false });
     }
@@ -4373,7 +4299,6 @@ function finalizarEstudo() {
       if (estudoAtual && segundosSessaoAtual > 0) {
         salvarSessaoEstudoNoBackend(estudoAtual, segundosSessaoAtual, "Estudo Manual");
       }
-      localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
       estudoAtual = null;
       segundosSessaoAtual = 0;
       modoEstudo = "manual";
@@ -4387,7 +4312,7 @@ function finalizarEstudo() {
       Swal.fire({
         icon: 'success',
         title: 'Estudo finalizado!',
-        text: `${nomeMateria} - ${horas}h ${minutos}min registrados!`,
+        text: `${nomeMateria} - ${horas}h ${minutos}min salvos no banco de dados!`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -4729,7 +4654,30 @@ function calcularTotais() {
 
   const totalHoras = totalSegundos / 3600;
   const dias = diasEstudados.size;
-  const maiorStreak = parseInt(localStorage.getItem("streak")) || 0;
+  
+  // Calcular streak dinamicamente a partir dos dias estudados no banco
+  let streakDinamico = 0;
+  if (diasEstudados.size > 0) {
+    const hojeStr = new Date().toISOString().split('T')[0];
+    const ontemDate = new Date();
+    ontemDate.setDate(ontemDate.getDate() - 1);
+    const ontemStr = ontemDate.toISOString().split('T')[0];
+
+    if (diasEstudados.has(hojeStr) || diasEstudados.has(ontemStr)) {
+      let d = diasEstudados.has(hojeStr) ? new Date() : ontemDate;
+      while (true) {
+        const str = d.toISOString().split('T')[0];
+        if (diasEstudados.has(str)) {
+          streakDinamico++;
+          d.setDate(d.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  const maiorStreak = streakDinamico;
   const mediaDiaria = dias > 0 ? totalHoras / dias : 0;
 
   return {
@@ -5189,8 +5137,7 @@ function atualizarBarraMeta(barraId, textoId, atual, meta) {
 // ==================== ATUALIZAR CONQUISTAS ====================
 function atualizarConquistas() {
   try {
-    const { totalHoras } = calcularTotais();
-    const streak = parseInt(localStorage.getItem("streak")) || 0;
+    const { totalHoras, maiorStreak: streak } = calcularTotais();
     const qtdMaterias = materias ? materias.length : 0;
     const conquistas = [
       {
@@ -5287,8 +5234,7 @@ function gerarSugestoes() {
   const sugestoesLista = document.getElementById("sugestoes");
   if (!sugestoesLista) return;
   try {
-    const { totalHoras, dias, maiorStreak } = calcularTotais();
-    const streak = parseInt(localStorage.getItem("streak")) || 0;
+    const { totalHoras, dias, maiorStreak: streak } = calcularTotais();
     const materiasTop = calcularHorasPorMateria();
     const sugestoes = [];
     if (totalHoras === 0) {
@@ -5340,11 +5286,12 @@ function gerarSugestoes() {
 // ==================== EXPORTAR DADOS (CORRIGIDO) ====================
 function exportarDados() {
   try {
+    const { maiorStreak: streakCalc } = calcularTotais();
     const dados = {
       versao: "1.0",
       dataExportacao: new Date().toISOString(),
       tarefas: tarefas || [],
-      notas: JSON.parse(localStorage.getItem("notas")) || [],
+      notas: notas || [],
       eventos: calendar ? calendar.getEvents().map(e => ({
         title: e.title,
         start: e.startStr,
@@ -5353,10 +5300,9 @@ function exportarDados() {
       })) : [],
       tempoEstudo: tempoEstudo || {},
       metas: metas || {},
-      flashcards: JSON.parse(localStorage.getItem("flashcards_sistema")) || [],
-      cronograma: JSON.parse(localStorage.getItem("cronogramaNovo")) || [],
-      streak: parseInt(localStorage.getItem("streak")) || 0,
-      ultimoDiaEstudo: localStorage.getItem("ultimoDiaEstudo") || ""
+      flashcards: flashcards || [],
+      cronograma: cronogramaNovo || [],
+      streak: streakCalc || 0
     };
     const dataStr = JSON.stringify(dados, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -5558,26 +5504,24 @@ function verificarPlano() {
 
 function verificarAcesso(funcionalidade) {
   const { plano, permissoes } = verificarPlano();
-
+  
+  console.log('🔍 Verificando acesso:', funcionalidade, '| Plano:', plano);
+  
   if (!permissoes[funcionalidade]) {
     Swal.fire({
       icon: 'info',
       title: 'Recurso Premium',
       html: `
-        <p>Esta funcionalidade esta disponivel nos planos <strong>Basico</strong> e <strong>Pro</strong>.</p>
+        <p>Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.</p>
         <p style="font-size: 0.8rem; color: #6b7280;">Seu plano atual: <strong>${plano.charAt(0).toUpperCase() + plano.slice(1)}</strong></p>
       `,
-      confirmButtonText: 'Ver Planos',
+      confirmButtonText: '<i class="bi bi-star-fill me-1"></i> Ver Planos',
       confirmButtonColor: '#9f042c',
       showCancelButton: true,
       cancelButtonText: 'Fechar'
     }).then(result => {
       if (result.isConfirmed) {
-        mostrarTela('planos');
-        const links = document.querySelectorAll('#menuLateral .nav-link');
-        links.forEach(link => link.classList.remove('active'));
-        const linkPlanos = document.querySelector('#menuLateral .nav-link[onclick*="planos"]');
-        if (linkPlanos) linkPlanos.classList.add('active');
+        abrirModalConfiguracoes();
       }
     });
     return false;
@@ -5650,29 +5594,46 @@ function escolherPlano(tipo) {
 function atualizarBotoesPlanos() {
   const { plano } = verificarPlano();
 
-  const btnGratuito = document.getElementById("btnGratuito");
-  const btnBasico = document.getElementById("btnBasico");
-  const btnPro = document.getElementById("btnPro");
+  const planos = ['gratuito', 'basico', 'pro'];
+  
+  planos.forEach(p => {
+    const nomeCap = p.charAt(0).toUpperCase() + p.slice(1);
+    const card = document.getElementById(`cardPlano${nomeCap}`);
+    const badge = document.getElementById(`badgePlano${nomeCap}`);
+    const btn = document.getElementById(`btnPlano${nomeCap}`);
 
-  if (btnGratuito) {
-    btnGratuito.textContent = plano === "gratuito" ? "Plano atual" : "Mudar para Gratuito";
-    btnGratuito.disabled = plano === "gratuito";
-    btnGratuito.style.opacity = plano === "gratuito" ? "0.6" : "1";
+    if (card) {
+      if (plano === p) {
+        card.classList.add('ativo');
+        card.style.border = '2px solid var(--cor-primaria)';
+      } else {
+        card.classList.remove('ativo');
+        card.style.border = '1px solid #e5e7eb';
+      }
+    }
+
+    if (badge) {
+      badge.style.display = (plano === p) ? 'inline-block' : 'none';
+    }
+
+    if (btn) {
+      if (plano === p) {
+        btn.textContent = 'Plano Atual';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+      } else {
+        btn.textContent = (p === 'gratuito') ? 'Mudar para Gratuito' : `Assinar ${nomeCap}`;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+  });
+
+  // Badge no topo
+  const badgeTopo = document.getElementById('badgePlano');
+  if (badgeTopo) {
+    badgeTopo.textContent = 'Seu plano: ' + plano.charAt(0).toUpperCase() + plano.slice(1);
   }
-
-  if (btnBasico) {
-    btnBasico.textContent = plano === "basico" ? "Plano atual" : "Assinar Basico";
-    btnBasico.disabled = plano === "basico";
-    btnBasico.style.opacity = plano === "basico" ? "0.6" : "1";
-  }
-
-  if (btnPro) {
-    btnPro.textContent = plano === "pro" ? "Plano atual" : "Assinar Pro";
-    btnPro.disabled = plano === "pro";
-    btnPro.style.opacity = plano === "pro" ? "0.6" : "1";
-  }
-
-  atualizarBadgePlano();
 }
 
 function atualizarBadgePlano() {
@@ -5687,25 +5648,44 @@ function atualizarBadgePlano() {
 }
 // ===== APLICAR BLOQUEIOS DO PLANO =====
 function aplicarBloqueiosPlano() {
-  const { permissoes } = verificarPlano();
-
+  const { plano, permissoes } = verificarPlano();
+  
+  console.log('🔒 Aplicando bloqueios do plano:', plano);
+  
+  // Mapa de telas que precisam de permissão
   const mapaBloqueios = {
     'estatistica': 'estatisticas',
     'cronogramaNovo': 'cronograma'
   };
-
+  
   document.querySelectorAll('#menuLateral .nav-link').forEach(link => {
     const onclick = link.getAttribute('onclick') || '';
-
+    
+    // Remover bloqueio anterior
     link.classList.remove('bloqueado');
-
+    link.style.pointerEvents = 'auto';
+    link.style.opacity = '1';
+    
+    // Verificar se precisa bloquear
     for (const [tela, permissao] of Object.entries(mapaBloqueios)) {
       if (onclick.includes(tela) && !permissoes[permissao]) {
         link.classList.add('bloqueado');
+        link.style.pointerEvents = 'none';
+        link.style.opacity = '0.5';
+        console.log('🔒 Bloqueado:', tela);
       }
     }
   });
 }
+
+// Chamar na inicialização
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    if (typeof aplicarBloqueiosPlano === 'function') {
+      aplicarBloqueiosPlano();
+    }
+  }, 500);
+});
 
 function mostrarTourBoasVindas() {
   const jaViu = localStorage.getItem("tourBoasVindas");
@@ -5889,8 +5869,8 @@ function abrirModalAmbiente() {
 }
 
 window.addEventListener("beforeunload", () => {
-  if (estudoAtual) {
-    localStorage.setItem("tempoEstudo", JSON.stringify(tempoEstudo));
+  if (estudoAtual && segundosSessaoAtual > 0) {
+    salvarSessaoEstudoNoBackend(estudoAtual, segundosSessaoAtual, "Estudo Fechamento Janela");
   }
 });
 
@@ -5913,19 +5893,8 @@ function abrirCornell() {
   console.log('📝 Abrindo Cornell');
   if (typeof fecharMetodoModal === 'function') fecharMetodoModal();
 
-  // Busca notas existentes
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  // Filtra apenas notas Cornell
-  const notasCornell = notas.filter(nota => nota.tipo === 'cornell');
+  // Filtra apenas notas Cornell carregadas do banco de dados
+  const notasCornell = (typeof notas !== 'undefined' && Array.isArray(notas)) ? notas.filter(nota => nota.tipo === 'cornell') : [];
 
   // Cria ou atualiza o modal
   let modal = document.getElementById('cornellModalOverlay');
@@ -5944,14 +5913,20 @@ function abrirCornell() {
 
   modal.style.display = 'flex';
   modal.innerHTML = criarHtmlCornell(notasCornell);
-  modal.querySelector('.cornell-modal-content').style.animation = 'slideUp 0.3s ease';
+  const cornellContent = modal.querySelector('.cornell-modal-content');
+  if (cornellContent && cornellContent.style) {
+    cornellContent.style.animation = 'slideUp 0.3s ease';
+  }
 
   // Inicializa eventos
   inicializarEventosCornell(notasCornell);
 }
 
 function criarHtmlCornell(notasCornell) {
-  const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
+  let inteligencia = 'logico';
+  if (window.usuarioLogadoPerfil && window.usuarioLogadoPerfil.tipo_dom) {
+    inteligencia = normalizarInteligencia(window.usuarioLogadoPerfil.tipo_dom);
+  }
   
   // Cores baseadas na inteligência do usuário
   const cores = {
@@ -6264,7 +6239,7 @@ function inicializarEventosCornell(notasCornell) {
 }
 
 // ===== SALVAR NOTA CORNELL =====
-function salvarNotaCornell() {
+async function salvarNotaCornell() {
   const tituloInput = document.getElementById('cornellTituloInput');
   const perguntaInput = document.getElementById('cornellPerguntaInput');
   const respostaInput = document.getElementById('cornellRespostaInput');
@@ -6278,49 +6253,25 @@ function salvarNotaCornell() {
   const resumo = resumoInput ? resumoInput.value.trim() : '';
 
   if (!pergunta || !resposta) {
-    if (typeof Swal !== 'undefined') {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campos incompletos!',
-        text: 'Preencha tanto a pergunta quanto a resposta.',
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
-      });
-    }
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos!',
+      text: 'Preencha tanto a pergunta quanto a resposta.'
+    });
     return;
   }
 
-  // Busca notas existentes
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  // Cria a nota
-  const novaNota = {
-    id: 'nota_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-    titulo: titulo || `📝 Cornell: ${pergunta.substring(0, 30)}${pergunta.length > 30 ? '...' : ''}`,
-    texto: `
+  const textoHtml = `
 <div style="padding: 20px; background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb;">
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-  
     <div style="border-right: 3px solid #dc3545; padding-right: 20px;">
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-        <span style="background: #dc3545; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
         <strong style="color: #dc3545; font-size: 13px;">Pergunta</strong>
       </div>
       <p style="margin: 0; color: #dc3545; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${pergunta}</p>
     </div>
     <div>
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-        <span style="background: #28a745; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
         <strong style="color: #28a745; font-size: 13px;">Resposta</strong>
       </div>
       <p style="margin: 0; color: #28a745; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resposta}</p>
@@ -6329,7 +6280,6 @@ function salvarNotaCornell() {
   ${resumo ? `
   <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-      <span style="background: #6c757d; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;"></span>
       <strong style="color: #6c757d; font-size: 13px;">Resumo</strong>
     </div>
     <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${resumo}</p>
@@ -6339,77 +6289,65 @@ function salvarNotaCornell() {
     <i class="bi bi-tag"></i> Método Cornell
   </div>
 </div>
-    `,
-    cor: '#ffffff',
-    corTexto: '#000000',
-    checklist: [],
-    anexos: [],
-    favorito: false,
-    dataCriacao: new Date().toLocaleString('pt-BR'),
-    tipo: 'cornell',
-    pergunta: pergunta,
-    resposta: resposta,
-    resumo: resumo
+  `;
+
+  const payload = {
+    conteudo: JSON.stringify({
+      titulo: titulo || `📝 Cornell: ${pergunta.substring(0, 30)}${pergunta.length > 30 ? '...' : ''}`,
+      texto: textoHtml,
+      corTexto: '#000000',
+      checklist: [],
+      anexos: [],
+      favorito: false,
+      dataCriacao: new Date().toLocaleString('pt-BR'),
+      tipo: 'cornell',
+      pergunta: pergunta,
+      resposta: resposta,
+      resumo: resumo
+    }),
+    cor_nota: '#ffffff'
   };
 
-  notas.unshift(novaNota);
-  localStorage.setItem('notas', JSON.stringify(notas));
-
-  // Limpa campos
-  if (tituloInput) tituloInput.value = '';
-  perguntaInput.value = '';
-  respostaInput.value = '';
-  if (resumoInput) resumoInput.value = '';
-  document.getElementById('cornellContadorPergunta').textContent = '0';
-  document.getElementById('cornellContadorResposta').textContent = '0';
-
-  // Re-renderiza
-  const notasCornell = notas.filter(n => n.tipo === 'cornell');
-  const lista = document.getElementById('cornellListaNotas');
-  if (lista) {
-    const total = document.getElementById('cornellTotalNotas');
-    if (total) total.textContent = `(${notasCornell.length})`;
-    // Atualiza a lista
-    const modal = document.getElementById('cornellModalOverlay');
-    if (modal) {
-      const novasNotas = JSON.parse(localStorage.getItem('notas') || '[]').filter(n => n.tipo === 'cornell');
-      modal.innerHTML = criarHtmlCornell(novasNotas);
-      inicializarEventosCornell(novasNotas);
-    }
-  }
-
-  // Feedback
-  if (typeof Swal !== 'undefined') {
-    Swal.fire({
-      icon: 'success',
-      title: 'Nota salva!',
-      text: `"${novaNota.titulo}" foi adicionado.`,
-      timer: 1500,
-      showConfirmButton: false,
-      toast: true,
-      position: 'top-end'
+  try {
+    const response = await apiFetch("blocos", {
+      method: "POST",
+      body: JSON.stringify(payload)
     });
-  }
+    if (response.ok) {
+      await carregarNotasDoBackend();
 
-  // Atualiza lista de notas principal
-  if (typeof renderNotas === 'function') {
-    renderNotas();
+      if (tituloInput) tituloInput.value = '';
+      perguntaInput.value = '';
+      respostaInput.value = '';
+      if (resumoInput) resumoInput.value = '';
+      const contP = document.getElementById('cornellContadorPergunta');
+      const contR = document.getElementById('cornellContadorResposta');
+      if (contP) contP.textContent = '0';
+      if (contR) contR.textContent = '0';
+
+      const notasCornell = notas.filter(n => n.tipo === 'cornell');
+      const modal = document.getElementById('cornellModalOverlay');
+      if (modal) {
+        modal.innerHTML = criarHtmlCornell(notasCornell);
+        inicializarEventosCornell(notasCornell);
+      }
+
+      if (typeof renderNotas === 'function') {
+        renderNotas();
+      }
+
+      mostrarToast('✅ Nota salva no banco de dados!', '#22c55e');
+    } else {
+      mostrarToast('❌ Erro ao salvar nota no servidor', '#ef4444');
+    }
+  } catch (err) {
+    console.error("Erro ao salvar nota Cornell:", err);
   }
 }
 
 // ===== ABRIR NOTA CORNELL =====
 function abrirNotaCornell(id) {
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
-
-  const nota = notas.find(n => n.id === id);
+  const nota = notas.find(n => n.id == id);
   if (!nota) return;
 
   if (typeof Swal !== 'undefined') {
@@ -6428,57 +6366,40 @@ function abrirNotaCornell(id) {
 
 // ===== EXCLUIR NOTA CORNELL =====
 function excluirNotaCornell(id) {
-  let notas = [];
-  try {
-    const notasSalvas = localStorage.getItem('notas');
-    if (notasSalvas) {
-      notas = JSON.parse(notasSalvas);
-    }
-  } catch (e) {
-    notas = [];
-  }
+  Swal.fire({
+    title: 'Excluir anotação?',
+    text: 'Essa ação não pode ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#dc3545'
+  }).then(async result => {
+    if (result.isConfirmed) {
+      try {
+        const response = await apiFetch(`blocos/${id}`, { method: "DELETE" });
+        if (response.ok) {
+          await carregarNotasDoBackend();
+          const notasCornell = notas.filter(n => n.tipo === 'cornell');
+          const modal = document.getElementById('cornellModalOverlay');
+          if (modal) {
+            modal.innerHTML = criarHtmlCornell(notasCornell);
+            inicializarEventosCornell(notasCornell);
+          }
 
-  const notaIndex = notas.findIndex(n => n.id === id);
-  if (notaIndex === -1) return;
+          if (typeof renderNotas === 'function') {
+            renderNotas();
+          }
 
-  if (typeof Swal !== 'undefined') {
-    Swal.fire({
-      title: 'Excluir anotação?',
-      text: 'Essa ação não pode ser desfeita!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, excluir',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc3545'
-    }).then(result => {
-      if (result.isConfirmed) {
-        notas.splice(notaIndex, 1);
-        localStorage.setItem('notas', JSON.stringify(notas));
-
-        // Re-renderiza
-        if (typeof renderNotas === 'function') {
-          renderNotas();
+          mostrarToast('🗑️ Anotação excluída!', '#22c55e');
+        } else {
+          mostrarToast('❌ Erro ao excluir nota no servidor', '#ef4444');
         }
-
-        // Atualiza o modal
-        const modal = document.getElementById('cornellModalOverlay');
-        if (modal) {
-          const novasNotas = JSON.parse(localStorage.getItem('notas') || '[]').filter(n => n.tipo === 'cornell');
-          modal.innerHTML = criarHtmlCornell(novasNotas);
-          inicializarEventosCornell(novasNotas);
-        }
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Anotação excluída!',
-          timer: 1200,
-          showConfirmButton: false,
-          toast: true,
-          position: 'top-end'
-        });
+      } catch (err) {
+        console.error("Erro ao excluir nota Cornell:", err);
       }
-    });
-  }
+    }
+  });
 }
 
 // ===== LIMPAR CAMPOS =====
@@ -6535,7 +6456,7 @@ let mapaMentalOffsetY = 0;
 let mapaMentalCanvas = null;
 let mapaMentalCtx = null;
 let mapaMentalHistorico = [];
-let mapasMentaisSalvos = JSON.parse(localStorage.getItem('mapasMentais') || '[]');
+let mapasMentaisSalvos = [];
 let mapaMentalZoom = 1;
 let mapaMentalZoomMin = 0.1;
 let mapaMentalZoomMax = 5;
@@ -8528,8 +8449,7 @@ function popularSelectMateriasVideos() {
   const select = document.getElementById('videoMateria');
   if (!select) return;
 
-  // Pega matérias do sistema
-  const materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
+  const materiasSistema = (typeof materias !== 'undefined' && Array.isArray(materias)) ? materias : [];
 
   select.innerHTML = '<option value="">Selecione uma matéria</option>';
 
@@ -8634,41 +8554,32 @@ function salvarVideo() {
 
 // ===== SALVAR NOVA MATÉRIA NO SISTEMA =====
 function salvarNovaMateriaNoSistema(nomeMateria) {
-  // Pega matérias existentes
-  let materiasSistema = JSON.parse(localStorage.getItem('materias') || '[]');
-
-  // Verifica se já existe
-  const materiaExiste = materiasSistema.some(m => m.nome.toLowerCase() === nomeMateria.toLowerCase());
+  const materiaExiste = (typeof materias !== 'undefined' && materias) ? materias.some(m => m.nome.toLowerCase() === nomeMateria.toLowerCase()) : false;
 
   if (!materiaExiste) {
-    // Cria nova matéria
-    const novaMateria = {
-      id: Date.now().toString(),
-      nome: nomeMateria,
-      cor: '#' + Math.floor(Math.random() * 16777215).toString(16) // cor aleatória
-    };
-
-    materiasSistema.push(novaMateria);
-    localStorage.setItem('materias', JSON.stringify(materiasSistema));
-
-    console.log('✅ Nova matéria salva:', novaMateria);
-
-    // Tenta salvar no backend se possível
-    if (typeof apiFetch === 'function') {
-      apiFetch('materias', {
-        method: 'POST',
-        body: JSON.stringify({
+    const corAleatoria = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    apiFetch('materias', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome: nomeMateria,
+        cor: corAleatoria
+      })
+    }).then(async response => {
+      if (response.ok) {
+        const data = await response.json();
+        const novaMat = {
+          id: data.id_materia ? data.id_materia.toString() : Date.now().toString(),
           nome: nomeMateria,
-          cor: novaMateria.cor
-        })
-      }).then(response => {
-        if (response.ok) {
-          console.log('✅ Matéria salva no backend!');
-        }
-      }).catch(err => {
-        console.log('ℹ️ Matéria salva apenas localmente (sem backend)');
-      });
-    }
+          cor: corAleatoria
+        };
+        if (typeof materias !== 'undefined') materias.push(novaMat);
+        popularSelectMateriasVideos();
+        if (typeof renderMaterias === 'function') renderMaterias();
+        if (typeof renderTabelaMaterias === 'function') renderTabelaMaterias();
+      }
+    }).catch(err => {
+      console.error('Erro ao salvar nova matéria:', err);
+    });
   }
 }
 
@@ -9216,7 +9127,7 @@ function formatarData(dataStr) {
 
 // ===== SALVAR =====
 function salvarFlashcards() {
-  localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
+  // Sincronizado diretamente no banco de dados via API
 }
 // ===== CONFIGURAR ABAS =====
 function configurarAbasRevisao() {
@@ -9240,7 +9151,7 @@ async function carregarFlashcardsDoBackend() {
     if (response.ok) {
       const data = await response.json();
 
-      if (data && data.length > 0) {
+      if (Array.isArray(data)) {
         flashcards = data.map(f => {
           let parsedTema = {
             tema: "Geral",
@@ -9259,7 +9170,6 @@ async function carregarFlashcardsDoBackend() {
               parsedTema.tema = rawTema;
             }
           } catch (e) {
-            console.error("Erro ao fazer parse do tema JSON:", e);
             if (rawTema) parsedTema.tema = rawTema;
           }
 
@@ -9273,32 +9183,14 @@ async function carregarFlashcardsDoBackend() {
             nivel: parsedTema.nivel !== undefined ? parsedTema.nivel : 0,
             dataProxima: parsedTema.dataProxima || new Date().toISOString().split("T")[0],
             acertos: parsedTema.acertos !== undefined ? parsedTema.acertos : 0,
-            erros: parsedTema.erros !== undefined ? parsedTema.erros : 0
+            erros: parsedTema.erros !== undefined ? parsedTema.erros : 0,
+            historico: parsedTema.historico || []
           };
         });
-
-        localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-      } else {
-        // Backend vazio, usa localStorage
-        const salvos = localStorage.getItem('flashcards_sistema');
-        if (salvos) {
-          flashcards = JSON.parse(salvos);
-        }
-      }
-    } else {
-      // Backend com erro, usa localStorage
-      const salvos = localStorage.getItem('flashcards_sistema');
-      if (salvos) {
-        flashcards = JSON.parse(salvos);
       }
     }
   } catch (err) {
-    console.error("Erro ao carregar flashcards:", err);
-    // Fallback para localStorage
-    const salvos = localStorage.getItem('flashcards_sistema');
-    if (salvos) {
-      flashcards = JSON.parse(salvos);
-    }
+    console.error("Erro ao carregar flashcards do servidor:", err);
   }
 
   // Renderiza tudo
@@ -9600,7 +9492,7 @@ function abrirModalFlashcardComProva(tituloProva) {
 }
 
 // ===== SALVAR FLASHCARD =====
-function salvarFlashcard() {
+async function salvarFlashcard() {
   const materiaId = document.getElementById("revisaoMateria").value;
   const tema = document.getElementById("revisaoTema").value.trim();
   const pergunta = document.getElementById("revisaoPergunta").value.trim();
@@ -9609,10 +9501,9 @@ function salvarFlashcard() {
   if (!materiaId) { mostrarToast('⚠️ Selecione uma matéria!', '#f59e0b'); return; }
   if (!pergunta || !resposta) { mostrarToast('⚠️ Preencha pergunta e resposta!', '#f59e0b'); return; }
 
-  const materia = materias.find(m => m.id == materiaId);
+  const materia = (typeof materias !== 'undefined' && materias) ? materias.find(m => m.id == materiaId) : null;
 
   const novoCard = {
-    id: Date.now(),
     materiaId: Number(materiaId),
     materiaNome: materia ? materia.nome : "Sem matéria",
     tema: tema || "Geral",
@@ -9624,16 +9515,40 @@ function salvarFlashcard() {
     erros: 0
   };
 
-  flashcards.push(novoCard);
-  salvarFlashcards();
-  popularFiltroMaterias();
-  renderizarFlashcardsAgrupados();
-  atualizarEstatisticas();
+  try {
+    const res = await apiFetch("flashcards", {
+      method: "POST",
+      body: JSON.stringify({
+        id_materia: novoCard.materiaId,
+        pergunta: novoCard.pergunta,
+        resposta: novoCard.resposta,
+        tema: JSON.stringify({
+          tema: novoCard.tema,
+          nivel: novoCard.nivel,
+          dataProxima: novoCard.dataProxima,
+          acertos: novoCard.acertos,
+          erros: novoCard.erros
+        })
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      novoCard.id = Number(data.id_flash);
+      flashcards.push(novoCard);
+      popularFiltroMaterias();
+      renderizarFlashcardsAgrupados();
+      atualizarEstatisticas();
 
-  const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
-  if (modal) modal.hide();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
+      if (modal) modal.hide();
 
-  Swal.fire({ icon: 'success', title: 'Flashcard criado!', timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'Flashcard salvo no banco de dados!', timer: 1500, showConfirmButton: false });
+    } else {
+      mostrarToast('❌ Erro ao salvar flashcard no servidor', '#ef4444');
+    }
+  } catch (err) {
+    console.error("Erro ao salvar flashcard:", err);
+  }
 }
 
 // ===== MOSTRAR CARD FOCO =====
@@ -9687,8 +9602,6 @@ function finalizarRevisao() {
   }
   document.body.style.overflow = 'auto';
 
-  localStorage.setItem('aviso_avisoCardsAtrasados_fechado', 'true');
-
   renderizarFlashcardsAgrupados();
   atualizarMensagemRevisar();
   verificarCardsAtrasados();
@@ -9700,13 +9613,11 @@ function finalizarRevisao() {
 function fecharModoFoco() {
   console.log('🚪 [FOCO] Fechando modo foco...');
 
-  // Limpar timer do simulado
   if (simuladoAtual.timer) {
     clearInterval(simuladoAtual.timer);
     simuladoAtual.timer = null;
   }
 
-  // Limpar timer da revisão normal
   if (window.timerRevisao) {
     clearInterval(window.timerRevisao);
     window.timerRevisao = null;
@@ -9721,7 +9632,6 @@ function fecharModoFoco() {
 
   document.body.style.overflow = 'auto';
 
-  // RESETAR O ESTADO DO SIMULADO
   simuladoAtual = {
     cards: [],
     indice: 0,
@@ -9734,16 +9644,11 @@ function fecharModoFoco() {
     respondido: false
   };
 
-  // Resetar revisão normal também
   revisoesEmAndamento = [];
   indiceAtualFoco = 0;
-
-  console.log('✅ [FOCO] Modo foco fechado e estado resetado');
 }
-function reiniciarSimulado() {
-  console.log('🔄 [SIMULADO] Reiniciando simulado...');
 
-  // Resetar estado
+function reiniciarSimulado() {
   simuladoAtual = {
     cards: [],
     indice: 0,
@@ -9756,25 +9661,14 @@ function reiniciarSimulado() {
     respondido: false
   };
 
-  // Esconder resultado
   document.getElementById('simuladoResultado').style.display = 'none';
-
-  // Mostrar pergunta novamente
   document.getElementById('focoPergunta').style.display = 'block';
-
-  // Esconder modo foco
   document.getElementById('modoFocoContainer').style.display = 'none';
 
-  // Voltar para a aba de simulado
   trocarAbaRevisao('simulado');
-
-  // Recarregar opções
   carregarOpcoesSimulado();
-
-  console.log('✅ [SIMULADO] Pronto para novo simulado!');
 }
 
-// Exportar
 window.reiniciarSimulado = reiniciarSimulado;
 
 // ===== EDITAR FLASHCARD =====
@@ -9796,14 +9690,33 @@ function editarFlashcard(id) {
       if (!pergunta || !resposta) { Swal.showValidationMessage('Preencha todos!'); return false; }
       return { pergunta, resposta, tema };
     }
-  }).then(result => {
+  }).then(async result => {
     if (result.isConfirmed) {
       flashcard.pergunta = result.value.pergunta;
       flashcard.resposta = result.value.resposta;
       flashcard.tema = result.value.tema || "Geral";
-      salvarFlashcards();
-      renderizarFlashcardsAgrupados();
-      Swal.fire('Atualizado!', '', 'success');
+      
+      try {
+        await apiFetch(`flashcards/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            pergunta: flashcard.pergunta,
+            resposta: flashcard.resposta,
+            tema: JSON.stringify({
+              tema: flashcard.tema,
+              nivel: flashcard.nivel || 0,
+              dataProxima: flashcard.dataProxima || hoje(),
+              acertos: flashcard.acertos || 0,
+              erros: flashcard.erros || 0,
+              historico: flashcard.historico || []
+            })
+          })
+        });
+        renderizarFlashcardsAgrupados();
+        Swal.fire('Atualizado no banco de dados!', '', 'success');
+      } catch (err) {
+        console.error("Erro ao atualizar flashcard:", err);
+      }
     }
   });
 }
@@ -9816,13 +9729,21 @@ function excluirFlashcard(id) {
     showCancelButton: true,
     confirmButtonText: 'Sim',
     cancelButtonText: 'Cancelar'
-  }).then(result => {
+  }).then(async result => {
     if (result.isConfirmed) {
-      flashcards = flashcards.filter(f => f.id != id);
-      salvarFlashcards();
-      renderizarFlashcardsAgrupados();
-      atualizarEstatisticas();
-      Swal.fire('Excluído!', '', 'success');
+      try {
+        const res = await apiFetch(`flashcards/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          flashcards = flashcards.filter(f => f.id != id);
+          renderizarFlashcardsAgrupados();
+          atualizarEstatisticas();
+          Swal.fire('Excluído do banco de dados!', '', 'success');
+        } else {
+          mostrarToast('Erro ao excluir no servidor', '#ef4444');
+        }
+      } catch (err) {
+        console.error("Erro ao excluir flashcard:", err);
+      }
     }
   });
 }
@@ -9843,7 +9764,7 @@ window.criarRevisaoPorProva = criarRevisaoPorProva;
 window.fecharAviso = fecharAviso;
 window.configurarFiltroRevisao = configurarFiltroRevisao;
 window.renderizarFlashcardsAgrupados = renderizarFlashcardsAgrupados;
-window.salvarFlashcards = salvarFlashcards;
+window.salvarFlashcards = function() {};
 window.atualizarEstatisticas = atualizarEstatisticas;
 
 console.log('✅ REVISÃO COMPLETA CARREGADA!');
@@ -10654,7 +10575,23 @@ function responderFlashcard(resultado) {
     intervalo: dias
   });
 
-  salvarFlashcards();
+  // Salvar progresso diretamente no banco de dados
+  apiFetch(`flashcards/${original.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      pergunta: original.pergunta,
+      resposta: original.resposta,
+      tema: JSON.stringify({
+        tema: original.tema,
+        nivel: original.nivel,
+        dataProxima: original.dataProxima,
+        acertos: original.acertos,
+        erros: original.erros,
+        historico: original.historico.slice(-20)
+      })
+    })
+  }).catch(err => console.error("Erro ao sincronizar flashcard com banco:", err));
+
   atualizarEstatisticas();
 
   // Mostrar aviso de próxima revisão (apenas na revisão inteligente)
@@ -10806,9 +10743,6 @@ async function salvarNovaMateriaRevisao() {
     if (!materias) materias = [];
     materias.push(novaMateria);
 
-    // Salva no localStorage como backup
-    localStorage.setItem('materias_sistema', JSON.stringify(materias));
-
     // Fecha o modal usando o ID CORRETO
     const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
     if (modalNovaMateria) {
@@ -10845,8 +10779,6 @@ async function salvarNovaMateriaRevisao() {
 
     if (!materias) materias = [];
     materias.push(novaMateria);
-
-    localStorage.setItem('materias_sistema', JSON.stringify(materias));
 
     // Fecha o modal
     const modalNovaMateria = document.getElementById('modalNovaMateriaRevisao');
@@ -12357,17 +12289,6 @@ function renderizarAbaFlashcards(grupo) {
 async function exportarFlashcardsGrupo(id) {
   // Garantir que os flashcards estão carregados
   if (!flashcards || flashcards.length === 0) {
-    const salvos = localStorage.getItem("flashcards_sistema");
-    if (salvos) {
-      try {
-        flashcards = JSON.parse(salvos);
-      } catch (e) {
-        flashcards = [];
-      }
-    }
-  }
-
-  if (!flashcards || flashcards.length === 0) {
     try {
       await carregarFlashcardsDoBackend();
     } catch (e) {}
@@ -12389,7 +12310,6 @@ async function exportarFlashcardsGrupo(id) {
     return;
   }
 
-  // Agrupar matérias existentes nos flashcards do usuário
   const materiasMap = new Map();
   flashcards.forEach(f => {
     const matNome = f.materiaNome || 'Geral';
@@ -12440,39 +12360,61 @@ async function exportarFlashcardsGrupo(id) {
 
       let userObj = {};
       try {
-        userObj = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+        userObj = window.usuarioLogadoPerfil || JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
       } catch (e) {}
       const autorNome = userObj.nome || 'Você';
 
       let adicionados = 0;
       cardsFiltrados.forEach(cf => {
-        const perguntaNorm = (cf.pergunta || '').trim().toLowerCase();
-        const existe = grupo.flashcardsCompartilhados.some(f => (f.pergunta || '').trim().toLowerCase() === perguntaNorm);
-        if (!existe) {
+        const jaExiste = grupo.flashcardsCompartilhados.some(gf => 
+          (gf.pergunta || '').trim().toLowerCase() === (cf.pergunta || '').trim().toLowerCase()
+        );
+        if (!jaExiste) {
           grupo.flashcardsCompartilhados.push({
-            id: cf.id || (Date.now() + Math.random()),
+            id: cf.id || Date.now() + Math.random(),
+            materiaNome: cf.materiaNome || 'Geral',
+            tema: cf.tema || 'Geral',
             pergunta: cf.pergunta,
             resposta: cf.resposta,
-            materiaNome: cf.materiaNome || materiaSelecionada || 'Geral',
-            tema: cf.tema || 'Geral',
-            compartilhadoPor: autorNome,
-            dataCompartilhamento: new Date().toISOString()
+            autor: autorNome,
+            dataEnvio: new Date().toISOString()
           });
           adicionados++;
         }
       });
 
-      if (adicionados > 0) {
-        await salvarGrupoServidor(grupo, 'flashcards');
-        Swal.fire({
-          icon: 'success',
-          title: 'Flashcards Compartilhados!',
-          text: `${adicionados} flashcard(s) foram adicionados ao grupo com sucesso.`,
-          timer: 2000,
-          showConfirmButton: false
+      // Sincronizar grupo com o backend
+      try {
+        const payload = {
+          nome: grupo.nome,
+          descricao: grupo.descricao || '',
+          cor: grupo.cor || '#3b82f6',
+          icone: grupo.icone || 'bi-people',
+          flashcards: grupo.flashcardsCompartilhados
+        };
+
+        const res = await apiFetch(`gruposestudo/${grupo.id_grupo || grupo.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
         });
-      } else {
-        Swal.fire('Nenhum card novo', 'Todos os flashcards selecionados já foram compartilhados neste grupo anteriormente.', 'info');
+
+        if (res.ok) {
+          Swal.fire({
+            title: 'Compartilhamento Concluído!',
+            text: `${adicionados} novos flashcards foram enviados para o grupo "${grupo.nome}".`,
+            icon: 'success',
+            confirmButtonColor: '#3b82f6'
+          });
+          await carregarGruposEstudoServidor();
+          const abaFlashcards = document.getElementById('grupoAbaFlashcards');
+          if (abaFlashcards && abaFlashcards.style.display !== 'none') {
+            abrirGrupoAba('flashcards');
+          }
+        } else {
+          Swal.fire('Aviso', 'Os flashcards foram preparados, mas não puderam ser gravados no servidor.', 'warning');
+        }
+      } catch (e) {
+        console.error('Erro ao enviar flashcards para o grupo:', e);
       }
     }
   });
@@ -12490,7 +12432,7 @@ function importarFlashcardsGrupo(id) {
     return;
   }
 
-  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
+  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : [];
   if (materiasLista.length === 0) {
     Swal.fire({
       title: 'Nenhuma Matéria',
@@ -12557,15 +12499,13 @@ function importarFlashcardsGrupo(id) {
         }
       });
 
-      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
-      
       if (typeof renderizarFlashcardsAgrupados === 'function') {
         renderizarFlashcardsAgrupados();
       }
 
       Swal.fire({
         title: 'Importação Concluída!',
-        text: `${adicionadosCount} novos flashcards foram salvos na matéria "${materiaDestino.nome}".`,
+        text: `${adicionadosCount} novos flashcards foram salvos no banco de dados na matéria "${materiaDestino.nome}".`,
         icon: 'success'
       });
     }
@@ -12581,7 +12521,7 @@ function importarFlashcardIndividual(id, index) {
   }
 
   const card = grupo.flashcardsCompartilhados[index];
-  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : (JSON.parse(localStorage.getItem('materias') || '[]'));
+  const materiasLista = (typeof materias !== 'undefined' && materias.length > 0) ? materias : [];
 
   let optionsHtml = '';
   if (materiasLista.length > 0) {
@@ -12642,7 +12582,6 @@ function importarFlashcardIndividual(id, index) {
       };
 
       flashcards.push(novoCard);
-      localStorage.setItem("flashcards_sistema", JSON.stringify(flashcards));
       if (typeof salvarFlashcardNoBackend === 'function') {
         salvarFlashcardNoBackend(novoCard);
       }
@@ -13083,7 +13022,6 @@ window.responderDuvida = responderDuvida;
 window.agendarReuniao = agendarReuniao;
 window.salvarNotasGrupo = salvarNotasGrupo;
 window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
-window.importarFlashcardsGrupo = importarFlashcardsGrupo;
 window.importarFlashcardIndividual = importarFlashcardIndividual;
 window.removerFlashcardGrupo = removerFlashcardGrupo;
 window.praticarFlashcardsGrupo = praticarFlashcardsGrupo;
@@ -13094,3 +13032,58 @@ window.removerDuvida = removerDuvida;
 window.removerReuniao = removerReuniao;
 window.sairDoGrupo = sairDoGrupo;
 window.voltarListaGrupos = voltarListaGrupos;
+
+function abrirModalConfiguracoes() {
+  console.log('⚙️ Abrindo configurações...');
+  limparBackdropModal();
+
+  if (typeof atualizarBotoesPlanos === 'function') {
+    atualizarBotoesPlanos();
+  }
+  
+  const userData = window.usuarioLogadoPerfil || JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+  if (userData.nome && document.getElementById('novoNome')) document.getElementById('novoNome').value = userData.nome;
+  if (userData.email && document.getElementById('novoEmail')) document.getElementById('novoEmail').value = userData.email;
+  
+  const modal = new bootstrap.Modal(document.getElementById('configModal'));
+  modal.show();
+}
+window.abrirModalConfiguracoes = abrirModalConfiguracoes;
+
+function fecharConfigModal() {
+  const modalElement = document.getElementById('configModal');
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) {
+    modal.hide();
+  }
+  setTimeout(() => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '';
+  }, 300);
+}
+window.fecharConfigModal = fecharConfigModal;
+
+function limparBackdropModal() {
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.overflow = 'auto';
+  document.body.style.paddingRight = '';
+}
+
+function fecharModalSeguro(modalId) {
+  const modalElement = document.getElementById(modalId);
+  if (!modalElement) return;
+  
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) {
+    modal.hide();
+  }
+  setTimeout(() => {
+    limparBackdropModal();
+  }, 300);
+}
+
+window.limparBackdropModal = limparBackdropModal;
+window.fecharModalSeguro = fecharModalSeguro;
