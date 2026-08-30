@@ -940,7 +940,9 @@ function mostrarTela(tela) {
     renderizarFlashcardsAgrupados();
     atualizarMensagemRevisar();
   }
-}// CONEXÃO COM EFEITO
+}
+
+// CONEXÃO COM EFEITO E TEMA
 document.addEventListener('DOMContentLoaded', function () {
   const params = new URLSearchParams(window.location.search);
   const tipoInteligencia = params.get('tipo');
@@ -952,6 +954,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (tipoSalvo) {
       aplicarTemaInteligencia(normalizarInteligencia(tipoSalvo));
     }
+  }
+
+  // Remove qualquer resquício de cor/tipo da URL para manter a URL 100% limpa
+  if (window.location.search) {
+    try {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {}
   }
 });
 

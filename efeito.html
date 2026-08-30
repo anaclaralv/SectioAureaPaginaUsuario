@@ -300,9 +300,9 @@
         localStorage.setItem('inteligenciaUsuario', tipo);
         localStorage.setItem('corPrimaria', cores[tipo]);
 
-        // Redireciona com os dados na URL
+        // Redireciona de forma limpa (dados salvos no localStorage e no banco)
         setTimeout(() => {
-          window.location.href = `PaginaUsuario.html?tipo=${tipo}&cor=${encodeURIComponent(cores[tipo])}`;
+          window.location.href = "PaginaUsuario.html";
         }, 500);
       }
     });
