@@ -7658,6 +7658,7 @@ window.excluirDiagramaSalvo = excluirDiagramaSalvo;
 let mediaRecorder = null;
 let audioChunks = [];
 let audioUrl = null;
+let audioStream = null;
 let gravando = false;
 let pausado = false;
 let segundosGravacao = 0;
@@ -7725,24 +7726,45 @@ function abrirGravador(modo) {
 function fecharGravadorModal() {
   console.log('🔒 Fechando modal do gravador');
 
-  // Para a gravação se estiver gravando
-  if (gravando && mediaRecorder) {
-    mediaRecorder.stop();
-    gravando = false;
-    pausado = false;
+  // Para o timer imediatamente
+  if (timerGravacao) {
     clearInterval(timerGravacao);
+    timerGravacao = null;
+  }
 
-    // Reseta botões
-    const btnGravar = document.getElementById('btnGravar');
-    const btnPausar = document.getElementById('btnPausarAudio');
-    const btnParar = document.getElementById('btnPararAudio');
+  // Para a gravação se estiver gravando
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    try {
+      mediaRecorder.stop();
+    } catch (e) {}
+  }
+  if (audioStream) {
+    try {
+      audioStream.getTracks().forEach(track => track.stop());
+    } catch (e) {}
+    audioStream = null;
+  }
 
-    if (btnGravar) btnGravar.disabled = false;
-    if (btnPausar) {
-      btnPausar.disabled = true;
-      btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
-    }
-    if (btnParar) btnParar.disabled = true;
+  gravando = false;
+  pausado = false;
+
+  // Reseta botões
+  const btnGravar = document.getElementById('btnGravar');
+  const btnPausar = document.getElementById('btnPausarAudio');
+  const btnParar = document.getElementById('btnPararAudio');
+
+  if (btnGravar) {
+    btnGravar.disabled = false;
+    btnGravar.style.opacity = '1';
+  }
+  if (btnPausar) {
+    btnPausar.disabled = true;
+    btnPausar.style.opacity = '0.5';
+    btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+  if (btnParar) {
+    btnParar.disabled = true;
+    btnParar.style.opacity = '0.5';
   }
 
   // Esconde o modal
@@ -7757,6 +7779,11 @@ function fecharGravadorModal() {
 
 // ===== FUNÇÃO PARA LIMPAR CAMPOS DO GRAVADOR =====
 function limparCamposGravador() {
+  if (timerGravacao) {
+    clearInterval(timerGravacao);
+    timerGravacao = null;
+  }
+
   const checkPalavrasSimples = document.getElementById('checkPalavrasSimples');
   const checkAnalogias = document.getElementById('checkAnalogias');
   const checkLacunas = document.getElementById('checkLacunas');
@@ -7764,7 +7791,7 @@ function limparCamposGravador() {
   const anotacoesGravacao = document.getElementById('anotacoesGravacao');
   const tempoGravacao = document.getElementById('tempoGravacao');
   const audioGravadoArea = document.getElementById('audioGravadoArea');
-  const nomeGravacao = document.getElementById('nomeGravacao'); // ⬅️ NOVO
+  const nomeGravacao = document.getElementById('nomeGravacao');
 
   if (checkPalavrasSimples) checkPalavrasSimples.checked = false;
   if (checkAnalogias) checkAnalogias.checked = false;
@@ -7773,11 +7800,32 @@ function limparCamposGravador() {
   if (anotacoesGravacao) anotacoesGravacao.value = '';
   if (tempoGravacao) tempoGravacao.textContent = '00:00';
   if (audioGravadoArea) audioGravadoArea.style.display = 'none';
-  if (nomeGravacao) nomeGravacao.value = ''; // ⬅️ NOVO
+  if (nomeGravacao) nomeGravacao.value = '';
+
+  const btnGravar = document.getElementById('btnGravar');
+  const btnPausar = document.getElementById('btnPausarAudio');
+  const btnParar = document.getElementById('btnPararAudio');
+
+  if (btnGravar) {
+    btnGravar.disabled = false;
+    btnGravar.style.opacity = '1';
+  }
+  if (btnPausar) {
+    btnPausar.disabled = true;
+    btnPausar.style.opacity = '0.5';
+    btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+  if (btnParar) {
+    btnParar.disabled = true;
+    btnParar.style.opacity = '0.5';
+  }
 
   audioUrl = null;
   segundosGravacao = 0;
+  gravando = false;
+  pausado = false;
 }
+
 // ===== FUNÇÕES ESPECÍFICAS =====
 function abrirGravadorPodcast() {
   abrirGravador('podcast');
@@ -7791,18 +7839,36 @@ function abrirGravadorFeynman() {
 async function iniciarGravacao() {
   console.log('🎤 Iniciando gravação...');
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  if (timerGravacao) {
+    clearInterval(timerGravacao);
+    timerGravacao = null;
+  }
+  if (audioStream) {
+    try {
+      audioStream.getTracks().forEach(t => t.stop());
+    } catch (e) {}
+    audioStream = null;
+  }
 
-    mediaRecorder = new MediaRecorder(stream);
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(audioStream);
     audioChunks = [];
 
     mediaRecorder.ondataavailable = (e) => {
-      audioChunks.push(e.data);
+      if (e.data && e.data.size > 0) {
+        audioChunks.push(e.data);
+      }
     };
 
     mediaRecorder.onstop = () => {
-      console.log('⏹️ Gravação parada');
+      console.log('⏹️ Gravação parada (onstop)');
+
+      if (timerGravacao) {
+        clearInterval(timerGravacao);
+        timerGravacao = null;
+      }
 
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const reader = new FileReader();
@@ -7822,27 +7888,48 @@ async function iniciarGravacao() {
       const btnPausar = document.getElementById('btnPausarAudio');
       const btnParar = document.getElementById('btnPararAudio');
 
-      if (btnGravar) btnGravar.disabled = false;
-      if (btnPausar) btnPausar.disabled = true;
-      if (btnParar) btnParar.disabled = true;
+      if (btnGravar) {
+        btnGravar.disabled = false;
+        btnGravar.style.opacity = '1';
+      }
+      if (btnPausar) {
+        btnPausar.disabled = true;
+        btnPausar.style.opacity = '0.5';
+        btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+      }
+      if (btnParar) {
+        btnParar.disabled = true;
+        btnParar.style.opacity = '0.5';
+      }
 
-      clearInterval(timerGravacao);
-
-      // Para as tracks do stream
-      stream.getTracks().forEach(track => track.stop());
+      if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
+      }
     };
 
-    mediaRecorder.start();
+    mediaRecorder.start(100);
     gravando = true;
+    pausado = false;
 
     const btnGravar = document.getElementById('btnGravar');
     const btnPausar = document.getElementById('btnPausarAudio');
     const btnParar = document.getElementById('btnPararAudio');
     const tempoGravacao = document.getElementById('tempoGravacao');
 
-    if (btnGravar) btnGravar.disabled = true;
-    if (btnPausar) btnPausar.disabled = false;
-    if (btnParar) btnParar.disabled = false;
+    if (btnGravar) {
+      btnGravar.disabled = true;
+      btnGravar.style.opacity = '0.5';
+    }
+    if (btnPausar) {
+      btnPausar.disabled = false;
+      btnPausar.style.opacity = '1';
+      btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+    }
+    if (btnParar) {
+      btnParar.disabled = false;
+      btnParar.style.opacity = '1';
+    }
 
     segundosGravacao = 0;
     if (tempoGravacao) tempoGravacao.textContent = '00:00';
@@ -7872,13 +7959,28 @@ function pausarGravacao() {
   const btnPausar = document.getElementById('btnPausarAudio');
 
   if (!pausado) {
-    mediaRecorder.pause();
+    try {
+      if (mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+      }
+    } catch (e) {}
     pausado = true;
-    clearInterval(timerGravacao);
+    if (timerGravacao) {
+      clearInterval(timerGravacao);
+      timerGravacao = null;
+    }
     if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-play-circle"></i> Continuar';
   } else {
-    mediaRecorder.resume();
+    try {
+      if (mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+      }
+    } catch (e) {}
     pausado = false;
+    if (timerGravacao) {
+      clearInterval(timerGravacao);
+      timerGravacao = null;
+    }
     timerGravacao = setInterval(() => {
       segundosGravacao++;
       const min = String(Math.floor(segundosGravacao / 60)).padStart(2, '0');
@@ -7891,14 +7993,40 @@ function pausarGravacao() {
 }
 
 function pararGravacao() {
-  if (!mediaRecorder || !gravando) return;
+  console.log('⏹️ Botão Parar clicado');
 
-  mediaRecorder.stop();
+  // Para o timer imediatamente
+  if (timerGravacao) {
+    clearInterval(timerGravacao);
+    timerGravacao = null;
+  }
+
   gravando = false;
   pausado = false;
 
+  const btnGravar = document.getElementById('btnGravar');
   const btnPausar = document.getElementById('btnPausarAudio');
-  if (btnPausar) btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  const btnParar = document.getElementById('btnPararAudio');
+
+  if (btnGravar) {
+    btnGravar.disabled = false;
+    btnGravar.style.opacity = '1';
+  }
+  if (btnPausar) {
+    btnPausar.disabled = true;
+    btnPausar.style.opacity = '0.5';
+    btnPausar.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar';
+  }
+  if (btnParar) {
+    btnParar.disabled = true;
+    btnParar.style.opacity = '0.5';
+  }
+
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    try {
+      mediaRecorder.stop();
+    } catch (e) {}
+  }
 }
 
 function salvarGravacao() {
