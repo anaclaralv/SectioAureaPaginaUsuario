@@ -68,24 +68,37 @@ class GrupoEstudo {
     
     public function read($id_usuario) {
         $email = '';
-        $queryEmail = "SELECT email FROM PI_Usuario WHERE id_usuario = :id";
-        $stmtEmail = $this->conn->prepare($queryEmail);
-        $stmtEmail->bindParam(":id", $id_usuario);
-        $stmtEmail->execute();
-        $rowEmail = $stmtEmail->fetch(PDO::FETCH_ASSOC);
-        if($rowEmail) {
-            $email = $rowEmail['email'];
+        $nome = '';
+        $queryUser = "SELECT nome, email FROM PI_Usuario WHERE id_usuario = :id";
+        $stmtUser = $this->conn->prepare($queryUser);
+        $stmtUser->bindParam(":id", $id_usuario);
+        $stmtUser->execute();
+        $rowUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if($rowUser) {
+            $email = $rowUser['email'] ?? '';
+            $nome = $rowUser['nome'] ?? '';
         }
         
         $query = "SELECT * FROM " . $this->table . " 
-                  WHERE id_usuario = :id_usuario 
-                  OR membros LIKE :email_search 
-                  ORDER BY data_criacao DESC";
+                  WHERE id_usuario = :id_usuario ";
+        if (!empty($email)) {
+            $query .= " OR membros LIKE :email_search ";
+        }
+        if (!empty($nome)) {
+            $query .= " OR membros LIKE :nome_search ";
+        }
+        $query .= " ORDER BY data_criacao DESC";
                   
         $stmt = $this->conn->prepare($query);
-        $email_search = "%" . $email . "%";
         $stmt->bindParam(":id_usuario", $id_usuario);
-        $stmt->bindParam(":email_search", $email_search);
+        if (!empty($email)) {
+            $email_search = "%" . $email . "%";
+            $stmt->bindParam(":email_search", $email_search);
+        }
+        if (!empty($nome)) {
+            $nome_search = "%" . $nome . "%";
+            $stmt->bindParam(":nome_search", $nome_search);
+        }
         $stmt->execute();
         return $stmt;
     }

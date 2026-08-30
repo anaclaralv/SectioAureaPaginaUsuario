@@ -28,11 +28,11 @@ class GrupoEstudoController {
         
         $grupos = [];
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $row['membros'] = json_decode($row['membros']) ?? [];
-            $row['temas'] = json_decode($row['temas']) ?? [];
-            $row['duvidas'] = json_decode($row['duvidas']) ?? [];
-            $row['reunioes'] = json_decode($row['reunioes']) ?? [];
-            $row['flashcards_compartilhados'] = json_decode($row['flashcards_compartilhados']) ?? [];
+            $row['membros'] = !empty($row['membros']) ? (json_decode($row['membros']) ?? []) : [];
+            $row['temas'] = !empty($row['temas']) ? (json_decode($row['temas']) ?? []) : [];
+            $row['duvidas'] = !empty($row['duvidas']) ? (json_decode($row['duvidas']) ?? []) : [];
+            $row['reunioes'] = !empty($row['reunioes']) ? (json_decode($row['reunioes']) ?? []) : [];
+            $row['flashcards_compartilhados'] = !empty($row['flashcards_compartilhados']) ? (json_decode($row['flashcards_compartilhados']) ?? []) : [];
             
             // Aliases para camelCase do frontend
             $row['linkMeet'] = $row['link_meet'] ?? '';
@@ -54,11 +54,11 @@ class GrupoEstudoController {
         }
         
         if($found) {
-            $membros = json_decode($this->grupo->membros) ?? [];
-            $temas = json_decode($this->grupo->temas) ?? [];
-            $duvidas = json_decode($this->grupo->duvidas) ?? [];
-            $reunioes = json_decode($this->grupo->reunioes) ?? [];
-            $flashcards = json_decode($this->grupo->flashcards_compartilhados) ?? [];
+            $membros = !empty($this->grupo->membros) ? (json_decode($this->grupo->membros) ?? []) : [];
+            $temas = !empty($this->grupo->temas) ? (json_decode($this->grupo->temas) ?? []) : [];
+            $duvidas = !empty($this->grupo->duvidas) ? (json_decode($this->grupo->duvidas) ?? []) : [];
+            $reunioes = !empty($this->grupo->reunioes) ? (json_decode($this->grupo->reunioes) ?? []) : [];
+            $flashcards = !empty($this->grupo->flashcards_compartilhados) ? (json_decode($this->grupo->flashcards_compartilhados) ?? []) : [];
             
             echo json_encode([
                 "id_grupo" => $this->grupo->id_grupo,
@@ -167,6 +167,8 @@ class GrupoEstudoController {
             $this->grupo->flashcards_compartilhados = is_string($data->flashcardsCompartilhados) ? $data->flashcardsCompartilhados : json_encode($data->flashcardsCompartilhados, JSON_UNESCAPED_UNICODE);
         } elseif (isset($data->flashcards_compartilhados)) {
             $this->grupo->flashcards_compartilhados = is_string($data->flashcards_compartilhados) ? $data->flashcards_compartilhados : json_encode($data->flashcards_compartilhados, JSON_UNESCAPED_UNICODE);
+        } elseif (isset($data->flashcards)) {
+            $this->grupo->flashcards_compartilhados = is_string($data->flashcards) ? $data->flashcards : json_encode($data->flashcards, JSON_UNESCAPED_UNICODE);
         }
         
         if($this->grupo->update()) {

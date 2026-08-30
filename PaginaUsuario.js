@@ -9790,7 +9790,7 @@ console.log('✅ REVISÃO COMPLETA CARREGADA!');
 
 // ===== SALVAR NO BACKEND TAMBÉM =====
 function salvarFlashcardNoBackend(card) {
-  apiFetch("flashcards", {
+  return apiFetch("flashcards", {
     method: "POST",
     body: JSON.stringify({
       id_materia: card.materiaId,
@@ -9804,12 +9804,16 @@ function salvarFlashcardNoBackend(card) {
         erros: card.erros
       })
     })
-  }).then(res => {
+  }).then(async res => {
     if (res.ok) {
-      console.log('✅ Card salvo no backend!');
+      const data = await res.json();
+      if (data && data.id_flash) {
+        card.id = data.id_flash;
+      }
+      console.log('✅ Card salvo no backend!', data);
     }
   }).catch(err => {
-    console.log('⚠️ Não salvou no backend, mas salvou localmente.');
+    console.error('Erro ao salvar flashcard no backend:', err);
   });
 }
 
@@ -12427,34 +12431,13 @@ async function exportarFlashcardsGrupo(id) {
 
       // Sincronizar grupo com o backend
       try {
-        const payload = {
-          nome: grupo.nome,
-          descricao: grupo.descricao || '',
-          cor: grupo.cor || '#3b82f6',
-          icone: grupo.icone || 'bi-people',
-          flashcards: grupo.flashcardsCompartilhados
-        };
-
-        const res = await apiFetch(`gruposestudo/${grupo.id_grupo || grupo.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload)
+        await salvarGrupoServidor(grupo, 'flashcards');
+        Swal.fire({
+          title: 'Compartilhamento Concluído!',
+          text: `${adicionados} novos flashcards foram enviados para o grupo "${grupo.nome}".`,
+          icon: 'success',
+          confirmButtonColor: '#3b82f6'
         });
-
-        if (res.ok) {
-          Swal.fire({
-            title: 'Compartilhamento Concluído!',
-            text: `${adicionados} novos flashcards foram enviados para o grupo "${grupo.nome}".`,
-            icon: 'success',
-            confirmButtonColor: '#3b82f6'
-          });
-          await carregarGruposEstudoServidor();
-          const abaFlashcards = document.getElementById('grupoAbaFlashcards');
-          if (abaFlashcards && abaFlashcards.style.display !== 'none') {
-            abrirGrupoAba('flashcards');
-          }
-        } else {
-          Swal.fire('Aviso', 'Os flashcards foram preparados, mas não puderam ser gravados no servidor.', 'warning');
-        }
       } catch (e) {
         console.error('Erro ao enviar flashcards para o grupo:', e);
       }
@@ -13064,10 +13047,12 @@ window.responderDuvida = responderDuvida;
 window.agendarReuniao = agendarReuniao;
 window.salvarNotasGrupo = salvarNotasGrupo;
 window.exportarFlashcardsGrupo = exportarFlashcardsGrupo;
+window.importarFlashcardsGrupo = importarFlashcardsGrupo;
 window.importarFlashcardIndividual = importarFlashcardIndividual;
 window.removerFlashcardGrupo = removerFlashcardGrupo;
 window.praticarFlashcardsGrupo = praticarFlashcardsGrupo;
 window.abrirModalPraticaGrupo = abrirModalPraticaGrupo;
+window.carregarGruposServidor = carregarGruposServidor;
 window.removerMembro = removerMembro;
 window.removerTema = removerTema;
 window.removerDuvida = removerDuvida;
