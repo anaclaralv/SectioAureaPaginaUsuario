@@ -4212,7 +4212,7 @@ function atualizarRelogioInfo() {
     Swal.fire({
       icon: 'info',
       title: 'Estudo pausado',
-      text: `${nomeMateria} - Tempo salvo no banco de dados!`,
+      text: `${nomeMateria} - Tempo salvo!`,
       timer: 2000,
       showConfirmButton: false,
       position: 'top-end',
@@ -4263,7 +4263,7 @@ function adicionarMateriaRelogio() {
       if (typeof popularFiltroMaterias === 'function') popularFiltroMaterias();
       if (typeof carregarMateriasRevisao === 'function') carregarMateriasRevisao();
       if (typeof renderizarSelectMateriasVideos === 'function') renderizarSelectMateriasVideos();
-      Swal.fire({ icon: "success", title: "Matéria salva no banco de dados!", timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: "success", title: "Matéria adicionada!", timer: 1500, showConfirmButton: false });
     } else {
       Swal.fire({ icon: "error", title: "Erro ao adicionar matéria!", timer: 1500, showConfirmButton: false });
     }
@@ -4312,7 +4312,7 @@ function finalizarEstudo() {
       Swal.fire({
         icon: 'success',
         title: 'Estudo finalizado!',
-        text: `${nomeMateria} - ${horas}h ${minutos}min salvos no banco de dados!`,
+        text: `${nomeMateria} - ${horas}h ${minutos}min registrados!`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -6336,9 +6336,9 @@ async function salvarNotaCornell() {
         renderNotas();
       }
 
-      mostrarToast('✅ Nota salva no banco de dados!', '#22c55e');
+      mostrarToast('✅ Nota salva!', '#22c55e');
     } else {
-      mostrarToast('❌ Erro ao salvar nota no servidor', '#ef4444');
+      mostrarToast('❌ Erro ao salvar nota', '#ef4444');
     }
   } catch (err) {
     console.error("Erro ao salvar nota Cornell:", err);
@@ -6393,7 +6393,7 @@ function excluirNotaCornell(id) {
 
           mostrarToast('🗑️ Anotação excluída!', '#22c55e');
         } else {
-          mostrarToast('❌ Erro ao excluir nota no servidor', '#ef4444');
+          mostrarToast('❌ Erro ao excluir nota', '#ef4444');
         }
       } catch (err) {
         console.error("Erro ao excluir nota Cornell:", err);
@@ -9542,9 +9542,9 @@ async function salvarFlashcard() {
       const modal = bootstrap.Modal.getInstance(document.getElementById("modalRevisao"));
       if (modal) modal.hide();
 
-      Swal.fire({ icon: 'success', title: 'Flashcard salvo no banco de dados!', timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'Flashcard salvo!', timer: 1500, showConfirmButton: false });
     } else {
-      mostrarToast('❌ Erro ao salvar flashcard no servidor', '#ef4444');
+      mostrarToast('❌ Erro ao salvar flashcard', '#ef4444');
     }
   } catch (err) {
     console.error("Erro ao salvar flashcard:", err);
@@ -9731,7 +9731,7 @@ function editarFlashcard(id) {
           })
         });
         renderizarFlashcardsAgrupados();
-        Swal.fire('Atualizado no banco de dados!', '', 'success');
+        Swal.fire('Atualizado com sucesso!', '', 'success');
       } catch (err) {
         console.error("Erro ao atualizar flashcard:", err);
       }
@@ -9755,9 +9755,9 @@ function excluirFlashcard(id) {
           flashcards = flashcards.filter(f => f.id != id);
           renderizarFlashcardsAgrupados();
           atualizarEstatisticas();
-          Swal.fire('Excluído do banco de dados!', '', 'success');
+          Swal.fire('Excluído com sucesso!', '', 'success');
         } else {
-          mostrarToast('Erro ao excluir no servidor', '#ef4444');
+          mostrarToast('Erro ao excluir', '#ef4444');
         }
       } catch (err) {
         console.error("Erro ao excluir flashcard:", err);
@@ -12547,7 +12547,7 @@ function importarFlashcardsGrupo(id) {
 
       Swal.fire({
         title: 'Importação Concluída!',
-        text: `${adicionadosCount} novos flashcards foram salvos no banco de dados na matéria "${materiaDestino.nome}".`,
+        text: `${adicionadosCount} novos flashcards foram importados para a matéria "${materiaDestino.nome}".`,
         icon: 'success'
       });
     }
