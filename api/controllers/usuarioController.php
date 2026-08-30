@@ -54,7 +54,7 @@ class UsuarioController {
                 "foto" => $this->usuario->foto,
                 "plano" => $this->usuario->plano,
                 "tipo_dom" => $this->usuario->tipo_dom,
-                "clas_inteli" => json_decode($this->usuario->clas_inteli)
+                "clas_inteli" => !empty($this->usuario->clas_inteli) ? json_decode($this->usuario->clas_inteli) : null
             ]);
         } else {
             http_response_code(404);

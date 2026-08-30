@@ -382,22 +382,30 @@ if (loginForm) {
         storage.setItem("token", data.token);
         storage.setItem("user", JSON.stringify(data.user));
 
-        const modalLoginEl = document.getElementById("loginModal");
-        const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
-        modalLogin.hide();
+        if (data.user && data.user.tipo_dom) {
+          const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
+          storage.setItem("inteligenciaUsuario", tipoSlug);
+          if (data.user.cor_dominante) {
+            storage.setItem("corPrimaria", data.user.cor_dominante);
+          }
+        }
 
-        modalLoginEl.addEventListener("hidden.bs.modal", function () {
-          if (data.user.tipo_dom) {
-            const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
-            storage.setItem("inteligenciaUsuario", tipoSlug);
-            if (data.user.cor_dominante) {
-              storage.setItem("corPrimaria", data.user.cor_dominante);
-            }
+        const modalLoginEl = document.getElementById("loginModal");
+        if (modalLoginEl) {
+          const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
+          if (modalLogin) {
+            modalLogin.hide();
+          }
+        }
+
+        setTimeout(() => {
+          if (data.user && data.user.tipo_dom) {
             window.location.href = "PaginaUsuario.html";
           } else {
-            abrirModalTeste();
+            // Se ainda não fez o teste de inteligência
+            window.location.href = "TesteInteligencia.html";
           }
-        }, { once: true });
+        }, 500);
       } else {
         Swal.fire({
           icon: "error",

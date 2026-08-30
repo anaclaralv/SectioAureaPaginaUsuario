@@ -10605,7 +10605,6 @@ function responderFlashcard(resultado) {
     resultado: resultado,
     intervalo: dias
   });
-<<<<<<< HEAD
 
   // Salvar progresso diretamente no banco de dados
   apiFetch(`flashcards/${original.id}`, {
@@ -10624,10 +10623,6 @@ function responderFlashcard(resultado) {
     })
   }).catch(err => console.error("Erro ao sincronizar flashcard com banco:", err));
 
-=======
-  
-  salvarFlashcards();
->>>>>>> 41c481be779b9b47ea6a1424b61ae0d4470eabb4
   atualizarEstatisticas();
   
   // Mostrar aviso
