@@ -2373,6 +2373,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await carregarPerfilUsuario();
   await carregarTarefasDoBackend();
   await carregarNotasDoBackend();
+  await carregarCornellDoBackend();
   await carregarMateriasDoBackend();
   await carregarCronogramaDoBackend();
   await carregarSessoesDoBackend();
