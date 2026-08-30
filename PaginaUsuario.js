@@ -943,9 +943,19 @@ function aplicarTemaInteligencia(tipo) {
 
 // ---------- ATIVAR MENU ----------
 function mudarPagina(elemento) {
+  const { plano, permissoes } = (typeof verificarPlano === 'function') ? verificarPlano() : { permissoes: {} };
+  const onclick = elemento ? (elemento.getAttribute('onclick') || '') : '';
+  
+  if (onclick.includes('estatistica') && permissoes && !permissoes.estatisticas) {
+    return;
+  }
+  if (onclick.includes('cronogramaNovo') && permissoes && !permissoes.cronograma) {
+    return;
+  }
+
   const links = document.querySelectorAll('#menuLateral .nav-link');
   links.forEach(link => link.classList.remove('active'));
-  elemento.classList.add('active');
+  if (elemento) elemento.classList.add('active');
 }
 // ---------- TAREFAS ----------
 let tarefas = [];
@@ -5511,21 +5521,32 @@ function verificarAcesso(funcionalidade) {
   
   console.log('🔍 Verificando acesso:', funcionalidade, '| Plano:', plano);
   
-  if (!permissoes[funcionalidade]) {
+  if (!permissoes || !permissoes[funcionalidade]) {
     Swal.fire({
       icon: 'info',
       title: 'Recurso Premium',
       html: `
-        <p>Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.</p>
-        <p style="font-size: 0.8rem; color: #6b7280;">Seu plano atual: <strong>${plano.charAt(0).toUpperCase() + plano.slice(1)}</strong></p>
+        <p style="font-size: 1rem; color: #374151; margin-bottom: 8px;">
+          Esta funcionalidade é exclusiva para assinantes dos planos <strong>Básico</strong> e <strong>Pro</strong>.
+        </p>
+        <p style="font-size: 0.85rem; color: #6b7280; margin: 0;">
+          Seu plano atual: <span class="badge bg-secondary">${plano.charAt(0).toUpperCase() + plano.slice(1)}</span>
+        </p>
       `,
       confirmButtonText: '<i class="bi bi-star-fill me-1"></i> Ver Planos',
       confirmButtonColor: '#9f042c',
       showCancelButton: true,
-      cancelButtonText: 'Fechar'
+      cancelButtonText: 'Fechar',
+      cancelButtonColor: '#6b7280'
     }).then(result => {
       if (result.isConfirmed) {
         abrirModalConfiguracoes();
+        setTimeout(() => {
+          const secaoPlanos = document.getElementById('secaoPlanosModal');
+          if (secaoPlanos) {
+            secaoPlanos.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 400);
       }
     });
     return false;
@@ -5680,13 +5701,26 @@ function aplicarBloqueiosPlano() {
     link.style.pointerEvents = 'auto';
     link.style.opacity = '1';
     
+    const badgeAnterior = link.querySelector('.badge-recurso-pro');
+    if (badgeAnterior) badgeAnterior.remove();
+    
     // Verificar se precisa bloquear
     for (const [tela, permissao] of Object.entries(mapaBloqueios)) {
-      if (onclick.includes(tela) && !permissoes[permissao]) {
+      if (onclick.includes(tela) && permissoes && !permissoes[permissao]) {
         link.classList.add('bloqueado');
-        link.style.pointerEvents = 'none';
-        link.style.opacity = '0.5';
-        console.log('🔒 Bloqueado:', tela);
+        link.style.pointerEvents = 'auto'; // Mantém clicável para abrir o modal de Recurso Premium
+        link.style.opacity = '0.9';
+        
+        const tag = document.createElement('span');
+        tag.className = 'badge-recurso-pro badge bg-warning text-dark ms-auto';
+        tag.style.fontSize = '0.65rem';
+        tag.style.marginLeft = 'auto';
+        tag.style.fontWeight = '700';
+        tag.innerHTML = '<i class="bi bi-lock-fill"></i> PRO';
+        link.style.display = 'flex';
+        link.style.alignItems = 'center';
+        link.appendChild(tag);
+        console.log('🔒 Bloqueado visualmente:', tela);
       }
     }
   });
