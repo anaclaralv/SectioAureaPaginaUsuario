@@ -5706,33 +5706,139 @@ body.modo-escuro {
   color: #e5e7eb !important;
 }
 
-body.modo-escuro .app-main {
-  background: #1e293b !important;
+body.modo-escuro .app-main,
+body.modo-escuro .main-content,
+body.modo-escuro .conteudo-principal {
+  background: #0f172a !important;
+  color: #e5e7eb !important;
 }
 
 body.modo-escuro .sidebar {
   background: #1e293b !important;
+  border-right-color: #334155 !important;
 }
 
-body.modo-escuro #menuLateral .nav-link {
-  color: #e5e7eb !important;
+body.modo-escuro #menuLateral .nav-link,
+body.modo-escuro .sidebar .nav-link {
+  color: #94a3b8 !important;
 }
 
-body.modo-escuro .card {
-  background: #1e293b !important;
-  color: #e5e7eb !important;
+body.modo-escuro #menuLateral .nav-link:hover,
+body.modo-escuro #menuLateral .nav-link.active,
+body.modo-escuro .sidebar .nav-link:hover,
+body.modo-escuro .sidebar .nav-link.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
+body.modo-escuro .card,
+body.modo-escuro .secao-card,
 body.modo-escuro .relogio-card,
 body.modo-escuro .stat-card,
 body.modo-escuro .grafico-card,
-body.modo-escuro .tabela-estudo {
+body.modo-escuro .tabela-estudo,
+body.modo-escuro .cronograma-card,
+body.modo-escuro .modal-content,
+body.modo-escuro .bloco-item,
+body.modo-escuro .card-materia,
+body.modo-escuro .video-card,
+body.modo-escuro .grupo-card,
+body.modo-escuro .card-simulado,
+body.modo-escuro .card-foco {
   background: #1e293b !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .navbar,
+body.modo-escuro header {
+  background: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+
+body.modo-escuro .config-row-tema {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+body.modo-escuro .plano-card-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .plano-card-item.ativo {
+  background: #2a1f2d !important;
+}
+
+body.modo-escuro .plano-preco-texto {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modal-config-custom,
+body.modo-escuro .modal-content {
+  background: #1e293b !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .modal-header,
+body.modo-escuro .modal-footer {
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .modal-title,
+body.modo-escuro h1,
+body.modo-escuro h2,
+body.modo-escuro h3,
+body.modo-escuro h4,
+body.modo-escuro h5,
+body.modo-escuro h6 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro input.form-control,
+body.modo-escuro textarea.form-control,
+body.modo-escuro select.form-select,
+body.modo-escuro .form-control,
+body.modo-escuro .form-select {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro input::placeholder,
+body.modo-escuro textarea::placeholder {
+  color: #64748b !important;
+}
+
+body.modo-escuro .table {
   color: #e5e7eb !important;
 }
 
-body.modo-escuro .navbar {
-  background: #0f172a !important;
+body.modo-escuro .table th,
+body.modo-escuro .table td {
+  background-color: transparent !important;
+  border-color: #334155 !important;
+  color: #e5e7eb !important;
+}
+
+body.modo-escuro .text-muted,
+body.modo-escuro .small.text-muted {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e5e7eb !important;
+}
+
+body.modo-escuro .dropdown-item {
+  color: #e5e7eb !important;
+}
+
+body.modo-escuro .dropdown-item:hover {
+  background-color: #334155 !important;
 }
 
 /* ===== RESPONSIVIDADE ===== */

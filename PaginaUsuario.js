@@ -13082,6 +13082,9 @@ function abrirModalConfiguracoes() {
   if (typeof atualizarBotoesPlanos === 'function') {
     atualizarBotoesPlanos();
   }
+  if (typeof atualizarSwitchModoEscuro === 'function') {
+    atualizarSwitchModoEscuro();
+  }
   
   const userData = window.usuarioLogadoPerfil || JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
   if (userData.nome && document.getElementById('novoNome')) document.getElementById('novoNome').value = userData.nome;
@@ -13127,5 +13130,45 @@ function fecharModalSeguro(modalId) {
   }, 300);
 }
 
+// ===== MODO ESCURO =====
+function alternarModoEscuroUsuario() {
+  const isDark = document.body.classList.toggle('modo-escuro');
+  localStorage.setItem('modoEscuro', isDark ? 'true' : 'false');
+  atualizarSwitchModoEscuro();
+}
+
+function carregarModoEscuro() {
+  const salvo = localStorage.getItem('modoEscuro');
+  if (salvo === 'true') {
+    document.body.classList.add('modo-escuro');
+  } else {
+    document.body.classList.remove('modo-escuro');
+  }
+  atualizarSwitchModoEscuro();
+}
+
+function atualizarSwitchModoEscuro() {
+  const isDark = document.body.classList.contains('modo-escuro');
+  const toggleThumb = document.querySelector('.theme-toggle-thumb');
+  const toggleTrack = document.querySelector('.theme-toggle-track');
+  
+  if (toggleThumb && toggleTrack) {
+    if (isDark) {
+      toggleTrack.style.background = '#22c55e';
+      toggleThumb.style.left = '25px';
+    } else {
+      toggleTrack.style.background = '#e5e7eb';
+      toggleThumb.style.left = '3px';
+    }
+  }
+}
+
+// Aplicar imediatamente para evitar flash de tela clara
+carregarModoEscuro();
+document.addEventListener('DOMContentLoaded', carregarModoEscuro);
+
+window.alternarModoEscuroUsuario = alternarModoEscuroUsuario;
+window.carregarModoEscuro = carregarModoEscuro;
+window.atualizarSwitchModoEscuro = atualizarSwitchModoEscuro;
 window.limparBackdropModal = limparBackdropModal;
 window.fecharModalSeguro = fecharModalSeguro;
