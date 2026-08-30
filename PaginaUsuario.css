@@ -5875,3 +5875,14 @@ body.modo-escuro .dropdown-item:hover {
     padding: 5px 12px !important;
   }
 }
+
+/* ===== ITEM DE MENU BLOQUEADO ===== */
+#menuLateral .nav-link.bloqueado {
+  opacity: 0.45 !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+}
+
+#menuLateral .nav-link.bloqueado:hover {
+  opacity: 0.7 !important;
+}
