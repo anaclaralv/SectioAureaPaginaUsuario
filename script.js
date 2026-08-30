@@ -65,25 +65,26 @@ if (typeof normalizarInteligencia === 'undefined') {
 document.addEventListener("DOMContentLoaded", () => {
 
   function aplicarTemaSalvo() {
-  const tema = localStorage.getItem("tema");
-  const icon = document.getElementById("iconTheme");
+    const tema = localStorage.getItem("tema");
+    const icon = document.getElementById("iconTheme");
 
-  if (tema === "dark") {
-    document.body.classList.add("dark");
-    if (icon) icon.textContent = "☀️";
-  } else {
-    document.body.classList.remove("dark");
-    if (icon) icon.textContent = "🌙";
+    if (tema === "dark") {
+      document.body.classList.add("dark");
+      if (icon) icon.textContent = "☀️";
+    } else {
+      document.body.classList.remove("dark");
+      if (icon) icon.textContent = "🌙";
+    }
   }
-}aplicarTemaSalvo();
+  aplicarTemaSalvo();
 
   const navbar = document.getElementById("navbar");
   const sections = Array.from(document.querySelectorAll("section[data-color]"));
-  const defaultColor = getComputedStyle(navbar).backgroundColor || "#f4f1eb";
 
   /* ================= NAVBAR DINÂMICA ================= */
   function updateNavbarColor() {
-
+    if (!navbar) return;
+    const isDark = document.body.classList.contains("dark");
     const centerY = window.innerHeight / 2;
     let applied = false;
 
@@ -94,14 +95,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const rect = s.getBoundingClientRect();
 
       if (rect.top <= centerY && rect.bottom >= centerY) {
-
         navbar.style.backgroundColor = s.dataset.color;
 
-        if (logo.getAttribute("src") !== "Icones/LogoBranca.png") {
-          logo.setAttribute("src", "Icones/LogoBranca.png");
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
+          logo.setAttribute("src", "Icones/logoBranca.png");
         }
 
-        titulo.style.color = "white";
+        if (titulo) {
+          titulo.style.color = "white";
+        }
 
         applied = true;
         break;
@@ -109,16 +111,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!applied) {
-
-      navbar.style.backgroundColor = defaultColor;
-
-      if (logo.getAttribute("src") !== "Icones/LogoPreta.png") {
-        logo.setAttribute("src", "Icones/LogoPreta.png");
+      if (isDark) {
+        navbar.style.backgroundColor = "#1e1e1e";
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
+          logo.setAttribute("src", "Icones/logoBranca.png");
+        }
+        if (titulo) {
+          titulo.style.color = "white";
+        }
+      } else {
+        navbar.style.backgroundColor = "#f4f1eb";
+        if (logo && logo.getAttribute("src") !== "Icones/LogoPreta.png") {
+          logo.setAttribute("src", "Icones/LogoPreta.png");
+        }
+        if (titulo) {
+          titulo.style.color = "black";
+        }
       }
-
-      titulo.style.color = "black";
     }
   }
+  window.updateNavbarColor = updateNavbarColor;
 
   updateNavbarColor();
   window.addEventListener("scroll", updateNavbarColor, { passive: true });
@@ -452,6 +464,10 @@ function toggleDark() {
   } else {
     icon.textContent = "🌙";
     localStorage.setItem("tema", "light");
+  }
+
+  if (typeof window.updateNavbarColor === 'function') {
+    window.updateNavbarColor();
   }
 
   renderGoogleButton(); 
