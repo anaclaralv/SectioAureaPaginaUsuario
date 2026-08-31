@@ -6,6 +6,12 @@ function rotear($method, $endpoint, $db) {
     $subresource = $parts[2] ?? null;
     
     // ========== ROTAS PÚBLICAS ==========
+    if ($resource == 'duvidas' && $method == 'POST') {
+        $controller = new DuvidasController($db);
+        $controller->criar();
+        return;
+    }
+    
     if ($resource == 'login' && $method == 'POST') {
         $auth = new AuthController($db);
         $auth->login();

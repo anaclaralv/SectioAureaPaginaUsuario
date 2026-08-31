@@ -455,10 +455,32 @@ formReclame.addEventListener("submit", function(e){
 
 e.preventDefault();
 
-mostrarSucesso("Mensagem enviada com sucesso!");
+const nome = formReclame.querySelector('input[type="text"]').value;
+const email = formReclame.querySelector('input[type="email"]').value;
+const tipoRaw = formReclame.querySelector('select').value;
+const tipo = tipoRaw.replace(/[^\w\sÀ-ÿ]/g, "").trim();
+const mensagem = formReclame.querySelector('textarea').value;
 
-const modal = bootstrap.Modal.getInstance(document.getElementById("modalReclame"));
-modal.hide();
+const dados = { nome, email, tipo, mensagem };
+
+apiFetch('duvidas', {
+    method: 'POST',
+    body: JSON.stringify(dados)
+})
+.then(response => {
+    if (response.ok) {
+        mostrarSucesso("Mensagem enviada com sucesso!");
+        const modal = bootstrap.Modal.getInstance(document.getElementById("modalReclame"));
+        if (modal) modal.hide();
+        formReclame.reset();
+    } else {
+        alert("Erro ao enviar a mensagem. Tente novamente mais tarde.");
+    }
+})
+.catch(error => {
+    console.error("Erro no envio:", error);
+    alert("Erro de conexão ao enviar a mensagem.");
+});
 
 });
 
