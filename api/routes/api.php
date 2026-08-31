@@ -17,6 +17,7 @@ function rotear($method, $endpoint, $db) {
         $auth->login();
         return;
     }
+
     
     if (($resource == 'register' || $resource == 'cadastro') && $method == 'POST') {
         $auth = new AuthController($db);

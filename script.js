@@ -190,7 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-  /* ================= BAGULHO DO GOOGLE ================= */
 function handleCredentialResponse(response) {
   console.log(response);
 
