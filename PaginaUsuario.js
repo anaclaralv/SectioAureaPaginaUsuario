@@ -6798,6 +6798,7 @@ function inicializarMapaMental() {
   setTimeout(() => {
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
+    desenharConexoes();
   }, 200);
 
   mapaMentalCanvas = canvas;
@@ -7000,13 +7001,9 @@ function confirmarEdicaoNo(id) {
     no.cor = cor;
 
     const div = document.getElementById(`mapa-no-${id}`);
-    if (div) {
-      div.style.background = cor;
-      div.innerHTML = `
-        <div style="font-size: ${no.isCentral ? '1rem' : '0.85rem'}; font-weight: ${no.negrito ? '700' : '600'}; font-style: ${no.italico ? 'italic' : 'normal'}; text-align: ${no.alinhamento}; word-wrap: break-word;">${titulo}</div>
-        ${anotacoes ? `<div style="font-size:0.7rem;opacity:0.8;margin-top:5px;">${anotacoes}</div>` : ''}
-      `;
-    }
+    if (div) div.remove();
+    renderizarNo(no);
+
     if (no.isCentral) { const ti = document.getElementById('mapaMentalTitulo'); if (ti) ti.value = titulo; }
     desenharConexoes();
   }
@@ -7190,9 +7187,15 @@ function abrirMapaSalvo(id) {
     mapaMentalNos = [];
     mapaMentalConexoes = [];
     document.getElementById('mapaMentalNosContainer').innerHTML = '';
-    const nosList = mapa.nos || [];
-    nosList.forEach(no => { mapaMentalNos.push(no); renderizarNo(no); });
-    mapaMentalConexoes = mapa.conexoes || [];
+    const nosList = typeof mapa.nos === 'string' ? JSON.parse(mapa.nos) : (mapa.nos || []);
+    let maxId = -1;
+    nosList.forEach(no => {
+      mapaMentalNos.push(no);
+      renderizarNo(no);
+      if (no.id > maxId) maxId = no.id;
+    });
+    mapaMentalIdCounter = maxId + 1;
+    mapaMentalConexoes = typeof mapa.conexoes === 'string' ? JSON.parse(mapa.conexoes) : (mapa.conexoes || []);
     desenharConexoes();
   }, 300);
 }
@@ -7312,6 +7315,7 @@ function inicializarDiagramaFluxo() {
   setTimeout(() => {
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
+    desenharConexoesFluxo();
   }, 200);
 
   diagramaFluxoCanvas = canvas;
@@ -7725,12 +7729,15 @@ function abrirDiagramaSalvo(id) {
     diagramaFluxoNos = [];
     diagramaFluxoConexoes = [];
     document.getElementById('diagramaFluxoNosContainer').innerHTML = '';
-    const nosList = diagrama.nos || [];
+    const nosList = typeof diagrama.nos === 'string' ? JSON.parse(diagrama.nos) : (diagrama.nos || []);
+    let maxId = -1;
     nosList.forEach(no => {
       diagramaFluxoNos.push(no);
       renderizarNoFluxo(no);
+      if (no.id > maxId) maxId = no.id;
     });
-    diagramaFluxoConexoes = diagrama.conexoes || [];
+    diagramaFluxoIdCounter = maxId + 1;
+    diagramaFluxoConexoes = typeof diagrama.conexoes === 'string' ? JSON.parse(diagrama.conexoes) : (diagrama.conexoes || []);
     desenharConexoesFluxo();
   }, 300);
 }
