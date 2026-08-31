@@ -1,0 +1,1293 @@
+/* ==========================================================================
+   MODO ESCURO COMPLETO (REACT & GERAL)
+   ========================================================================== */
+
+body.modo-escuro,
+body.dark {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Backgrounds principais de seções e containers */
+body.modo-escuro .app-main,
+body.modo-escuro .main-content,
+body.modo-escuro .conteudo-principal,
+body.modo-escuro #tarefasSection,
+body.modo-escuro #notasSection,
+body.modo-escuro #calendarioSection,
+body.modo-escuro #relogioSection,
+body.modo-escuro #estatisticaSection,
+body.modo-escuro #cronogramaNovoSection,
+body.modo-escuro #revisaoSection,
+body.modo-escuro #planosSection,
+body.modo-escuro .metodos-container,
+body.modo-escuro .calendario-container,
+body.modo-escuro .layout-container,
+body.modo-escuro .linha-inferior,
+body.modo-escuro .card-pequeno {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Sidebar e Menus */
+body.modo-escuro .sidebar {
+  background-color: #1e293b !important;
+  border-right-color: #334155 !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.modo-escuro #menuLateral .nav-link,
+body.modo-escuro .sidebar .nav-link {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro #menuLateral .nav-link:hover,
+body.modo-escuro #menuLateral .nav-link.active,
+body.modo-escuro .sidebar .nav-link:hover,
+body.modo-escuro .sidebar .nav-link.active {
+  color: #ffffff !important;
+  background-color: var(--cor-primaria) !important;
+}
+
+/* Navbar */
+body.modo-escuro .navbar,
+body.modo-escuro header {
+  background-color: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+
+/* Cards em Geral */
+body.modo-escuro .card,
+body.modo-escuro .secao-card,
+body.modo-escuro .tarefa-card,
+body.modo-escuro .card-nota,
+body.modo-escuro .relogio-card,
+body.modo-escuro .stat-card,
+body.modo-escuro .grafico-card,
+body.modo-escuro .tabela-estudo,
+body.modo-escuro .cronograma-card,
+body.modo-escuro .cronogramaNovo-card,
+body.modo-escuro .metodo-card,
+body.modo-escuro .anki-table-container,
+body.modo-escuro .card-planos,
+body.modo-escuro .modal-content,
+body.modo-escuro .bloco-item,
+body.modo-escuro .card-materia,
+body.modo-escuro .video-card,
+body.modo-escuro .grupo-card,
+body.modo-escuro .card-simulado,
+body.modo-escuro .card-foco,
+body.modo-escuro .meta-card,
+body.modo-escuro .tabela-container,
+body.modo-escuro .foco-box,
+body.modo-escuro .modal-anki-card,
+body.modo-escuro .modal-conteudo,
+body.modo-escuro .deck-card,
+body.modo-escuro .form-cronogramaNovo,
+body.modo-escuro .periodo-selector {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Card de Dicas / Início */
+body.modo-escuro .card-dicas {
+  background: #1e293b !important;
+  border-color: var(--cor-primaria) !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .card-dicas:hover {
+  background: #273549 !important;
+}
+
+/* Textos e Títulos */
+body.modo-escuro h1,
+body.modo-escuro h2,
+body.modo-escuro h3,
+body.modo-escuro h4,
+body.modo-escuro h5,
+body.modo-escuro h6,
+body.modo-escuro .modal-title,
+body.modo-escuro .metodos-header h1,
+body.modo-escuro .metodo-card-header h3,
+body.modo-escuro .card-planos h3,
+body.modo-escuro .preco,
+body.modo-escuro .stat-card strong,
+body.modo-escuro .relogio-card h3,
+body.modo-escuro .titulo-materia {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro p,
+body.modo-escuro span,
+body.modo-escuro label,
+body.modo-escuro .revisao-subtitle,
+body.modo-escuro .metodos-descricao,
+body.modo-escuro .plano-subtitulo,
+body.modo-escuro .stat-card span,
+body.modo-escuro .tarefa-info span,
+body.modo-escuro .lista-planos li {
+  color: #cbd5e1 !important;
+}
+
+/* Sub-blocos e containers internos */
+body.modo-escuro .cornell-info,
+body.modo-escuro .materias-area,
+body.modo-escuro .passo-item,
+body.modo-escuro .revisao-item,
+body.modo-escuro .foco-pergunta,
+body.modo-escuro .foco-resposta,
+body.modo-escuro .anexo-indicador,
+body.modo-escuro .checklist-stats,
+body.modo-escuro .relogio-card p {
+  background: #334155 !important;
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+/* Inputs, Textareas e Selects */
+body.modo-escuro input,
+body.modo-escuro textarea,
+body.modo-escuro select,
+body.modo-escuro .form-control,
+body.modo-escuro .form-select,
+body.modo-escuro .tarefa-form input,
+body.modo-escuro .tarefa-form select,
+body.modo-escuro .form-evento input,
+body.modo-escuro .form-evento select,
+body.modo-escuro .form-cronogramaNovo input[type="text"],
+body.modo-escuro .cornell-duas-colunas textarea,
+body.modo-escuro .relogio-card input,
+body.modo-escuro .add-materia-relogio input {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro input::placeholder,
+body.modo-escuro textarea::placeholder {
+  color: #64748b !important;
+}
+
+body.modo-escuro input:focus,
+body.modo-escuro textarea:focus,
+body.modo-escuro select:focus {
+  border-color: var(--cor-primaria) !important;
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25) !important;
+}
+
+/* ==========================================================================
+   MÉTODOS (TEMPO, DIFICULDADE E MODAL)
+   ========================================================================== */
+body.modo-escuro .tag-tempo,
+body.dark .tag-tempo {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: #a5b4fc !important;
+  border: 1px solid rgba(99, 102, 241, 0.4) !important;
+}
+
+body.modo-escuro .tag-tempo i,
+body.dark .tag-tempo i {
+  color: #a5b4fc !important;
+}
+
+body.modo-escuro .tag-dificuldade.facil,
+body.dark .tag-dificuldade.facil {
+  background: rgba(34, 197, 94, 0.25) !important;
+  color: #86efac !important;
+  border: 1px solid rgba(34, 197, 94, 0.4) !important;
+}
+
+body.modo-escuro .tag-dificuldade.medio,
+body.dark .tag-dificuldade.medio {
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fde047 !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+
+body.modo-escuro .tag-dificuldade.dificil,
+body.dark .tag-dificuldade.dificil {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+body.modo-escuro .passo-item,
+body.dark .passo-item {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .revisao-item,
+body.dark .revisao-item {
+  background: #1e3a5f !important;
+  color: #f8fafc !important;
+  border: 1px solid #2563eb !important;
+}
+
+body.modo-escuro .modal-conteudo,
+body.dark .modal-conteudo {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+/* ==========================================================================
+   RELÓGIO DE ESTUDOS
+   ========================================================================== */
+body.modo-escuro #relogioSection,
+body.dark #relogioSection {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .relogio-card,
+body.dark .relogio-card {
+  background: #1e293b !important;
+  border-color: var(--cor-primaria) !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .relogio-card h3,
+body.dark .relogio-card h3 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .relogio-card p,
+body.dark .relogio-card p {
+  background: #0f172a !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .relogio-card input,
+body.dark .relogio-card input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .relogio-card small,
+body.dark .relogio-card small {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .add-materia-relogio,
+body.dark .add-materia-relogio {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .add-materia-relogio input,
+body.dark .add-materia-relogio input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .tabela-estudo,
+body.dark .tabela-estudo {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .tabela-estudo th,
+body.dark .tabela-estudo th {
+  background: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+body.modo-escuro .tabela-estudo td,
+body.dark .tabela-estudo td {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .tabela-estudo tr:hover td,
+body.dark .tabela-estudo tr:hover td {
+  background: #273549 !important;
+}
+
+body.modo-escuro .relogio-info-card,
+body.dark .relogio-info-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .relogio-topo p,
+body.dark .relogio-topo p {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .relogio-meio,
+body.dark .relogio-meio {
+  background: #0f172a !important;
+}
+
+body.modo-escuro .relogio-meio p,
+body.dark .relogio-meio p {
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .stat,
+body.dark .stat {
+  background: #0f172a !important;
+}
+
+body.modo-escuro .stat strong,
+body.dark .stat strong {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .stat span,
+body.dark .stat span {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .meta-card-escuro,
+body.dark .meta-card-escuro {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .meta-header-escuro h3,
+body.dark .meta-header-escuro h3 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .btn-editar-meta-escuro,
+body.dark .btn-editar-meta-escuro {
+  background: #334155 !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .meta-tipo-selector,
+body.dark .meta-tipo-selector {
+  background: #0f172a !important;
+}
+
+body.modo-escuro .meta-tipo-btn,
+body.dark .meta-tipo-btn {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .meta-tipo-btn:hover:not(.active),
+body.dark .meta-tipo-btn:hover:not(.active) {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .meta-texto-resumo,
+body.dark .meta-texto-resumo {
+  background: #334155 !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .meta-progresso-escuro,
+body.dark .meta-progresso-escuro {
+  background: #334155 !important;
+}
+
+body.modo-escuro .meta-restante-escuro,
+body.dark .meta-restante-escuro {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .btn-pausar-auto,
+body.dark .btn-pausar-auto,
+body.modo-escuro #btnPausarAuto,
+body.dark #btnPausarAuto {
+  background: #1e293b !important;
+  border-color: var(--cor-primaria) !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .relogio-notificacao-box,
+body.dark .relogio-notificacao-box,
+body.modo-escuro .relogio-explicacao-box,
+body.dark .relogio-explicacao-box {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .relogio-notificacao-box span,
+body.dark .relogio-notificacao-box span {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .relogio-explicacao-box p,
+body.dark .relogio-explicacao-box p {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .relogio-explicacao-box strong,
+body.dark .relogio-explicacao-box strong {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .historico-acordeon-header,
+body.dark .historico-acordeon-header {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .historico-item,
+body.dark .historico-item {
+  border-bottom: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro #cronometroHistoricoConteudo,
+body.dark #cronometroHistoricoConteudo {
+  background: #1e293b !important;
+}
+
+body.modo-escuro #cronometroHistoricoLista,
+body.dark #cronometroHistoricoLista {
+  color: #cbd5e1 !important;
+}
+
+/* Modo Foco do Relógio */
+body.modo-escuro .modo-foco-overlay,
+body.dark .modo-foco-overlay,
+body.modo-escuro .modo-foco-container,
+body.dark .modo-foco-container {
+  background: rgba(0, 0, 0, 0.95) !important;
+}
+
+body.modo-escuro .modo-foco-card,
+body.dark .modo-foco-card {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+body.modo-escuro .modo-foco-titulo,
+body.dark .modo-foco-titulo {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modo-foco-timer,
+body.dark .modo-foco-timer {
+  background: #0f172a !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .modo-foco-progresso-bg,
+body.dark .modo-foco-progresso-bg {
+  background: #334155 !important;
+}
+
+body.modo-escuro .modo-foco-frase,
+body.dark .modo-foco-frase {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .modo-foco-materia,
+body.dark .modo-foco-materia {
+  background: #0f172a !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .modo-foco-stat,
+body.dark .modo-foco-stat {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modo-foco-stat strong,
+body.dark .modo-foco-stat strong {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .alert-info,
+body.dark .alert-info {
+  background: #1e3a5f !important;
+  border-color: #2563eb !important;
+  color: #93c5fd !important;
+}
+
+/* ==========================================================================
+   REVISÃO, ANKI, FLASHCARDS E MODO FOCO
+   ========================================================================== */
+body.modo-escuro #revisaoSection,
+body.dark #revisaoSection {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Dashboard rápido de revisão */
+body.modo-escuro .revisao-dashboard .stat-box,
+body.dark .revisao-dashboard .stat-box {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .revisao-dashboard .stat-box span,
+body.dark .revisao-dashboard .stat-box span {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .revisao-dashboard .stat-box strong,
+body.dark .revisao-dashboard .stat-box strong {
+  color: #f8fafc !important;
+}
+
+/* Abas de revisão */
+body.modo-escuro .revisao-abas,
+body.dark .revisao-abas {
+  border-bottom-color: #334155 !important;
+}
+
+body.modo-escuro .aba-btn,
+body.dark .aba-btn {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .aba-btn:hover,
+body.dark .aba-btn:hover {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .aba-btn.active,
+body.dark .aba-btn.active {
+  color: var(--cor-primaria) !important;
+}
+
+/* Filtros de revisão */
+body.modo-escuro .filtro-materia-select,
+body.dark .filtro-materia-select,
+body.modo-escuro .revisao-filtros input[type="text"],
+body.dark .revisao-filtros input[type="text"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .revisao-filtros label,
+body.dark .revisao-filtros label {
+  color: #cbd5e1 !important;
+}
+
+/* Acordeão de Matérias e Cards na Aba Meus Cards */
+body.modo-escuro .materia-acordeon,
+body.dark .materia-acordeon {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .materia-header,
+body.dark .materia-header {
+  background: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+
+body.modo-escuro .materia-header:hover,
+body.dark .materia-header:hover {
+  background: #273549 !important;
+}
+
+body.modo-escuro .materia-titulo h3,
+body.dark .materia-titulo h3 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .tema-header,
+body.dark .tema-header {
+  border-bottom-color: #334155 !important;
+}
+
+body.modo-escuro .tema-header h4,
+body.dark .tema-header h4 {
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .tema-badge-count,
+body.dark .tema-badge-count {
+  background: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .card-flashcard,
+body.dark .card-flashcard {
+  background: #1e293b !important;
+  border-left-color: #475569 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.modo-escuro .card-flashcard.atrasada,
+body.dark .card-flashcard.atrasada {
+  background: #2a1b1e !important;
+  border-left-color: #ef4444 !important;
+}
+
+body.modo-escuro .card-flashcard.hoje,
+body.dark .card-flashcard.hoje {
+  background: #13281e !important;
+  border-left-color: #22c55e !important;
+}
+
+body.modo-escuro .card-pergunta,
+body.dark .card-pergunta {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .card-data,
+body.dark .card-data {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .card-acoes button,
+body.dark .card-acoes button {
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .card-acoes button:hover,
+body.dark .card-acoes button:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Resumo (Summary Card) */
+body.modo-escuro .summary-card,
+body.dark .summary-card {
+  background: #334155 !important;
+  color: #fde047 !important;
+  border: 1px solid #475569 !important;
+}
+
+/* Tabela Anki */
+body.modo-escuro .anki-table-container,
+body.dark .anki-table-container {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .anki-table th,
+body.dark .anki-table th {
+  background: #0f172a !important;
+  border-bottom-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .anki-table td,
+body.dark .anki-table td {
+  border-bottom-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .deck-row:hover,
+body.dark .deck-row:hover {
+  background: #273549 !important;
+}
+
+body.modo-escuro .deck-name,
+body.dark .deck-name {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .deck-total,
+body.modo-escuro .subdeck-total,
+body.dark .deck-total,
+body.dark .subdeck-total {
+  background: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .subdeck-row,
+body.dark .subdeck-row {
+  background: #152238 !important;
+}
+
+body.modo-escuro .subdeck-row:hover,
+body.dark .subdeck-row:hover {
+  background: #1e293b !important;
+}
+
+body.modo-escuro .subdeck-name,
+body.dark .subdeck-name {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .btn-add-card-mini,
+body.dark .btn-add-card-mini {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .btn-add-card-mini:hover,
+body.dark .btn-add-card-mini:hover {
+  background: #334155 !important;
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .empty-state,
+body.dark .empty-state {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Modo Foco / Popups de Flashcard */
+body.modo-escuro .foco-card,
+body.dark .foco-card {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+body.modo-escuro .foco-pergunta,
+body.dark .foco-pergunta {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .foco-resposta,
+body.dark .foco-resposta {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-left: 4px solid var(--cor-primaria) !important;
+}
+
+body.modo-escuro .foco-tema,
+body.dark .foco-tema {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .foco-fechar,
+body.dark .foco-fechar {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .foco-fechar:hover,
+body.dark .foco-fechar:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .foco-progresso span,
+body.dark .foco-progresso span {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .progresso-barra,
+body.dark .progresso-barra {
+  background: #334155 !important;
+}
+
+/* Badges de Nível do Flashcard */
+body.modo-escuro .level-0,
+body.dark .level-0 {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: #a5b4fc !important;
+}
+
+body.modo-escuro .level-1,
+body.modo-escuro .level-2,
+body.dark .level-1,
+body.dark .level-2 {
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fde047 !important;
+}
+
+body.modo-escuro .level-3,
+body.modo-escuro .level-4,
+body.dark .level-3,
+body.dark .level-4 {
+  background: rgba(34, 197, 94, 0.25) !important;
+  color: #86efac !important;
+}
+
+/* Modos de Revisão e Simulado */
+body.modo-escuro .modo-revisao-card,
+body.dark .modo-revisao-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modo-revisao-card h3,
+body.dark .modo-revisao-card h3 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modo-revisao-card p,
+body.dark .modo-revisao-card p {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .modo-revisao-card div,
+body.dark .modo-revisao-card div {
+  background-color: transparent !important;
+}
+
+body.modo-escuro .simulado-config,
+body.dark .simulado-config {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .simulado-config h3,
+body.dark .simulado-config h3 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro #abaHistorico > div,
+body.dark #abaHistorico > div {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro #focoInfoNivel,
+body.dark #focoInfoNivel {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro #simuladoResultado,
+body.dark #simuladoResultado {
+  background: #064e3b !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .aviso-conteudo,
+body.dark .aviso-conteudo {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   CRONOGRAMA INTELIGENTE
+   ========================================================================== */
+body.modo-escuro #cronogramaNovoSection,
+body.dark #cronogramaNovoSection {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .form-cronogramaNovo,
+body.dark .form-cronogramaNovo {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+body.modo-escuro .form-cronogramaNovo input[type="text"],
+body.dark .form-cronogramaNovo input[type="text"] {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .form-cronogramaNovo input[type="color"],
+body.dark .form-cronogramaNovo input[type="color"] {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .materias-area,
+body.dark .materias-area {
+  background: #0f172a !important;
+  border: 2px dashed #334155 !important;
+}
+
+body.modo-escuro .drag-text,
+body.dark .drag-text {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .drag-text span,
+body.dark .drag-text span {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .dia,
+body.dark .dia {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  border: 2px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .dia:hover,
+body.dark .dia:hover {
+  border-color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .dia h5,
+body.dark .dia h5 {
+  color: #f8fafc !important;
+  border-bottom: 2px solid #334155 !important;
+}
+
+body.modo-escuro .dia.drag-over,
+body.dark .dia.drag-over {
+  background: #334155 !important;
+  border-color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .dia-drop,
+body.dark .dia-drop {
+  color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   ESTATÍSTICAS
+   ========================================================================== */
+body.modo-escuro #estatisticaSection,
+body.dark #estatisticaSection {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .stats-cards,
+body.dark .stats-cards {
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .stat-card,
+body.dark .stat-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .stat-card strong,
+body.dark .stat-card strong {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .stat-card span,
+body.dark .stat-card span {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .periodo-selector,
+body.dark .periodo-selector {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+body.modo-escuro .periodo-btn,
+body.dark .periodo-btn {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .periodo-btn:hover:not(.active),
+body.dark .periodo-btn:hover:not(.active) {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .periodo-btn.active,
+body.dark .periodo-btn.active {
+  background: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+body.modo-escuro .graficos-lado-a-lado,
+body.dark .graficos-lado-a-lado {
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .grafico-card,
+body.dark .grafico-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .grafico-card h4,
+body.dark .grafico-card h4 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .metas-container,
+body.dark .metas-container {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .metas-container h4,
+body.dark .metas-container h4 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .meta-header span:first-child,
+body.dark .meta-header span:first-child {
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .meta-header span:last-child,
+body.dark .meta-header span:last-child {
+  color: var(--cor-primaria) !important;
+}
+
+body.modo-escuro .meta-progresso-container,
+body.dark .meta-progresso-container {
+  background: #334155 !important;
+}
+
+body.modo-escuro .meta-restante,
+body.dark .meta-restante {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .conquistas-container,
+body.dark .conquistas-container {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .conquistas-container h4,
+body.dark .conquistas-container h4 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .conquistas-grupo h5,
+body.dark .conquistas-grupo h5 {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .badge,
+body.dark .badge {
+  background: #334155 !important;
+  border: 1px solid #475569 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .badge.desbloqueado,
+body.dark .badge.desbloqueado {
+  background: #1e293b !important;
+  border-color: var(--cor-primaria) !important;
+  color: #fca5a5 !important;
+}
+
+body.modo-escuro .sugestoes-container,
+body.dark .sugestoes-container {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .sugestoes-container h4,
+body.dark .sugestoes-container h4 {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .sugestoes-container li,
+body.dark .sugestoes-container li {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+body.modo-escuro .btn-exportar,
+body.dark .btn-exportar {
+  background: #1e293b !important;
+  border: 2px solid var(--cor-primaria) !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .btn-exportar:hover,
+body.dark .btn-exportar:hover {
+  background: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+/* ==========================================================================
+   RELÓGIO DE ESTUDOS (EXTENSÕES)
+   ========================================================================== */
+body.modo-escuro .historico-acordeon-header,
+body.dark .historico-acordeon-header {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .historico-item,
+body.dark .historico-item {
+  border-bottom: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .relogio-card small,
+body.dark .relogio-card small {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .relogio-topo p,
+body.dark .relogio-topo p {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .modo-foco-frase,
+body.dark .modo-foco-frase {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .alert-info,
+body.dark .alert-info {
+  background: #1e3a5f !important;
+  border-color: #2563eb !important;
+  color: #93c5fd !important;
+}
+
+/* FullCalendar no Modo Escuro */
+body.modo-escuro .fc {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .fc-theme-standard td,
+body.modo-escuro .fc-theme-standard th,
+body.modo-escuro .fc-scrollgrid,
+body.modo-escuro .fc-col-header-cell {
+  border-color: #334155 !important;
+  background: transparent !important;
+}
+
+body.modo-escuro .fc-toolbar-title,
+body.modo-escuro .fc-col-header-cell-cushion,
+body.modo-escuro .fc-daygrid-day-number {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .fc-button-primary {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .fc-button-primary:hover,
+body.modo-escuro .fc-button-primary.fc-button-active {
+  background-color: var(--cor-primaria) !important;
+  border-color: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+/* Tabelas (Anki, Cronograma, Relatório, etc.) */
+body.modo-escuro .table,
+body.modo-escuro .tabela-cronograma,
+body.modo-escuro .tabela-estudo {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+body.modo-escuro .table th,
+body.modo-escuro .table td,
+body.modo-escuro .tabela-cronograma th,
+body.modo-escuro .tabela-cronograma td {
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.modo-escuro .table thead th {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .deck-row:hover,
+body.modo-escuro .table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Botões e Filtros */
+body.modo-escuro .btn-filtro-prioridade {
+  background: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .btn-filtro-prioridade:hover:not(.active) {
+  background: #475569 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .btn-filtro-prioridade.active {
+  background: var(--cor-primaria) !important;
+  color: white !important;
+}
+
+/* Linhas e separadores */
+body.modo-escuro hr,
+body.modo-escuro .border,
+body.modo-escuro .border-top,
+body.modo-escuro .border-bottom,
+body.modo-escuro .border-start,
+body.modo-escuro .border-end,
+body.modo-escuro .card li,
+body.modo-escuro .lista-planos li {
+  border-color: #334155 !important;
+}
+
+/* Modal Config e Itens do Switch */
+body.modo-escuro .config-row-tema {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .plano-card-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.modo-escuro .plano-card-item .plano-titulo-tipo {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%) !important;
+}
+
+/* SweetAlert2 no Modo Escuro (incluindo Como preparar ambiente) */
+body.modo-escuro .swal2-popup,
+body.dark .swal2-popup {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+body.modo-escuro .swal2-title,
+body.dark .swal2-title {
+  color: #f8fafc !important;
+}
+
+body.modo-escuro .modal-ambiente-texto,
+body.dark .modal-ambiente-texto,
+body.modo-escuro .swal2-html-container p,
+body.dark .swal2-html-container p {
+  color: #cbd5e1 !important;
+}
+
+body.modo-escuro .modal-ambiente-passos,
+body.dark .modal-ambiente-passos {
+  color: #94a3b8 !important;
+}
+
+body.modo-escuro .swal2-input,
+body.modo-escuro .swal2-textarea,
+body.modo-escuro .swal2-select {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+

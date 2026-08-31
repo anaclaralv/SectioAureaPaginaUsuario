@@ -176,7 +176,7 @@ const Inicio = () => {
       
       Swal.fire({
         title: passo.titulo,
-        html: `<div style="text-align: center;"><i class="${passo.icone}" style="font-size: 3rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i><p style="font-size: 0.95rem; color: #4b5563; line-height: 1.6;">${passo.texto}</p><p style="font-size: 0.75rem; color: #9ca3af; margin-top: 15px;">${passoAtual + 1} de ${passos.length}</p></div>`,
+        html: `<div style="text-align: center;"><i class="${passo.icone}" style="font-size: 3rem; color: var(--cor-primaria); display: block; margin-bottom: 15px;"></i><p class="modal-ambiente-texto" style="font-size: 0.95rem; line-height: 1.6;">${passo.texto}</p><p class="modal-ambiente-passos" style="font-size: 0.75rem; margin-top: 15px;">${passoAtual + 1} de ${passos.length}</p></div>`,
         showCancelButton: !isPrimeiro,
         showConfirmButton: true,
         confirmButtonText: isUltimo ? 'Pronto!' : 'Proximo',
