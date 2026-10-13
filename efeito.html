@@ -276,12 +276,36 @@
 
     let redirecionado = false;
 
+    function irParaPagina() {
+      if (redirecionado) return;
+      redirecionado = true;
+      if (tipo) {
+        localStorage.setItem('inteligenciaUsuario', tipo);
+        sessionStorage.setItem('inteligenciaUsuario', tipo);
+        if (cores[tipo]) {
+          localStorage.setItem('corPrimaria', cores[tipo]);
+          sessionStorage.setItem('corPrimaria', cores[tipo]);
+        }
+      }
+      setTimeout(() => {
+        window.location.href = `PaginaUsuario.html${tipo ? `?tipo=${tipo}&cor=${encodeURIComponent(cores[tipo] || '')}` : ''}`;
+      }, 400);
+    }
+
+    const scrollTip = document.querySelector(".scroll-tip");
+    if (scrollTip) {
+      scrollTip.style.cursor = "pointer";
+      scrollTip.addEventListener("click", () => {
+        window.scrollTo({ top: window.innerHeight * 1.2, behavior: "smooth" });
+      });
+    }
+
     window.addEventListener("scroll", () => {
       const scrollY = window.scrollY;
       const windowH = window.innerHeight;
       const progress = Math.min(scrollY / windowH, 1);
 
-      console.log('📊 Progresso:', progress.toFixed(2), '| Tipo:', tipo); // DEBUG
+      console.log('📊 Progresso:', progress.toFixed(2), '| Tipo:', tipo);
 
       inteligencia.style.transform = `translateY(-${progress * 100}vh)`;
       inteligencia.style.opacity = 1 - progress * 1.5;
@@ -294,16 +318,8 @@
         document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
       }
 
-      if (progress >= 0.95 && !redirecionado && tipo) {
-        redirecionado = true;
-
-        localStorage.setItem('inteligenciaUsuario', tipo);
-        localStorage.setItem('corPrimaria', cores[tipo]);
-
-        // Redireciona de forma limpa (dados salvos no localStorage e no banco)
-        setTimeout(() => {
-          window.location.href = "PaginaUsuario.html";
-        }, 500);
+      if (progress >= 0.85 && !redirecionado && tipo) {
+        irParaPagina();
       }
     });
 

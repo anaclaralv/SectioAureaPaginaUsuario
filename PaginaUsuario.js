@@ -6,6 +6,13 @@ if (typeof apiFetch === 'undefined') {
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token === 'guest_session') {
+      if (endpoint === 'perfil') {
+        const u = JSON.parse(sessionStorage.getItem('user') || '{}');
+        return new Response(JSON.stringify(u), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -59,8 +66,25 @@ if (typeof normalizarInteligencia === 'undefined') {
   };
 }
 
+const urlParamsAuth = new URLSearchParams(window.location.search);
+const hasTipoParam = urlParamsAuth.get('tipo') || localStorage.getItem('inteligenciaUsuario') || sessionStorage.getItem('inteligenciaUsuario');
+
 if (!sessionStorage.getItem("token") && !localStorage.getItem("token")) {
-  window.location.href = "ProjetoIntegrador.html";
+  if (hasTipoParam) {
+    const tipoGuest = (typeof normalizarInteligencia === 'function') ? normalizarInteligencia(hasTipoParam) : hasTipoParam;
+    const guestUser = {
+      id_usuario: 0,
+      nome: "Estudante",
+      email: "estudante@sectioaurea.com",
+      tipo_dom: tipoGuest,
+      plano: "gratuito"
+    };
+    sessionStorage.setItem("user", JSON.stringify(guestUser));
+    sessionStorage.setItem("token", "guest_session");
+    sessionStorage.setItem("inteligenciaUsuario", tipoGuest);
+  } else {
+    window.location.href = "ProjetoIntegrador.html";
+  }
 }
 
 async function carregarPerfilUsuario() {

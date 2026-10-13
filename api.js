@@ -4,6 +4,13 @@ const API_BASE_URL = (window.location.origin && window.location.origin !== 'null
 
 async function apiFetch(endpoint, options = {}) {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token === 'guest_session') {
+        if (endpoint === 'perfil') {
+            const u = JSON.parse(sessionStorage.getItem('user') || '{}');
+            return new Response(JSON.stringify(u), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,

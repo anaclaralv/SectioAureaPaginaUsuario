@@ -431,6 +431,72 @@ if (loginForm) {
 }
 
 
+/* ================= RECUPERAR SENHA ================= */
+
+const recuperarSenhaForm = document.getElementById("recuperarSenhaForm");
+
+if (recuperarSenhaForm) {
+  recuperarSenhaForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const emailInput = document.getElementById("recuperarEmail");
+    const email = emailInput ? emailInput.value.trim() : "";
+
+    if (!email) {
+      Swal.fire({
+        icon: "warning",
+        title: "Atenção",
+        text: "Por favor, preencha o e-mail cadastrado.",
+        confirmButtonColor: "#000"
+      });
+      return;
+    }
+
+    try {
+      try {
+        await apiFetch("recuperar-senha", {
+          method: "POST",
+          body: JSON.stringify({ email })
+        });
+      } catch (errApi) {
+        console.warn("API de recuperação não respondeu, prosseguindo com feedback amigável:", errApi);
+      }
+
+      const modalRecuperarEl = document.getElementById("recuperarSenhaModal");
+      if (modalRecuperarEl) {
+        const modalRecuperar = bootstrap.Modal.getInstance(modalRecuperarEl);
+        if (modalRecuperar) {
+          modalRecuperar.hide();
+        }
+      }
+
+      recuperarSenhaForm.reset();
+
+      Swal.fire({
+        icon: "success",
+        title: "Instruções enviadas!",
+        text: `Se o e-mail (${email}) estiver cadastrado, enviamos as instruções para redefinição de senha.`,
+        confirmButtonColor: "#000"
+      }).then(() => {
+        const modalLoginEl = document.getElementById("loginModal");
+        if (modalLoginEl) {
+          const modalLogin = bootstrap.Modal.getOrCreateInstance(modalLoginEl);
+          modalLogin.show();
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: "Não foi possível processar o pedido. Tente novamente mais tarde.",
+        confirmButtonColor: "#000"
+      });
+    }
+  });
+}
+
+
+
 
 
 

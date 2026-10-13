@@ -532,6 +532,22 @@ function mostrarResultado() {
     });
   }, { once: true });
 
+  const coresPorSlug = {
+    'corporal': '#00bf63',
+    'espacial': '#d203a4',
+    'interpessoal': '#ff5f00',
+    'intrapessoal': '#5170ff',
+    'linguistica': '#9f042c',
+    'logico': '#ffbd59',
+    'musical': '#8a03d2'
+  };
+  const corFinal = coresPorSlug[tipoFinal] || coresInteligencia[maior] || "#00bf63";
+
+  localStorage.setItem('inteligenciaUsuario', tipoFinal);
+  localStorage.setItem('corPrimaria', corFinal);
+  sessionStorage.setItem('inteligenciaUsuario', tipoFinal);
+  sessionStorage.setItem('corPrimaria', corFinal);
+
   document.getElementById("btnVamo").onclick = () => {
     modal.hide();
     setTimeout(() => {

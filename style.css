@@ -794,3 +794,21 @@ body.dark .modal input {
   border: 1px solid #555;
   color: white;
 }
+.link-recuperar {
+  color: #666;
+  font-weight: 500;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.link-recuperar:hover {
+  color: #1e1e1e;
+  text-decoration: underline !important;
+}
+
+body.dark .link-recuperar {
+  color: #bbb;
+}
+
+body.dark .link-recuperar:hover {
+  color: #ffffff;
+}

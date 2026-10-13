@@ -25,6 +25,12 @@ function rotear($method, $endpoint, $db) {
         return;
     }
     
+    if ($resource == 'recuperar-senha' && $method == 'POST') {
+        $auth = new AuthController($db);
+        $auth->recuperarSenha();
+        return;
+    }
+    
     if ($resource == 'inteligencias' && $method == 'GET') {
         $inteligencias = new Inteligencias($db);
         $stmt = $inteligencias->read();

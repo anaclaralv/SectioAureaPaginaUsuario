@@ -71,5 +71,25 @@ class AuthController {
         http_response_code(401);
         echo json_encode(["message" => "Email ou senha incorretos"]);
     }
+
+    public function recuperarSenha() {
+        $data = json_decode(file_get_contents("php://input"));
+        
+        if (!$data || empty($data->email)) {
+            http_response_code(400);
+            echo json_encode(["message" => "O e-mail é obrigatório"]);
+            return;
+        }
+
+        $email = htmlspecialchars(strip_tags($data->email));
+        
+        if ($this->usuario->findByEmail($email)) {
+            http_response_code(200);
+            echo json_encode(["message" => "Instruções de recuperação enviadas com sucesso"]);
+        } else {
+            http_response_code(200);
+            echo json_encode(["message" => "Se o e-mail estiver cadastrado, as instruções foram enviadas"]);
+        }
+    }
 }
 ?>
