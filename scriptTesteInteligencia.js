@@ -1,22 +1,12 @@
 // Fallback local caso api.js não seja carregado
 if (typeof apiFetch === 'undefined') {
-  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
-    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
-    : 'http://localhost/SectioAureaPaginaUsuario/api';
+  const API_BASE_URL = 'http://localhost/api_sectio_aurea-main';
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    const config = {
-      ...options,
-      headers,
-    };
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const config = { ...options, headers };
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
       sessionStorage.removeItem('token');
@@ -32,170 +22,27 @@ if (typeof apiFetch === 'undefined') {
 if (typeof normalizarInteligenciaParaBanco === 'undefined') {
   window.normalizarInteligenciaParaBanco = function(slug) {
     const mapa = {
-      "linguistica": "Linguística",
-      "logico": "Lógico-matemática",
-      "musical": "Musical",
-      "corporal": "Cinestésica",
-      "espacial": "Espacial",
-      "interpessoal": "Interpessoal",
-      "intrapessoal": "Intrapessoal"
+      "linguistica": "Linguística", "logico": "Lógico-matemática", "musical": "Musical",
+      "corporal": "Cinestésica", "espacial": "Espacial", "interpessoal": "Interpessoal", "intrapessoal": "Intrapessoal"
     };
     return mapa[slug] || slug;
   };
 }
 
 const area = document.getElementById("perguntasArea");
-
-const tipos = {
-  A: "Corporal-Cinestésica",
-  B: "Espacial",
-  C: "Interpessoal",
-  D: "Intrapessoal",
-  E: "Linguística",
-  F: "Lógico-Matemática",
-  G: "Musical"
-};
-
-// Cores para cada inteligência
-const coresInteligencia = {
-  A: "#00bf63", // Verde - Corporal
-  B: "#d203a4", // Rosa - Espacial
-  C: "#ff5f00", // Laranja - Interpessoal
-  D: "#5170ff", // Azul - Intrapessoal
-  E: "#9f042c", // Vermelho - Linguística
-  F: "#ffbd59", // Amarelo - Lógico
-  G: "#8a03d2"  // Roxo - Musical
-};
-
-const pontuacao = {
-  A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0
-};
-
-// Array para guardar as respostas de CADA etapa (para poder voltar)
+const tipos = { A: "Corporal-Cinestésica", B: "Espacial", C: "Interpessoal", D: "Intrapessoal", E: "Linguística", F: "Lógico-Matemática", G: "Musical" };
+const coresInteligencia = { A: "#00bf63", B: "#d203a4", C: "#ff5f00", D: "#5170ff", E: "#9f042c", F: "#ffbd59", G: "#8a03d2" };
+const pontuacao = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0 };
 let respostasPorEtapa = [];
 
-// ===== PERGUNTAS =====
 const etapas = [
   {
     titulo: "O que mais gosto de fazer:",
     itens: {
-      A: "Praticar esportes",
-      B: "Dirigir",
-      C: "Compartilhar atividades",
-      D: "Refletir sobre meus sentimentos",
-      E: "Debater ideias",
-      F: "Ordenar coisas",
-      G: "Cantar"
+      A: "Praticar esportes", B: "Dirigir", C: "Compartilhar atividades",
+      D: "Refletir sobre meus sentimentos", E: "Debater ideias", F: "Ordenar coisas", G: "Cantar"
     }
-  }/*,
-  {
-    titulo: "Tenho facilidade em:",
-    itens: {
-      A: "Aprender esportes",
-      B: "Executar tarefas delicadas",
-      C: "Trabalhar em equipe",
-      D: "Analisar sentimentos",
-      E: "Contar histórias",
-      F: "Organizar coisas",
-      G: "Tocar instrumentos"
-    }
-  },
-  {
-    titulo: "Na escola eu prefiro:",
-    itens: {
-      A: "Me movimentar",
-      B: "Fazer algo funcionar",
-      C: "Trabalhar com pessoas",
-      D: "Trabalhar sozinho",
-      E: "Conversar ideias",
-      F: "Analisar dados",
-      G: "Ouvir sons"
-    }
-  },
-  {
-    titulo: "Pergunta que mais faço:",
-    itens: {
-      A: "Onde?",
-      B: "Como?",
-      C: "Quem?",
-      D: "Para quê?",
-      E: "Por quê?",
-      F: "O quê?",
-      G: "Quando?"
-    }
-  },
-  {
-    titulo: "No tempo livre gosto de:",
-    itens: {
-      A: "Dançar",
-      B: "Trabalho manual",
-      C: "Sair com amigos",
-      D: "Refletir",
-      E: "Ler",
-      F: "Jogos de estratégia",
-      G: "Ouvir música"
-    }
-  },
-  {
-    titulo: "Tenho facilidade em:",
-    itens: {
-      A: "Aprender praticando",
-      B: "Perceber detalhes",
-      C: "Compartilhar ideias",
-      D: "Criar teorias",
-      E: "Discutir ideias",
-      F: "Organizar informações",
-      G: "Estudar com música"
-    }
-  },
-  {
-    titulo: "Em casa eu:",
-    itens: {
-      A: "Não paro",
-      B: "Conserto coisas",
-      C: "Ajudo pessoas",
-      D: "Fico quieto",
-      E: "Converso",
-      F: "Organizo tudo",
-      G: "Ouço música"
-    }
-  },
-  {
-    titulo: "As pessoas me veem como:",
-    itens: {
-      A: "Esportista",
-      B: "Competente",
-      C: "Perceptivo",
-      D: "Analítico",
-      E: "Comunicativo",
-      F: "Lógico",
-      G: "Artista"
-    }
-  },
-  {
-    titulo: "Aprendo melhor com:",
-    itens: {
-      A: "Prática",
-      B: "Passo a passo",
-      C: "Discussões",
-      D: "Leitura",
-      E: "Explicações",
-      F: "Análise",
-      G: "Música"
-    }
-  },
-  {
-    titulo: "Eu me considero:",
-    itens: {
-      A: "Ágil",
-      B: "Detalhista",
-      C: "Amigo",
-      D: "Sensível",
-      E: "Comunicativo",
-      F: "Racional",
-      G: "Musical"
-    }
-  }*/
+  }
 ];
 
 let etapaAtual = 0;
@@ -204,18 +51,11 @@ let respostasEtapa = {};
 
 function mostrarEtapa() {
   area.innerHTML = "";
-  
- area.innerHTML = "";
-  
   const etapa = etapas[etapaAtual];
   const totalEtapas = etapas.length;
   
-  // ✅ CORRETO - Carrega ou cria vazio
-  if (respostasPorEtapa[etapaAtual]) {
-    respostasEtapa = { ...respostasPorEtapa[etapaAtual] };
-  } else {
-    respostasEtapa = {};
-  }
+  if (respostasPorEtapa[etapaAtual]) respostasEtapa = { ...respostasPorEtapa[etapaAtual] };
+  else respostasEtapa = {};
 
   const div = document.createElement("div");
   div.classList.add("etapa-container");
@@ -228,7 +68,6 @@ function mostrarEtapa() {
   for (let letra in etapa.itens) {
     const item = etapa.itens[letra];
     const cor = coresInteligencia[letra];
-    
     html += `
       <div class="item-bloco" data-item="${letra}" style="border-left: 5px solid ${cor};">
         <h5 style="color: ${cor};">${item}</h5>
@@ -247,245 +86,123 @@ function mostrarEtapa() {
   div.innerHTML = html;
   area.appendChild(div);
   
-  // NOVO: Função para atualizar destaque dos itens
   function atualizarDestaqueItens() {
-  document.querySelectorAll('.item-bloco').forEach(bloco => {
-    const letra = bloco.querySelector('input[type="radio"]')?.dataset.letra;
-    
-    if (letra && !respostasEtapa[letra]) {
-      // Item NÃO respondido -> borda sutil
-      bloco.style.transition = 'all 0.3s ease';
-      bloco.style.border = '1px solid #03030360';        // Borda fina ao redor
-      bloco.style.borderLeft = '5px solid #030303c1'; 
-      bloco.style.opacity = '1';
-    } else {
-      // Item respondido -> borda da cor da inteligência (já existe)
-      const cor = coresInteligencia[letra];
-      bloco.style.border = '1px solid transparent'; 
-      bloco.style.borderLeft = `5px solid ${cor}`;
-      bloco.style.opacity = '0.85'; // Levemente "resolvido"
-    }
-  });
-}
+    document.querySelectorAll('.item-bloco').forEach(bloco => {
+      const letra = bloco.querySelector('input[type="radio"]')?.dataset.letra;
+      if (letra && !respostasEtapa[letra]) {
+        bloco.style.border = '1px solid #03030360';
+        bloco.style.borderLeft = '5px solid #030303c1'; 
+        bloco.style.opacity = '1';
+      } else {
+        bloco.style.border = '1px solid transparent'; 
+        bloco.style.borderLeft = `5px solid ${coresInteligencia[letra]}`;
+        bloco.style.opacity = '0.85';
+      }
+    });
+  }
   
   document.querySelectorAll('input[type="radio"]').forEach(radio => {
-    // Permite desselecionar clicando no mesmo rádio
     radio.addEventListener('click', function(e) {
       if (this.checked && respostasEtapa[this.dataset.letra] === this.value) {
         this.checked = false;
-        const letra = this.dataset.letra;
-        delete respostasEtapa[letra];
-        
-        const valor = this.value;
+        delete respostasEtapa[this.dataset.letra];
         document.querySelectorAll('input[type="radio"]').forEach(r => {
-          if (r.value === valor) {
-            r.disabled = false;
-          }
+          if (r.value === this.value) r.disabled = false;
         });
-        
-        atualizarBotao();
-        atualizarDestaqueItens(); // NOVO
-        e.stopPropagation();
-        return;
+        atualizarBotao(); atualizarDestaqueItens();
+        e.stopPropagation(); return;
       }
     });
     
     radio.addEventListener('change', function() {
       const letra = this.dataset.letra;
-      const valor = this.value;
-      
       if (respostasEtapa[letra]) {
         const valorAntigo = respostasEtapa[letra];
         document.querySelectorAll('input[type="radio"]').forEach(r => {
-          if (r.value === valorAntigo) {
-            r.disabled = false;
-          }
+          if (r.value === valorAntigo) r.disabled = false;
         });
         delete respostasEtapa[letra];
       }
-      
-      respostasEtapa[letra] = valor;
-      
+      respostasEtapa[letra] = this.value;
       document.querySelectorAll('input[type="radio"]').forEach(r => {
-        const rLetra = r.dataset.letra;
-        const rValor = r.value;
-        
-        const valorUsado = Object.entries(respostasEtapa).some(
-          ([l, v]) => l !== rLetra && v === rValor
-        );
-        
+        const valorUsado = Object.entries(respostasEtapa).some(([l, v]) => l !== r.dataset.letra && v === r.value);
         r.disabled = valorUsado;
       });
-      
-      atualizarBotao();
-      atualizarDestaqueItens(); // NOVO
+      atualizarBotao(); atualizarDestaqueItens();
     });
   });
   
-  atualizarBarra();
-  atualizarBotao();
-  atualizarDestaqueItens(); // NOVO: destaque inicial
-  atualizarBotaoVoltar();
+  atualizarBarra(); atualizarBotao(); atualizarDestaqueItens(); atualizarBotaoVoltar();
 }
 
 function atualizarBotao() {
   const btn = document.getElementById("btnNext");
-  const totalRespondido = Object.keys(respostasEtapa).length;
-  
-  if (totalRespondido === 7) {
-    btn.disabled = false;
-    btn.innerText = etapaAtual === etapas.length - 1 ? "Finalizar" : "Próxima Etapa";
-  } else {
-    btn.disabled = true;
-    btn.innerText = `Responda ${7 - totalRespondido} item(ns)`;
-  }
-}
-function atualizarBotaoVoltar() {
-  const btnPrev = document.getElementById("btnPrev");
-  if (btnPrev) {
-    btnPrev.disabled = (etapaAtual === 0);
-    btnPrev.style.opacity = etapaAtual === 0 ? '0.5' : '1';
-  }
+  const total = Object.keys(respostasEtapa).length;
+  if (total === 7) { btn.disabled = false; btn.innerText = etapaAtual === etapas.length - 1 ? "Finalizar" : "Próxima Etapa"; }
+  else { btn.disabled = true; btn.innerText = `Responda ${7 - total} item(ns)`; }
 }
 
-// Botão Próxima
+function atualizarBotaoVoltar() {
+  const btnPrev = document.getElementById("btnPrev");
+  if (btnPrev) { btnPrev.disabled = (etapaAtual === 0); btnPrev.style.opacity = etapaAtual === 0 ? '0.5' : '1'; }
+}
+
 document.getElementById("btnNext").onclick = () => {
-  if (Object.keys(respostasEtapa).length < 7) {
-    Swal.fire({
-      icon: "warning",
-      title: "Atenção!",
-      text: "Você precisa classificar todos os 7 itens de 1 a 7.",
-      confirmButtonColor: "#000000"
-    });
-    return;
-  }
-  
-  // Salva as respostas desta etapa
+  if (Object.keys(respostasEtapa).length < 7) return;
   respostasPorEtapa[etapaAtual] = { ...respostasEtapa };
-  
   etapaAtual++;
-  
-  if (etapaAtual < etapas.length) {
-    mostrarEtapa();
-  } else {
-    // Soma todas as pontuações ao finalizar
-    respostasPorEtapa.forEach(respostas => {
-      for (let letra in respostas) {
-        pontuacao[letra] += parseInt(respostas[letra]);
-      }
-    });
+  if (etapaAtual < etapas.length) mostrarEtapa();
+  else {
+    respostasPorEtapa.forEach(respostas => { for (let letra in respostas) pontuacao[letra] += parseInt(respostas[letra]); });
     mostrarResultado();
   }
 };
 
-// Botão Voltar
 document.getElementById("btnPrev").onclick = () => {
-  if (etapaAtual > 0) {
-    // Salva respostas atuais antes de voltar
-    respostasPorEtapa[etapaAtual] = { ...respostasEtapa };
-    
-    etapaAtual--;
-    mostrarEtapa();
-  }
+  if (etapaAtual > 0) { respostasPorEtapa[etapaAtual] = { ...respostasEtapa }; etapaAtual--; mostrarEtapa(); }
 };
 
-// Botão Limpar - Reseta TODAS as respostas
 document.getElementById("btnLimpar").onclick = () => {
   Swal.fire({
-    title: 'Limpar tudo?',
-    text: 'Todas as respostas de TODAS as etapas serão apagadas.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc3545',
-    cancelButtonColor: '#6c757d',
-    confirmButtonText: 'Sim, limpar tudo',
-    cancelButtonText: 'Cancelar'
+    title: 'Limpar tudo?', text: 'Todas as respostas serão apagadas.', icon: 'warning',
+    showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Sim', cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      // Reseta TODAS as respostas
-      respostasPorEtapa = [];      // ← CORRETO: ARRAY!
-      respostasEtapa = {};
-      
-      // Reseta as pontuações
-      for (let letra in pontuacao) {
-        pontuacao[letra] = 0;
-      }
-      
-      // Volta para a primeira etapa
-      etapaAtual = 0;
-      
-      // Recarrega a etapa
-      mostrarEtapa();
-      
-      // Feedback visual
-      Swal.fire({
-        icon: 'success',
-        title: 'Formulário limpo!',
-        text: 'Todas as respostas foram apagadas.',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      respostasPorEtapa = []; respostasEtapa = {};
+      for (let letra in pontuacao) pontuacao[letra] = 0;
+      etapaAtual = 0; mostrarEtapa();
     }
   });
 };
+
 function atualizarBarra() {
-  const total = etapas.length;
-  const progresso = (etapaAtual / total) * 100; // ✅ Usa etapaAtual (já foi decrementada no voltar)
-  document.getElementById("barraInterna").style.width = progresso + "%";
+  document.getElementById("barraInterna").style.width = ((etapaAtual / etapas.length) * 100) + "%";
 }
 
 function mostrarResultado() {
-  let maior = "";
-  let maiorValor = -1;
+  let maior = ""; let maiorValor = -1;
+  for (let letra in pontuacao) { if (pontuacao[letra] > maiorValor) { maiorValor = pontuacao[letra]; maior = letra; } }
 
-  for (let letra in pontuacao) {
-    if (pontuacao[letra] > maiorValor) {
-      maiorValor = pontuacao[letra];
-      maior = letra;
-    }
-  }
-
-  const tipoMapeado = {
-    'A': 'corporal',
-    'B': 'espacial',
-    'C': 'interpessoal',
-    'D': 'intrapessoal',
-    'E': 'linguistica',
-    'F': 'logico',
-    'G': 'musical'
-  };
-
+  const tipoMapeado = { 'A': 'corporal', 'B': 'espacial', 'C': 'interpessoal', 'D': 'intrapessoal', 'E': 'linguistica', 'F': 'logico', 'G': 'musical' };
   const tipoFinal = tipoMapeado[maior];
-  
-  document.getElementById("dominante").innerHTML = 
-    `<strong>Sua inteligência dominante é:</strong><br>${tipos[maior]}`;
+  document.getElementById("dominante").innerHTML = `<strong>Sua inteligência dominante é:</strong><br>${tipos[maior]}`;
 
-  // Calcula as três dominantes (maiores pontuações)
   const ordenadas = Object.entries(pontuacao).sort((a, b) => b[1] - a[1]);
-  const top3 = ordenadas.slice(0, 3);
-  const tresDominantes = {};
-  top3.forEach(([letra, valor]) => {
-    tresDominantes[letra] = valor;
-  });
+  const tresDominantes = {}; ordenadas.slice(0, 3).forEach(([letra, valor]) => { tresDominantes[letra] = valor; });
 
   const token = sessionStorage.getItem("token") || localStorage.getItem("token");
   if (token) {
     apiFetch("perfil", {
       method: "PUT",
-      body: JSON.stringify({
-        tipo_dom: normalizarInteligenciaParaBanco(tipoFinal),
-        clas_inteli: tresDominantes
-      })
+      body: JSON.stringify({ tipo_dom: normalizarInteligenciaParaBanco(tipoFinal), clas_inteli: tresDominantes })
     }).then(response => {
       if (response.ok) {
-        console.log("Resultado de inteligência salvo no backend.");
         const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
         const user = JSON.parse(storage.getItem("user") || "{}");
-        user.tipo_dom = tipoFinal;
-        user.clas_inteli = tresDominantes;
+        user.tipo_dom = tipoFinal; user.clas_inteli = tresDominantes;
         storage.setItem("user", JSON.stringify(user));
       }
-    }).catch(err => console.error("Erro ao salvar inteligência:", err));
+    }).catch(err => console.error(err));
   }
 
   const modalEl = document.getElementById('resultadoModal');
@@ -493,54 +210,16 @@ function mostrarResultado() {
   modal.show();
 
   modalEl.addEventListener('shown.bs.modal', function() {
-    const canvas = document.getElementById('graficoPizza');
-    const ctx = canvas.getContext('2d');
-    
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
-    
-    const valores = Object.values(pontuacao);
-    const labels = Object.values(tipos);
-    
+    const ctx = document.getElementById('graficoPizza').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
       type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: valores,
-          backgroundColor: Object.values(coresInteligencia),
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 15,
-              padding: 15,
-              font: { size: 11 },
-              color: document.body.classList.contains('dark') ? '#ffffff' : '#000000'
-            }
-          }
-        }
-      }
+      data: { labels: Object.values(tipos), datasets: [{ data: Object.values(pontuacao), backgroundColor: Object.values(coresInteligencia), borderWidth: 2, borderColor: '#ffffff' }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 15, padding: 15, font: { size: 11 }, color: document.body.classList.contains('dark') ? '#ffffff' : '#000000' } } } }
     });
   }, { once: true });
 
-  const coresPorSlug = {
-    'corporal': '#00bf63',
-    'espacial': '#d203a4',
-    'interpessoal': '#ff5f00',
-    'intrapessoal': '#5170ff',
-    'linguistica': '#9f042c',
-    'logico': '#ffbd59',
-    'musical': '#8a03d2'
-  };
+  const coresPorSlug = { 'corporal': '#00bf63', 'espacial': '#d203a4', 'interpessoal': '#ff5f00', 'intrapessoal': '#5170ff', 'linguistica': '#9f042c', 'logico': '#ffbd59', 'musical': '#8a03d2' };
   const corFinal = coresPorSlug[tipoFinal] || coresInteligencia[maior] || "#00bf63";
 
   localStorage.setItem('inteligenciaUsuario', tipoFinal);
@@ -551,102 +230,66 @@ function mostrarResultado() {
   document.getElementById("btnVamo").onclick = () => {
     modal.hide();
     setTimeout(() => {
-      window.location.href = `efeito.html?tipo=${tipoFinal}`;
+      const tokenAtual = sessionStorage.getItem("token") || localStorage.getItem("token");
+      const userAtual = sessionStorage.getItem("user") || localStorage.getItem("user");
+      if (tokenAtual) {
+        localStorage.setItem("token", tokenAtual);
+        if (userAtual) localStorage.setItem("user", userAtual);
+      }
+      const corSalva = localStorage.getItem('corPrimaria') || '#6c757d';
+      // 👇 AQUI ELE MANDA O TOKEN NA URL
+      window.location.href = `http://localhost:5173/?tipo=${tipoFinal}&cor=${encodeURIComponent(corSalva)}&token=${tokenAtual}`;
     }, 300);
   };
 }
 
-// Dark Mode
 const toggleBtn = document.getElementById('toggleTema');
 const iconTheme = document.getElementById('iconTheme');
-
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark');
-  if (iconTheme) iconTheme.textContent = '☀️';
-}
-
+if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark'); if (iconTheme) iconTheme.textContent = '☀️'; }
 if (toggleBtn) {
   toggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark');
     if (iconTheme) iconTheme.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    
-    if (chartInstance) {
-      chartInstance.options.plugins.legend.labels.color = 
-        document.body.classList.contains('dark') ? '#ffffff' : '#000000';
-      chartInstance.update();
-    }
+    if (chartInstance) { chartInstance.options.plugins.legend.labels.color = document.body.classList.contains('dark') ? '#ffffff' : '#000000'; chartInstance.update(); }
   });
 }
 
-// Abre o tutorial automaticamente (só na primeira vez) ou verifica se já realizou o teste
 document.addEventListener('DOMContentLoaded', function() {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  
   if (token) {
-    apiFetch("perfil")
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro ao buscar perfil do servidor');
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.tipo_dom && data.tipo_dom.trim() !== '') {
-          // Já realizou o teste
-          bloquearTeste();
-        } else {
-          iniciarTeste();
-        }
-      })
-      .catch(err => {
-        console.error('Erro ao verificar status do teste:', err);
-        // Fallback local caso o servidor falhe ou esteja offline
-        const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
-        if (user.tipo_dom && user.tipo_dom.trim() !== '') {
-          bloquearTeste();
-        } else {
-          iniciarTeste();
-        }
-      });
-  } else {
-    // Visitante (não logado), inicia normalmente
-    iniciarTeste();
-  }
+    apiFetch("perfil").then(response => {
+      if (!response.ok) throw new Error('Erro');
+      return response.json();
+    }).then(data => {
+      if (data.tipo_dom && data.tipo_dom.trim() !== '') bloquearTeste();
+      else iniciarTeste();
+    }).catch(() => {
+      const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+      if (user.tipo_dom && user.tipo_dom.trim() !== '') bloquearTeste();
+      else iniciarTeste();
+    });
+  } else iniciarTeste();
 });
 
 function bloquearTeste() {
   Swal.fire({
-    icon: 'warning',
-    title: 'Teste já realizado!',
-    text: 'Você já realizou o teste de inteligência e não pode refazê-lo.',
-    confirmButtonColor: '#000000',
-    allowOutsideClick: false,
-    allowEscapeKey: false
+    icon: 'warning', title: 'Teste já realizado!', text: 'Você já realizou o teste.',
+    confirmButtonColor: '#000000', allowOutsideClick: false, allowEscapeKey: false
   }).then(() => {
-    window.location.href = 'PaginaUsuario.html';
+    const tokenAtual = sessionStorage.getItem("token") || localStorage.getItem("token");
+    const tipoSalvo = localStorage.getItem('inteligenciaUsuario') || 'logico';
+    const corSalva = localStorage.getItem('corPrimaria') || '#6c757d';
+    window.location.href = `http://localhost:5173/?tipo=${tipoSalvo}&cor=${encodeURIComponent(corSalva)}&token=${tokenAtual}`;
   });
 }
 
 function iniciarTeste() {
-  const tutorialVisto = localStorage.getItem('tutorialVisto');
-  
-  if (!tutorialVisto) {
-    // Pequeno delay para garantir que o Bootstrap carregou
+  if (!localStorage.getItem('tutorialVisto')) {
     setTimeout(() => {
       const modalEl = document.getElementById('modalTutorial');
-      if (modalEl) {
-        const modalTutorial = new bootstrap.Modal(modalEl);
-        modalTutorial.show();
-        localStorage.setItem('tutorialVisto', 'true');
-      } else {
-        console.error('Modal não encontrado!');
-      }
+      if (modalEl) { new bootstrap.Modal(modalEl).show(); localStorage.setItem('tutorialVisto', 'true'); }
     }, 500);
   }
-  
-  // Também inicia o teste
   mostrarEtapa();
 }
-
-// Opcional: Botão "Revisar tutorial" na navbar ou rodapé

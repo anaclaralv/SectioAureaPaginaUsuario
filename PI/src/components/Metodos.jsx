@@ -543,44 +543,15 @@ const Metodos = () => {
     }, 500);
   };
 
-   const abrirCornell = () => {
+     const abrirCornell = () => {
     console.log('Abrindo Cornell...');
     
     // Fecha o modal
     setMetodoSelecionado(null);
     
-    // Salva o modo no localStorage
-    localStorage.setItem('modoCornellAtivo', 'true');
-    
-    // Salva a inteligência atual
-    const inteligencia = localStorage.getItem('inteligenciaUsuario') || 'logico';
-    localStorage.setItem('inteligenciaAtual', inteligencia);
-    
-    // Salva o título do método para referência
-    localStorage.setItem('metodoAtivo', 'Cornell');
-    
-    // Navega para a tela de notas
-    if (typeof window.mostrarTela === 'function') {
-      window.mostrarTela('notas');
-    }
-    
-    // Dispara evento para o menu lateral
-    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'notas' }));
-    
-    // Scroll até as notas e ativa o modo Cornell
-    setTimeout(() => {
-      const notasContainer = document.getElementById('notasSection');
-      if (notasContainer) {
-        notasContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        // Dispara evento para ativar o modo Cornell
-        window.dispatchEvent(new CustomEvent('ativarModoCornell', { 
-          detail: { ativo: true } 
-        }));
-      }
-    }, 500);
+    // Dispara o evento que o NavbarSidebar escuta para trocar a tela
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'cornell' }));
   };
-
   // ===== FUNÇÃO PARA RENDERIZAR O BOTÃO DO MODAL =====
   const renderizarBotaoModal = () => {
     if (!metodoSelecionado) return null;

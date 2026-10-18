@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./navabarsidebar.css";
 import Tarefas from './tarefas';
 import Notas from './notas';
+import Cornell from './cornell'; // Importação correta
 import Calendario from "./calendario";
 import Relogio from "./relogio";
 import Estatisticas from "./estatisticas";
@@ -11,6 +12,7 @@ import Planos from "./Planos";
 import Inicio from "./inicio";
 import Metodos from "./Metodos";
 import Swal from 'sweetalert2';
+import { apiFetch } from '../api';
 
 // ===================== ÍCONES DAS INTELIGÊNCIAS =====================
 const iconesInteligencia = {
@@ -35,6 +37,7 @@ const menuItems = [
   { id: "metodos", icon: "bi-lightbulb", label: "Métodos" },
   { id: "revisao", icon: "bi-arrow-repeat", label: "Revisão" },
   { id: "planos", icon: "bi-star-fill", label: "Planos" },
+  // NOTA: O Cornell NÃO fica aqui na sidebar!
 ];
 
 // ===================== NAVBAR =====================
@@ -150,6 +153,25 @@ function ModalConfiguracao({ usuario, onSalvar, onFechar }) {
     }
   };
 
+  const handleSair = () => {
+    Swal.fire({
+      title: 'Sair da conta?',
+      text: "Você será desconectado do sistema.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = 'http://localhost/SectioAureaPaginaUsuario/ProjetoIntegrador.html';
+      }
+    });
+  };
+
   return (
     <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-dialog-centered">
@@ -164,46 +186,28 @@ function ModalConfiguracao({ usuario, onSalvar, onFechar }) {
                 <img
                   src={fotoPreview}
                   alt="Foto do Usuário"
-                  style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '4px solid black'
-                  }}
+                  style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '4px solid black' }}
                 />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="form-control mt-2"
-                  onChange={handleFotoChange}
-                />
+                <input type="file" accept="image/*" className="form-control mt-2" onChange={handleFotoChange} />
               </div>
             </div>
             <div className="mb-3">
               <label className="form-label fw-bold">Nome</label>
-              <input
-                type="text"
-                className="form-control"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Digite seu nome"
-              />
+              <input type="text" className="form-control" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Digite seu nome" />
             </div>
             <div className="mb-3">
               <label className="form-label fw-bold">Email</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Digite seu email"
-              />
+              <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Digite seu email" />
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onFechar}>Cancelar</button>
-            <button type="button" className="btn btn-danger" onClick={handleSalvar}>Salvar Alterações</button>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <button type="button" className="btn btn-outline-danger" onClick={handleSair} style={{ fontWeight: 'bold', borderRadius: '8px' }}>
+              <i className="bi bi-box-arrow-right"></i> Sair da Conta
+            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" className="btn btn-secondary" onClick={onFechar}>Cancelar</button>
+              <button type="button" className="btn btn-danger" onClick={handleSalvar}>Salvar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -217,6 +221,7 @@ function SecaoAtiva({ id }) {
     case 'inicio': return <Inicio />;
     case 'tarefas': return <Tarefas />;
     case 'notas': return <Notas />;
+    case 'cornell': return <Cornell />; // 👈 ADICIONADO AQUI
     case 'calendario': return <Calendario />;
     case 'relogio': return <Relogio />;
     case 'estatistica': return <Estatisticas />;
@@ -224,6 +229,7 @@ function SecaoAtiva({ id }) {
     case 'metodos': return <Metodos />;
     case 'revisao': return <Revisao />;
     case 'planos': return <Planos />;
+  
     default:
       return (
         <div className="placeholder">
@@ -239,61 +245,90 @@ function SecaoAtiva({ id }) {
 export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
   const [planoAtual, setPlanoAtual] = useState('gratuito');
   
-  // Carregar plano
   useEffect(() => {
     const plano = localStorage.getItem('planoUsuario') || 'gratuito';
     setPlanoAtual(plano);
     
-    // Escutar mudanças de plano
     const handlePlanoAtualizado = (event) => {
       setPlanoAtual(event.detail.plano);
     };
     window.addEventListener('planoAtualizado', handlePlanoAtualizado);
     return () => window.removeEventListener('planoAtualizado', handlePlanoAtualizado);
   }, []);
+
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [telaAtiva, setTelaAtiva] = useState("inicio");
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
-  const [usuario, setUsuario] = useState({
-    nome: localStorage.getItem("userName") || "Usuário",
-    email: localStorage.getItem("userEmail") || "usuario@email.com",
-    foto: localStorage.getItem("userFoto") || null,
+  
+  const [usuario, setUsuario] = useState(() => {
+    const userSalvo = localStorage.getItem("user") || sessionStorage.getItem("user");
+    if (userSalvo) {
+      try {
+        const u = JSON.parse(userSalvo);
+        return { nome: u.nome || "Usuário", email: u.email || "", foto: u.foto || null };
+      } catch (e) {}
+    }
+    return { nome: "Usuário", email: "usuario@email.com", foto: null };
   });
+
+  useEffect(() => {
+    const buscarPerfil = async () => {
+      try {
+        const response = await apiFetch('perfil');
+        if (response.ok) {
+          const data = await response.json();
+          setUsuario({
+            nome: data.nome || "Usuário",
+            email: data.email || "",
+            foto: data.foto || null
+          });
+          
+          const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
+          const userAtual = JSON.parse(storage.getItem("user") || "{}");
+          storage.setItem("user", JSON.stringify({ ...userAtual, ...data }));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar perfil:", err);
+      }
+    };
+    buscarPerfil();
+  }, []);
 
   const toggleSidebar = () => setSidebarAberta(prev => !prev);
   const fecharSidebar = () => setSidebarAberta(false);
- const navegarPara = (tela) => {
-  const bloqueios = {
-    gratuito: ['estatistica', 'cronogramaNovo'],
-    basico: [],
-    pro: []
+  
+  const navegarPara = (tela) => {
+    const bloqueios = {
+      gratuito: ['estatistica', 'cronogramaNovo'],
+      basico: [],
+      pro: []
+    };
+    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    const bloqueadas = bloqueios[plano] || [];
+
+    if (bloqueadas.includes(tela)) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          setTelaAtiva('planos');
+        }
+      });
+      return;
+    }
+
+    setTelaAtiva(tela);
   };
-  const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-  const bloqueadas = bloqueios[plano] || [];
 
-  if (bloqueadas.includes(tela)) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Recurso Premium',
-      html: 'Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-      confirmButtonText: 'Ver Planos',
-      confirmButtonColor: '#9f042c',
-      showCancelButton: true,
-      cancelButtonText: 'Fechar'
-    }).then(result => {
-      if (result.isConfirmed) {
-        setTelaAtiva('planos');
-      }
-    });
-    return; // NÃO deixa entrar na seção
-  }
-
-  setTelaAtiva(tela);
-};
   const abrirConfig = () => setModalConfigAberto(true);
   const fecharConfig = () => setModalConfigAberto(false);
 
-  // Escutar evento de navegação dos métodos
   useEffect(() => {
     const handleNavegar = (event) => {
       navegarPara(event.detail);
@@ -303,19 +338,32 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
     return () => window.removeEventListener('navegarPara', handleNavegar);
   }, []);
 
-  const salvarConfiguracao = ({ nome, email, foto }) => {
-    setUsuario({ nome, email, foto });
-    localStorage.setItem("userName", nome);
-    localStorage.setItem("userEmail", email);
-    setModalConfigAberto(false);
+  const salvarConfiguracao = async ({ nome, email, foto }) => {
+    try {
+      const response = await apiFetch('perfil', {
+        method: 'PUT',
+        body: JSON.stringify({ nome, email, foto })
+      });
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Sucesso!',
-      text: 'Configurações salvas com sucesso.',
-      timer: 1500,
-      showConfirmButton: false
-    });
+      if (response.ok) {
+        setUsuario({ nome, email, foto });
+        
+        const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
+        const userAtual = JSON.parse(storage.getItem("user") || "{}");
+        storage.setItem("user", JSON.stringify({ ...userAtual, nome, email, foto }));
+        
+        setModalConfigAberto(false);
+        Swal.fire({
+          icon: 'success',
+          title: 'Sucesso!',
+          text: 'Configurações salvas no banco de dados.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    } catch (err) {
+      Swal.fire('Erro', 'Não foi possível salvar os dados.', 'error');
+    }
   };
 
   return (
@@ -329,12 +377,12 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
       />
 
       <Sidebar
-  aberta={sidebarAberta}
-  telaAtiva={telaAtiva}
-  onNavegar={navegarPara}
-  onFechar={fecharSidebar}
-  planoAtual={planoAtual}
-/>
+        aberta={sidebarAberta}
+        telaAtiva={telaAtiva}
+        onNavegar={navegarPara}
+        onFechar={fecharSidebar}
+        planoAtual={planoAtual}
+      />
 
       <main className={`app-main ${!sidebarAberta ? 'sidebar-fechada' : ''}`}>
         <div className="layout-container">

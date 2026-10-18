@@ -492,3 +492,13 @@
     min-height: 80px;
   }
 }
+/* ===== CORNELL SECTION ===== */
+#cornellSection {
+  position: relative;
+  padding: 20px;
+  background: #f8f8f8;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+}

@@ -1,11 +1,7 @@
-
-
-
 // Fallback local caso api.js não seja carregado
 if (typeof apiFetch === 'undefined') {
-  const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
-    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
-    : 'http://localhost/SectioAureaPaginaUsuario/api';
+  const API_BASE_URL = 'http://localhost/api_sectio_aurea-main';
+  
   window.API_BASE_URL = API_BASE_URL;
   window.apiFetch = async function (endpoint, options = {}) {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -16,10 +12,7 @@ if (typeof apiFetch === 'undefined') {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const config = {
-      ...options,
-      headers,
-    };
+    const config = { ...options, headers };
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     if (response.status === 401) {
       sessionStorage.removeItem('token');
@@ -36,166 +29,94 @@ if (typeof normalizarInteligencia === 'undefined') {
   window.normalizarInteligencia = function(nomeDb) {
     if (!nomeDb || typeof nomeDb !== 'string') return "";
     const mapa = {
-      "Linguística": "linguistica",
-      "linguistica": "linguistica",
-      "Lógico-matemática": "logico",
-      "Lógico-Matemática": "logico",
-      "lógico-matemática": "logico",
-      "lógico-matematica": "logico",
-      "logico-matematica": "logico",
-      "Musical": "musical",
-      "musical": "musical",
-      "Cinestésica": "corporal",
-      "cinestésica": "corporal",
-      "cinestesica": "corporal",
-      "Corporal-Cinestésica": "corporal",
-      "corporal-cinestésica": "corporal",
-      "corporal-cinestesica": "corporal",
-      "Espacial": "espacial",
-      "espacial": "espacial",
-      "Interpessoal": "interpessoal",
-      "interpessoal": "interpessoal",
-      "Intrapessoal": "intrapessoal",
-      "intrapessoal": "intrapessoal"
+      "Linguística": "linguistica", "linguistica": "linguistica",
+      "Lógico-matemática": "logico", "Lógico-Matemática": "logico", "lógico-matemática": "logico", "lógico-matematica": "logico", "logico-matematica": "logico",
+      "Musical": "musical", "musical": "musical",
+      "Cinestésica": "corporal", "cinestésica": "corporal", "cinestesica": "corporal", "Corporal-Cinestésica": "corporal", "corporal-cinestésica": "corporal", "corporal-cinestesica": "corporal",
+      "Espacial": "espacial", "espacial": "espacial",
+      "Interpessoal": "interpessoal", "interpessoal": "interpessoal",
+      "Intrapessoal": "intrapessoal", "intrapessoal": "intrapessoal"
     };
     return mapa[nomeDb] || mapa[nomeDb.trim()] || nomeDb.toLowerCase().trim();
   };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
   function aplicarTemaSalvo() {
     const tema = localStorage.getItem("tema");
     const icon = document.getElementById("iconTheme");
-
-    if (tema === "dark") {
-      document.body.classList.add("dark");
-      if (icon) icon.textContent = "☀️";
-    } else {
-      document.body.classList.remove("dark");
-      if (icon) icon.textContent = "🌙";
-    }
+    if (tema === "dark") { document.body.classList.add("dark"); if (icon) icon.textContent = "☀️"; }
+    else { document.body.classList.remove("dark"); if (icon) icon.textContent = "🌙"; }
   }
   aplicarTemaSalvo();
 
   const navbar = document.getElementById("navbar");
   const sections = Array.from(document.querySelectorAll("section[data-color]"));
 
-  /* ================= NAVBAR DINÂMICA ================= */
   function updateNavbarColor() {
     if (!navbar) return;
     const isDark = document.body.classList.contains("dark");
     const centerY = window.innerHeight / 2;
     let applied = false;
-
     const logo = document.getElementById("logoNavbar");
     const titulo = document.getElementById("tituloNavbar");
 
     for (let s of sections) {
       const rect = s.getBoundingClientRect();
-
       if (rect.top <= centerY && rect.bottom >= centerY) {
         navbar.style.setProperty("background-color", s.dataset.color, "important");
-
-        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
-          logo.setAttribute("src", "Icones/logoBranca.png");
-        }
-
-        if (titulo) {
-          titulo.style.setProperty("color", "white", "important");
-        }
-
-        applied = true;
-        break;
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") logo.setAttribute("src", "Icones/logoBranca.png");
+        if (titulo) titulo.style.setProperty("color", "white", "important");
+        applied = true; break;
       }
     }
 
     if (!applied) {
       if (isDark) {
         navbar.style.setProperty("background-color", "#1e1e1e", "important");
-        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") {
-          logo.setAttribute("src", "Icones/logoBranca.png");
-        }
-        if (titulo) {
-          titulo.style.setProperty("color", "white", "important");
-        }
+        if (logo && logo.getAttribute("src") !== "Icones/logoBranca.png") logo.setAttribute("src", "Icones/logoBranca.png");
+        if (titulo) titulo.style.setProperty("color", "white", "important");
       } else {
         navbar.style.setProperty("background-color", "#f4f1eb", "important");
-        if (logo && logo.getAttribute("src") !== "Icones/LogoPreta.png") {
-          logo.setAttribute("src", "Icones/LogoPreta.png");
-        }
-        if (titulo) {
-          titulo.style.setProperty("color", "black", "important");
-        }
+        if (logo && logo.getAttribute("src") !== "Icones/LogoPreta.png") logo.setAttribute("src", "Icones/LogoPreta.png");
+        if (titulo) titulo.style.setProperty("color", "black", "important");
       }
     }
   }
   window.updateNavbarColor = updateNavbarColor;
-
   updateNavbarColor();
   window.addEventListener("scroll", updateNavbarColor, { passive: true });
   window.addEventListener("resize", updateNavbarColor);
 
-  /* ================= COR DOS CARDS ================= */
   sections.forEach(section => {
     const cor = section.dataset.color;
     const card = section.querySelector(".card-inteligencia");
-
-    if (card) {
-      card.style.backgroundColor = cor;
-    }
+    if (card) card.style.backgroundColor = cor;
   });
 
-  /* ================= MODAL DINÂMICO ================= */
   document.querySelectorAll(".abrir-modal").forEach(botao => {
-
     botao.addEventListener("click", function () {
-
       const nome = this.dataset.nome;
       const cor = this.dataset.cor;
       const pontos = this.dataset.pontos;
       const areas = this.dataset.areas.split(",");
-
       document.getElementById("modalTitulo").textContent = nome;
       document.getElementById("modalPontos").textContent = pontos;
-
       const listaAreas = document.getElementById("modalAreas");
       listaAreas.innerHTML = "";
-
       areas.forEach(area => {
         const li = document.createElement("li");
         li.textContent = area.trim();
         listaAreas.appendChild(li);
       });
-
-      // aplica a cor da inteligência 
-      const modalContent = document.getElementById("modalContent");
-      const modalHeader = document.getElementById("modalHeader");
-
-      modalContent.style.borderColor = cor;
-      modalHeader.style.borderColor = cor;
-
+      document.getElementById("modalContent").style.borderColor = cor;
+      document.getElementById("modalHeader").style.borderColor = cor;
     });
-
   });
-
 });
 
-
-
-
-
-
-
-
-
-
 function handleCredentialResponse(response) {
-  console.log(response);
-
   const dados = JSON.parse(atob(response.credential.split('.')[1]));
-  console.log("Nome:", dados.name);
-  console.log("Email:", dados.email);
 }
 
 window.onload = function () {
@@ -203,82 +124,35 @@ window.onload = function () {
     client_id: "882150648839-9jlqshioa5loeae8drkfm9s4ggivjesr.apps.googleusercontent.com",
     callback: handleCredentialResponse
   });
-
   renderGoogleButton();
-  const isDark = document.body.classList.contains("dark");
-
-google.accounts.id.renderButton(
-  document.querySelector(".g_id_signin"),
-  {
-    theme: isDark ? "filled_black" : "outline",
-    size: "large"
-  });
 };
 
 function renderGoogleButton() {
   const isDark = document.body.classList.contains("dark");
-
   document.querySelectorAll(".g_id_signin").forEach(el => {
-    el.innerHTML = ""; // limpa antes
-
-    google.accounts.id.renderButton(el, {
-      theme: isDark ? "filled_black" : "outline",
-      size: "large",
-      width: 250
-    });
+    el.innerHTML = "";
+    google.accounts.id.renderButton(el, { theme: isDark ? "filled_black" : "outline", size: "large", width: 250 });
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-/* ================= TOAST SUCESSO ================= */
 
 function mostrarSucesso(mensagem) {
-
   const toastEl = document.getElementById("toastSucesso");
   const toastMsg = document.getElementById("toastMensagem");
-
   toastMsg.textContent = mensagem;
-
   if (!toastEl) return;
-
-  const toast = new bootstrap.Toast(toastEl, {
-    delay: 2000
-  });
-
+  const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
   toast.show();
 }
-
-/* ================= LOGIN / CADASTRO ================= */
 
 const cadastroForm = document.getElementById("cadastroForm");
 const loginForm = document.getElementById("loginForm");
 
-
-/* ================= ABRIR MODAL TESTE ================= */
-
 function abrirModalTeste() {
-
   const modalTesteEl = document.getElementById("modalConhecerTeste");
-
   if (!modalTesteEl) return;
-
   const modalTeste = bootstrap.Modal.getOrCreateInstance(modalTesteEl);
   modalTeste.show();
-
 }
-
-
-/* ================= CADASTRO ================= */
 
 if (cadastroForm) {
   cadastroForm.addEventListener("submit", async function (e) {
@@ -288,66 +162,36 @@ if (cadastroForm) {
     const senha = document.getElementById("cadSenha").value;
 
     try {
-      const response = await apiFetch("cadastro", {
-        method: "POST",
-        body: JSON.stringify({ nome, email, senha })
-      });
+      const response = await apiFetch("cadastro", { method: "POST", body: JSON.stringify({ nome, email, senha }) });
       const data = await response.json();
 
       if (response.ok) {
         mostrarSucesso("Conta criada com sucesso!");
-        // Faz login automático para melhorar a experiência
-        const loginResp = await apiFetch("login", {
-          method: "POST",
-          body: JSON.stringify({ email, senha })
-        });
+        const loginResp = await apiFetch("login", { method: "POST", body: JSON.stringify({ email, senha }) });
+        
         if (loginResp.ok) {
           const loginData = await loginResp.json();
           sessionStorage.setItem("token", loginData.token);
           sessionStorage.setItem("user", JSON.stringify(loginData.user));
+          localStorage.setItem("token", loginData.token);
+          localStorage.setItem("user", JSON.stringify(loginData.user));
           sessionStorage.setItem("planoUsuario", (loginData.user?.plano || "gratuito").toLowerCase());
-          localStorage.removeItem("planoUsuario");
           
           const modalCadastroEl = document.getElementById("cadastro");
-          const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
-          modalCadastro.hide();
-
-          modalCadastroEl.addEventListener("hidden.bs.modal", function () {
-            abrirModalTeste();
-          }, { once: true });
+          bootstrap.Modal.getInstance(modalCadastroEl).hide();
+          modalCadastroEl.addEventListener("hidden.bs.modal", function () { abrirModalTeste(); }, { once: true });
         } else {
-          const modalCadastroEl = document.getElementById("cadastro");
-          const modalCadastro = bootstrap.Modal.getInstance(modalCadastroEl);
-          modalCadastro.hide();
-          
-          setTimeout(() => {
-            const modalLoginEl = document.getElementById("loginModal");
-            const modalLogin = new bootstrap.Modal(modalLoginEl);
-            modalLogin.show();
-          }, 500);
+          document.getElementById("cadastro").style.display = 'none';
+          setTimeout(() => { new bootstrap.Modal(document.getElementById("loginModal")).show(); }, 500);
         }
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Erro no cadastro",
-          text: data.message || "Erro desconhecido",
-          confirmButtonColor: "#000"
-        });
+        Swal.fire({ icon: "error", title: "Erro no cadastro", text: data.message || "Erro desconhecido", confirmButtonColor: "#000" });
       }
     } catch (err) {
-      console.error(err);
-      Swal.fire({
-        icon: "error",
-        title: "Erro de conexão",
-        text: "Não foi possível conectar ao servidor backend.",
-        confirmButtonColor: "#000"
-      });
+      Swal.fire({ icon: "error", title: "Erro de conexão", text: "Não foi possível conectar.", confirmButtonColor: "#000" });
     }
   });
 }
-
-
-/* ================= LOGIN ================= */
 
 if (loginForm) {
   loginForm.addEventListener("submit", async function (e) {
@@ -356,61 +200,53 @@ if (loginForm) {
     const senha = document.getElementById("loginSenha").value;
 
     try {
-      const response = await apiFetch("login", {
-        method: "POST",
-        body: JSON.stringify({ email, senha })
-      });
+      const response = await apiFetch("login", { method: "POST", body: JSON.stringify({ email, senha }) });
       const data = await response.json();
 
       if (response.ok) {
         mostrarSucesso("Login realizado com sucesso!");
         
-        sessionStorage.removeItem("userFoto");
-        sessionStorage.removeItem("inteligenciaUsuario");
-        sessionStorage.removeItem("corPrimaria");
-        sessionStorage.removeItem("token");
-        sessionStorage.removeItem("user");
-        sessionStorage.removeItem("planoUsuario");
-        
-        localStorage.removeItem("userFoto");
-        localStorage.removeItem("inteligenciaUsuario");
-        localStorage.removeItem("corPrimaria");
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("planoUsuario");
+        // 🔥 LIMPA TUDO PRIMEIRO
+        sessionStorage.clear();
+        localStorage.clear();
 
-        const lembrar = document.getElementById("loginLembrar")?.checked;
-        const storage = lembrar ? localStorage : sessionStorage;
-
-        storage.setItem("token", data.token);
-        storage.setItem("user", JSON.stringify(data.user));
-        storage.setItem("planoUsuario", (data.user?.plano || "gratuito").toLowerCase());
+        // 🔥 SALVA O TOKEN NA FORÇA
+        const tokenRecebido = data.token;
+        localStorage.setItem("token", tokenRecebido);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("planoUsuario", (data.user?.plano || "gratuito").toLowerCase());
 
         if (data.user && data.user.tipo_dom) {
           const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
-          storage.setItem("inteligenciaUsuario", tipoSlug);
+          localStorage.setItem("inteligenciaUsuario", tipoSlug);
           if (data.user.cor_dominante) {
-            storage.setItem("corPrimaria", data.user.cor_dominante);
+            localStorage.setItem("corPrimaria", data.user.cor_dominante);
           }
         }
 
         const modalLoginEl = document.getElementById("loginModal");
         if (modalLoginEl) {
           const modalLogin = bootstrap.Modal.getInstance(modalLoginEl);
-          if (modalLogin) {
-            modalLogin.hide();
-          }
+          if (modalLogin) modalLogin.hide();
         }
 
         setTimeout(() => {
+          // 👇 PEGA O TOKEN DO LOCALSTORAGE
+          const tokenParaURL = localStorage.getItem("token"); 
+
           if (data.user && data.user.tipo_dom) {
-            window.location.href = "PaginaUsuario.html";
+            const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
+            const cor = data.user.cor_dominante || '#6c757d';
+            
+            // 👇 MANDA PRA URL COM O TOKEN
+            window.location.href = `http://localhost:5173/?tipo=${tipoSlug}&cor=${encodeURIComponent(cor)}&token=${tokenParaURL}`;
           } else {
-            // Se ainda não fez o teste de inteligência
             window.location.href = "TesteInteligencia.html";
           }
         }, 500);
+
       } else {
+        // 👇 AVISA SE A SENHA TÁ ERRADA
         Swal.fire({
           icon: "error",
           title: "Erro no login",
@@ -419,164 +255,65 @@ if (loginForm) {
         });
       }
     } catch (err) {
-      console.error(err);
-      Swal.fire({
-        icon: "error",
-        title: "Erro de conexão",
-        text: "Não foi possível conectar ao servidor backend.",
-        confirmButtonColor: "#000"
-      });
+      Swal.fire({ icon: "error", title: "Erro de conexão", text: "Não foi possível conectar.", confirmButtonColor: "#000" });
     }
   });
 }
 
-
-/* ================= RECUPERAR SENHA ================= */
-
 const recuperarSenhaForm = document.getElementById("recuperarSenhaForm");
-
 if (recuperarSenhaForm) {
   recuperarSenhaForm.addEventListener("submit", async function (e) {
     e.preventDefault();
-    const emailInput = document.getElementById("recuperarEmail");
-    const email = emailInput ? emailInput.value.trim() : "";
-
-    if (!email) {
-      Swal.fire({
-        icon: "warning",
-        title: "Atenção",
-        text: "Por favor, preencha o e-mail cadastrado.",
-        confirmButtonColor: "#000"
-      });
-      return;
-    }
-
+    const email = document.getElementById("recuperarEmail")?.value.trim();
+    if (!email) return Swal.fire({ icon: "warning", title: "Atenção", text: "Preencha o e-mail.", confirmButtonColor: "#000" });
     try {
-      try {
-        await apiFetch("recuperar-senha", {
-          method: "POST",
-          body: JSON.stringify({ email })
-        });
-      } catch (errApi) {
-        console.warn("API de recuperação não respondeu, prosseguindo com feedback amigável:", errApi);
-      }
-
-      const modalRecuperarEl = document.getElementById("recuperarSenhaModal");
-      if (modalRecuperarEl) {
-        const modalRecuperar = bootstrap.Modal.getInstance(modalRecuperarEl);
-        if (modalRecuperar) {
-          modalRecuperar.hide();
-        }
-      }
-
+      await apiFetch("recuperar-senha", { method: "POST", body: JSON.stringify({ email }) });
+      bootstrap.Modal.getInstance(document.getElementById("recuperarSenhaModal"))?.hide();
       recuperarSenhaForm.reset();
-
-      Swal.fire({
-        icon: "success",
-        title: "Instruções enviadas!",
-        text: `Se o e-mail (${email}) estiver cadastrado, enviamos as instruções para redefinição de senha.`,
-        confirmButtonColor: "#000"
-      }).then(() => {
-        const modalLoginEl = document.getElementById("loginModal");
-        if (modalLoginEl) {
-          const modalLogin = bootstrap.Modal.getOrCreateInstance(modalLoginEl);
-          modalLogin.show();
-        }
+      Swal.fire({ icon: "success", title: "Instruções enviadas!", text: `Se o e-mail (${email}) estiver cadastrado, enviamos as instruções.`, confirmButtonColor: "#000" }).then(() => {
+        new bootstrap.Modal(document.getElementById("loginModal")).show();
       });
     } catch (err) {
-      console.error(err);
-      Swal.fire({
-        icon: "error",
-        title: "Erro",
-        text: "Não foi possível processar o pedido. Tente novamente mais tarde.",
-        confirmButtonColor: "#000"
-      });
+      Swal.fire({ icon: "error", title: "Erro", text: "Não foi possível processar.", confirmButtonColor: "#000" });
     }
   });
 }
 
-
-
-
-
-
 function liberarMenuTeste() {
-
   const menu = document.getElementById("menuTeste");
-
-  if (menu) {
-    menu.classList.remove("d-none");
-  }
-
+  if (menu) menu.classList.remove("d-none");
 }
-
-
 
 const formReclame = document.getElementById("formReclame");
-
 if(formReclame){
-
-formReclame.addEventListener("submit", function(e){
-
-e.preventDefault();
-
-const nome = formReclame.querySelector('input[type="text"]').value;
-const email = formReclame.querySelector('input[type="email"]').value;
-const tipoRaw = formReclame.querySelector('select').value;
-const tipo = tipoRaw.replace(/[^\w\sÀ-ÿ]/g, "").trim();
-const mensagem = formReclame.querySelector('textarea').value;
-
-const dados = { nome, email, tipo, mensagem };
-
-apiFetch('duvidas', {
-    method: 'POST',
-    body: JSON.stringify(dados)
-})
-.then(response => {
-    if (response.ok) {
+  formReclame.addEventListener("submit", function(e){
+    e.preventDefault();
+    const dados = {
+      nome: formReclame.querySelector('input[type="text"]').value,
+      email: formReclame.querySelector('input[type="email"]').value,
+      tipo: formReclame.querySelector('select').value.replace(/[^\w\sÀ-ÿ]/g, "").trim(),
+      mensagem: formReclame.querySelector('textarea').value
+    };
+    apiFetch('adm/duvidas', { method: 'POST', body: JSON.stringify(dados) })
+    .then(response => {
+      if (response.ok) {
         mostrarSucesso("Mensagem enviada com sucesso!");
-        const modal = bootstrap.Modal.getInstance(document.getElementById("modalReclame"));
-        if (modal) modal.hide();
+        bootstrap.Modal.getInstance(document.getElementById("modalReclame"))?.hide();
         formReclame.reset();
-    } else {
-        alert("Erro ao enviar a mensagem. Tente novamente mais tarde.");
-    }
-})
-.catch(error => {
-    console.error("Erro no envio:", error);
-    alert("Erro de conexão ao enviar a mensagem.");
-});
-
-});
-
+      } else alert("Erro ao enviar.");
+    }).catch(() => alert("Erro de conexão."));
+  });
 }
-
-
 
 function toggleDark() {
   document.body.classList.toggle("dark");
-
   const icon = document.getElementById("iconTheme");
-
-  if (document.body.classList.contains("dark")) {
-    icon.textContent = "☀️";
-    localStorage.setItem("tema", "dark");
-  } else {
-    icon.textContent = "🌙";
-    localStorage.setItem("tema", "light");
-  }
-
-  if (typeof window.updateNavbarColor === 'function') {
-    window.updateNavbarColor();
-  }
-
+  if (document.body.classList.contains("dark")) { icon.textContent = "☀️"; localStorage.setItem("tema", "dark"); }
+  else { icon.textContent = "🌙"; localStorage.setItem("tema", "light"); }
+  if (typeof window.updateNavbarColor === 'function') window.updateNavbarColor();
   renderGoogleButton(); 
 }
 
 function salvarTema() {
-  if (document.body.classList.contains("dark")) {
-    localStorage.setItem("tema", "dark");
-  } else {
-    localStorage.setItem("tema", "light");
-  }
+  localStorage.setItem("tema", document.body.classList.contains("dark") ? "dark" : "light");
 }

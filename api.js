@@ -1,9 +1,11 @@
-const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:')) 
-    ? window.location.origin + '/SectioAureaPaginaUsuario/api' 
-    : 'http://localhost/SectioAureaPaginaUsuario/api';
+// 👇 APONTANDO PARA A API NOVA
+const API_BASE_URL = 'http://localhost/api_sectio_aurea-main';
 
 async function apiFetch(endpoint, options = {}) {
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+   // Troque a linha do token por essa:
+const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    
+    // Fallback para convidado (mantido por segurança)
     if (token === 'guest_session') {
         if (endpoint === 'perfil') {
             const u = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -11,6 +13,7 @@ async function apiFetch(endpoint, options = {}) {
         }
         return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+    
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -22,7 +25,9 @@ async function apiFetch(endpoint, options = {}) {
         ...options,
         headers,
     };
+    
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
+    
     if (response.status === 401) {
         // Token inválido ou expirado
         sessionStorage.removeItem('token');
