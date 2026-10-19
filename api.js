@@ -1,5 +1,5 @@
 // 👇 APONTANDO PARA A API NOVA
-const API_BASE_URL = 'http://localhost/api_sectio_aurea-main';
+const API_BASE_URL = 'http://localhost/api_sectio_aurea';
 
 async function apiFetch(endpoint, options = {}) {
    // Troque a linha do token por essa:
