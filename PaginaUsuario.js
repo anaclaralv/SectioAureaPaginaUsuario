@@ -9771,8 +9771,9 @@ async function abrirModalFlashcard() {
 
   if (materias && materias.length > 0) {
     materias.forEach(m => {
-      if (m && m.id && m.nome && m.nome !== 'undefined') {
-        select.innerHTML += `<option value="${m.id}">${m.nome}</option>`;
+      const matId = m.id_materia || m.id;
+      if (m && matId && m.nome && m.nome !== 'undefined') {
+        select.innerHTML += `<option value="${matId}">${m.nome}</option>`;
       }
     });
   }
@@ -9803,7 +9804,7 @@ async function salvarFlashcard() {
   if (!materiaId) { mostrarToast('⚠️ Selecione uma matéria!', '#f59e0b'); return; }
   if (!pergunta || !resposta) { mostrarToast('⚠️ Preencha pergunta e resposta!', '#f59e0b'); return; }
 
-  const materia = (typeof materias !== 'undefined' && materias) ? materias.find(m => m.id == materiaId) : null;
+  const materia = (typeof materias !== 'undefined' && materias) ? materias.find(m => (m.id_materia || m.id) == materiaId) : null;
 
   const novoCard = {
     materiaId: Number(materiaId),

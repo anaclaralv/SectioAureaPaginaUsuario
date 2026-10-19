@@ -232,9 +232,12 @@ function mostrarResultado() {
     setTimeout(() => {
       const tokenAtual = sessionStorage.getItem("token") || localStorage.getItem("token");
       const userAtual = sessionStorage.getItem("user") || localStorage.getItem("user");
+      const planoAtual = (sessionStorage.getItem("planoUsuario") || localStorage.getItem("planoUsuario") || "gratuito").toLowerCase().trim();
       if (tokenAtual) {
         localStorage.setItem("token", tokenAtual);
         if (userAtual) localStorage.setItem("user", userAtual);
+        localStorage.setItem("planoUsuario", planoAtual);
+        sessionStorage.setItem("planoUsuario", planoAtual);
       }
       const corSalva = localStorage.getItem('corPrimaria') || '#6c757d';
       // 👇 AQUI ELE MANDA O TOKEN NA URL

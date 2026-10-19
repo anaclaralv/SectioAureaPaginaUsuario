@@ -171,11 +171,16 @@ if (cadastroForm) {
         
         if (loginResp.ok) {
           const loginData = await loginResp.json();
+          sessionStorage.clear();
+          localStorage.clear();
+
+          const planoCadastro = (loginData.user?.plano || "gratuito").toLowerCase().trim();
           sessionStorage.setItem("token", loginData.token);
           sessionStorage.setItem("user", JSON.stringify(loginData.user));
+          sessionStorage.setItem("planoUsuario", planoCadastro);
           localStorage.setItem("token", loginData.token);
           localStorage.setItem("user", JSON.stringify(loginData.user));
-          sessionStorage.setItem("planoUsuario", (loginData.user?.plano || "gratuito").toLowerCase());
+          localStorage.setItem("planoUsuario", planoCadastro);
           
           const modalCadastroEl = document.getElementById("cadastro");
           bootstrap.Modal.getInstance(modalCadastroEl).hide();
@@ -212,9 +217,13 @@ if (loginForm) {
 
         // 🔥 SALVA O TOKEN NA FORÇA
         const tokenRecebido = data.token;
+        const planoLogin = (data.user?.plano || "gratuito").toLowerCase().trim();
         localStorage.setItem("token", tokenRecebido);
         localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("planoUsuario", (data.user?.plano || "gratuito").toLowerCase());
+        localStorage.setItem("planoUsuario", planoLogin);
+        sessionStorage.setItem("token", tokenRecebido);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem("planoUsuario", planoLogin);
 
         if (data.user && data.user.tipo_dom) {
           const tipoSlug = normalizarInteligencia(data.user.tipo_dom);
