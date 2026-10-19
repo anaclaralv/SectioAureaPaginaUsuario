@@ -15,9 +15,48 @@ export default function Cronograma() {
     { id: 'domingo', nome: 'Domingo' }
   ];
 
+  const plano = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
+
   useEffect(() => {
+    if (plano === 'gratuito') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'O <strong>Cronograma Inteligente</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+        }
+      });
+      return;
+    }
     carregarDados();
-  }, []);
+  }, [plano]);
+
+  if (plano === 'gratuito') {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 24px', maxWidth: '600px', margin: '40px auto', background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 4px 18px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', fontSize: '2rem' }}>
+          <i className="bi bi-lock-fill"></i>
+        </div>
+        <h2 style={{ fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Recurso Premium</h2>
+        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '24px' }}>
+          O <strong>Cronograma Inteligente</strong> é uma funcionalidade exclusiva dos planos <strong>Básico</strong> e <strong>Pro</strong>. Organize seus horários semanais por matéria com automação de rotinas!
+        </p>
+        <button
+          className="btn"
+          style={{ background: '#9f042c', color: '#fff', fontWeight: 'bold', padding: '12px 24px', borderRadius: '10px' }}
+          onClick={() => window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }))}
+        >
+          <i className="bi bi-star-fill me-2"></i> Conhecer Planos
+        </button>
+      </div>
+    );
+  }
 
   const carregarDados = async () => {
     try {

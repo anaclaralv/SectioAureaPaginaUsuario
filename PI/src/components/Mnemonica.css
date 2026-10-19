@@ -1,0 +1,663 @@
+/* ========================================================
+   ESTILOS: SEQUÊNCIAS E LISTAS MNEMÔNICAS
+======================================================== */
+
+.mnemonica-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+/* Header */
+.mnemonica-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mnemonica-title-area h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mnemonica-title-area p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.mnemonica-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-voltar-metodos {
+  background: transparent;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 30px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-voltar-metodos:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.btn-nova-mnemonica {
+  background: var(--cor-primaria, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-nova-mnemonica:hover {
+  transform: translateY(-2px);
+  filter: brightness(0.95);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Filtro de Matérias */
+.mnemonica-filtros {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+
+.filtro-pill {
+  border: none;
+  background: white;
+  color: #4b5563;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filtro-pill:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.filtro-pill.ativo {
+  background: var(--cor-primaria, #3b82f6);
+  color: white;
+  border-color: var(--cor-primaria, #3b82f6);
+}
+
+/* Grid de Sequências */
+.mnemonica-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.mnemonica-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mnemonica-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.card-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.badge-materia {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.card-step-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mnemonica-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #1e293b;
+}
+
+.mnemonica-card p.card-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+/* Pré-visualização dos passos */
+.card-steps-preview {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.preview-step-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-step-num {
+  font-weight: 700;
+  color: var(--cor-primaria, #3b82f6);
+  min-width: 18px;
+}
+
+.preview-step-termo {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.preview-step-ancora {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 0.78rem;
+}
+
+/* Botões do Card */
+.card-actions-main {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.btn-estudo-card {
+  flex: 1;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-estudo-card:hover {
+  background: #e2e8f0;
+}
+
+.btn-desafio-card {
+  flex: 1;
+  background: var(--cor-primaria, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-desafio-card:hover {
+  filter: brightness(0.92);
+}
+
+.card-actions-sub {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.btn-icon-card {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.btn-icon-card:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.btn-icon-card.delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+/* Empty State */
+.mnemonica-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.mnemonica-empty i {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.mnemonica-empty h3 {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.mnemonica-empty p {
+  color: #64748b;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+/* Item Builder no Modal */
+.steps-builder-container {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.step-builder-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-num-badge {
+  background: var(--cor-primaria, #3b82f6);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-inputs {
+  flex-grow: 1;
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .step-inputs {
+    flex-direction: column;
+  }
+}
+
+.step-btn-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-step-move {
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn-step-move:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-step-move:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-step-delete {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn-step-delete:hover {
+  background: #fca5a5;
+  color: white;
+}
+
+/* ========================================================
+   MODAIS DE TREINO & DESAFIO (OVERLAYS)
+======================================================== */
+
+.mnemonica-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 10500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mnemonica-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 650px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header-styled {
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modal-header-styled h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.modal-body-scroll {
+  padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Modo Estudo Sequencial */
+.study-card-hero {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  padding: 30px 24px;
+  text-align: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.study-step-circle {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: var(--cor-primaria, #3b82f6);
+  color: white;
+  font-weight: 800;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.study-ancora-box {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.study-termo-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: filter 0.3s;
+}
+
+.study-desc-text {
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.5;
+  transition: filter 0.3s;
+  cursor: pointer;
+}
+
+.is-blurred {
+  filter: blur(8px);
+  user-select: none;
+}
+
+.hint-click-unblur {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.study-nav-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Modo Desafio / Jogo de Ordenação */
+.game-step-item {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.game-step-item:hover {
+  border-color: var(--cor-primaria, #3b82f6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.game-step-item.correto {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.game-step-item.incorreto {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.game-step-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.game-order-slot {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-order-slot.correct-slot {
+  background: #10b981;
+  color: white;
+}
+
+/* Dark Mode */
+body.dark .mnemonica-card,
+body.modo-escuro .mnemonica-card,
+body.dark .mnemonica-modal-content,
+body.modo-escuro .mnemonica-modal-content {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.dark .mnemonica-title-area h1,
+body.modo-escuro .mnemonica-title-area h1,
+body.dark .mnemonica-card h3,
+body.modo-escuro .mnemonica-card h3,
+body.dark .modal-header-styled h3,
+body.modo-escuro .modal-header-styled h3 {
+  color: #f8fafc;
+}
+
+body.dark .card-steps-preview,
+body.modo-escuro .card-steps-preview,
+body.dark .step-builder-row,
+body.modo-escuro .step-builder-row {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.dark .filtro-pill,
+body.modo-escuro .filtro-pill {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}

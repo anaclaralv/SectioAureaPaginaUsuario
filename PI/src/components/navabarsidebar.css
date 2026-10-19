@@ -326,24 +326,42 @@ body {
 
 /* ===== ITENS BLOQUEADOS NO MENU ===== */
 #menuLateral .nav-link.bloqueado {
-  color: #cbd5e1 !important;
-  opacity: 0.6;
+  color: #94a3b8 !important;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
 }
 
-#menuLateral .nav-link.bloqueado i {
-  color: #cbd5e1 !important;
+#menuLateral .nav-link.bloqueado i.nav-icon {
+  color: #94a3b8 !important;
 }
 
-#menuLateral .nav-link.bloqueado::after {
-  content: "\F4D9";
-  font-family: "bootstrap-icons";
-  font-size: 0.65rem;
+.badge-sidebar-lock {
   margin-left: auto;
-  opacity: 0.5;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #menuLateral .nav-link.bloqueado:hover {
-  background-color: transparent !important;
-  color: #cbd5e1 !important;
-  cursor: not-allowed;
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  color: #475569 !important;
+  cursor: pointer;
+}
+
+body.modo-escuro #menuLateral .nav-link.bloqueado,
+body.dark #menuLateral .nav-link.bloqueado {
+  color: #64748b !important;
+}
+
+body.modo-escuro .badge-sidebar-lock,
+body.dark .badge-sidebar-lock {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
 }

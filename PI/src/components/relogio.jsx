@@ -1,47 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
-import './Relogio.css';
+import './relogio.css';
+import { apiFetch } from '../api';
 
 export default function Relogio() {
   // ==================== ESTADOS PRINCIPAIS ====================
   const [materias, setMaterias] = useState([]);
-  const [tempoEstudo, setTempoEstudo] = useState({});
-  const [estudoAtual, setEstudoAtual] = useState(null);
-  const [modoEstudo, setModoEstudo] = useState('auto');
-  const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
   const [cronograma, setCronograma] = useState([]);
+  const [estudoAtual, setEstudoAtual] = useState(null);
+  const [estudoPausado, setEstudoPausado] = useState(false);
+  const [segundosSessaoAtual, setSegundosSessaoAtual] = useState(0);
+  const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
   
-  // ==================== TIMER ====================
+  // Histórico do Cronômetro (API)
+  const [historicoCronometro, setHistoricoCronometro] = useState([]);
+  const [acordeonAberto, setAcordeonAberto] = useState(false);
+
+  // Timer e Cronômetro
   const [timerTempo, setTimerTempo] = useState(0);
   const [timerRodando, setTimerRodando] = useState(false);
   const timerIntervalRef = useRef(null);
-  
-  // ==================== CRONÔMETRO ====================
+
   const [cronometro, setCronometro] = useState(0);
   const [cronometroRodando, setCronometroRodando] = useState(false);
-  const [historicoCronometro, setHistoricoCronometro] = useState([]);
-  const [acordeonAberto, setAcordeonAberto] = useState(false);
   const cronometroIntervalRef = useRef(null);
-  
-  // ==================== POMODORO ====================
+
+  // Pomodoro
   const [pomodoroTempo, setPomodoroTempo] = useState(1500);
   const [pomodoroRodando, setPomodoroRodando] = useState(false);
   const [modoPomodoro, setModoPomodoro] = useState('foco');
+  const [tempoFocoConfig, setTempoFocoConfig] = useState(25);
+  const [tempoPausaConfig, setTempoPausaConfig] = useState(5);
   const [estudoIdPomodoro, setEstudoIdPomodoro] = useState(null);
   const pomodoroIntervalRef = useRef(null);
-  
-  // ==================== ESTUDO ====================
+
+  // Refs para sincronização sem stale closures
+  const modoPomodoroRef = useRef('foco');
+  const tempoFocoConfigRef = useRef(25);
+  const tempoPausaConfigRef = useRef(5);
+  const estudoIdPomodoroRef = useRef(null);
+  const pomodoroTempoRef = useRef(1500);
+
+  useEffect(() => { modoPomodoroRef.current = modoPomodoro; }, [modoPomodoro]);
+  useEffect(() => { tempoFocoConfigRef.current = tempoFocoConfig; }, [tempoFocoConfig]);
+  useEffect(() => { tempoPausaConfigRef.current = tempoPausaConfig; }, [tempoPausaConfig]);
+  useEffect(() => { estudoIdPomodoroRef.current = estudoIdPomodoro; }, [estudoIdPomodoro]);
+  useEffect(() => { pomodoroTempoRef.current = pomodoroTempo; }, [pomodoroTempo]);
+
+  // Modo Foco (React Nativo)
+  const [modoFocoAtivo, setModoFocoAtivo] = useState(false);
+  const [focoMateria, setFocoMateria] = useState(null);
+  const [focoTempoTotal, setFocoTempoTotal] = useState(25 * 60);
+  const [focoTempoRestante, setFocoTempoRestante] = useState(25 * 60);
+  const [focoRodando, setFocoRodando] = useState(false);
+  const [confirmandoSaidaFoco, setConfirmandoSaidaFoco] = useState(false);
+  const focoIntervalRef = useRef(null);
+
+  // Estudo por matéria
   const estudoIntervalRef = useRef(null);
-  
-  // ==================== METAS ====================
-  const [metas, setMetas] = useState({
-    diaria: 0.5,
-    semanal: 3.5,
-    mensal: 14
-  });
+
+  // Metas (LocalStorage)
+  const [metas, setMetas] = useState({ diaria: 0.5, semanal: 3.5, mensal: 14 });
   const [metaAtiva, setMetaAtiva] = useState('semanal');
-  
-  // ==================== REFS PARA MODAIS ====================
+
+  // Refs para Modais Bootstrap
   const modalPomodoroRef = useRef(null);
   const modalFocoRef = useRef(null);
   const modalMetaRef = useRef(null);
@@ -76,195 +98,419 @@ export default function Relogio() {
     return (parseInt(horas) || 0) + ((parseInt(minutos) || 0) / 60);
   };
 
-   // ==================== CARREGAR DADOS DO LOCALSTORAGE ====================
-  useEffect(() => {
-    console.log("🔄 Relogio - Iniciando carregamento...");
-    
-    // Carregar matérias
-    const materiasSalvas = localStorage.getItem('materias');
-    console.log("📥 Relogio - Raw materias do localStorage:", materiasSalvas);
-    
-    if (materiasSalvas && materiasSalvas !== '[]') {
-      try {
-        const materiasParseadas = JSON.parse(materiasSalvas);
-        if (materiasParseadas.length > 0) {
-          setMaterias(materiasParseadas);
-          console.log("📥 Relogio - Matérias carregadas:", materiasParseadas);
-        }
-      } catch(e) {
-        console.error("Erro ao parsear matérias:", e);
+  // ==================== CARREGAR DADOS DA API ====================
+  const carregarDados = async () => {
+    try {
+      const resMat = await apiFetch('materias');
+      if (resMat.ok) setMaterias(await resMat.json());
+
+      const resCron = await apiFetch('cronogramas');
+      if (resCron.ok) setCronograma(await resCron.json());
+
+      await carregarHistorico();
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
+    }
+  };
+
+  const carregarHistorico = async () => {
+    try {
+      const res = await apiFetch('cronometros');
+      if (res.ok) {
+        const data = await res.json();
+        setHistoricoCronometro(data);
       }
-    }
+    } catch (err) { console.error("Erro ao carregar histórico:", err); }
+  };
 
-    // Carregar tempo de estudo
-    const tempoSalvo = localStorage.getItem('tempoEstudo');
-    if (tempoSalvo) {
-      setTempoEstudo(JSON.parse(tempoSalvo));
-    }
+  // Cadastro de Matéria Inline
+  const [criandoMateriaTabela, setCriandoMateriaTabela] = useState(false);
+  const [criandoMateriaPomodoro, setCriandoMateriaPomodoro] = useState(false);
+  const [criandoMateriaFoco, setCriandoMateriaFoco] = useState(false);
+  const [nomeNovaMateria, setNomeNovaMateria] = useState('');
+  const [corNovaMateria, setCorNovaMateria] = useState('#9f042c');
+  const [salvandoMateria, setSalvandoMateria] = useState(false);
 
-    // Carregar histórico do cronômetro
-    const historicoSalvo = localStorage.getItem('historicoCronometro');
-    if (historicoSalvo) {
-      setHistoricoCronometro(JSON.parse(historicoSalvo));
-    }
-
-    // Carregar notificações
-    const notifSalvas = localStorage.getItem('notificacoesAtivas');
-    if (notifSalvas !== null) {
-      setNotificacoesAtivas(notifSalvas === 'true');
-    }
-
-    // Carregar metas
-    const metasSalvas = localStorage.getItem('metas');
-    if (metasSalvas) {
-      setMetas(JSON.parse(metasSalvas));
-    }
-    const metaAtivaSalva = localStorage.getItem('metaAtiva');
-    if (metaAtivaSalva) {
-      setMetaAtiva(metaAtivaSalva);
-    }
-
-    // Carregar cronograma
-    const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
-    if (cronogramaSalvo) {
-      setCronograma(JSON.parse(cronogramaSalvo));
-      console.log("📥 Relogio - Cronograma carregado");
-    }
-  }, []);
-
-  // Forçar recarregamento periódico (corrigido - useEffect separado)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const materiasSalvas = localStorage.getItem('materias');
-      if (materiasSalvas) {
-        try {
-          const materiasParseadas = JSON.parse(materiasSalvas);
-          if (materiasParseadas.length !== materias.length) {
-            setMaterias(materiasParseadas);
-            console.log("🔄 Forced sync - Matérias atualizadas:", materiasParseadas);
-          }
-        } catch(e) {}
-      }
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, [materias.length]);
-
-  // Sincronizar matérias quando mudarem no cronograma
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const materiasSalvas = localStorage.getItem('materias');
-      if (materiasSalvas) {
-        try {
-          setMaterias(JSON.parse(materiasSalvas));
-          console.log("🔄 Relogio - Matérias sincronizadas");
-        } catch(e) {}
-      }
-      
-      const cronogramaSalvo = localStorage.getItem('cronogramaNovo');
-      if (cronogramaSalvo) {
-        try {
-          setCronograma(JSON.parse(cronogramaSalvo));
-          console.log("🔄 Relogio - Cronograma sincronizado");
-        } catch(e) {}
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('materiasAtualizadas', handleStorageChange);
-    window.addEventListener('cronogramaAtualizado', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('materiasAtualizadas', handleStorageChange);
-      window.removeEventListener('cronogramaAtualizado', handleStorageChange);
-    };
-  }, []);
-
-  // Salvar matérias
-  useEffect(() => {
-    if (materias.length > 0) {
-      localStorage.setItem('materias', JSON.stringify(materias));
-    }
-  }, [materias]);
-
-  // Salvar tempo de estudo
-  useEffect(() => {
-    localStorage.setItem('tempoEstudo', JSON.stringify(tempoEstudo));
-  }, [tempoEstudo]);
-
-  // Salvar histórico
-  useEffect(() => {
-    localStorage.setItem('historicoCronometro', JSON.stringify(historicoCronometro));
-  }, [historicoCronometro]);
-
-  // Salvar notificações
-  useEffect(() => {
-    localStorage.setItem('notificacoesAtivas', notificacoesAtivas);
-  }, [notificacoesAtivas]);
-
-  // Salvar metas
-  useEffect(() => {
-    localStorage.setItem('metas', JSON.stringify(metas));
-  }, [metas]);
-
-  // Sincronizar matérias quando mudar (outro listener)
-  useEffect(() => {
-    const handleMateriasUpdate = () => {
-      const materiasSalvas = localStorage.getItem('materias');
-      if (materiasSalvas) {
-        try {
-          setMaterias(JSON.parse(materiasSalvas));
-        } catch(e) {}
-      }
-    };
-    
-    window.addEventListener('materiasAtualizadas', handleMateriasUpdate);
-    window.addEventListener('storage', handleMateriasUpdate);
-    
-    return () => {
-      window.removeEventListener('materiasAtualizadas', handleMateriasUpdate);
-      window.removeEventListener('storage', handleMateriasUpdate);
-    };
-  }, []);
-
-  // Forçar atualização do relógio a cada minuto
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCronograma(prev => [...prev]);
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Debug: Mostrar cronograma no console quando mudar
-  useEffect(() => {
-    console.log("Cronograma mudou no Relogio:", cronograma);
-  }, [cronograma]);
-  
-  // ==================== TIMER ====================
-  const iniciarTimer = () => {
-    const minutosInput = document.getElementById('timerMinutos')?.value;
-    const segundosInput = document.getElementById('timerSegundos')?.value;
-    const minutos = parseInt(minutosInput) || 0;
-    const segundos = parseInt(segundosInput) || 0;
-    const total = (minutos * 60) + segundos;
-
-    if (total <= 0) {
-      Swal.fire({ icon: 'warning', title: 'Valor inválido!', text: 'Digite pelo menos 1 segundo!', timer: 2000, showConfirmButton: false });
+  const salvarNovaMateria = async (origem = 'tabela') => {
+    const nomeTrim = nomeNovaMateria.trim();
+    if (!nomeTrim) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Atenção',
+        text: 'Por favor, digite o nome da matéria.',
+        timer: 2000,
+        showConfirmButton: false
+      });
       return;
     }
 
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    setSalvandoMateria(true);
+    try {
+      const response = await apiFetch('materias', {
+        method: 'POST',
+        body: JSON.stringify({ nome: nomeTrim, cor: corNovaMateria || '#9f042c' })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const resMat = await apiFetch('materias');
+        if (resMat.ok) {
+          const novasMats = await resMat.json();
+          setMaterias(Array.isArray(novasMats) ? novasMats : []);
+        }
+
+        setNomeNovaMateria('');
+        setCorNovaMateria('#9f042c');
+
+        if (origem === 'tabela') {
+          setCriandoMateriaTabela(false);
+        } else if (origem === 'pomodoro') {
+          setCriandoMateriaPomodoro(false);
+          setTimeout(() => {
+            const pSelect = document.getElementById('pomodoroMateria');
+            if (pSelect && data.id_materia) pSelect.value = String(data.id_materia);
+          }, 50);
+        } else if (origem === 'foco') {
+          setCriandoMateriaFoco(false);
+          setTimeout(() => {
+            const fSelect = document.getElementById('focoMateriaSelect');
+            if (fSelect && data.id_materia) fSelect.value = String(data.id_materia);
+          }, 50);
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Matéria cadastrada!',
+          text: `"${nomeTrim}" foi adicionada com sucesso.`,
+          timer: 1800,
+          showConfirmButton: false
+        });
+      } else {
+        const erro = await response.json().catch(() => ({}));
+        Swal.fire('Erro', erro.message || 'Não foi possível cadastrar a matéria.', 'error');
+      }
+    } catch (err) {
+      Swal.fire('Erro', 'Falha ao conectar com o servidor.', 'error');
+    } finally {
+      setSalvandoMateria(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarDados();
+    
+    // Carregar configs locais
+    const notifSalvas = localStorage.getItem('notificacoesAtivas');
+    if (notifSalvas !== null) setNotificacoesAtivas(notifSalvas === 'true');
+    
+    const metasSalvas = localStorage.getItem('metas');
+    if (metasSalvas) setMetas(JSON.parse(metasSalvas));
+    
+    const metaAtivaSalva = localStorage.getItem('metaAtiva');
+    if (metaAtivaSalva) setMetaAtiva(metaAtivaSalva);
+
+    // Inicializar Modais Bootstrap
+    if (window.bootstrap) {
+      if (modalPomodoroRef.current) modalInstancePomodoro.current = new window.bootstrap.Modal(modalPomodoroRef.current);
+      if (modalFocoRef.current) modalInstanceFoco.current = new window.bootstrap.Modal(modalFocoRef.current);
+      if (modalMetaRef.current) modalInstanceMeta.current = new window.bootstrap.Modal(modalMetaRef.current);
+    }
+
+    return () => {
+      clearInterval(estudoIntervalRef.current);
+      clearInterval(timerIntervalRef.current);
+      clearInterval(cronometroIntervalRef.current);
+      clearInterval(pomodoroIntervalRef.current);
+    };
+  }, []);
+
+  // Salvar no localStorage as metas e notificações
+  useEffect(() => { localStorage.setItem('notificacoesAtivas', notificacoesAtivas); }, [notificacoesAtivas]);
+  useEffect(() => { localStorage.setItem('metas', JSON.stringify(metas)); }, [metas]);
+  useEffect(() => { localStorage.setItem('metaAtiva', metaAtiva); }, [metaAtiva]);
+
+  // ==================== SALVAR NA API ====================
+  // ==================== SALVAR NA API (GERAL) ====================
+  const salvarSessaoAPI = async (idMateria, segundos, descricao) => {
+    if (!segundos || segundos <= 0) return false;
+
+    const tempoFormatado = formatarTempo(segundos);
+    const agora = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dataLocal = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
+
+    const payload = {
+      tempo_cronometro: tempoFormatado,
+      descricao: descricao || 'Estudo',
+      id_materia: idMateria ? parseInt(idMateria) : null,
+      created_at: dataLocal
+    };
+
+    try {
+      const response = await apiFetch('cronometros', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        await carregarHistorico();
+        Swal.fire({
+          icon: 'success',
+          title: 'Tempo salvo!',
+          text: `${tempoFormatado} registrados no histórico.`,
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+        return true;
+      } else {
+        const erro = await response.json().catch(() => ({}));
+        Swal.fire('Erro', erro.message || 'Não foi possível salvar o tempo.', 'error');
+        return false;
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire('Erro', 'Falha ao conectar com o servidor.', 'error');
+      return false;
+    }
+  };
+
+  const excluirRegistroHistorico = async (id) => {
+    Swal.fire({
+      title: 'Excluir registro?',
+      text: 'Essa ação removerá o registro do seu histórico.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await apiFetch(`cronometros/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            await carregarHistorico();
+            Swal.fire({
+              icon: 'success',
+              title: 'Excluído!',
+              timer: 1500,
+              showConfirmButton: false,
+              toast: true,
+              position: 'top-end'
+            });
+          } else {
+            const err = await res.json().catch(() => ({}));
+            Swal.fire('Erro', err.message || 'Não foi possível excluir.', 'error');
+          }
+        } catch (e) {
+          Swal.fire('Erro', 'Falha ao conectar à API.', 'error');
+        }
+      }
+    });
+  };
+
+  // ==================== CRONÔMETRO AVULSO E INDEPENDENTE ====================
+  const iniciarCronometro = () => {
+    if (cronometroRodando) return;
+    setCronometroRodando(true);
+    clearInterval(cronometroIntervalRef.current);
+    cronometroIntervalRef.current = setInterval(() => {
+      setCronometro((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const pausarCronometro = () => {
+    clearInterval(cronometroIntervalRef.current);
+    setCronometroRodando(false);
+  };
+
+  const salvarCronometro = async () => {
+    if (cronometro <= 0) {
+      return Swal.fire({
+        icon: 'info',
+        title: 'Nenhum tempo',
+        text: 'Inicie o cronômetro para registrar algum tempo.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    pausarCronometro();
+    const sucesso = await salvarSessaoAPI(null, cronometro, 'Cronômetro Avulso');
+    if (sucesso) {
+      setCronometro(0);
+    }
+  };
+
+  const resetarCronometro = () => {
+    if (cronometro > 0) {
+      Swal.fire({
+        title: 'Zerar cronômetro?',
+        text: 'Deseja salvar o tempo registrado antes de zerar?',
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Salvar e Zerar',
+        denyButtonText: 'Apenas Zerar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        denyButtonColor: '#ef4444'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          await salvarCronometro();
+        } else if (result.isDenied) {
+          pausarCronometro();
+          setCronometro(0);
+        }
+      });
+    } else {
+      pausarCronometro();
+      setCronometro(0);
+    }
+  };
+
+  // ==================== ESTUDO POR MATÉRIA ====================
+  const iniciarEstudo = (idMateria) => {
+    const materia = materias.find((m) => m.id_materia == idMateria);
+    if (!materia) return;
+
+    if (estudoAtual && estudoAtual.id_materia === materia.id_materia && estudoPausado) {
+      setEstudoPausado(false);
+      clearInterval(estudoIntervalRef.current);
+      estudoIntervalRef.current = setInterval(() => {
+        setSegundosSessaoAtual((prev) => prev + 1);
+      }, 1000);
+      return;
+    }
+
+    if (estudoAtual && estudoAtual.id_materia !== materia.id_materia) {
+      Swal.fire({
+        title: 'Trocar matéria?',
+        text: `Você já está estudando ${estudoAtual.nome}. Deseja salvar e iniciar ${materia.nome}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, salvar e trocar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          if (segundosSessaoAtual > 0) {
+            salvarSessaoAPI(estudoAtual.id_materia, segundosSessaoAtual, `Estudo (${estudoAtual.nome})`);
+          }
+          comecarEstudoDireto(materia);
+        }
+      });
+      return;
+    }
+
+    comecarEstudoDireto(materia);
+  };
+
+  const comecarEstudoDireto = (materia) => {
+    clearInterval(estudoIntervalRef.current);
+    setEstudoAtual(materia);
+    setEstudoPausado(false);
+    setSegundosSessaoAtual(0);
+
+    estudoIntervalRef.current = setInterval(() => {
+      setSegundosSessaoAtual((prev) => prev + 1);
+    }, 1000);
+
+    if (notificacoesAtivas) {
+      Swal.fire({
+        icon: 'success',
+        title: `Estudando: ${materia.nome}`,
+        timer: 1500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+  };
+
+  const pausarEstudo = () => {
+    clearInterval(estudoIntervalRef.current);
+    setEstudoPausado(true);
+  };
+
+  const finalizarEstudo = () => {
+    if (!estudoAtual) return;
+    const materia = estudoAtual;
+
+    Swal.fire({
+      title: 'Finalizar estudo?',
+      html: `<p>Matéria: <strong>${materia.nome}</strong></p><p>Tempo estudado: <strong>${formatarTempo(segundosSessaoAtual)}</strong></p>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, finalizar e salvar',
+      cancelButtonText: 'Continuar estudando',
+      confirmButtonColor: '#22c55e'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        clearInterval(estudoIntervalRef.current);
+        if (segundosSessaoAtual > 0) {
+          await salvarSessaoAPI(materia.id_materia, segundosSessaoAtual, `Estudo (${materia.nome})`);
+        }
+        setEstudoAtual(null);
+        setEstudoPausado(false);
+        setSegundosSessaoAtual(0);
+      }
+    });
+  };
+
+  // ==================== TIMER REGRESSIVO ====================
+  const iniciarTimer = () => {
+    if (timerTempo > 0 && !timerRodando) {
+      setTimerRodando(true);
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = setInterval(() => {
+        setTimerTempo((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerIntervalRef.current);
+            setTimerRodando(false);
+            Swal.fire({
+              icon: 'info',
+              title: '⏰ Tempo esgotado!',
+              text: 'Seu timer finalizou.',
+              timer: 3000,
+              showConfirmButton: false
+            });
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return;
+    }
+
+    const min = parseInt(document.getElementById('timerMinutos')?.value) || 0;
+    const seg = parseInt(document.getElementById('timerSegundos')?.value) || 0;
+    const total = min * 60 + seg;
+    if (total <= 0) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Tempo inválido',
+        text: 'Insira um valor maior que 0 minutos ou segundos.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
     setTimerTempo(total);
     setTimerRodando(true);
-
+    clearInterval(timerIntervalRef.current);
     timerIntervalRef.current = setInterval(() => {
-      setTimerTempo(prev => {
+      setTimerTempo((prev) => {
         if (prev <= 1) {
           clearInterval(timerIntervalRef.current);
           setTimerRodando(false);
-          Swal.fire({ icon: 'info', title: 'Tempo acabou!', timer: 2000, showConfirmButton: false });
+          Swal.fire({
+            icon: 'info',
+            title: '⏰ Tempo esgotado!',
+            text: 'Seu timer finalizou.',
+            timer: 3000,
+            showConfirmButton: false
+          });
           return 0;
         }
         return prev - 1;
@@ -273,133 +519,24 @@ export default function Relogio() {
   };
 
   const pararTimer = () => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    clearInterval(timerIntervalRef.current);
     setTimerRodando(false);
   };
 
   const resetarTimer = () => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    setTimerRodando(false);
+    pararTimer();
     setTimerTempo(0);
-    const minutosInput = document.getElementById('timerMinutos');
-    const segundosInput = document.getElementById('timerSegundos');
-    if (minutosInput) minutosInput.value = '';
-    if (segundosInput) segundosInput.value = '';
-  };
-
-  // ==================== CRONÔMETRO ====================
-  const iniciarCronometro = () => {
-    if (cronometroRodando) return;
-    if (cronometroIntervalRef.current) clearInterval(cronometroIntervalRef.current);
-    setCronometroRodando(true);
-
-    cronometroIntervalRef.current = setInterval(() => {
-      setCronometro(prev => prev + 1);
-    }, 1000);
-  };
-
-  const pausarCronometro = () => {
-    if (!cronometroRodando) return;
-    if (cronometroIntervalRef.current) clearInterval(cronometroIntervalRef.current);
-    setCronometroRodando(false);
-
-    if (cronometro > 0) {
-      const agora = new Date();
-      const registro = {
-        id: Date.now(),
-        tempo: cronometro,
-        tempoFormatado: formatarTempo(cronometro),
-        data: agora.toLocaleDateString('pt-BR'),
-        hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setHistoricoCronometro(prev => [registro, ...prev].slice(0, 50));
-    }
-  };
-
-  const resetarCronometro = () => {
-    if (cronometroIntervalRef.current) clearInterval(cronometroIntervalRef.current);
-    setCronometroRodando(false);
-    setCronometro(0);
-  };
-
-  const limparHistoricoCronometro = () => {
-    if (historicoCronometro.length === 0) {
-      Swal.fire({ icon: 'info', title: 'Histórico vazio', timer: 1500, showConfirmButton: false });
-      return;
-    }
-    Swal.fire({
-      title: 'Limpar histórico?',
-      text: `Tem certeza que deseja excluir todos os ${historicoCronometro.length} registros?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, limpar tudo!',
-      confirmButtonColor: '#ef4444'
-    }).then(result => {
-      if (result.isConfirmed) {
-        setHistoricoCronometro([]);
-        Swal.fire({ icon: 'success', title: 'Histórico limpo!', timer: 1500, showConfirmButton: false });
-      }
-    });
-  };
-
-  const excluirRegistroCronometro = (id) => {
-    setHistoricoCronometro(prev => prev.filter(r => r.id !== id));
+    const mInput = document.getElementById('timerMinutos');
+    const sInput = document.getElementById('timerSegundos');
+    if (mInput) mInput.value = '';
+    if (sInput) sInput.value = '';
   };
 
   // ==================== POMODORO ====================
-  const iniciarPomodoroPadrao = () => {
-    if (pomodoroRodando) {
-      Swal.fire({ icon: 'warning', title: 'Já rodando!', text: 'Pause ou resete primeiro.', timer: 1500, showConfirmButton: false });
-      return;
-    }
-
-    setModoPomodoro('foco');
-    setPomodoroTempo(1500);
-    setPomodoroRodando(true);
-
-    if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-    pomodoroIntervalRef.current = setInterval(() => {
-      setPomodoroTempo(prev => {
-        if (prev <= 1) {
-          clearInterval(pomodoroIntervalRef.current);
-          setPomodoroRodando(false);
-
-          if (modoPomodoro === 'foco') {
-            Swal.fire({ icon: 'success', title: 'Foco concluído!', text: 'Hora da pausa!', timer: 2000, showConfirmButton: false });
-            setModoPomodoro('pausa');
-            setPomodoroTempo(300);
-            setTimeout(() => iniciarPomodoroPadrao(), 100);
-          } else {
-            Swal.fire({ icon: 'info', title: 'Pausa concluída!', text: 'Hora de estudar!', timer: 2000, showConfirmButton: false });
-            setModoPomodoro('foco');
-            setPomodoroTempo(1500);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const pausarPomodoro = () => {
-    if (!pomodoroRodando) return;
-    setPomodoroRodando(false);
-    if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-  };
-
-  const resetarPomodoro = () => {
-    if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-    setPomodoroRodando(false);
-    setModoPomodoro('foco');
-    setPomodoroTempo(1500);
-    setEstudoIdPomodoro(null);
-  };
-
   const abrirModalPomodoro = () => {
-    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-    
+    const plano = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
     if (plano === 'gratuito') {
-      Swal.fire({
+      return Swal.fire({
         icon: 'info',
         title: 'Recurso Premium',
         html: 'O <strong>Pomodoro Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
@@ -407,15 +544,62 @@ export default function Relogio() {
         confirmButtonColor: '#9f042c',
         showCancelButton: true,
         cancelButtonText: 'Fechar'
-      }).then(result => {
+      }).then((result) => {
         if (result.isConfirmed) {
           window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
         }
       });
-      return;
     }
-    
     modalInstancePomodoro.current?.show();
+  };
+
+  const iniciarPomodoro = () => {
+    if (pomodoroRodando) return;
+    setPomodoroRodando(true);
+    clearInterval(pomodoroIntervalRef.current);
+
+    pomodoroIntervalRef.current = setInterval(() => {
+      setPomodoroTempo((prev) => {
+        if (prev <= 1) {
+          clearInterval(pomodoroIntervalRef.current);
+          setPomodoroRodando(false);
+
+          if (modoPomodoroRef.current === 'foco') {
+            const matId = estudoIdPomodoroRef.current;
+            const tempoSegundos = tempoFocoConfigRef.current * 60;
+            const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
+            const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : `Pomodoro (${tempoFocoConfigRef.current} min)`;
+
+            salvarSessaoAPI(matId || null, tempoSegundos, desc);
+
+            Swal.fire({
+              icon: 'success',
+              title: '🍅 Foco concluído!',
+              text: `Tempo registrado no histórico! Hora de uma pausa de ${tempoPausaConfigRef.current} min.`,
+              timer: 3500,
+              showConfirmButton: false
+            });
+
+            modoPomodoroRef.current = 'pausa';
+            setModoPomodoro('pausa');
+            return tempoPausaConfigRef.current * 60;
+          } else {
+            Swal.fire({
+              icon: 'info',
+              title: '☕ Pausa finalizada!',
+              text: 'Pronto para voltar ao foco?',
+              timer: 3000,
+              showConfirmButton: false
+            });
+
+            modoPomodoroRef.current = 'foco';
+            setModoPomodoro('foco');
+            return tempoFocoConfigRef.current * 60;
+          }
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const iniciarPomodoroPersonalizado = () => {
@@ -423,385 +607,129 @@ export default function Relogio() {
     const tempoEstudoVal = parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25);
     const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5);
 
-    if (!materiaId) {
-      Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
-      return;
-    }
+    setTempoFocoConfig(tempoEstudoVal);
+    setTempoPausaConfig(tempoPausa);
+    setEstudoIdPomodoro(materiaId || null);
 
-    resetarPomodoro();
+    tempoFocoConfigRef.current = tempoEstudoVal;
+    tempoPausaConfigRef.current = tempoPausa;
+    estudoIdPomodoroRef.current = materiaId || null;
+
+    modoPomodoroRef.current = 'foco';
     setModoPomodoro('foco');
     setPomodoroTempo(tempoEstudoVal * 60);
-    setPomodoroRodando(true);
-    setEstudoIdPomodoro(materiaId);
-    iniciarEstudo(materiaId);
+    pomodoroTempoRef.current = tempoEstudoVal * 60;
 
     modalInstancePomodoro.current?.hide();
 
-    if (pomodoroIntervalRef.current) clearInterval(pomodoroIntervalRef.current);
-    let tempoAtual = tempoEstudoVal * 60;
-    let ciclo = 'foco';
-
-    pomodoroIntervalRef.current = setInterval(() => {
-      if (!pomodoroRodando) return;
-
-      if (tempoAtual <= 1) {
-        clearInterval(pomodoroIntervalRef.current);
-        setPomodoroRodando(false);
-
-        if (ciclo === 'foco') {
-          pausarEstudo();
-          Swal.fire({ icon: 'success', title: 'Foco concluído!', text: `${tempoPausa} min de pausa`, timer: 2000, showConfirmButton: false });
-          ciclo = 'pausa';
-          tempoAtual = tempoPausa * 60;
-          setPomodoroTempo(tempoAtual);
-          setModoPomodoro('pausa');
-          setPomodoroRodando(true);
-
-          setTimeout(() => {
-            if (pomodoroRodando) {
-              pomodoroIntervalRef.current = setInterval(() => {
-                if (!pomodoroRodando) return;
-                if (tempoAtual <= 1) {
-                  clearInterval(pomodoroIntervalRef.current);
-                  setPomodoroRodando(false);
-                  Swal.fire({ icon: 'info', title: 'Pausa concluída!', timer: 2000, showConfirmButton: false });
-                  setEstudoIdPomodoro(null);
-                } else {
-                  tempoAtual--;
-                  setPomodoroTempo(tempoAtual);
-                }
-              }, 1000);
-            }
-          }, 100);
-        }
-      } else {
-        tempoAtual--;
-        setPomodoroTempo(tempoAtual);
-      }
-    }, 1000);
+    clearInterval(pomodoroIntervalRef.current);
+    setPomodoroRodando(false);
+    setTimeout(() => {
+      iniciarPomodoro();
+    }, 100);
   };
 
-  // ==================== ESTUDO POR MATÉRIA ====================
-  const iniciarEstudo = (id) => {
-    const materia = materias.find(m => m.id === id);
-    if (!materia) return;
+  const pausarPomodoro = () => {
+    clearInterval(pomodoroIntervalRef.current);
+    setPomodoroRodando(false);
+  };
 
-    if (estudoAtual && estudoAtual !== id) {
-      pausarEstudo();
-    }
-
-    setEstudoAtual(id);
-
-    if (!tempoEstudo[id]) {
-      setTempoEstudo(prev => ({ ...prev, [id]: { total: 0, historico: {} } }));
-    }
-
-    const hoje = new Date().toISOString().split('T')[0];
-    setTempoEstudo(prev => {
-      const novo = { ...prev };
-      if (!novo[id]) novo[id] = { total: 0, historico: {} };
-      if (!novo[id].historico) novo[id].historico = {};
-      if (!novo[id].historico[hoje]) novo[id].historico[hoje] = 0;
-      return novo;
-    });
-
-    if (estudoIntervalRef.current) clearInterval(estudoIntervalRef.current);
-    estudoIntervalRef.current = setInterval(() => {
-      setTempoEstudo(prev => {
-        const novo = { ...prev };
-        if (novo[id] && novo[id].historico) {
-          novo[id].total = (novo[id].total || 0) + 1;
-          novo[id].historico[hoje] = (novo[id].historico[hoje] || 0) + 1;
-        }
-        return novo;
+  const salvarPomodoro = async () => {
+    if (modoPomodoroRef.current !== 'foco') {
+      return Swal.fire({
+        icon: 'info',
+        title: 'Modo Pausa',
+        text: 'O tempo de pausa não é computado no histórico de estudos.',
+        timer: 2000,
+        showConfirmButton: false
       });
-    }, 1000);
+    }
 
-    if (notificacoesAtivas) {
+    const tempoTotalFoco = tempoFocoConfigRef.current * 60;
+    const segundosEstudados = tempoTotalFoco - pomodoroTempoRef.current;
+
+    if (segundosEstudados < 10) {
+      return Swal.fire({
+        icon: 'info',
+        title: 'Tempo insuficiente',
+        text: 'Estude pelo menos 10 segundos antes de salvar.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+
+    pausarPomodoro();
+
+    const matId = estudoIdPomodoroRef.current;
+    const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
+    const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : 'Pomodoro';
+
+    const ok = await salvarSessaoAPI(matId || null, segundosEstudados, desc);
+    if (ok) {
+      modoPomodoroRef.current = 'foco';
+      setModoPomodoro('foco');
+      setPomodoroTempo(tempoFocoConfigRef.current * 60);
+    }
+  };
+
+  const resetarPomodoro = () => {
+    pausarPomodoro();
+    const tempoTotalFoco = tempoFocoConfigRef.current * 60;
+    const segundosEstudados = modoPomodoroRef.current === 'foco' ? tempoTotalFoco - pomodoroTempoRef.current : 0;
+
+    if (modoPomodoroRef.current === 'foco' && segundosEstudados >= 20) {
       Swal.fire({
-        icon: 'success',
-        title: `Estudando: ${materia.nome}`,
-        text: 'O tempo está sendo contado!',
-        timer: 1500,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      });
-    }
-  };
+        title: 'Zerar Pomodoro?',
+        html: `Você focou por <strong>${formatarTempo(segundosEstudados)}</strong>.<br/>Deseja salvar esse tempo no histórico antes de zerar?`,
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Salvar e Zerar',
+        denyButtonText: 'Apenas Zerar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        denyButtonColor: '#ef4444'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          const matId = estudoIdPomodoroRef.current;
+          const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
+          const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : 'Pomodoro';
+          await salvarSessaoAPI(matId || null, segundosEstudados, desc);
 
-  const pausarEstudo = () => {
-    if (estudoIntervalRef.current) {
-      clearInterval(estudoIntervalRef.current);
-      estudoIntervalRef.current = null;
-    }
-    if (estudoAtual) {
-      const materia = materias.find(m => m.id === estudoAtual);
-      if (notificacoesAtivas && materia) {
-        Swal.fire({
-          icon: 'info',
-          title: 'Estudo pausado',
-          text: `${materia.nome} - Tempo salvo!`,
-          timer: 2000,
-          showConfirmButton: false,
-          position: 'top-end',
-          toast: true
-        });
-      }
-    }
-    setEstudoAtual(null);
-  };
-
-  const finalizarEstudo = () => {
-    const materia = estudoAtual ? materias.find(m => m.id === estudoAtual) : null;
-    const hoje = new Date().toISOString().split('T')[0];
-    const tempoSessao = tempoEstudo[estudoAtual]?.historico?.[hoje] || 0;
-    const horas = Math.floor(tempoSessao / 3600);
-    const minutos = Math.floor((tempoSessao % 3600) / 60);
-
-    Swal.fire({
-      title: 'Finalizar estudo?',
-      html: `
-        <p>Matéria: <strong>${materia?.nome || 'Desconhecida'}</strong></p>
-        <p>Tempo nesta sessão: <strong>${horas}h ${minutos}min</strong></p>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, finalizar!',
-      cancelButtonText: 'Continuar estudando',
-      confirmButtonColor: '#22c55e'
-    }).then(result => {
-      if (result.isConfirmed) {
-        if (estudoIntervalRef.current) {
-          clearInterval(estudoIntervalRef.current);
-          estudoIntervalRef.current = null;
+          modoPomodoroRef.current = 'foco';
+          setModoPomodoro('foco');
+          setPomodoroTempo(tempoFocoConfigRef.current * 60);
+        } else if (result.isDenied) {
+          modoPomodoroRef.current = 'foco';
+          setModoPomodoro('foco');
+          setPomodoroTempo(tempoFocoConfigRef.current * 60);
         }
-        setEstudoAtual(null);
-        Swal.fire({
-          icon: 'success',
-          title: 'Estudo finalizado!',
-          text: `${materia?.nome} - ${horas}h ${minutos}min registrados!`,
-          timer: 2000,
-          showConfirmButton: false
-        });
-      }
-    });
-  };
-
-  const adicionarMateriaRelogio = () => {
-    const nomeInput = document.getElementById('novaMateriaRelogio');
-    const nome = nomeInput?.value.trim();
-    if (!nome) return;
-
-    const novaMateria = {
-      id: 'm' + Date.now(),
-      nome: nome,
-      cor: '#9f042c'
-    };
-    setMaterias(prev => [...prev, novaMateria]);
-    if (nomeInput) nomeInput.value = '';
-    Swal.fire({ icon: 'success', title: 'Matéria adicionada!', timer: 1500, showConfirmButton: false });
-  };
-
-  // ==================== METAS ====================
-  const calcularHorasEstudadas = (periodo) => {
-    const hoje = new Date();
-    let totalSegundos = 0;
-    const formatarData = (data) => {
-      const ano = data.getFullYear();
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const dia = String(data.getDate()).padStart(2, '0');
-      return `${ano}-${mes}-${dia}`;
-    };
-
-    const hojeStr = formatarData(hoje);
-    let dataInicioStr;
-
-    if (periodo === 'diaria') {
-      dataInicioStr = hojeStr;
-    } else if (periodo === 'semanal') {
-      const dataInicio = new Date();
-      dataInicio.setDate(hoje.getDate() - 7);
-      dataInicioStr = formatarData(dataInicio);
+      });
     } else {
-      const dataInicio = new Date();
-      dataInicio.setDate(hoje.getDate() - 30);
-      dataInicioStr = formatarData(dataInicio);
+      modoPomodoroRef.current = 'foco';
+      setModoPomodoro('foco');
+      setPomodoroTempo((modoPomodoroRef.current === 'foco' ? tempoFocoConfigRef.current : tempoPausaConfigRef.current) * 60);
     }
-
-    Object.values(tempoEstudo).forEach(materia => {
-      if (typeof materia === 'number') {
-        totalSegundos += materia;
-      } else if (materia.historico) {
-        Object.entries(materia.historico).forEach(([dataStr, segundos]) => {
-          if (dataStr >= dataInicioStr && dataStr <= hojeStr) {
-            totalSegundos += segundos;
-          }
-        });
-      } else if (materia.total) {
-        totalSegundos += materia.total;
-      }
-    });
-
-    return totalSegundos / 3600;
   };
 
-  const atualizarMeta = () => {
-    const metaValor = metas[metaAtiva];
-    const totalHoras = calcularHorasEstudadas(metaAtiva);
-    const progresso = Math.min((totalHoras / metaValor) * 100, 100);
-    const faltam = Math.max(metaValor - totalHoras, 0);
-
-    return { totalHoras, progresso, faltam, metaValor };
-  };
-
-  const abrirModalMeta = () => {
-    const meta = metas;
-    const diariaH = Math.floor(meta.diaria);
-    const diariaM = Math.round((meta.diaria - diariaH) * 60);
-    const semanalH = Math.floor(meta.semanal);
-    const semanalM = Math.round((meta.semanal - semanalH) * 60);
-    const mensalH = Math.floor(meta.mensal);
-    const mensalM = Math.round((meta.mensal - mensalH) * 60);
-
-    const diariaHorasInput = document.getElementById('metaDiariaHoras');
-    const diariaMinutosInput = document.getElementById('metaDiariaMinutos');
-    const semanalHorasInput = document.getElementById('metaSemanalHoras');
-    const semanalMinutosInput = document.getElementById('metaSemanalMinutos');
-    const mensalHorasInput = document.getElementById('metaMensalHoras');
-    const mensalMinutosInput = document.getElementById('metaMensalMinutos');
-
-    if (diariaHorasInput) diariaHorasInput.value = diariaH;
-    if (diariaMinutosInput) diariaMinutosInput.value = diariaM;
-    if (semanalHorasInput) semanalHorasInput.value = semanalH;
-    if (semanalMinutosInput) semanalMinutosInput.value = semanalM;
-    if (mensalHorasInput) mensalHorasInput.value = mensalH;
-    if (mensalMinutosInput) mensalMinutosInput.value = mensalM;
-
-    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-    
-    if (plano === 'gratuito') {
-      Swal.fire({
-        icon: 'info',
-        title: 'Recurso Premium',
-        html: 'A <strong>Meta de Estudo</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
-        confirmButtonText: 'Ver Planos',
-        confirmButtonColor: '#9f042c',
-        showCancelButton: true,
-        cancelButtonText: 'Fechar'
-      }).then(result => {
-        if (result.isConfirmed) {
-          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
-        }
-      });
-      return;
-    }
-
-    modalInstanceMeta.current?.show();
-  };
-
-  const salvarMeta = () => {
-    const diariaHoras = parseInt(document.getElementById('metaDiariaHoras')?.value || 0);
-    const diariaMinutos = parseInt(document.getElementById('metaDiariaMinutos')?.value || 0);
-    const semanalHoras = parseInt(document.getElementById('metaSemanalHoras')?.value || 0);
-    const semanalMinutos = parseInt(document.getElementById('metaSemanalMinutos')?.value || 0);
-    const mensalHoras = parseInt(document.getElementById('metaMensalHoras')?.value || 0);
-    const mensalMinutos = parseInt(document.getElementById('metaMensalMinutos')?.value || 0);
-
-    const novasMetas = {
-      diaria: converterParaHoras(diariaHoras, diariaMinutos),
-      semanal: converterParaHoras(semanalHoras, semanalMinutos),
-      mensal: converterParaHoras(mensalHoras, mensalMinutos)
-    };
-
-    if (novasMetas.diaria <= 0 && novasMetas.semanal <= 0 && novasMetas.mensal <= 0) {
-      Swal.fire({ icon: 'warning', title: 'Meta inválida!', text: 'Defina pelo menos 1 minuto para uma das metas.', timer: 2000 });
-      return;
-    }
-
-    setMetas(novasMetas);
-    modalInstanceMeta.current?.hide();
-    Swal.fire({
-      icon: 'success',
-      title: 'Metas atualizadas!',
-      html: `
-        Diária: ${formatarMeta(novasMetas.diaria)}<br>
-        Semanal: ${formatarMeta(novasMetas.semanal)}<br>
-        Mensal: ${formatarMeta(novasMetas.mensal)}
-      `,
-      timer: 2500,
-      showConfirmButton: false
-    });
-  };
-
-  // ==================== RELÓGIO INTELIGENTE ====================
-  const obterMateriaAtual = () => {
-    console.log("Buscando matéria atual...");
-    console.log("Cronograma atual:", cronograma);
-    
-    if (!cronograma || cronograma.length === 0) {
-      console.log("Cronograma vazio");
-      return null;
-    }
-    
-    const diasSemana = {
-      1: 'segunda',
-      2: 'terca',
-      3: 'quarta',
-      4: 'quinta',
-      5: 'sexta',
-      6: 'sabado',
-      0: 'domingo'
-    };
-    
-    const hoje = new Date();
-    const diaSemana = diasSemana[hoje.getDay()];
-    const horaAtual = String(hoje.getHours()).padStart(2, '0') + ':' + String(hoje.getMinutes()).padStart(2, '0');
-    
-    console.log("Dia da semana:", diaSemana);
-    console.log("Hora atual:", horaAtual);
-    
-    const blocosHoje = cronograma.filter(b => b.dia === diaSemana);
-    console.log("Blocos de hoje:", blocosHoje);
-    
-    const blocoAtual = blocosHoje.find(b => {
-      return horaAtual >= b.inicio && horaAtual < b.fim;
-    });
-    
-    if (blocoAtual) {
-      console.log("Matéria atual encontrada:", blocoAtual.materia.nome);
-      return {
-        materia: blocoAtual.materia,
-        inicio: blocoAtual.inicio,
-        fim: blocoAtual.fim
-      };
-    }
-    
-    console.log("Nenhuma matéria encontrada para esse horário");
-    return null;
-  };
-
-  // ==================== MODO FOCO PERSONALIZADO ====================
+  // ==================== MODO FOCO (REACT NATIVO) ====================
   const abrirModalModoFoco = () => {
-    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
-    
+    const plano = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
     if (plano === 'gratuito') {
-      Swal.fire({
+      return Swal.fire({
         icon: 'info',
         title: 'Recurso Premium',
-        html: 'O <strong>Modo Foco Personalizado</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        html: 'O <strong>Modo Foco</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
         confirmButtonText: 'Ver Planos',
         confirmButtonColor: '#9f042c',
         showCancelButton: true,
         cancelButtonText: 'Fechar'
-      }).then(result => {
+      }).then((result) => {
         if (result.isConfirmed) {
           window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
         }
       });
-      return;
     }
-    
     modalInstanceFoco.current?.show();
   };
 
@@ -810,172 +738,426 @@ export default function Relogio() {
     const tempoFoco = parseInt(document.getElementById('focoTempoPersonalizado')?.value || 25);
 
     if (!materiaId) {
-      Swal.fire({ icon: 'warning', title: 'Selecione uma matéria!', timer: 1500, showConfirmButton: false });
-      return;
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Selecione uma matéria!',
+        text: 'Escolha qual matéria você vai focar.',
+        timer: 1500,
+        showConfirmButton: false
+      });
     }
 
-    const materia = materias.find(m => m.id === materiaId);
-    if (!materia) return;
+    const mat = materias.find((m) => m.id_materia == materiaId);
+    if (!mat) return;
 
     modalInstanceFoco.current?.hide();
-    iniciarTimerFoco(materia, tempoFoco);
+
+    const segTotal = Math.max(1, tempoFoco) * 60;
+    setFocoMateria(mat);
+    setFocoTempoTotal(segTotal);
+    setFocoTempoRestante(segTotal);
+    setConfirmandoSaidaFoco(false);
+    setModoFocoAtivo(true);
+    setFocoRodando(true);
   };
 
-  const iniciarTimerFoco = (materia, tempoMinutos) => {
-    let tempoRestante = tempoMinutos * 60;
-    let focoAtivo = true;
-    let intervalId = null;
-    let containerExistente = document.getElementById('modoFocoContainer');
-    if (containerExistente) containerExistente.remove();
-
-    const container = document.createElement('div');
-    container.id = 'modoFocoContainer';
-    container.className = 'modo-foco-overlay';
-    container.innerHTML = `
-      <div class="modo-foco-card">
-        <div class="modo-foco-icon" style="background: ${materia.cor};">
-          <i class="bi bi-brain"></i>
-        </div>
-        <h1 class="modo-foco-titulo">${materia.nome}</h1>
-        <div id="focoTimer" class="modo-foco-timer">${String(tempoMinutos).padStart(2, '0')}:00</div>
-        <div class="modo-foco-progresso-bg">
-          <div id="focoProgresso" class="modo-foco-progresso-bar" style="background: ${materia.cor}; width: 100%;"></div>
-        </div>
-        <div class="modo-foco-botoes">
-          <button id="focoPausarBtn" class="modo-foco-btn modo-foco-btn-pausar">⏸ Pausar</button>
-          <button id="focoResetBtn" class="modo-foco-btn modo-foco-btn-reset">🔄 Reset</button>
-          <button id="focoSairBtn" class="modo-foco-btn modo-foco-btn-sair">✕ Sair</button>
-        </div>
-        <p id="focoFrase" class="modo-foco-frase">🎯 Foco total em ${materia.nome}! Você consegue!</p>
-      </div>
-    `;
-
-    document.body.appendChild(container);
-
-    const timerEl = document.getElementById('focoTimer');
-    const progressoEl = document.getElementById('focoProgresso');
-    const fraseEl = document.getElementById('focoFrase');
-    const pausarBtn = document.getElementById('focoPausarBtn');
-    const resetBtn = document.getElementById('focoResetBtn');
-    const sairBtn = document.getElementById('focoSairBtn');
-
-    const atualizarDisplay = () => {
-      if (timerEl) {
-        const minutos = Math.floor(tempoRestante / 60);
-        const segundos = tempoRestante % 60;
-        timerEl.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-      }
-      if (progressoEl) {
-        const progressoPercent = (tempoRestante / (tempoMinutos * 60)) * 100;
-        progressoEl.style.width = `${progressoPercent}%`;
-      }
-      if (fraseEl && focoAtivo) {
-        if (tempoRestante > (tempoMinutos * 60) * 0.8) {
-          fraseEl.textContent = `🚀 Começando com tudo! Mantenha o foco em ${materia.nome}!`;
-        } else if (tempoRestante > (tempoMinutos * 60) * 0.5) {
-          fraseEl.textContent = `💪 Continue assim! Você está indo bem!`;
-        } else if (tempoRestante > 60) {
-          fraseEl.textContent = `🎯 Quase lá! Mais um pouco!`;
-        } else if (tempoRestante > 0) {
-          fraseEl.textContent = `⚡ Último minuto! Dá pra finalizar com força!`;
-        }
-      }
-    };
-
-    intervalId = setInterval(() => {
-      if (!focoAtivo) return;
-      if (tempoRestante > 0) {
-        tempoRestante--;
-        atualizarDisplay();
-      } else {
-        clearInterval(intervalId);
-        iniciarEstudo(materia.id);
-        Swal.fire({
-          icon: 'success',
-          title: '🎉 Tempo concluído!',
-          text: `Parabéns! Você focou ${tempoMinutos} minutos em ${materia.nome}!`,
-          timer: 3000,
-          showConfirmButton: false
-        });
-        setTimeout(() => container.remove(), 3000);
-      }
-    }, 1000);
-
-    if (pausarBtn) {
-      pausarBtn.onclick = () => {
-        focoAtivo = !focoAtivo;
-        pausarBtn.textContent = focoAtivo ? '⏸ Pausar' : '▶ Continuar';
-        if (fraseEl) {
-          fraseEl.textContent = focoAtivo 
-            ? `🎯 Foco total em ${materia.nome}!` 
-            : '⏸ Pausado. Respire fundo e volte quando estiver pronto!';
-        }
-      };
-    }
-
-    if (resetBtn) {
-      resetBtn.onclick = () => {
-        tempoRestante = tempoMinutos * 60;
-        focoAtivo = true;
-        atualizarDisplay();
-        if (pausarBtn) pausarBtn.textContent = '⏸ Pausar';
-        if (fraseEl) fraseEl.textContent = '🔄 Timer resetado! Vamos começar de novo!';
-      };
-    }
-
-    if (sairBtn) {
-      sairBtn.onclick = () => {
-        if (intervalId) clearInterval(intervalId);
-        container.remove();
-      };
-    }
-
-    atualizarDisplay();
-    iniciarEstudo(materia.id);
-  };
-
-  // Inicializar modais Bootstrap
   useEffect(() => {
-    if (window.bootstrap) {
-      if (modalPomodoroRef.current) modalInstancePomodoro.current = new window.bootstrap.Modal(modalPomodoroRef.current);
-      if (modalFocoRef.current) modalInstanceFoco.current = new window.bootstrap.Modal(modalFocoRef.current);
-      if (modalMetaRef.current) modalInstanceMeta.current = new window.bootstrap.Modal(modalMetaRef.current);
+    if (modoFocoAtivo && focoRodando) {
+      focoIntervalRef.current = setInterval(() => {
+        setFocoTempoRestante((prev) => {
+          if (prev <= 1) {
+            clearInterval(focoIntervalRef.current);
+            setFocoRodando(false);
+            salvarSessaoAPI(focoMateria?.id_materia, focoTempoTotal, `Modo Foco (${focoMateria?.nome})`);
+            Swal.fire({
+              icon: 'success',
+              title: '🎉 Foco concluído!',
+              text: `Parabéns! Você concluiu seus estudos em ${focoMateria?.nome || 'sua matéria'}!`,
+              timer: 3500,
+              showConfirmButton: false
+            });
+            setModoFocoAtivo(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(focoIntervalRef.current);
     }
-  }, []);
 
-  // Renderização da tabela de matérias
-  const renderTabelaMaterias = () => {
-    const hoje = new Date().toISOString().split('T')[0];
-    return (
-      <table className="tabela-estudo">
+    return () => clearInterval(focoIntervalRef.current);
+  }, [modoFocoAtivo, focoRodando, focoMateria, focoTempoTotal]);
+
+  const sairModoFoco = () => {
+    const tempoEstudado = focoTempoTotal - focoTempoRestante;
+    if (tempoEstudado >= 15 && focoMateria) {
+      // Pausa o cronômetro e exibe confirmação inline dentro do card
+      setFocoRodando(false);
+      setConfirmandoSaidaFoco(true);
+    } else {
+      setConfirmandoSaidaFoco(false);
+      setModoFocoAtivo(false);
+      setFocoRodando(false);
+    }
+  };
+
+  const salvarESairModoFoco = async () => {
+    const tempoEstudado = focoTempoTotal - focoTempoRestante;
+    if (focoMateria && tempoEstudado > 0) {
+      await salvarSessaoAPI(focoMateria.id_materia, tempoEstudado, `Modo Foco (${focoMateria.nome})`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Tempo registrado!',
+        text: `Seus estudos em "${focoMateria.nome}" foram salvos com sucesso.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+    setConfirmandoSaidaFoco(false);
+    setModoFocoAtivo(false);
+    setFocoRodando(false);
+  };
+
+  const sairSemSalvarModoFoco = () => {
+    setConfirmandoSaidaFoco(false);
+    setModoFocoAtivo(false);
+    setFocoRodando(false);
+  };
+
+  // ==================== METAS E RELÓGIO ====================
+  const calcularHorasEstudadas = (periodo) => {
+    const hoje = new Date();
+    let totalSegundos = 0;
+    const formatarData = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const hojeStr = formatarData(hoje);
+    let dataInicioStr = hojeStr;
+
+    if (periodo === 'semanal') {
+      const d = new Date();
+      d.setDate(hoje.getDate() - 7);
+      dataInicioStr = formatarData(d);
+    } else if (periodo === 'mensal') {
+      const d = new Date();
+      d.setDate(hoje.getDate() - 30);
+      dataInicioStr = formatarData(d);
+    }
+
+    historicoCronometro.forEach((sessao) => {
+      if (!sessao.created_at || !sessao.tempo_cronometro) return;
+      const dataSessao = sessao.created_at.split(' ')[0];
+      const dentroDoPeriodo = (periodo === 'diaria')
+        ? (dataSessao >= hojeStr)
+        : (dataSessao >= dataInicioStr);
+
+      if (dentroDoPeriodo) {
+        const partes = sessao.tempo_cronometro.split(':');
+        const segs =
+          (parseInt(partes[0]) || 0) * 3600 +
+          (parseInt(partes[1]) || 0) * 60 +
+          (parseInt(partes[2]) || 0);
+        totalSegundos += segs;
+      }
+    });
+
+    return totalSegundos / 3600;
+  };
+
+  const abrirModalMeta = () => {
+    const plano = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
+    if (plano === 'gratuito') {
+      return Swal.fire({
+        icon: 'info',
+        title: 'Recurso Premium',
+        html: 'A <strong>Meta de Estudo</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        confirmButtonText: 'Ver Planos',
+        confirmButtonColor: '#9f042c',
+        showCancelButton: true,
+        cancelButtonText: 'Fechar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }));
+        }
+      });
+    }
+    modalInstanceMeta.current?.show();
+  };
+
+  const salvarMeta = () => {
+    const dH = parseInt(document.getElementById('metaDiariaHoras')?.value || 0);
+    const dM = parseInt(document.getElementById('metaDiariaMinutos')?.value || 0);
+    const sH = parseInt(document.getElementById('metaSemanalHoras')?.value || 0);
+    const sM = parseInt(document.getElementById('metaSemanalMinutos')?.value || 0);
+    const mH = parseInt(document.getElementById('metaMensalHoras')?.value || 0);
+    const mM = parseInt(document.getElementById('metaMensalMinutos')?.value || 0);
+
+    const novasMetas = {
+      diaria: converterParaHoras(dH, dM),
+      semanal: converterParaHoras(sH, sM),
+      mensal: converterParaHoras(mH, mM)
+    };
+    setMetas(novasMetas);
+    modalInstanceMeta.current?.hide();
+    Swal.fire({ icon: 'success', title: 'Metas salvas!', timer: 1500, showConfirmButton: false });
+  };
+
+  const obterMateriaAtual = () => {
+    if (!cronograma || cronograma.length === 0) return null;
+    const diasSemana = { 1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo' };
+    const hoje = new Date();
+    const diaSemana = diasSemana[hoje.getDay()];
+    const horaAtual = String(hoje.getHours()).padStart(2, '0') + ':' + String(hoje.getMinutes()).padStart(2, '0');
+
+    const blocosHoje = cronograma.filter((b) => b.dia_semana === diaSemana);
+    const blocoAtual = blocosHoje.find(
+      (b) => horaAtual >= b.hora_inicio?.substring(0, 5) && horaAtual < b.hora_final?.substring(0, 5)
+    );
+
+    if (blocoAtual) {
+      return {
+        materia: { nome: blocoAtual.nome_materia, id_materia: blocoAtual.id_materia },
+        inicio: blocoAtual.hora_inicio.substring(0, 5),
+        fim: blocoAtual.hora_final.substring(0, 5)
+      };
+    }
+    return null;
+  };
+
+  const materiaAtualCronograma = obterMateriaAtual();
+  const metaValor = metas[metaAtiva] || 0;
+  const totalHoras = calcularHorasEstudadas(metaAtiva);
+  const progresso = metaValor > 0 ? Math.min((totalHoras / metaValor) * 100, 100) : 0;
+  const faltam = Math.max(metaValor - totalHoras, 0);
+
+  return (
+    <section id="relogioSection">
+      <h1>Relógio de Estudos</h1>
+
+      {/* ==================== ESTUDO POR MATÉRIA ==================== */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+        <h3 className="titulo-materia" style={{ margin: 0 }}>Estudo por Matéria</h3>
+        <button
+          onClick={() => {
+            setCriandoMateriaTabela(!criandoMateriaTabela);
+            setNomeNovaMateria('');
+          }}
+          style={{
+            background: criandoMateriaTabela ? '#64748b' : 'var(--cor-primaria)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '7px 14px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+          title={criandoMateriaTabela ? 'Fechar formulário' : 'Cadastrar nova matéria'}
+        >
+          {criandoMateriaTabela ? (
+            <>✕ Cancelar</>
+          ) : (
+            <><i className="bi bi-plus-lg"></i> Adicionar Matéria</>
+          )}
+        </button>
+      </div>
+
+      {/* Formulário Inline de Nova Matéria na Tabela */}
+      {criandoMateriaTabela && (
+        <div style={{
+          background: '#ffffff',
+          border: '1.5px dashed var(--cor-primaria)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#1f2937', fontWeight: 700 }}>
+            ✨ Cadastrar Nova Matéria
+          </h4>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 240px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                Nome da Matéria:
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Ex: Biologia, Literatura, Redação"
+                value={nomeNovaMateria}
+                onChange={(e) => setNomeNovaMateria(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') salvarNovaMateria('tabela'); }}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                Cor:
+              </label>
+              <input
+                type="color"
+                value={corNovaMateria}
+                onChange={(e) => setCorNovaMateria(e.target.value)}
+                style={{ width: '48px', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
+                title="Escolha a cor da matéria"
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn"
+                disabled={salvandoMateria}
+                onClick={() => salvarNovaMateria('tabela')}
+                style={{ background: 'var(--cor-primaria)', color: '#fff', fontWeight: '600', padding: '8px 16px' }}
+              >
+                {salvandoMateria ? 'Salvando...' : 'Cadastrar Matéria'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setCriandoMateriaTabela(false);
+                  setNomeNovaMateria('');
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <table className="tabela-estudo mb-5">
         <thead>
-          <tr><th>Matéria</th><th>Tempo Estudado</th><th>Ação</th></tr>
+          <tr>
+            <th>Matéria</th>
+            <th>Ação</th>
+          </tr>
         </thead>
         <tbody>
           {materias.length === 0 ? (
-            <tr><td colSpan="3" style={{ textAlign: 'center' }}>Nenhuma matéria cadastrada</td></tr>
+            <tr>
+              <td colSpan="2" style={{ textAlign: 'center', padding: '25px 15px' }}>
+                <p style={{ margin: '0 0 10px 0', color: '#6b7280' }}>
+                  Nenhuma matéria encontrada.
+                </p>
+                <button
+                  onClick={() => setCriandoMateriaTabela(true)}
+                  style={{
+                    background: 'var(--cor-primaria)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <i className="bi bi-plus-circle"></i> Cadastrar Primeira Matéria
+                </button>
+              </td>
+            </tr>
           ) : (
-            materias.map(m => {
-              const dados = tempoEstudo[m.id];
-              let tempoSegundos = 0;
-              if (dados) {
-                if (typeof dados === 'number') tempoSegundos = dados;
-                else if (dados.historico && dados.historico[hoje]) tempoSegundos = dados.historico[hoje];
-                else if (dados.total) tempoSegundos = dados.total;
-              }
-              const isEstudando = estudoAtual === m.id;
+            materias.map((m) => {
+              const isEstaMateria = estudoAtual?.id_materia === m.id_materia;
               return (
-                <tr key={m.id} style={{ background: isEstudando ? '#fef2f2' : 'transparent' }}>
-                  <td>{m.nome} {isEstudando && <span style={{ color: '#22c55e' }}> ● Estudando</span>}</td>
-                  <td>{formatarTempo(tempoSegundos)}</td>
+                <tr key={m.id_materia} style={{ background: isEstaMateria ? '#fef2f2' : 'transparent' }}>
+                  <td style={{ textAlign: 'left', paddingLeft: '20px' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        background: m.cor || 'var(--cor-primaria)',
+                        marginRight: '8px'
+                      }}
+                    ></span>
+                    <strong>{m.nome}</strong>
+                    {isEstaMateria && (
+                      <span
+                        style={{
+                          marginLeft: '10px',
+                          fontWeight: '600',
+                          color: estudoPausado ? '#f59e0b' : '#22c55e'
+                        }}
+                      >
+                        {estudoPausado ? '⏸ Pausado' : '● Estudando'} ({formatarTempo(segundosSessaoAtual)})
+                      </span>
+                    )}
+                  </td>
                   <td>
-                    {isEstudando ? (
-                      <>
-                        <button onClick={pausarEstudo} style={{ background: '#f59e0b' }}>⏸</button>
-                        <button onClick={finalizarEstudo} style={{ background: '#ef4444' }}>⏹ Finalizar</button>
-                      </>
+                    {isEstaMateria ? (
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        {estudoPausado ? (
+                          <button
+                            onClick={() => iniciarEstudo(m.id_materia)}
+                            style={{
+                              background: '#22c55e',
+                              color: 'white',
+                              border: 'none',
+                              padding: '6px 14px',
+                              borderRadius: '30px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            ▶ Continuar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={pausarEstudo}
+                            style={{
+                              background: '#f59e0b',
+                              color: 'white',
+                              border: 'none',
+                              padding: '6px 14px',
+                              borderRadius: '30px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            ⏸ Pausar
+                          </button>
+                        )}
+                        <button
+                          onClick={finalizarEstudo}
+                          style={{
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            padding: '6px 14px',
+                            borderRadius: '30px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                          }}
+                        >
+                          ⏹ Finalizar
+                        </button>
+                      </div>
                     ) : (
-                      <button onClick={() => iniciarEstudo(m.id)} style={{ background: '#22c55e' }}>▶ Iniciar</button>
+                      <button
+                        onClick={() => iniciarEstudo(m.id_materia)}
+                        style={{
+                          background: '#22c55e',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 18px',
+                          borderRadius: '30px',
+                          cursor: 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        ▶ Iniciar
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -984,201 +1166,520 @@ export default function Relogio() {
           )}
         </tbody>
       </table>
-    );
-  };
 
-  const materiaAtualObj = obterMateriaAtual();
-  const { totalHoras, progresso, faltam, metaValor } = atualizarMeta();
-
-  return (
-    <section id="relogioSection">
-      <h1>Relógio de Estudos</h1>
-
-      {/* Adicionar Matéria */}
-      <div className="add-materia-relogio">
-        <input type="text" id="novaMateriaRelogio" placeholder="Nova matéria" />
-        <button onClick={adicionarMateriaRelogio}>Adicionar</button>
-      </div>
-
-      {/* Estudo por Matéria */}
-      <h3 className="titulo-materia">Estudo por Matéria</h3>
-      {renderTabelaMaterias()}
-
-      {/* Cards: Timer, Cronômetro, Pomodoro, Modo Foco */}
-      <div className="relogio-container">
-        {/* TIMER */}
+      {/* ==================== 4 CARDS PRINCIPAIS ==================== */}
+      <div
+        className="relogio-container"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '20px',
+          alignItems: 'stretch'
+        }}
+      >
+        {/* CARD 1: TIMER */}
         <div className="relogio-card">
-          <h3><i className="bi bi-hourglass-split"></i> Timer</h3>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', margin: '10px 0' }}>
-            <div style={{ textAlign: 'center' }}>
-              <input type="number" id="timerMinutos" placeholder="00" min="0" max="99" style={{ width: '55px', textAlign: 'center' }} />
-              <small style={{ display: 'block', fontSize: '0.65rem' }}>Min</small>
-            </div>
-            <span style={{ fontSize: '1.2rem' }}>:</span>
-            <div style={{ textAlign: 'center' }}>
-              <input type="number" id="timerSegundos" placeholder="00" min="0" max="59" style={{ width: '55px', textAlign: 'center' }} />
-              <small style={{ display: 'block', fontSize: '0.65rem' }}>Seg</small>
-            </div>
+          <h3>
+            <i className="bi bi-hourglass-split"></i> Timer
+          </h3>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '10px 0' }}>
+            <input
+              type="number"
+              id="timerMinutos"
+              placeholder="Min"
+              min="0"
+              max="180"
+              style={{ width: '60px', textAlign: 'center' }}
+            />
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>:</span>
+            <input
+              type="number"
+              id="timerSegundos"
+              placeholder="Seg"
+              min="0"
+              max="59"
+              style={{ width: '60px', textAlign: 'center' }}
+            />
           </div>
           <div className="relogio-botoes">
-            <button onClick={iniciarTimer}>Iniciar</button>
-            <button onClick={pararTimer}>Parar</button>
+            {!timerRodando ? (
+              <button onClick={iniciarTimer}>{timerTempo > 0 ? 'Continuar' : 'Iniciar'}</button>
+            ) : (
+              <button onClick={pararTimer}>Pausar</button>
+            )}
             <button onClick={resetarTimer}>Reset</button>
           </div>
-          <p id="timerDisplay">{formatarTempoCurto(timerTempo)}</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '10px' }}>
+            {formatarTempoCurto(timerTempo)}
+          </p>
         </div>
 
-        {/* CRONÔMETRO */}
+        {/* CARD 2: CRONÔMETRO AVULSO E INDEPENDENTE */}
         <div className="relogio-card">
-          <h3><i className="bi bi-stopwatch"></i> Cronômetro</h3>
-          <p id="cronometroDisplay">{formatarTempo(cronometro)}</p>
+          <h3>
+            <i className="bi bi-stopwatch"></i> Cronômetro
+          </h3>
+          <p style={{ fontSize: '1.6rem', fontWeight: 'bold', margin: '10px 0' }}>
+            {formatarTempo(cronometro)}
+          </p>
+
           <div className="relogio-botoes">
-            <button onClick={iniciarCronometro}>Iniciar</button>
-            <button onClick={pausarCronometro}>Pausar</button>
+            {!cronometroRodando ? (
+              <button onClick={iniciarCronometro}>
+                {cronometro > 0 ? 'Continuar' : 'Iniciar'}
+              </button>
+            ) : (
+              <button onClick={pausarCronometro}>Pausar</button>
+            )}
+            <button
+              onClick={salvarCronometro}
+              disabled={cronometro === 0}
+              style={{
+                opacity: cronometro === 0 ? 0.5 : 1,
+                background: cronometro > 0 ? '#22c55e' : undefined
+              }}
+              title="Salvar tempo no histórico"
+            >
+              Salvar
+            </button>
             <button onClick={resetarCronometro}>Reset</button>
           </div>
 
-          <div style={{ width: '100%', marginTop: '10px', textAlign: 'left' }}>
-            <div onClick={() => setAcordeonAberto(!acordeonAberto)} className="historico-acordeon-header" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
+          {/* ACORDEON DE HISTÓRICO */}
+          <div style={{ width: '100%', marginTop: '15px', textAlign: 'left' }}>
+            <div
+              onClick={() => setAcordeonAberto(!acordeonAberto)}
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                background: '#f9fafb',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}
+            >
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151' }}>
                 Histórico <span style={{ color: 'var(--cor-primaria)' }}>({historicoCronometro.length})</span>
               </span>
-              <span style={{ fontSize: '0.7rem' }}>{acordeonAberto ? '▼' : '▶'}</span>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                {acordeonAberto ? '▲' : '▼'}
+              </span>
             </div>
             {acordeonAberto && (
-              <div style={{ maxHeight: '150px', overflowY: 'auto', marginTop: '5px' }}>
-                <div style={{ fontSize: '0.75rem' }}>
-                  {historicoCronometro.length === 0 ? (
-                    <p style={{ textAlign: 'center', padding: '10px' }}>Nenhum tempo registrado</p>
-                  ) : (
-                    historicoCronometro.map(reg => (
-                      <div key={reg.id} className="historico-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px' }}>
-                        <div>
-                          <div style={{ fontWeight: '600' }}>{reg.tempoFormatado}</div>
-                          <div style={{ fontSize: '0.7rem' }}>{reg.data} às {reg.hora}</div>
+              <div
+                style={{
+                  maxHeight: '160px',
+                  overflowY: 'auto',
+                  marginTop: '6px',
+                  border: '1px solid #f3f4f6',
+                  borderRadius: '8px',
+                  background: '#ffffff'
+                }}
+              >
+                {historicoCronometro.length === 0 ? (
+                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', padding: '12px' }}>
+                    Nenhum tempo salvo ainda.
+                  </p>
+                ) : (
+                  historicoCronometro.map((item) => (
+                    <div
+                      key={item.id_cron}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 10px',
+                        borderBottom: '1px solid #f3f4f6'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#1f2937' }}>
+                          {item.tempo_cronometro}
                         </div>
-                        <button onClick={() => excluirRegistroCronometro(reg.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>✕</button>
+                        <div style={{ fontSize: '0.7rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          {item.nome_materia ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <span
+                                style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  background: item.cor_materia || '#9f042c'
+                                }}
+                              />
+                              {item.nome_materia}
+                            </span>
+                          ) : (
+                            <span>⏱ {item.descricao || 'Cronômetro'}</span>
+                          )}
+                          <span style={{ color: '#9ca3af' }}>• {item.created_at?.substring(5, 16)}</span>
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-                <button onClick={limparHistoricoCronometro} style={{ width: '100%', marginTop: '6px', padding: '5px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.7rem' }}>
-                  Limpar histórico
-                </button>
+                      <button
+                        onClick={() => excluirRegistroHistorico(item.id_cron)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          padding: '4px 6px',
+                          borderRadius: '4px'
+                        }}
+                        title="Excluir este registro"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* POMODORO */}
-        <div className="relogio-card">
-          <h3><i className="bi bi-circle-fill" style={{ color: '#ef4444', fontSize: '0.8rem' }}></i> Pomodoro</h3>
-          <p id="pomodoroDisplay">{formatarTempoCurto(pomodoroTempo)}</p>
+        {/* CARD 3: POMODORO */}
+        <div className="relogio-card" id="cardPomodoro">
+          <h3>
+            <i
+              className="bi bi-circle-fill"
+              style={{
+                color: modoPomodoro === 'foco' ? '#ef4444' : '#22c55e',
+                fontSize: '0.8rem',
+                marginRight: '6px'
+              }}
+            ></i>
+            Pomodoro
+          </h3>
+          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '10px 0' }}>
+            {formatarTempoCurto(pomodoroTempo)}
+          </p>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              marginBottom: '8px',
+              color: modoPomodoro === 'foco' ? '#ef4444' : '#22c55e'
+            }}
+          >
+            {modoPomodoro === 'foco' ? '🎯 Ciclo de Foco' : '☕ Pausa / Descanso'}
+            {estudoIdPomodoro && (
+              <span style={{ display: 'block', color: '#6b7280', fontWeight: 'normal', marginTop: '2px' }}>
+                Matéria: <strong>{materias.find((m) => String(m.id_materia) === String(estudoIdPomodoro))?.nome || 'Geral'}</strong>
+              </span>
+            )}
+          </div>
           <div className="relogio-botoes">
-            <button onClick={abrirModalPomodoro}>Iniciar</button>
-            <button onClick={pausarPomodoro}>Pausar</button>
+            {!pomodoroRodando ? (
+              <button onClick={iniciarPomodoro}>
+                {pomodoroTempo < (modoPomodoro === 'foco' ? tempoFocoConfig : tempoPausaConfig) * 60 ? 'Continuar' : 'Iniciar'}
+              </button>
+            ) : (
+              <button onClick={pausarPomodoro}>Pausar</button>
+            )}
+            <button
+              onClick={salvarPomodoro}
+              disabled={modoPomodoro !== 'foco' || pomodoroTempo >= tempoFocoConfig * 60}
+              style={{
+                opacity: modoPomodoro !== 'foco' || pomodoroTempo >= tempoFocoConfig * 60 ? 0.5 : 1,
+                background: modoPomodoro === 'foco' && pomodoroTempo < tempoFocoConfig * 60 ? '#22c55e' : undefined
+              }}
+              title="Salvar tempo estudado até agora no histórico"
+            >
+              Salvar
+            </button>
             <button onClick={resetarPomodoro}>Reset</button>
+            <button
+              onClick={abrirModalPomodoro}
+              style={{ background: '#4b5563' }}
+              title="Personalizar tempos e matéria"
+            >
+              ⚙
+            </button>
           </div>
         </div>
 
-        {/* MODO FOCO */}
+        {/* CARD 4: MODO FOCO */}
         <div className="relogio-card">
-          <h3><i className="bi bi-lightbulb"></i> Modo Foco</h3>
-          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '15px 0' }}>Foco total em uma matéria com tempo personalizado</p>
+          <h3>
+            <i className="bi bi-lightbulb"></i> Modo Foco
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '15px 0' }}>
+            Foco total em tela cheia com matéria e temporizador imersivo.
+          </p>
           <div className="relogio-botoes">
-            <button onClick={abrirModalModoFoco}>Iniciar Foco</button>
+            <button onClick={abrirModalModoFoco} style={{ width: '100%', padding: '10px' }}>
+              🧠 Iniciar Modo Foco
+            </button>
           </div>
-          <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '10px' }}>25 min padrão</p>
         </div>
       </div>
 
-      {/* Relógio Inteligente + Meta */}
-      <div className="relogio-duas-colunas">
+      {/* ==================== RELÓGIO INTELIGENTE + META ==================== */}
+      <div
+        className="relogio-duas-colunas"
+        style={{ marginTop: '30px', display: 'flex', gap: '30px', flexWrap: 'wrap' }}
+      >
         {/* Relógio Inteligente */}
-        <div id="relogioInfo" className="relogio-info-card">
+        <div className="relogio-info-card" style={{ flex: 1 }}>
           <div className="relogio-topo">
-            <h2 id="materiaRelogio">{materiaAtualObj?.materia?.nome || 'Nenhuma matéria'}</h2>
-            <p id="horarioRelogio">{materiaAtualObj ? `${materiaAtualObj.inicio} - ${materiaAtualObj.fim}` : '--:-- - --:--'}</p>
-          </div>
-          <div className="relogio-meio">
-            <p id="tempoRestante">aguardando...</p>
-          </div>
-          <div className="relogio-stats">
-            <div className="stat">
-              <span>Hoje</span>
-              <strong id="tempoHoje">{formatarTempo(totalHoras * 3600)}</strong>
-            </div>
-            <div className="stat">
-              <span>Streak</span>
-              <strong id="streakRelogio">{localStorage.getItem('streak') || 0} dias</strong>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px', width: '100%' }}>
-            <button className="btn-modo-auto" onClick={() => setModoEstudo('auto')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: 'none', background: 'var(--cor-primaria)', color: 'white', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
-              Modo Automático
-            </button>
-            <button className="btn-pausar-auto" onClick={() => setModoEstudo('manual')} style={{ flex: 1, padding: '10px', borderRadius: '40px', border: '2px solid var(--cor-primaria)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
-              Pausar Automático
-            </button>
-          </div>
-
-          <div className="relogio-notificacao-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '12px', padding: '8px 12px', borderRadius: '12px' }}>
-            <span style={{ fontSize: '0.75rem' }}>Notificar ao iniciar matéria</span>
-            <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={notificacoesAtivas} onChange={(e) => setNotificacoesAtivas(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
-              <span style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: notificacoesAtivas ? '#22c55e' : '#d1d5db', borderRadius: '22px', transition: '0.3s' }}>
-                <span style={{ position: 'absolute', height: '18px', width: '18px', left: notificacoesAtivas ? '19px' : '3px', bottom: '2px', backgroundColor: 'white', borderRadius: '50%', transition: '0.3s' }}></span>
-              </span>
-            </label>
-          </div>
-
-          <p id="statusModoAuto" style={{ fontSize: '0.75rem', marginTop: '10px', textAlign: 'center', color: modoEstudo === 'auto' ? '#22c55e' : '#f59e0b' }}>
-            {modoEstudo === 'auto' ? 'Modo automático ativo - Seguindo o cronograma' : 'Modo automático pausado - Controle manual ativo'}
-          </p>
-
-          <div className="relogio-explicacao-box" style={{ marginTop: '12px', padding: '10px', borderRadius: '12px', width: '100%' }}>
-            <p style={{ fontSize: '0.7rem', margin: 0, textAlign: 'left' }}>
-              <strong>Conectado ao Cronograma:</strong> Este relógio identifica automaticamente qual matéria você deveria estar estudando agora, baseado no dia da semana e horário.
+            <h2>{materiaAtualCronograma?.materia?.nome || 'Nenhuma matéria agora'}</h2>
+            <p>
+              {materiaAtualCronograma
+                ? `${materiaAtualCronograma.inicio} - ${materiaAtualCronograma.fim}`
+                : '--:-- - --:--'}
             </p>
+          </div>
+          <div className="relogio-meio" style={{ textAlign: 'center', margin: '20px 0' }}>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--cor-primaria)' }}>
+              {estudoAtual
+                ? `Sessão ativa: ${formatarTempo(segundosSessaoAtual)}`
+                : 'Aguardando início...'}
+            </p>
+          </div>
+          <div className="relogio-stats" style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+            <div
+              className="stat"
+              style={{
+                background: '#f8fafc',
+                padding: '10px 20px',
+                borderRadius: '12px',
+                flex: 1,
+                textAlign: 'center'
+              }}
+            >
+              <span style={{ fontSize: '0.8rem', color: '#666' }}>Hoje</span>
+              <strong style={{ display: 'block', fontSize: '1.2rem' }}>
+                {formatarTempo(calcularHorasEstudadas('diaria') * 3600)}
+              </strong>
+            </div>
           </div>
         </div>
 
         {/* Meta de Estudo */}
-        <div id="metaCard" className="meta-card-escuro">
-          <div className="meta-header-escuro">
-            <h3>Meta de Estudo</h3>
-            <button className="btn-editar-meta-escuro" onClick={abrirModalMeta}>
+        <div
+          className="meta-card-escuro"
+          style={{
+            flex: 1,
+            background: 'white',
+            padding: '20px',
+            borderRadius: '24px',
+            border: '1px solid #eef2ff',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+          }}
+        >
+          <div
+            className="meta-header-escuro"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '15px'
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#1f2937' }}>Meta de Estudo</h3>
+            <button
+              onClick={abrirModalMeta}
+              style={{
+                background: '#f1f5f9',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                color: 'var(--cor-primaria)',
+                cursor: 'pointer'
+              }}
+              title="Editar metas"
+            >
               <i className="bi bi-pencil-fill"></i>
             </button>
           </div>
-          <div className="meta-tipo-selector">
-            {['diaria', 'semanal', 'mensal'].map(tipo => (
-              <button key={tipo} className={`meta-tipo-btn ${metaAtiva === tipo ? 'active' : ''}`} onClick={() => setMetaAtiva(tipo)}>
+
+          <div
+            className="meta-tipo-selector"
+            style={{
+              display: 'flex',
+              gap: '5px',
+              background: '#f1f5f9',
+              borderRadius: '40px',
+              padding: '4px',
+              marginBottom: '20px'
+            }}
+          >
+            {['diaria', 'semanal', 'mensal'].map((tipo) => (
+              <button
+                key={tipo}
+                className={`meta-tipo-btn ${metaAtiva === tipo ? 'active' : ''}`}
+                onClick={() => setMetaAtiva(tipo)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  border: 'none',
+                  borderRadius: '30px',
+                  background: metaAtiva === tipo ? 'var(--cor-primaria)' : 'transparent',
+                  color: metaAtiva === tipo ? 'white' : '#64748b',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
                 {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
               </button>
             ))}
           </div>
-          <div className="meta-conteudo">
-            <p id="metaTextoResumo" className="meta-texto-resumo">
-              {progresso >= 100 ? `✅ Meta batida! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}` :
-               progresso >= 75 ? `🎯 Quase lá! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}` :
-               progresso >= 50 ? `📚 Na metade! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}` :
-               progresso > 0 ? `🚀 Começando! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}` :
-               `📖 Nenhum estudo ainda. Meta: ${formatarMeta(metaValor)}`}
-            </p>
-            <div className="meta-progresso-escuro">
-              <div id="metaBarraResumo" className={`meta-barra-escuro ${progresso >= 100 ? 'alta' : progresso >= 50 ? 'media' : 'baixa'}`} style={{ width: `${progresso}%` }}></div>
-            </div>
-            <p id="metaRestanteResumo" className="meta-restante-escuro">
-              {faltam <= 0 ? '✅ Concluído!' : `⏳ Faltam ${formatarMeta(faltam)}`}
-            </p>
+
+          <p
+            className="meta-texto-resumo"
+            style={{
+              textAlign: 'center',
+              fontWeight: 'bold',
+              color: 'var(--cor-primaria)',
+              marginBottom: '10px'
+            }}
+          >
+            {progresso >= 100
+              ? `✅ Meta batida! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`
+              : progresso > 0
+              ? `🚀 ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`
+              : `📖 Nenhum estudo registrado. Meta: ${formatarMeta(metaValor)}`}
+          </p>
+
+          <div
+            className="meta-progresso-escuro"
+            style={{
+              background: '#e5e7eb',
+              borderRadius: '20px',
+              height: '12px',
+              overflow: 'hidden',
+              margin: '15px 0'
+            }}
+          >
+            <div
+              style={{
+                width: `${progresso}%`,
+                height: '100%',
+                background: progresso >= 100 ? '#22c55e' : progresso >= 50 ? '#f59e0b' : '#ef4444',
+                borderRadius: '20px',
+                transition: 'width 0.5s'
+              }}
+            ></div>
           </div>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', margin: 0 }}>
+            {faltam <= 0 ? '✅ Concluído!' : `⏳ Faltam ${formatarMeta(faltam)}`}
+          </p>
         </div>
       </div>
 
-      {/* Modal Pomodoro */}
-      <div className="modal fade" id="modalPomodoro" ref={modalPomodoroRef} tabIndex="-1" aria-hidden="true">
+      {/* ==================== OVERLAY MODO FOCO (REACT NATIVO) ==================== */}
+      {modoFocoAtivo && (
+        <div className="modo-foco-overlay">
+          <div className="modo-foco-card">
+            <div
+              className="modo-foco-icon"
+              style={{ background: focoMateria?.cor || 'var(--cor-primaria)' }}
+            >
+              <i className="bi bi-brain"></i>
+            </div>
+            <h1 className="modo-foco-titulo">{focoMateria?.nome || 'Modo Foco'}</h1>
+            <div className="modo-foco-timer">{formatarTempoCurto(focoTempoRestante)}</div>
+
+            {/* Barra de progresso */}
+            <div className="modo-foco-progresso-bg">
+              <div
+                className="modo-foco-progresso-bar"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.max(0, ((focoTempoTotal - focoTempoRestante) / (focoTempoTotal || 1)) * 100)
+                  )}%`,
+                  background: focoMateria?.cor || 'var(--cor-primaria)'
+                }}
+              />
+            </div>
+
+            {confirmandoSaidaFoco ? (
+              <div
+                className="modo-foco-confirmacao"
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  padding: '18px',
+                  borderRadius: '20px',
+                  margin: '20px 0',
+                  textAlign: 'center'
+                }}
+              >
+                <p style={{ margin: '0 0 6px 0', fontWeight: '700', fontSize: '1.05rem', color: '#1f2937' }}>
+                  Sair do Modo Foco?
+                </p>
+                <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: '#4b5563' }}>
+                  Você focou por <strong>{formatarTempo(focoTempoTotal - focoTempoRestante)}</strong> em <strong>{focoMateria?.nome}</strong>.<br />
+                  Deseja salvar esse tempo no histórico?
+                </p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ background: '#22c55e', color: '#fff', fontWeight: '600', padding: '8px 16px', borderRadius: '30px' }}
+                    onClick={salvarESairModoFoco}
+                  >
+                    💾 Salvar e Sair
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger"
+                    style={{ fontWeight: '600', padding: '8px 16px', borderRadius: '30px' }}
+                    onClick={sairSemSalvarModoFoco}
+                  >
+                    Sair sem Salvar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    style={{ fontWeight: '600', padding: '8px 16px', borderRadius: '30px' }}
+                    onClick={() => {
+                      setConfirmandoSaidaFoco(false);
+                      setFocoRodando(true);
+                    }}
+                  >
+                    Continuar no Foco
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="modo-foco-botoes">
+                <button
+                  type="button"
+                  className="modo-foco-btn modo-foco-btn-pausar"
+                  onClick={() => setFocoRodando((prev) => !prev)}
+                >
+                  {focoRodando ? '⏸ Pausar' : '▶ Continuar'}
+                </button>
+                <button
+                  type="button"
+                  className="modo-foco-btn modo-foco-btn-reset"
+                  onClick={() => setFocoTempoRestante(focoTempoTotal)}
+                >
+                  🔄 Reiniciar
+                </button>
+                <button
+                  type="button"
+                  className="modo-foco-btn modo-foco-btn-sair"
+                  onClick={sairModoFoco}
+                >
+                  ✕ Sair
+                </button>
+              </div>
+            )}
+
+            <p className="modo-foco-frase">"O foco determina a sua realidade. Mantenha a concentração!"</p>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAIS BOOTSTRAP ==================== */}
+      {/* Modal Pomodoro Personalizado */}
+      <div className="modal fade" id="modalPomodoro" ref={modalPomodoroRef} tabIndex="-1" data-bs-focus="false">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -1187,60 +1688,263 @@ export default function Relogio() {
             </div>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label fw-bold">Matéria</label>
-                <select id="pomodoroMateria" className="form-select">
-                  <option value="">Selecione uma matéria</option>
-                  {materias.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-label fw-bold" style={{ margin: 0 }}>
+                    {criandoMateriaPomodoro ? 'Nova Matéria' : 'Matéria (Opcional)'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCriandoMateriaPomodoro(!criandoMateriaPomodoro);
+                      setNomeNovaMateria('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: criandoMateriaPomodoro ? '#6b7280' : 'var(--cor-primaria)',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    {criandoMateriaPomodoro ? '✕ Escolher da lista' : '+ Nova Matéria'}
+                  </button>
+                </div>
+
+                {criandoMateriaPomodoro ? (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <div className="mb-2">
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                        Nome da matéria:
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Ex: Matemática, Redação, Física"
+                        value={nomeNovaMateria}
+                        onChange={(e) => setNomeNovaMateria(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') salvarNovaMateria('pomodoro'); }}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="mb-3" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                          Cor:
+                        </label>
+                        <input
+                          type="color"
+                          value={corNovaMateria}
+                          onChange={(e) => setCorNovaMateria(e.target.value)}
+                          style={{ width: '42px', height: '36px', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
+                        />
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '16px' }}>
+                        Cor para gráficos e estatísticas
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        disabled={salvandoMateria}
+                        onClick={() => salvarNovaMateria('pomodoro')}
+                        style={{ background: 'var(--cor-primaria)', color: '#fff', fontWeight: '600' }}
+                      >
+                        {salvandoMateria ? 'Salvando...' : '✓ Salvar e Selecionar'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => {
+                          setCriandoMateriaPomodoro(false);
+                          setNomeNovaMateria('');
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <select id="pomodoroMateria" className="form-select">
+                    <option value="">Nenhuma matéria (Geral)</option>
+                    {materias.map((m) => (
+                      <option key={m.id_materia} value={m.id_materia}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">⏱ Tempo de Estudo (minutos)</label>
-                <input type="number" id="pomodoroTempoEstudo" className="form-control" defaultValue="25" min="1" max="120" />
+                <label className="form-label fw-bold">Tempo de Estudo (minutos)</label>
+                <input
+                  type="number"
+                  id="pomodoroTempoEstudo"
+                  className="form-control"
+                  defaultValue="25"
+                  min="1"
+                  max="120"
+                />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">☕ Tempo de Pausa (minutos)</label>
-                <input type="number" id="pomodoroTempoPausa" className="form-control" defaultValue="5" min="1" max="30" />
+                <label className="form-label fw-bold">Tempo de Pausa (minutos)</label>
+                <input
+                  type="number"
+                  id="pomodoroTempoPausa"
+                  className="form-control"
+                  defaultValue="5"
+                  min="1"
+                  max="60"
+                />
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" className="btn btn-primary" onClick={iniciarPomodoroPersonalizado}>Iniciar Pomodoro</button>
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={iniciarPomodoroPersonalizado}
+              >
+                Iniciar Pomodoro
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Modo Foco */}
-      <div className="modal fade" id="modalModoFoco" ref={modalFocoRef} tabIndex="-1" aria-hidden="true">
+      {/* Modal Modo Foco Personalizado */}
+      <div className="modal fade" id="modalModoFoco" ref={modalFocoRef} tabIndex="-1" data-bs-focus="false">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title">🧠 Personalizar Modo Foco</h5>
+              <h5 className="modal-title">🧠 Iniciar Modo Foco</h5>
               <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label fw-bold">📚 Matéria</label>
-                <select id="focoMateriaSelect" className="form-select">
-                  <option value="">Selecione uma matéria</option>
-                  {materias.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                </select>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-label fw-bold" style={{ margin: 0 }}>
+                    {criandoMateriaFoco ? 'Nova Matéria' : 'Matéria'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCriandoMateriaFoco(!criandoMateriaFoco);
+                      setNomeNovaMateria('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: criandoMateriaFoco ? '#6b7280' : 'var(--cor-primaria)',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    {criandoMateriaFoco ? '✕ Escolher da lista' : '+ Nova Matéria'}
+                  </button>
+                </div>
+
+                {criandoMateriaFoco ? (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
+                    <div className="mb-2">
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                        Nome da matéria:
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Ex: Biologia, História, Geografia"
+                        value={nomeNovaMateria}
+                        onChange={(e) => setNomeNovaMateria(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') salvarNovaMateria('foco'); }}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="mb-3" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>
+                          Cor:
+                        </label>
+                        <input
+                          type="color"
+                          value={corNovaMateria}
+                          onChange={(e) => setCorNovaMateria(e.target.value)}
+                          style={{ width: '42px', height: '36px', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
+                        />
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '16px' }}>
+                        Cor para gráficos e foco
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        disabled={salvandoMateria}
+                        onClick={() => salvarNovaMateria('foco')}
+                        style={{ background: 'var(--cor-primaria)', color: '#fff', fontWeight: '600' }}
+                      >
+                        {salvandoMateria ? 'Salvando...' : '✓ Salvar e Selecionar'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => {
+                          setCriandoMateriaFoco(false);
+                          setNomeNovaMateria('');
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <select id="focoMateriaSelect" className="form-select">
+                    <option value="">Selecione uma matéria</option>
+                    {materias.map((m) => (
+                      <option key={m.id_materia} value={m.id_materia}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">⏱ Tempo de Foco (minutos)</label>
-                <input type="number" id="focoTempoPersonalizado" className="form-control" defaultValue="25" min="1" max="120" />
+                <label className="form-label fw-bold">Tempo de Foco (minutos)</label>
+                <input
+                  type="number"
+                  id="focoTempoPersonalizado"
+                  className="form-control"
+                  defaultValue="25"
+                  min="1"
+                  max="180"
+                />
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" className="btn btn-primary" onClick={iniciarModoFocoPersonalizado}>Iniciar Foco</button>
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={iniciarModoFocoPersonalizado}
+              >
+                Iniciar Foco
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Meta */}
-      <div className="modal fade" id="modalMeta" ref={modalMetaRef} tabIndex="-1" aria-hidden="true">
+      {/* Modal Metas */}
+      <div className="modal fade" id="modalMeta" ref={modalMetaRef} tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -1250,50 +1954,75 @@ export default function Relogio() {
             <div className="modal-body">
               <div className="mb-3">
                 <label className="form-label fw-bold">Meta Diária</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaDiariaHoras" className="form-control" defaultValue="0" min="0" max="24" style={{ width: '80px' }} />
-                    <small>Horas</small>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaDiariaMinutos" className="form-control" defaultValue="30" min="0" max="59" style={{ width: '80px' }} />
-                    <small>Minutos</small>
-                  </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="number"
+                    id="metaDiariaHoras"
+                    className="form-control"
+                    defaultValue={Math.floor(metas.diaria)}
+                    min="0"
+                    max="24"
+                  />
+                  <input
+                    type="number"
+                    id="metaDiariaMinutos"
+                    className="form-control"
+                    defaultValue={Math.round((metas.diaria % 1) * 60)}
+                    min="0"
+                    max="59"
+                  />
                 </div>
               </div>
               <div className="mb-3">
                 <label className="form-label fw-bold">Meta Semanal</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaSemanalHoras" className="form-control" defaultValue="3" min="0" max="168" style={{ width: '80px' }} />
-                    <small>Horas</small>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaSemanalMinutos" className="form-control" defaultValue="30" min="0" max="59" style={{ width: '80px' }} />
-                    <small>Minutos</small>
-                  </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="number"
+                    id="metaSemanalHoras"
+                    className="form-control"
+                    defaultValue={Math.floor(metas.semanal)}
+                    min="0"
+                    max="168"
+                  />
+                  <input
+                    type="number"
+                    id="metaSemanalMinutos"
+                    className="form-control"
+                    defaultValue={Math.round((metas.semanal % 1) * 60)}
+                    min="0"
+                    max="59"
+                  />
                 </div>
               </div>
               <div className="mb-3">
                 <label className="form-label fw-bold">Meta Mensal</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaMensalHoras" className="form-control" defaultValue="14" min="0" max="720" style={{ width: '80px' }} />
-                    <small>Horas</small>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <input type="number" id="metaMensalMinutos" className="form-control" defaultValue="0" min="0" max="59" style={{ width: '80px' }} />
-                    <small>Minutos</small>
-                  </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="number"
+                    id="metaMensalHoras"
+                    className="form-control"
+                    defaultValue={Math.floor(metas.mensal)}
+                    min="0"
+                    max="720"
+                  />
+                  <input
+                    type="number"
+                    id="metaMensalMinutos"
+                    className="form-control"
+                    defaultValue={Math.round((metas.mensal % 1) * 60)}
+                    min="0"
+                    max="59"
+                  />
                 </div>
-              </div>
-              <div className="alert alert-info mt-3">
-                <i className="bi bi-lightbulb"></i> Dica: Comece com metas realistas e aumente aos poucos!
               </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" className="btn btn-primary" onClick={salvarMeta}>Salvar Metas</button>
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="button" className="btn btn-primary" onClick={salvarMeta}>
+                Salvar Metas
+              </button>
             </div>
           </div>
         </div>

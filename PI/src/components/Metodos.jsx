@@ -30,7 +30,7 @@ const metodosPorInteligencia = {
         descricao: "Aprenda explicando o conceito em voz alta com suas proprias palavras, como se estivesse ensinando alguem.",
         passos: ["Escolha um conceito", "Explique em voz alta com palavras simples", "Identifique as lacunas na sua explicacao", "Volte ao material original e estude novamente", "Reveja e simplifique"],
         beneficios: ["Desenvolve a comunicacao", "Identifica pontos fracos", "Fixa o conteudo"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 3, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Facil",
@@ -88,7 +88,7 @@ const metodosPorInteligencia = {
         descricao: "Aprenda explicando o conceito em voz alta com suas proprias palavras.",
         passos: ["Escolha um conceito", "Explique em voz alta", "Identifique lacunas", "Volte ao material", "Simplifique a explicacao"],
         beneficios: ["Desenvolve autoconhecimento", "Identifica pontos fracos", "Fixa o conteudo"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 3, titulo: "Metodo Cornell", tempo: "35 min", dificuldade: "Medio",
@@ -139,14 +139,14 @@ const metodosPorInteligencia = {
         descricao: "Aprenda explicando conceitos para seus colegas como se estivessem aprendendo pela primeira vez.",
         passos: ["Cada membro escolhe um conceito", "Explique para o grupo", "Use analogias e exemplos simples", "Peca perguntas e feedback", "Troque de papeis"],
         beneficios: ["Desenvolve lideranca", "Aprendizado colaborativo", "Feedback em tempo real"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 3, titulo: "Teste Pratico", tempo: "30 min", dificuldade: "Medio",
         descricao: "Resolva provas anteriores e exercicios. Pode ser feito em dupla para correcao conjunta.",
         passos: ["Escolha provas ou exercicios", "Responda individualmente", "Corrija com um colega", "Discutam os erros", "Criem um banco de questoes"],
         beneficios: ["Avaliacao colaborativa", "Discussao enriquecedora", "Identificacao de pontos fracos"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 4, titulo: "Mnemonica com Poemas ou Musicas", tempo: "25 min", dificuldade: "Facil",
@@ -204,7 +204,7 @@ const metodosPorInteligencia = {
         descricao: "Grave audio da sua propria explicacao para enfatizar a memorizacao da materia.",
         passos: ["Escolha um tema", "Escreva um roteiro simples", "Configure o gravador", "Grave explicando o conteudo", "Ouca e identifique pontos a melhorar"],
         beneficios: ["Material de revisao auditiva", "Desenvolvimento de comunicacao", "Criacao de portfolio"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
+        irParaRevisao: false
       },
       {
         id: 4, titulo: "Estudo com Videos Educativos", tempo: "25 min", dificuldade: "Facil",
@@ -255,14 +255,14 @@ const metodosPorInteligencia = {
         descricao: "Resolver provas anteriores e exercicios e uma forma eficiente para fixar o conteudo.",
         passos: ["Escolha provas ou exercicios", "Resolva sem consulta", "Corrija seus erros", "Refaca os exercicios que errou", "Anote o que precisa revisar"],
         beneficios: ["Fixacao por pratica", "Identificacao de dificuldades", "Preparacao para provas"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 5, titulo: "Mnemonica com Numeros ou Listas Ordenadas", tempo: "20 min", dificuldade: "Facil",
         descricao: "Crie associacoes usando numeros, sequencias ou listas ordenadas para memorizar.",
         passos: ["Liste as informacoes em ordem", "Crie uma sequencia logica ou numerica", "Associe cada item a um numero", "Repita a sequencia varias vezes"],
         beneficios: ["Memorizacao estruturada", "Associacoes logicas", "Retencao de sequencias"],
-        irParaRevisao: true, tipoRevisao: "revisao_normal"
+        irParaRevisao: false
       },
       {
         id: 6, titulo: "Diagrama de Fluxos", tempo: "30 min", dificuldade: "Medio",
@@ -357,7 +357,7 @@ const metodosPorInteligencia = {
         descricao: "Resolver provas anteriores e exercicios praticos e uma forma eficiente para fixar o conteudo.",
         passos: ["Escolha provas ou exercicios", "Resolva sem consulta", "Corrija seus erros", "Refaca os exercicios que errou"],
         beneficios: ["Fixacao por pratica", "Identificacao de dificuldades", "Preparacao para provas"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
+        irParaRevisao: false
       },
       {
         id: 3, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Medio",
@@ -465,82 +465,16 @@ const Metodos = () => {
 
   // ===== FUNÇÃO PARA ABRIR O GRAVADOR (PODCAST) =====
   const abrirGravadorPodcast = () => {
-    // Fecha o modal
+    console.log('Abrindo Gravação de Podcast...');
     setMetodoSelecionado(null);
-    
-    // Salva o modo no localStorage
-    localStorage.setItem('modoGravadorAtivo', 'podcast');
-    
-    // Navega para a tela de revisão (onde o gravador está)
-    if (typeof window.mostrarTela === 'function') {
-      window.mostrarTela('revisao');
-    }
-    
-    // Dispara evento para o menu lateral
-    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
-    
-    // Scroll até o gravador
-    setTimeout(() => {
-      const gravadorContainer = document.getElementById('gravadorAudioContainer');
-      if (gravadorContainer) {
-        gravadorContainer.style.display = 'block';
-        gravadorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        gravadorContainer.classList.add('destaque-gravador');
-        
-        // Atualiza o título do gravador
-        const tituloGravador = document.getElementById('gravadorTitulo');
-        if (tituloGravador) {
-          tituloGravador.innerHTML = `
-            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
-            Gravação de Podcast
-          `;
-        }
-        
-        setTimeout(() => {
-          gravadorContainer.classList.remove('destaque-gravador');
-        }, 3000);
-      }
-    }, 500);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'podcast' }));
   };
 
-  // ===== FUNÇÃO PARA ABRIR O GRAVADOR (FEYNMAN) =====
+  // ===== FUNÇÃO PARA ABRIR A TÉCNICA FEYNMAN =====
   const abrirGravadorFeynman = () => {
-    // Fecha o modal
+    console.log('Abrindo Técnica Feynman...');
     setMetodoSelecionado(null);
-    
-    // Salva o modo no localStorage
-    localStorage.setItem('modoGravadorAtivo', 'feynman');
-    
-    // Navega para a tela de revisão (onde o gravador está)
-    if (typeof window.mostrarTela === 'function') {
-      window.mostrarTela('revisao');
-    }
-    
-    // Dispara evento para o menu lateral
-    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
-    
-    // Scroll até o gravador
-    setTimeout(() => {
-      const gravadorContainer = document.getElementById('gravadorAudioContainer');
-      if (gravadorContainer) {
-        gravadorContainer.style.display = 'block';
-        gravadorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        gravadorContainer.classList.add('destaque-gravador');
-        
-        // Atualiza o título do gravador
-        const tituloGravador = document.getElementById('gravadorTitulo');
-        if (tituloGravador) {
-          tituloGravador.innerHTML = `
-            <i class="bi bi-mic-fill" style="color: var(--cor-primaria);"></i>
-            Técnica Feynman - Grave sua Explicação
-          `;
-        }
-        
-        setTimeout(() => {
-          gravadorContainer.classList.remove('destaque-gravador');
-        }, 3000);
-      }
-    }, 500);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'feynman' }));
   };
 
      const abrirCornell = () => {
@@ -552,6 +486,49 @@ const Metodos = () => {
     // Dispara o evento que o NavbarSidebar escuta para trocar a tela
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'cornell' }));
   };
+
+  const abrirMnemonica = () => {
+    console.log('Abrindo Sequências Mnemônicas...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'mnemonica' }));
+  };
+
+  const abrirMapaMental = () => {
+    console.log('Abrindo Mapa Mental...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'mapamental' }));
+  };
+
+  const abrirFluxograma = () => {
+    console.log('Abrindo Diagrama de Fluxos / Fluxograma...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'fluxograma' }));
+  };
+
+  const abrirGruposEstudo = () => {
+    console.log('Abrindo Grupos de Estudo...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'grupos' }));
+  };
+
+  const abrirLeituraSavoring = () => {
+    console.log('Abrindo Leitura Savoring...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'leitura' }));
+  };
+
+  const abrirTestePratico = () => {
+    console.log('Abrindo Teste Prático & Simulados...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'testePratico' }));
+  };
+
+  const abrirVideoEducativo = () => {
+    console.log('Abrindo Estudo com Vídeos Educativos...');
+    setMetodoSelecionado(null);
+    window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'videoEducativo' }));
+  };
+
   // ===== FUNÇÃO PARA RENDERIZAR O BOTÃO DO MODAL =====
   const renderizarBotaoModal = () => {
     if (!metodoSelecionado) return null;
@@ -559,6 +536,92 @@ const Metodos = () => {
     const titulo = metodoSelecionado.titulo;
     const cor = metodos.cor;
 
+    // VERIFICAÇÃO MNEMÔNICA COM NÚMEROS / LISTAS ORDENADAS
+    if (titulo.includes("Mnemônica") || titulo.includes("Mnemonica") || titulo.includes("Listas Ordenadas")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirMnemonica}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-sort-numeric-down"></i> 
+          Usar Sequências Mnemônicas
+        </button>
+      );
+    }
+
+    // VERIFICAÇÃO MAPA MENTAL
+    if (titulo.includes("Mapa Mental") || titulo.includes("mapa mental")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirMapaMental}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-diagram-3"></i> 
+          Criar / Abrir Mapa Mental
+        </button>
+      );
+    }
+
+    // VERIFICAÇÃO DIAGRAMA DE FLUXOS / FLUXOGRAMA
+    if (titulo.includes("Diagrama de Fluxo") || titulo.includes("diagrama de fluxo") || titulo.includes("Fluxograma") || titulo.includes("fluxograma")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirFluxograma}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-diagram-2"></i> 
+          Criar / Abrir Diagrama de Fluxos
+        </button>
+      );
+    }
  
  //VERIFICAÇÃO CORNELL
     if (titulo === "Metodo Cornell" || titulo === "Método Cornell" || titulo.includes("Cornell")) {
@@ -610,8 +673,23 @@ const Metodos = () => {
       return (
         <button 
           className="btn-aplicar"
-          style={{ background: cor }}
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
           onClick={abrirGravadorPodcast}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
         >
           <i className="bi bi-mic-fill"></i> Gravar Podcast
         </button>
@@ -619,14 +697,146 @@ const Metodos = () => {
     }
     
     // Caso: Técnica Feynman
-    if (titulo === "Técnica Feynman" || titulo === "Tecnica Feynman") {
+    if (titulo.includes("Feynman") || titulo.includes("feynman")) {
       return (
         <button 
           className="btn-aplicar"
-          style={{ background: cor }}
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
           onClick={abrirGravadorFeynman}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
         >
-          <i className="bi bi-mic-fill"></i> Gravar Explicação
+          <i className="bi bi-mic-fill"></i> 
+          Praticar Técnica Feynman
+        </button>
+      );
+    }
+
+    // Caso: Grupos de Estudo
+    if (titulo.includes("Grupo") || titulo.includes("grupo")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirGruposEstudo}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-people-fill"></i> 
+          Acessar Grupos de Estudo
+        </button>
+      );
+    }
+
+    // Caso: Leitura Savoring
+    if (titulo.includes("Savoring") || titulo.includes("savoring") || (titulo.includes("Leitura") && titulo.includes("Savoring"))) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirLeituraSavoring}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-book-half"></i> 
+          Praticar Leitura Savoring
+        </button>
+      );
+    }
+
+    // Caso: Teste Prático / Simulados (Upload de PDFs)
+    if (titulo.includes("Teste Pratico") || titulo.includes("Teste Prático") || titulo.includes("teste pratico")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirTestePratico}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-file-earmark-pdf-fill"></i> 
+          Acessar Teste Prático (Subir PDFs de Provas)
+        </button>
+      );
+    }
+
+    // Caso: Estudo com Vídeos Educativos
+    if (titulo.includes("Video") || titulo.includes("Vídeo") || titulo.includes("Videos Educativos") || titulo.includes("Vídeos Educativos")) {
+      return (
+        <button 
+          className="btn-aplicar"
+          style={{ 
+            background: cor,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            fontSize: '16px'
+          }}
+          onClick={abrirVideoEducativo}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        >
+          <i className="bi bi-youtube"></i> 
+          Estudar com Vídeo Educativo
         </button>
       );
     }

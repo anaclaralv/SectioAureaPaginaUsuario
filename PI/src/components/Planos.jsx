@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import { apiFetch } from '../api';
 import './Planos.css';
 
 export default function Planos() {
@@ -37,29 +38,41 @@ export default function Planos() {
     }
   };
 
-  // Carregar plano do localStorage
+  // Carregar plano do localStorage e sincronizar com o perfil
   useEffect(() => {
-    const planoSalvo = localStorage.getItem('planoUsuario') || 'gratuito';
+    const planoSalvo = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
     setPlanoAtual(planoSalvo);
-    setPermissoes(permissoesPorPlano[planoSalvo]);
-    
-    // Atualizar badge e botoes
+    setPermissoes(permissoesPorPlano[planoSalvo] || permissoesPorPlano.gratuito);
     atualizarBadgePlano(planoSalvo);
     
-    // Disparar evento para atualizar menu
-    window.dispatchEvent(new CustomEvent('planoAtualizado', { detail: { plano: planoSalvo, permissoes: permissoesPorPlano[planoSalvo] } }));
+    // Sincronizar com o perfil do servidor
+    apiFetch('perfil').then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.plano) {
+          const p = data.plano.toLowerCase().trim();
+          setPlanoAtual(p);
+          setPermissoes(permissoesPorPlano[p] || permissoesPorPlano.gratuito);
+          localStorage.setItem('planoUsuario', p);
+          sessionStorage.setItem('planoUsuario', p);
+          atualizarBadgePlano(p);
+          window.dispatchEvent(new CustomEvent('planoAtualizado', { detail: { plano: p, permissoes: permissoesPorPlano[p] } }));
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   // Atualizar badge
   const atualizarBadgePlano = (plano) => {
     const badge = document.getElementById('badgePlano');
     if (badge) {
-      const nomePlano = plano.charAt(0).toUpperCase() + plano.slice(1);
+      const p = (plano || 'gratuito').toLowerCase().trim();
+      const nomePlano = p.charAt(0).toUpperCase() + p.slice(1);
       badge.textContent = `Seu plano: ${nomePlano}`;
       
       let cor;
-      if (plano === 'pro') cor = '#981515';
-      else if (plano === 'basico') cor = '#f59e0b';
+      if (p === 'pro') cor = '#981515';
+      else if (p === 'basico') cor = '#f59e0b';
       else cor = '#22c55e';
       
       badge.style.background = cor;
@@ -69,7 +82,8 @@ export default function Planos() {
 
   // Escolher plano
   const escolherPlano = (tipo) => {
-    if (tipo === planoAtual) {
+    const tipoNorm = (tipo || 'gratuito').toLowerCase().trim();
+    if (tipoNorm === planoAtual) {
       Swal.fire({
         icon: 'info',
         title: 'Você já está neste plano!',
@@ -81,26 +95,37 @@ export default function Planos() {
 
     Swal.fire({
       title: 'Confirmar mudança',
-      html: `Deseja mudar para o plano <strong>${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</strong>?`,
+      html: `Deseja mudar para o plano <strong>${tipoNorm.charAt(0).toUpperCase() + tipoNorm.slice(1)}</strong>?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sim, mudar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#9f042c'
-    }).then(result => {
+    }).then(async result => {
       if (result.isConfirmed) {
-        localStorage.setItem('planoUsuario', tipo);
-        setPlanoAtual(tipo);
-        setPermissoes(permissoesPorPlano[tipo]);
-        atualizarBadgePlano(tipo);
+        localStorage.setItem('planoUsuario', tipoNorm);
+        sessionStorage.setItem('planoUsuario', tipoNorm);
+        setPlanoAtual(tipoNorm);
+        setPermissoes(permissoesPorPlano[tipoNorm] || permissoesPorPlano.gratuito);
+        atualizarBadgePlano(tipoNorm);
         
+        // Atualizar no banco de dados via PUT /perfil
+        try {
+          await apiFetch('perfil', {
+            method: 'PUT',
+            body: JSON.stringify({ plano: tipoNorm })
+          });
+        } catch (e) {
+          console.warn("Aviso ao salvar plano na API:", e);
+        }
+
         // Disparar evento para atualizar menu
-        window.dispatchEvent(new CustomEvent('planoAtualizado', { detail: { plano: tipo, permissoes: permissoesPorPlano[tipo] } }));
+        window.dispatchEvent(new CustomEvent('planoAtualizado', { detail: { plano: tipoNorm, permissoes: permissoesPorPlano[tipoNorm] } }));
         
         Swal.fire({
           icon: 'success',
           title: 'Plano atualizado!',
-          text: `Agora você está no plano ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}.`,
+          text: `Agora você está no plano ${tipoNorm.charAt(0).toUpperCase() + tipoNorm.slice(1)}.`,
           timer: 2000,
           showConfirmButton: false
         });
@@ -223,7 +248,7 @@ export default function Planos() {
 
 // Função global para verificar acesso (para ser usada em outros componentes)
 export const verificarAcesso = (funcionalidade) => {
-  const planoSalvo = localStorage.getItem('planoUsuario') || 'gratuito';
+  const planoSalvo = (localStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
   
   const permissoesPorPlano = {
     gratuito: {

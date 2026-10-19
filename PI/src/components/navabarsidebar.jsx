@@ -3,6 +3,15 @@ import "./navabarsidebar.css";
 import Tarefas from './tarefas';
 import Notas from './notas';
 import Cornell from './cornell'; // Importação correta
+import Mnemonica from "./Mnemonica";
+import MapaMental from "./MapaMental";
+import Fluxograma from "./Fluxograma";
+import Feynman from "./Feynman";
+import GruposEstudo from "./GruposEstudo";
+import LeituraSavoring from "./LeituraSavoring";
+import TestePratico from "./TestePratico";
+import VideoEducativo from "./VideoEducativo";
+import Podcast from "./Podcast";
 import Calendario from "./calendario";
 import Relogio from "./relogio";
 import Estatisticas from "./estatisticas";
@@ -82,12 +91,13 @@ function Navbar({ onToggleSidebar, usuario, corPrimaria, tipoInteligencia, onAbr
 
 // ===================== SIDEBAR =====================
 function Sidebar({ aberta, telaAtiva, onNavegar, onFechar, planoAtual }) {
+  const planoNormalizado = (planoAtual || 'gratuito').toLowerCase().trim();
   const bloqueios = {
     gratuito: ['estatistica', 'cronogramaNovo'],
     basico: [],
     pro: []
   };
-  const bloqueadas = bloqueios[planoAtual] || [];
+  const bloqueadas = bloqueios[planoNormalizado] || [];
 
   return (
     <>
@@ -106,12 +116,21 @@ function Sidebar({ aberta, telaAtiva, onNavegar, onFechar, planoAtual }) {
                     className={`nav-link ${isAtivo ? 'active' : ''} ${isBloqueado ? 'bloqueado' : ''}`}
                     onClick={e => {
                       e.preventDefault();
+                      if (item.id === 'revisao') {
+                        localStorage.setItem('revisaoTipoAtivo', 'baralhos');
+                        window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
+                      }
                       onNavegar(item.id);
                       onFechar();
                     }}
                   >
                     <i className={`bi ${item.icon} nav-icon`}></i>
-                    {item.label}
+                    <span>{item.label}</span>
+                    {isBloqueado && (
+                      <span className="badge-sidebar-lock" title="Disponível nos planos Básico e Pro">
+                        <i className="bi bi-lock-fill"></i>
+                      </span>
+                    )}
                   </a>
                 </li>
               );
@@ -217,11 +236,50 @@ function ModalConfiguracao({ usuario, onSalvar, onFechar }) {
 
 // ===================== SEÇÃO ATIVA =====================
 function SecaoAtiva({ id }) {
+  const plano = (localStorage.getItem('planoUsuario') || sessionStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
+  const bloqueios = {
+    gratuito: ['estatistica', 'cronogramaNovo'],
+    basico: [],
+    pro: []
+  };
+  const bloqueadas = bloqueios[plano] || [];
+
+  if (bloqueadas.includes(id)) {
+    const nomeRecurso = id === 'estatistica' ? 'Estatísticas de Estudo' : 'Cronograma Inteligente';
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 24px', maxWidth: '600px', margin: '40px auto', background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 4px 18px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', fontSize: '2rem' }}>
+          <i className="bi bi-lock-fill"></i>
+        </div>
+        <h2 style={{ fontWeight: '800', color: '#1e293b', marginBottom: '8px' }}>Recurso Premium</h2>
+        <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '24px' }}>
+          O acesso a <strong>{nomeRecurso}</strong> está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>. Desbloqueie ferramentas avançadas para potencializar seus estudos!
+        </p>
+        <button
+          className="btn"
+          style={{ background: '#9f042c', color: '#fff', fontWeight: 'bold', padding: '12px 24px', borderRadius: '10px' }}
+          onClick={() => window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'planos' }))}
+        >
+          <i className="bi bi-star-fill me-2"></i> Conhecer Planos
+        </button>
+      </div>
+    );
+  }
+
   switch (id) {
     case 'inicio': return <Inicio />;
     case 'tarefas': return <Tarefas />;
     case 'notas': return <Notas />;
     case 'cornell': return <Cornell />; // 👈 ADICIONADO AQUI
+    case 'mnemonica': return <Mnemonica />; // 👈 NOVO MÓDULO MNEMÔNICA
+    case 'mapamental': return <MapaMental />; // 👈 NOVO MÓDULO MAPA MENTAL
+    case 'fluxograma': return <Fluxograma />; // 👈 NOVO MÓDULO FLUXOGRAMA
+    case 'feynman': return <Feynman />; // 👈 NOVO MÓDULO TÉCNICA FEYNMAN
+    case 'grupos': return <GruposEstudo />; // 👈 NOVO MÓDULO GRUPOS DE ESTUDO
+    case 'leitura': return <LeituraSavoring />; // 👈 NOVO MÓDULO LEITURA SAVORING
+    case 'testePratico': return <TestePratico />; // 👈 NOVO MÓDULO TESTE PRÁTICO & PROVAS PDF
+    case 'videoEducativo': return <VideoEducativo />; // 👈 NOVO MÓDULO ESTUDO COM VÍDEOS EDUCATIVOS
+    case 'podcast': return <Podcast />; // 👈 NOVO MÓDULO GRAVAÇÃO DE PODCAST
     case 'calendario': return <Calendario />;
     case 'relogio': return <Relogio />;
     case 'estatistica': return <Estatisticas />;
@@ -243,14 +301,19 @@ function SecaoAtiva({ id }) {
 
 // ===================== COMPONENTE PRINCIPAL =====================
 export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
-  const [planoAtual, setPlanoAtual] = useState('gratuito');
+  const [planoAtual, setPlanoAtual] = useState(() => {
+    return (localStorage.getItem('planoUsuario') || sessionStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
+  });
   
   useEffect(() => {
-    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
+    const plano = (localStorage.getItem('planoUsuario') || sessionStorage.getItem('planoUsuario') || 'gratuito').toLowerCase().trim();
     setPlanoAtual(plano);
     
     const handlePlanoAtualizado = (event) => {
-      setPlanoAtual(event.detail.plano);
+      const novoPlano = (event.detail?.plano || 'gratuito').toLowerCase().trim();
+      setPlanoAtual(novoPlano);
+      localStorage.setItem('planoUsuario', novoPlano);
+      sessionStorage.setItem('planoUsuario', novoPlano);
     };
     window.addEventListener('planoAtualizado', handlePlanoAtualizado);
     return () => window.removeEventListener('planoAtualizado', handlePlanoAtualizado);
@@ -277,15 +340,21 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
         const response = await apiFetch('perfil');
         if (response.ok) {
           const data = await response.json();
+          const planoDoUsuario = (data.plano || 'gratuito').toLowerCase().trim();
+
           setUsuario({
             nome: data.nome || "Usuário",
             email: data.email || "",
             foto: data.foto || null
           });
           
+          setPlanoAtual(planoDoUsuario);
+          localStorage.setItem('planoUsuario', planoDoUsuario);
+          sessionStorage.setItem('planoUsuario', planoDoUsuario);
+
           const storage = sessionStorage.getItem("token") ? sessionStorage : localStorage;
           const userAtual = JSON.parse(storage.getItem("user") || "{}");
-          storage.setItem("user", JSON.stringify({ ...userAtual, ...data }));
+          storage.setItem("user", JSON.stringify({ ...userAtual, ...data, plano: planoDoUsuario }));
         }
       } catch (err) {
         console.error("Erro ao buscar perfil:", err);
@@ -298,19 +367,20 @@ export default function NavbarSidebar({ corPrimaria, tipoInteligencia }) {
   const fecharSidebar = () => setSidebarAberta(false);
   
   const navegarPara = (tela) => {
+    const plano = (localStorage.getItem('planoUsuario') || planoAtual || 'gratuito').toLowerCase().trim();
     const bloqueios = {
       gratuito: ['estatistica', 'cronogramaNovo'],
       basico: [],
       pro: []
     };
-    const plano = localStorage.getItem('planoUsuario') || 'gratuito';
     const bloqueadas = bloqueios[plano] || [];
 
     if (bloqueadas.includes(tela)) {
+      const nomeRecurso = tela === 'estatistica' ? 'Estatística' : 'Cronograma';
       Swal.fire({
         icon: 'info',
         title: 'Recurso Premium',
-        html: 'Esta funcionalidade está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.',
+        html: `Esta funcionalidade (<strong>${nomeRecurso}</strong>) está disponível nos planos <strong>Básico</strong> e <strong>Pro</strong>.`,
         confirmButtonText: 'Ver Planos',
         confirmButtonColor: '#9f042c',
         showCancelButton: true,

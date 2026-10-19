@@ -1258,6 +1258,11 @@ body.modo-escuro .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%) !important;
 }
 
+/* SweetAlert2 sempre visível à frente de qualquer overlay */
+.swal2-container {
+  z-index: 999999 !important;
+}
+
 /* SweetAlert2 no Modo Escuro (incluindo Como preparar ambiente) */
 body.modo-escuro .swal2-popup,
 body.dark .swal2-popup {

@@ -442,6 +442,10 @@
   background: linear-gradient(90deg, #22c55e, #16a34a);
 }
 
+.swal2-container {
+  z-index: 999999 !important;
+}
+
 /* ===== MODO FOCO OVERLAY ===== */
 .modo-foco-overlay {
   position: fixed;
