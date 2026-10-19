@@ -130,7 +130,6 @@
   background: #fef2f2 !important;
 }
 
-/* ===== BOTÃO VAMOS LÁ ===== */
 #btnVamosLa {
   animation: pulseBtn 2s infinite;
 }
@@ -146,4 +145,61 @@
   50% {
     box-shadow: 0 0 0 8px rgba(108, 117, 125, 0);
   }
+}
+
+/* ===== ALERTA ÚNICO "VOCÊ DEVERIA ESTAR ESTUDANDO!!!" ===== */
+.alerta-estudo-unico {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background-color: var(--cor-primaria);
+  color: #ffffff;
+  padding: 16px 22px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.alerta-estudo-conteudo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.alerta-estudo-icone {
+  font-size: 1.8rem;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.alerta-estudo-titulo {
+  margin: 0 0 2px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.alerta-estudo-detalhe {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.btn-alerta-estudar {
+  background: #ffffff;
+  color: var(--cor-primaria);
+  border: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.btn-alerta-estudar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }

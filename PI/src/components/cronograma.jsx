@@ -60,13 +60,43 @@ export default function Cronograma() {
 
   const carregarDados = async () => {
     try {
+      let listaMaterias = [];
       // Carrega matérias
       const resMat = await apiFetch('materias');
-      if (resMat.ok) setMaterias(await resMat.json());
+      if (resMat.ok) {
+        listaMaterias = await resMat.json();
+        setMaterias(listaMaterias);
+      }
 
       // Carrega cronograma
       const resCron = await apiFetch('cronogramas');
-      if (resCron.ok) setCronograma(await resCron.json());
+      if (resCron.ok) {
+        const dadosCron = await resCron.json();
+        setCronograma(dadosCron);
+
+        // Sincroniza com localStorage para a página inicial
+        const cronogramaFormatado = (Array.isArray(dadosCron) ? dadosCron : []).map(c => {
+          const mat = listaMaterias.find(m => String(m.id_materia) === String(c.id_materia));
+          const cor = c.cor_materia || mat?.cor || '#9f042c';
+          const inicio = (c.hora_inicio || '').substring(0, 5);
+          const fim = (c.hora_final || '').substring(0, 5);
+          return {
+            ...c,
+            id: c.id_cronograma,
+            dia: c.dia_semana,
+            inicio,
+            fim,
+            cor_materia: cor,
+            materia: {
+              id: c.id_materia,
+              nome: c.nome_materia || mat?.nome || 'Matéria',
+              cor
+            }
+          };
+        });
+        localStorage.setItem('cronogramaNovo', JSON.stringify(cronogramaFormatado));
+        window.dispatchEvent(new CustomEvent('cronogramaAtualizado', { detail: cronogramaFormatado }));
+      }
     } catch (err) {
       console.error("Erro ao carregar dados:", err);
     }
@@ -290,7 +320,7 @@ export default function Cronograma() {
                   <div
                     key={bloco.id_cronograma}
                     className="bloco-materia"
-                    style={{ background: materias.find(m => m.id_materia === bloco.id_materia)?.cor || '#ccc' }}
+                    style={{ background: bloco.cor_materia || materias.find(m => String(m.id_materia) === String(bloco.id_materia))?.cor || '#9f042c' }}
                     onDoubleClick={() => editarBloco(bloco)}
                   >
                     {bloco.nome_materia} ({bloco.hora_inicio.substring(0,5)} - {bloco.hora_final.substring(0,5)})
