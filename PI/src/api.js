@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost/api_sectio_aurea-main';
+const API_BASE_URL = 'http://localhost/api_sectio_aurea';
 
 export async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');

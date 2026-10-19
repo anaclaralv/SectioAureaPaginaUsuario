@@ -252,7 +252,7 @@ export default function TestePratico() {
         formData.append('arquivo', arquivoSelecionado);
 
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const resUpload = await fetch('http://localhost/api_sectio_aurea-main/simulados/upload', {
+        const resUpload = await fetch('http://localhost/api_sectio_aurea/simulados/upload', {
           method: 'POST',
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
           body: formData
