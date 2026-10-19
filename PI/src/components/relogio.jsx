@@ -40,12 +40,18 @@ export default function Relogio() {
   const tempoPausaConfigRef = useRef(5);
   const estudoIdPomodoroRef = useRef(null);
   const pomodoroTempoRef = useRef(1500);
+  const pomodoroRodandoRef = useRef(false);
+  const materiasRef = useRef([]);
+  const estudoAtualRef = useRef(null);
 
   useEffect(() => { modoPomodoroRef.current = modoPomodoro; }, [modoPomodoro]);
   useEffect(() => { tempoFocoConfigRef.current = tempoFocoConfig; }, [tempoFocoConfig]);
   useEffect(() => { tempoPausaConfigRef.current = tempoPausaConfig; }, [tempoPausaConfig]);
   useEffect(() => { estudoIdPomodoroRef.current = estudoIdPomodoro; }, [estudoIdPomodoro]);
   useEffect(() => { pomodoroTempoRef.current = pomodoroTempo; }, [pomodoroTempo]);
+  useEffect(() => { pomodoroRodandoRef.current = pomodoroRodando; }, [pomodoroRodando]);
+  useEffect(() => { materiasRef.current = materias; }, [materias]);
+  useEffect(() => { estudoAtualRef.current = estudoAtual; }, [estudoAtual]);
 
   // Modo Foco (React Nativo)
   const [modoFocoAtivo, setModoFocoAtivo] = useState(false);
@@ -55,6 +61,8 @@ export default function Relogio() {
   const [focoRodando, setFocoRodando] = useState(false);
   const [confirmandoSaidaFoco, setConfirmandoSaidaFoco] = useState(false);
   const focoIntervalRef = useRef(null);
+  const focoTempoRestanteRef = useRef(25 * 60);
+  useEffect(() => { focoTempoRestanteRef.current = focoTempoRestante; }, [focoTempoRestante]);
 
   // Estudo por matéria
   const estudoIntervalRef = useRef(null);
@@ -73,25 +81,58 @@ export default function Relogio() {
 
   // ==================== FUNÇÕES AUXILIARES ====================
   const formatarTempo = (segundos) => {
-    const h = Math.floor(segundos / 3600);
-    const m = Math.floor((segundos % 3600) / 60);
-    const s = segundos % 60;
+    const total = Math.max(0, Math.floor(segundos || 0));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const formatarTempoCurto = (segundos) => {
-    const m = Math.floor(segundos / 60);
-    const s = segundos % 60;
+    const total = Math.max(0, Math.floor(segundos || 0));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const formatarMeta = (horasDecimais) => {
-    const h = Math.floor(horasDecimais);
-    const m = Math.round((horasDecimais - h) * 60);
-    if (h === 0 && m === 0) return '0min';
+    const totalSegundos = Math.round((horasDecimais || 0) * 3600);
+    if (totalSegundos <= 0) return '0min';
+    if (totalSegundos < 60) return `${totalSegundos}s`;
+    const h = Math.floor(totalSegundos / 3600);
+    const m = Math.round((totalSegundos % 3600) / 60);
     if (h === 0) return `${m}min`;
     if (m === 0) return `${h}h`;
     return `${h}h ${m}min`;
+  };
+
+  const converterTempoParaSegundos = (tempoStr) => {
+    if (!tempoStr) return 0;
+    const partes = String(tempoStr).split(':');
+    return (
+      (parseInt(partes[0]) || 0) * 3600 +
+      (parseInt(partes[1]) || 0) * 60 +
+      (parseInt(partes[2]) || 0)
+    );
+  };
+
+  const calcularSegundosMateria = (materia) => {
+    if (!materia) return 0;
+    let total = 0;
+    historicoCronometro.forEach((sessao) => {
+      const mesmoId = sessao.id_materia && String(sessao.id_materia) === String(materia.id_materia);
+      const mesmoNome =
+        !sessao.id_materia &&
+        sessao.nome_materia &&
+        sessao.nome_materia.toLowerCase() === String(materia.nome || '').toLowerCase();
+      if (mesmoId || mesmoNome) {
+        total += converterTempoParaSegundos(sessao.tempo_cronometro);
+      }
+    });
+    if (estudoAtual && String(estudoAtual.id_materia) === String(materia.id_materia)) {
+      total += segundosSessaoAtual;
+    }
+    return total;
   };
 
   const converterParaHoras = (horas, minutos) => {
@@ -229,20 +270,22 @@ export default function Relogio() {
   useEffect(() => { localStorage.setItem('metas', JSON.stringify(metas)); }, [metas]);
   useEffect(() => { localStorage.setItem('metaAtiva', metaAtiva); }, [metaAtiva]);
 
-  // ==================== SALVAR NA API ====================
   // ==================== SALVAR NA API (GERAL) ====================
-  const salvarSessaoAPI = async (idMateria, segundos, descricao) => {
+  const salvarSessaoAPI = async (idMateria, segundos, descricao, exibirToast = true) => {
     if (!segundos || segundos <= 0) return false;
 
     const tempoFormatado = formatarTempo(segundos);
     const agora = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const dataLocal = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
+    const dataHoje = `${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}`;
+    const dataLocal = `${dataHoje} ${pad(agora.getHours())}:${pad(agora.getMinutes())}:${pad(agora.getSeconds())}`;
+
+    const idMatNum = idMateria && !isNaN(parseInt(idMateria)) ? parseInt(idMateria) : null;
 
     const payload = {
       tempo_cronometro: tempoFormatado,
       descricao: descricao || 'Estudo',
-      id_materia: idMateria ? parseInt(idMateria) : null,
+      id_materia: idMatNum,
       created_at: dataLocal
     };
 
@@ -253,16 +296,30 @@ export default function Relogio() {
       });
 
       if (response.ok) {
+        try {
+          const chaveMat = idMatNum ? String(idMatNum) : 'geral';
+          const salvo = JSON.parse(localStorage.getItem('tempoEstudo') || '{}');
+          if (!salvo[chaveMat] || typeof salvo[chaveMat] !== 'object') {
+            salvo[chaveMat] = { total: Number(salvo[chaveMat]) || 0, historico: {} };
+          }
+          salvo[chaveMat].total = (salvo[chaveMat].total || 0) + segundos;
+          if (!salvo[chaveMat].historico) salvo[chaveMat].historico = {};
+          salvo[chaveMat].historico[dataHoje] = (salvo[chaveMat].historico[dataHoje] || 0) + segundos;
+          localStorage.setItem('tempoEstudo', JSON.stringify(salvo));
+        } catch (e) {}
+
         await carregarHistorico();
-        Swal.fire({
-          icon: 'success',
-          title: 'Tempo salvo!',
-          text: `${tempoFormatado} registrados no histórico.`,
-          timer: 2000,
-          showConfirmButton: false,
-          toast: true,
-          position: 'top-end'
-        });
+        if (exibirToast) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Tempo salvo!',
+            text: `${tempoFormatado} registrados em tempo de estudo.`,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
+        }
         return true;
       } else {
         const erro = await response.json().catch(() => ({}));
@@ -553,59 +610,73 @@ export default function Relogio() {
     modalInstancePomodoro.current?.show();
   };
 
-  const iniciarPomodoro = () => {
-    if (pomodoroRodando) return;
+  const iniciarPomodoro = (forcarInicio = false) => {
+    if (pomodoroRodandoRef.current && !forcarInicio) return;
+    pomodoroRodandoRef.current = true;
     setPomodoroRodando(true);
     clearInterval(pomodoroIntervalRef.current);
 
     pomodoroIntervalRef.current = setInterval(() => {
-      setPomodoroTempo((prev) => {
-        if (prev <= 1) {
-          clearInterval(pomodoroIntervalRef.current);
-          setPomodoroRodando(false);
+      if (pomodoroTempoRef.current <= 1) {
+        clearInterval(pomodoroIntervalRef.current);
+        pomodoroRodandoRef.current = false;
+        setPomodoroRodando(false);
 
-          if (modoPomodoroRef.current === 'foco') {
-            const matId = estudoIdPomodoroRef.current;
-            const tempoSegundos = tempoFocoConfigRef.current * 60;
-            const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
-            const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : `Pomodoro (${tempoFocoConfigRef.current} min)`;
+        if (modoPomodoroRef.current === 'foco') {
+          const matId = estudoIdPomodoroRef.current || estudoAtualRef.current?.id_materia || null;
+          const tempoSegundos = Math.max(1, (tempoFocoConfigRef.current || 25) * 60);
+          const listaMats = materiasRef.current || [];
+          const nomeMateria = matId
+            ? listaMats.find((m) => String(m.id_materia) === String(matId))?.nome
+            : null;
+          const desc = nomeMateria
+            ? `Pomodoro (${nomeMateria})`
+            : `Pomodoro (${tempoFocoConfigRef.current} min)`;
 
-            salvarSessaoAPI(matId || null, tempoSegundos, desc);
+          const tempoPausaSeg = Math.max(1, (tempoPausaConfigRef.current || 5) * 60);
+          modoPomodoroRef.current = 'pausa';
+          pomodoroTempoRef.current = tempoPausaSeg;
+          setModoPomodoro('pausa');
+          setPomodoroTempo(tempoPausaSeg);
 
+          salvarSessaoAPI(matId, tempoSegundos, desc, false).then((salvou) => {
             Swal.fire({
-              icon: 'success',
+              icon: salvou ? 'success' : 'warning',
               title: '🍅 Foco concluído!',
-              text: `Tempo registrado no histórico! Hora de uma pausa de ${tempoPausaConfigRef.current} min.`,
+              text: salvou
+                ? `Tempo (${formatarTempo(tempoSegundos)}) salvo em tempo de estudo! Hora de uma pausa de ${tempoPausaConfigRef.current} min.`
+                : 'Foco concluído, mas não foi possível salvar o tempo no servidor.',
               timer: 3500,
               showConfirmButton: false
             });
+          });
+        } else {
+          const tempoFocoSeg = Math.max(1, (tempoFocoConfigRef.current || 25) * 60);
+          modoPomodoroRef.current = 'foco';
+          pomodoroTempoRef.current = tempoFocoSeg;
+          setModoPomodoro('foco');
+          setPomodoroTempo(tempoFocoSeg);
 
-            modoPomodoroRef.current = 'pausa';
-            setModoPomodoro('pausa');
-            return tempoPausaConfigRef.current * 60;
-          } else {
-            Swal.fire({
-              icon: 'info',
-              title: '☕ Pausa finalizada!',
-              text: 'Pronto para voltar ao foco?',
-              timer: 3000,
-              showConfirmButton: false
-            });
-
-            modoPomodoroRef.current = 'foco';
-            setModoPomodoro('foco');
-            return tempoFocoConfigRef.current * 60;
-          }
+          Swal.fire({
+            icon: 'info',
+            title: '☕ Pausa finalizada!',
+            text: 'Pronto para voltar ao foco?',
+            timer: 3000,
+            showConfirmButton: false
+          });
         }
-        return prev - 1;
-      });
+      } else {
+        const novoTempo = pomodoroTempoRef.current - 1;
+        pomodoroTempoRef.current = novoTempo;
+        setPomodoroTempo(novoTempo);
+      }
     }, 1000);
   };
 
   const iniciarPomodoroPersonalizado = () => {
     const materiaId = document.getElementById('pomodoroMateria')?.value;
-    const tempoEstudoVal = parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25);
-    const tempoPausa = parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5);
+    const tempoEstudoVal = Math.max(1, parseInt(document.getElementById('pomodoroTempoEstudo')?.value || 25));
+    const tempoPausa = Math.max(1, parseInt(document.getElementById('pomodoroTempoPausa')?.value || 5));
 
     setTempoFocoConfig(tempoEstudoVal);
     setTempoPausaConfig(tempoPausa);
@@ -623,14 +694,14 @@ export default function Relogio() {
     modalInstancePomodoro.current?.hide();
 
     clearInterval(pomodoroIntervalRef.current);
+    pomodoroRodandoRef.current = false;
     setPomodoroRodando(false);
-    setTimeout(() => {
-      iniciarPomodoro();
-    }, 100);
+    iniciarPomodoro(true);
   };
 
   const pausarPomodoro = () => {
     clearInterval(pomodoroIntervalRef.current);
+    pomodoroRodandoRef.current = false;
     setPomodoroRodando(false);
   };
 
@@ -660,15 +731,18 @@ export default function Relogio() {
 
     pausarPomodoro();
 
-    const matId = estudoIdPomodoroRef.current;
-    const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
+    const matId = estudoIdPomodoroRef.current || estudoAtualRef.current?.id_materia || null;
+    const listaMats = materiasRef.current || [];
+    const nomeMateria = matId ? listaMats.find((m) => String(m.id_materia) === String(matId))?.nome : null;
     const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : 'Pomodoro';
 
-    const ok = await salvarSessaoAPI(matId || null, segundosEstudados, desc);
+    const ok = await salvarSessaoAPI(matId, segundosEstudados, desc);
     if (ok) {
+      const tempoFocoSeg = tempoFocoConfigRef.current * 60;
       modoPomodoroRef.current = 'foco';
+      pomodoroTempoRef.current = tempoFocoSeg;
       setModoPomodoro('foco');
-      setPomodoroTempo(tempoFocoConfigRef.current * 60);
+      setPomodoroTempo(tempoFocoSeg);
     }
   };
 
@@ -691,24 +765,31 @@ export default function Relogio() {
         denyButtonColor: '#ef4444'
       }).then(async (result) => {
         if (result.isConfirmed) {
-          const matId = estudoIdPomodoroRef.current;
-          const nomeMateria = matId ? materias.find((m) => String(m.id_materia) === String(matId))?.nome : null;
+          const matId = estudoIdPomodoroRef.current || estudoAtualRef.current?.id_materia || null;
+          const listaMats = materiasRef.current || [];
+          const nomeMateria = matId ? listaMats.find((m) => String(m.id_materia) === String(matId))?.nome : null;
           const desc = nomeMateria ? `Pomodoro (${nomeMateria})` : 'Pomodoro';
-          await salvarSessaoAPI(matId || null, segundosEstudados, desc);
+          await salvarSessaoAPI(matId, segundosEstudados, desc);
 
+          const tempoFocoSeg = tempoFocoConfigRef.current * 60;
           modoPomodoroRef.current = 'foco';
+          pomodoroTempoRef.current = tempoFocoSeg;
           setModoPomodoro('foco');
-          setPomodoroTempo(tempoFocoConfigRef.current * 60);
+          setPomodoroTempo(tempoFocoSeg);
         } else if (result.isDenied) {
+          const tempoFocoSeg = tempoFocoConfigRef.current * 60;
           modoPomodoroRef.current = 'foco';
+          pomodoroTempoRef.current = tempoFocoSeg;
           setModoPomodoro('foco');
-          setPomodoroTempo(tempoFocoConfigRef.current * 60);
+          setPomodoroTempo(tempoFocoSeg);
         }
       });
     } else {
+      const tempoFocoSeg = tempoFocoConfigRef.current * 60;
       modoPomodoroRef.current = 'foco';
+      pomodoroTempoRef.current = tempoFocoSeg;
       setModoPomodoro('foco');
-      setPomodoroTempo((modoPomodoroRef.current === 'foco' ? tempoFocoConfigRef.current : tempoPausaConfigRef.current) * 60);
+      setPomodoroTempo(tempoFocoSeg);
     }
   };
 
@@ -753,6 +834,7 @@ export default function Relogio() {
     modalInstanceFoco.current?.hide();
 
     const segTotal = Math.max(1, tempoFoco) * 60;
+    focoTempoRestanteRef.current = segTotal;
     setFocoMateria(mat);
     setFocoTempoTotal(segTotal);
     setFocoTempoRestante(segTotal);
@@ -764,11 +846,13 @@ export default function Relogio() {
   useEffect(() => {
     if (modoFocoAtivo && focoRodando) {
       focoIntervalRef.current = setInterval(() => {
-        setFocoTempoRestante((prev) => {
-          if (prev <= 1) {
-            clearInterval(focoIntervalRef.current);
-            setFocoRodando(false);
-            salvarSessaoAPI(focoMateria?.id_materia, focoTempoTotal, `Modo Foco (${focoMateria?.nome})`);
+        if (focoTempoRestanteRef.current <= 1) {
+          clearInterval(focoIntervalRef.current);
+          focoTempoRestanteRef.current = 0;
+          setFocoTempoRestante(0);
+          setFocoRodando(false);
+          setModoFocoAtivo(false);
+          salvarSessaoAPI(focoMateria?.id_materia, focoTempoTotal, `Modo Foco (${focoMateria?.nome})`, false).then(() => {
             Swal.fire({
               icon: 'success',
               title: '🎉 Foco concluído!',
@@ -776,11 +860,12 @@ export default function Relogio() {
               timer: 3500,
               showConfirmButton: false
             });
-            setModoFocoAtivo(false);
-            return 0;
-          }
-          return prev - 1;
-        });
+          });
+        } else {
+          const novoRestante = focoTempoRestanteRef.current - 1;
+          focoTempoRestanteRef.current = novoRestante;
+          setFocoTempoRestante(novoRestante);
+        }
       }, 1000);
     } else {
       clearInterval(focoIntervalRef.current);
@@ -1035,13 +1120,14 @@ export default function Relogio() {
         <thead>
           <tr>
             <th>Matéria</th>
+            <th>Tempo Estudado</th>
             <th>Ação</th>
           </tr>
         </thead>
         <tbody>
           {materias.length === 0 ? (
             <tr>
-              <td colSpan="2" style={{ textAlign: 'center', padding: '25px 15px' }}>
+              <td colSpan="3" style={{ textAlign: 'center', padding: '25px 15px' }}>
                 <p style={{ margin: '0 0 10px 0', color: '#6b7280' }}>
                   Nenhuma matéria encontrada.
                 </p>
@@ -1068,6 +1154,7 @@ export default function Relogio() {
           ) : (
             materias.map((m) => {
               const isEstaMateria = estudoAtual?.id_materia === m.id_materia;
+              const tempoMateriaSegundos = calcularSegundosMateria(m);
               return (
                 <tr key={m.id_materia} style={{ background: isEstaMateria ? '#fef2f2' : 'transparent' }}>
                   <td style={{ textAlign: 'left', paddingLeft: '20px' }}>
@@ -1093,6 +1180,9 @@ export default function Relogio() {
                         {estudoPausado ? '⏸ Pausado' : '● Estudando'} ({formatarTempo(segundosSessaoAtual)})
                       </span>
                     )}
+                  </td>
+                  <td className="tempo" style={{ fontWeight: '700', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                    {formatarTempo(tempoMateriaSegundos)}
                   </td>
                   <td>
                     {isEstaMateria ? (
@@ -1365,15 +1455,30 @@ export default function Relogio() {
             }}
           >
             {modoPomodoro === 'foco' ? '🎯 Ciclo de Foco' : '☕ Pausa / Descanso'}
-            {estudoIdPomodoro && (
-              <span style={{ display: 'block', color: '#6b7280', fontWeight: 'normal', marginTop: '2px' }}>
-                Matéria: <strong>{materias.find((m) => String(m.id_materia) === String(estudoIdPomodoro))?.nome || 'Geral'}</strong>
-              </span>
-            )}
+          </div>
+          <div style={{ width: '100%', marginBottom: '10px' }}>
+            <select
+              className="form-select form-select-sm"
+              value={estudoIdPomodoro || ''}
+              onChange={(e) => {
+                const val = e.target.value || null;
+                setEstudoIdPomodoro(val);
+                estudoIdPomodoroRef.current = val;
+              }}
+              style={{ fontSize: '0.78rem', borderRadius: '8px' }}
+              title="Escolha a matéria para somar no Tempo de Estudo"
+            >
+              <option value="">Matéria: Geral (ou selecione)</option>
+              {materias.map((m) => (
+                <option key={m.id_materia} value={m.id_materia}>
+                  📚 {m.nome}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="relogio-botoes">
             {!pomodoroRodando ? (
-              <button onClick={iniciarPomodoro}>
+              <button onClick={() => iniciarPomodoro(false)}>
                 {pomodoroTempo < (modoPomodoro === 'foco' ? tempoFocoConfig : tempoPausaConfig) * 60 ? 'Continuar' : 'Iniciar'}
               </button>
             ) : (
@@ -1538,9 +1643,9 @@ export default function Relogio() {
             }}
           >
             {progresso >= 100
-              ? `✅ Meta batida! ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`
+              ? `✅ Meta batida! ${formatarMeta(totalHoras)} de ${formatarMeta(metaValor)}`
               : progresso > 0
-              ? `🚀 ${totalHoras.toFixed(1)}h de ${formatarMeta(metaValor)}`
+              ? `🚀 ${formatarMeta(totalHoras)} de ${formatarMeta(metaValor)}`
               : `📖 Nenhum estudo registrado. Meta: ${formatarMeta(metaValor)}`}
           </p>
 

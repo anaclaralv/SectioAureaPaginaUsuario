@@ -362,8 +362,7 @@ async function carregarSessoesDoBackend() {
       });
 
       sessoes.forEach(sessao => {
-        const matId = sessao.id_materia;
-        if (!matId) return;
+        const matId = sessao.id_materia || "__geral__";
         if (!tempoEstudo[matId]) {
           tempoEstudo[matId] = { total: 0, historico: {} };
         }
@@ -371,12 +370,18 @@ async function carregarSessoesDoBackend() {
         const segundos = timeToSeconds(sessao.tempo_cronometro);
         tempoEstudo[matId].total += segundos;
 
-        const dataStr = sessao.created_at.split(' ')[0];
-        if (!tempoEstudo[matId].historico[dataStr]) {
-          tempoEstudo[matId].historico[dataStr] = 0;
+        const dataStr = (sessao.created_at || "").split(' ')[0];
+        if (dataStr) {
+          if (!tempoEstudo[matId].historico[dataStr]) {
+            tempoEstudo[matId].historico[dataStr] = 0;
+          }
+          tempoEstudo[matId].historico[dataStr] += segundos;
         }
-        tempoEstudo[matId].historico[dataStr] += segundos;
       });
+
+      if (typeof renderTabelaMaterias === 'function') renderTabelaMaterias();
+      if (typeof atualizarMeta === 'function') atualizarMeta();
+      if (typeof atualizarRelogioInfo === 'function') atualizarRelogioInfo();
     }
   } catch (err) {
     console.error("Erro ao carregar sessões de estudo:", err);
@@ -404,16 +409,18 @@ function secondsToTime(totalSecs) {
 }
 
 async function salvarSessaoEstudoNoBackend(materiaId, segundos, descricao = "Sessão de Estudo") {
-  if (!materiaId || segundos <= 0) return;
+  if (segundos <= 0) return;
   try {
     const formattedTime = secondsToTime(segundos);
+    const agora = new Date();
+    const dataLocal = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')} ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
     const response = await apiFetch("cronometros", {
       method: "POST",
       body: JSON.stringify({
-        id_materia: materiaId,
+        id_materia: materiaId ? Number(materiaId) : null,
         tempo_cronometro: formattedTime,
         descricao: descricao,
-        created_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        created_at: dataLocal
       })
     });
     if (response.ok) {
@@ -3608,46 +3615,53 @@ function iniciarPomodoroPadrao() {
     return;
   }
 
-  modoPomodoro = "foco";
-  pomodoroTempo = 1500;
+  if (pomodoroTempo <= 0) {
+    modoPomodoro = "foco";
+    pomodoroTempo = 1500;
+  }
   pomodoroRodando = true;
   atualizarDisplayPomodoro();
 
+  clearInterval(pomodoroInterval);
   pomodoroInterval = setInterval(() => {
     if (!pomodoroRodando) return;
 
-    if (pomodoroTempo <= 0) {
+    if (pomodoroTempo <= 1) {
       clearInterval(pomodoroInterval);
       pomodoroRodando = false;
 
       if (modoPomodoro === "foco") {
+        const matIdParaSalvar = estudoIdPomodoro || estudoAtual || null;
         if (estudoIdPomodoro) {
           if (typeof pausarEstudo === 'function') pausarEstudo();
           estudoIdPomodoro = null;
+        } else {
+          salvarSessaoEstudoNoBackend(matIdParaSalvar, 1500, "Pomodoro (25 min)");
         }
 
         Swal.fire({
           icon: 'success',
-          title: 'Foco concluído!',
-          text: 'Hora da pausa!',
-          timer: 2000,
+          title: '🍅 Foco concluído!',
+          text: 'Sessão salva! Hora da pausa (5 min)!',
+          timer: 2500,
           showConfirmButton: false
         });
         modoPomodoro = "pausa";
         pomodoroTempo = 300;
+        atualizarDisplayPomodoro();
         iniciarPomodoroPadrao();
       } else {
         Swal.fire({
           icon: 'info',
-          title: 'Pausa concluída!',
-          text: 'Hora de estudar!',
+          title: '☕ Pausa concluída!',
+          text: 'Hora de voltar aos estudos!',
           timer: 2000,
           showConfirmButton: false
         });
         modoPomodoro = "foco";
         pomodoroTempo = 1500;
+        atualizarDisplayPomodoro();
       }
-      atualizarDisplayPomodoro();
       return;
     }
 
@@ -3729,16 +3743,20 @@ function iniciarPomodoroPersonalizado() {
   pomodoroInterval = setInterval(() => {
     if (!pomodoroRodando) return;
 
-    if (pomodoroTempo <= 0) {
+    if (pomodoroTempo <= 1) {
       clearInterval(pomodoroInterval);
       pomodoroRodando = false;
 
       if (modoPomodoro === "foco") {
-        if (estudoIdPomodoro && typeof pausarEstudo === 'function') pausarEstudo();
+        if (estudoIdPomodoro && estudoAtual == estudoIdPomodoro && segundosSessaoAtual > 0 && typeof pausarEstudo === 'function') {
+          pausarEstudo();
+        } else {
+          salvarSessaoEstudoNoBackend(materiaId, tempoEstudo * 60, `Pomodoro: ${materia.nome} (${tempoEstudo} min)`);
+        }
 
         Swal.fire({
           icon: 'success',
-          title: ' Foco concluído!',
+          title: '🍅 Foco concluído!',
           text: `${tempoPausa} min de pausa `,
           timer: 2000,
           showConfirmButton: false
@@ -3752,9 +3770,12 @@ function iniciarPomodoroPersonalizado() {
             pomodoroRodando = true;
             pomodoroInterval = setInterval(() => {
               if (!pomodoroRodando) return;
-              if (pomodoroTempo <= 0) {
+              if (pomodoroTempo <= 1) {
                 clearInterval(pomodoroInterval);
                 pomodoroRodando = false;
+                modoPomodoro = "foco";
+                pomodoroTempo = tempoEstudo * 60;
+                atualizarDisplayPomodoro();
                 Swal.fire({
                   icon: 'info',
                   title: '☕ Pausa concluída!',

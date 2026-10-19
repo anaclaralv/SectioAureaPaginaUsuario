@@ -118,7 +118,7 @@ export default function Estatisticas() {
   const formatarMeta = (horasDecimais) => {
     const h = Math.floor(horasDecimais);
     const m = Math.round((horasDecimais - h) * 60);
-    if (h === 0 && m === 0) return '0min';
+    if (h === 0 && m === 0) return horasDecimais > 0 ? '< 1min' : '0min';
     if (h === 0) return `${m}min`;
     if (m === 0) return `${h}h`;
     return `${h}h ${m}min`;
@@ -578,7 +578,7 @@ export default function Estatisticas() {
         <div className="stat-card">
           <i className="bi bi-clock-history"></i>
           <span>Total Geral</span>
-          <strong>{totais.totalHoras.toFixed(1)}h</strong>
+          <strong>{totais.totalHoras > 0 && totais.totalHoras < 1 ? formatarMeta(totais.totalHoras) : `${totais.totalHoras.toFixed(1)}h`}</strong>
         </div>
         <div className="stat-card">
           <i className="bi bi-calendar-check"></i>
@@ -593,7 +593,7 @@ export default function Estatisticas() {
         <div className="stat-card">
           <i className="bi bi-graph-up"></i>
           <span>Média Diária</span>
-          <strong>{totais.mediaDiaria.toFixed(1)}h</strong>
+          <strong>{totais.mediaDiaria > 0 && totais.mediaDiaria < 1 ? formatarMeta(totais.mediaDiaria) : `${totais.mediaDiaria.toFixed(1)}h`}</strong>
         </div>
       </div>
 
@@ -635,17 +635,17 @@ export default function Estatisticas() {
         <div className="meta-item">
           <div className="meta-header"><span>Meta Diária</span><span>{formatarMeta(metas.diaria)}</span></div>
           <div className="meta-progresso-container"><div className={`meta-barra ${metasAtuais.diaria.progresso >= 100 ? 'alta' : metasAtuais.diaria.progresso >= 50 ? 'media' : 'baixa'}`} style={{ width: `${Math.min(metasAtuais.diaria.progresso, 100)}%` }}></div></div>
-          <p className="meta-restante">{metasAtuais.diaria.atual.toFixed(1)}h de {formatarMeta(metas.diaria)} {metasAtuais.diaria.progresso >= 100 && '✅ Concluído!'}</p>
+          <p className="meta-restante">{formatarMeta(metasAtuais.diaria.atual)} de {formatarMeta(metas.diaria)} {metasAtuais.diaria.progresso >= 100 && '✅ Concluído!'}</p>
         </div>
         <div className="meta-item">
           <div className="meta-header"><span>Meta Semanal</span><span>{formatarMeta(metas.semanal)}</span></div>
           <div className="meta-progresso-container"><div className={`meta-barra ${metasAtuais.semanal.progresso >= 100 ? 'alta' : metasAtuais.semanal.progresso >= 50 ? 'media' : 'baixa'}`} style={{ width: `${Math.min(metasAtuais.semanal.progresso, 100)}%` }}></div></div>
-          <p className="meta-restante">{metasAtuais.semanal.atual.toFixed(1)}h de {formatarMeta(metas.semanal)} {metasAtuais.semanal.progresso >= 100 && '✅ Concluído!'}</p>
+          <p className="meta-restante">{formatarMeta(metasAtuais.semanal.atual)} de {formatarMeta(metas.semanal)} {metasAtuais.semanal.progresso >= 100 && '✅ Concluído!'}</p>
         </div>
         <div className="meta-item">
           <div className="meta-header"><span>Meta Mensal</span><span>{formatarMeta(metas.mensal)}</span></div>
           <div className="meta-progresso-container"><div className={`meta-barra ${metasAtuais.mensal.progresso >= 100 ? 'alta' : metasAtuais.mensal.progresso >= 50 ? 'media' : 'baixa'}`} style={{ width: `${Math.min(metasAtuais.mensal.progresso, 100)}%` }}></div></div>
-          <p className="meta-restante">{metasAtuais.mensal.atual.toFixed(1)}h de {formatarMeta(metas.mensal)} {metasAtuais.mensal.progresso >= 100 && '✅ Concluído!'}</p>
+          <p className="meta-restante">{formatarMeta(metasAtuais.mensal.atual)} de {formatarMeta(metas.mensal)} {metasAtuais.mensal.progresso >= 100 && '✅ Concluído!'}</p>
         </div>
       </div>
 
