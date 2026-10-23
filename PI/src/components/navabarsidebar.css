@@ -17,8 +17,15 @@ body {
 }
 
 * {
-  font-family: 'Poppins', sans-serif !important;
   box-sizing: border-box;
+}
+
+body, button, input, select, textarea {
+  font-family: 'Poppins', sans-serif;
+}
+
+i.bi, [class^="bi-"], [class*=" bi-"] {
+  font-family: "bootstrap-icons" !important;
 }
 
 /* ===== NAVBAR ===== */

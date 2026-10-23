@@ -263,72 +263,173 @@ export default function Cronograma() {
       .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
   };
 
+  const diasOcupados = new Set(cronograma.map(c => c.dia_semana)).size;
+  const mediaBlocos = diasOcupados > 0 ? (cronograma.length / diasOcupados).toFixed(1) : '0';
+
   return (
     <section id="cronogramaNovoSection">
-      <div className="layout-container">
-        <h1>Cronograma Inteligente</h1>
-
-        <div className="form-cronogramaNovo">
-          <input
-            type="text"
-            placeholder="Nome da matéria"
-            value={novaMateria.nome}
-            onChange={(e) => setNovaMateria({ ...novaMateria, nome: e.target.value })}
-          />
-          <input
-            type="color"
-            value={novaMateria.cor}
-            onChange={(e) => setNovaMateria({ ...novaMateria, cor: e.target.value })}
-          />
-          <button onClick={adicionarMateria}>Adicionar Matéria</button>
+      <div className="cronograma-container-main">
+        {/* Cabeçalho Padronizado (estilo Calendário) */}
+        <div className="cronograma-header-bar">
+          <div className="cronograma-header-titles">
+            <h1><i className="bi bi-diagram-3-fill"></i> Cronograma Inteligente</h1>
+            <p className="cronograma-subtitle">Distribuição semanal de estudos, rotinas e grade horária personalizada</p>
+          </div>
+          <button
+            className="btn-novo-cronograma-main"
+            onClick={() => document.getElementById('novaMateriaNomeInput')?.focus()}
+          >
+            <i className="bi bi-plus-lg"></i> Nova Matéria
+          </button>
         </div>
 
-        <h4>Matérias</h4>
-        <div className="materias-area">
-          {materias.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#9ca3af', width: '100%' }}>Nenhuma matéria cadastrada.</p>
-          ) : (
-            materias.map(materia => (
-              <div
-                key={materia.id_materia}
-                className="materia-bloco"
-                style={{ background: materia.cor }}
-                draggable
-                onDragStart={(e) => onDragStart(e, materia)}
-                onDoubleClick={() => editarMateria(materia)}
-              >
-                {materia.nome}
-              </div>
-            ))
-          )}
-        </div>
-
-        <p className="drag-text">Arraste a matéria para um dia da semana</p>
-
-        <div className="cronogramaNovo-grid">
-          {diasSemana.map(dia => (
-            <div
-              key={dia.id}
-              className="dia"
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={(e) => onDrop(e, dia.id)}
-            >
-              <h5>{dia.nome}</h5>
-              <div className="dia-drop">
-                {getBlocosPorDia(dia.id).map(bloco => (
-                  <div
-                    key={bloco.id_cronograma}
-                    className="bloco-materia"
-                    style={{ background: bloco.cor_materia || materias.find(m => String(m.id_materia) === String(bloco.id_materia))?.cor || '#9f042c' }}
-                    onDoubleClick={() => editarBloco(bloco)}
-                  >
-                    {bloco.nome_materia} ({bloco.hora_inicio.substring(0,5)} - {bloco.hora_final.substring(0,5)})
-                  </div>
-                ))}
-              </div>
+        {/* Cards de Métricas (estilo Calendário) */}
+        <div className="cronograma-metricas-grid">
+          <div className="crono-metric-card">
+            <div className="crono-metric-icon materias">
+              <i className="bi bi-journal-bookmark-fill"></i>
             </div>
-          ))}
+            <div className="crono-metric-info">
+              <span className="crono-metric-num">{materias.length}</span>
+              <span className="crono-metric-label">Matérias Ativas</span>
+            </div>
+          </div>
+
+          <div className="crono-metric-card">
+            <div className="crono-metric-icon blocos">
+              <i className="bi bi-calendar3-range"></i>
+            </div>
+            <div className="crono-metric-info">
+              <span className="crono-metric-num">{cronograma.length}</span>
+              <span className="crono-metric-label">Blocos Agendados</span>
+            </div>
+          </div>
+
+          <div className="crono-metric-card">
+            <div className="crono-metric-icon dias">
+              <i className="bi bi-calendar-check-fill"></i>
+            </div>
+            <div className="crono-metric-info">
+              <span className="crono-metric-num">{diasOcupados} / 7</span>
+              <span className="crono-metric-label">Dias com Estudo</span>
+            </div>
+          </div>
+
+          <div className="crono-metric-card">
+            <div className="crono-metric-icon media">
+              <i className="bi bi-speedometer2"></i>
+            </div>
+            <div className="crono-metric-info">
+              <span className="crono-metric-num">{mediaBlocos}</span>
+              <span className="crono-metric-label">Média / Dia Útil</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card de Gestão de Matérias */}
+        <div className="cronograma-card-main mb-4">
+          <div className="cronograma-card-header mb-3">
+            <div>
+              <h3><i className="bi bi-palette-fill me-2" style={{ color: 'var(--cor-primaria)' }}></i> Minhas Matérias</h3>
+              <p className="cronograma-card-sub">Cadastre as disciplinas e arraste-as para os dias da semana abaixo</p>
+            </div>
+          </div>
+
+          <div className="form-cronograma-modern mb-3">
+            <input
+              id="novaMateriaNomeInput"
+              type="text"
+              placeholder="Nome da disciplina (ex: Biologia, Cálculo, História)..."
+              value={novaMateria.nome}
+              onChange={(e) => setNovaMateria({ ...novaMateria, nome: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') adicionarMateria(); }}
+            />
+            <div className="color-picker-wrap">
+              <label>Cor:</label>
+              <input
+                type="color"
+                value={novaMateria.cor}
+                onChange={(e) => setNovaMateria({ ...novaMateria, cor: e.target.value })}
+              />
+            </div>
+            <button className="btn-add-materia-action" onClick={adicionarMateria}>
+              <i className="bi bi-plus-circle-fill me-1"></i> Cadastrar Matéria
+            </button>
+          </div>
+
+          <div className="materias-area">
+            {materias.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#94a3b8', width: '100%', margin: 0, padding: '16px' }}>
+                Nenhuma matéria cadastrada. Digite o nome acima e clique em "Cadastrar Matéria".
+              </p>
+            ) : (
+              materias.map(materia => (
+                <div
+                  key={materia.id_materia}
+                  className="materia-bloco"
+                  style={{ background: materia.cor }}
+                  draggable
+                  onDragStart={(e) => onDragStart(e, materia)}
+                  onDoubleClick={() => editarMateria(materia)}
+                  title="Dê duplo clique para editar ou remover. Arraste para o dia desejado."
+                >
+                  <i className="bi bi-grip-vertical me-1"></i> {materia.nome}
+                </div>
+              ))
+            )}
+          </div>
+          <p className="drag-hint-text mt-2 mb-0">
+            <i className="bi bi-info-circle me-1"></i> <strong>Dica:</strong> Arraste a matéria até o dia desejado ou dê duplo clique nela para renomear/excluir.
+          </p>
+        </div>
+
+        {/* Card do Grid Semanal */}
+        <div className="cronograma-card-main">
+          <div className="cronograma-card-header mb-3">
+            <div>
+              <h3><i className="bi bi-calendar-week me-2" style={{ color: 'var(--cor-primaria)' }}></i> Grade Semanal</h3>
+              <p className="cronograma-card-sub">Solte as disciplinas nas colunas correspondentes para programar seus horários</p>
+            </div>
+          </div>
+
+          <div className="cronogramaNovo-grid">
+            {diasSemana.map(dia => (
+              <div
+                key={dia.id}
+                className="dia"
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={(e) => onDrop(e, dia.id)}
+              >
+                <div className="dia-header">
+                  <h5>{dia.nome}</h5>
+                  <span className="dia-badge-count">{getBlocosPorDia(dia.id).length}</span>
+                </div>
+                <div className="dia-drop">
+                  {getBlocosPorDia(dia.id).length === 0 ? (
+                    <div className="dia-drop-vazio">
+                      <span>Solte aqui</span>
+                    </div>
+                  ) : (
+                    getBlocosPorDia(dia.id).map(bloco => (
+                      <div
+                        key={bloco.id_cronograma}
+                        className="bloco-materia"
+                        style={{ background: bloco.cor_materia || materias.find(m => String(m.id_materia) === String(bloco.id_materia))?.cor || '#9f042c' }}
+                        onDoubleClick={() => editarBloco(bloco)}
+                        title="Duplo clique para editar horário ou excluir"
+                      >
+                        <div className="bloco-materia-nome">{bloco.nome_materia}</div>
+                        <div className="bloco-materia-hora">
+                          <i className="bi bi-clock me-1"></i> {bloco.hora_inicio.substring(0,5)} - {bloco.hora_final.substring(0,5)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

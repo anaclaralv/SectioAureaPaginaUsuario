@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { apiFetch } from '../api';
 import './GruposEstudo.css';
 
+const limparNomeMembro = (nome = '') => {
+  if (!nome || typeof nome !== 'string') return '';
+  return nome.replace(/\s*\((?:Você|Voce|Criador)\)\s*/gi, '').trim();
+};
+
 export default function GruposEstudo() {
   const [grupos, setGrupos] = useState([]);
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
+  const grupoSelecionadoIdRef = useRef(null);
   const [abaInterna, setAbaInterna] = useState('membros'); // 'membros', 'temas', 'duvidas', 'notas', 'reunioes', 'flashcards'
   const [carregando, setCarregando] = useState(false);
 
@@ -28,26 +34,77 @@ export default function GruposEstudo() {
   const [carregandoMeusCards, setCarregandoMeusCards] = useState(false);
   const [cardsImportados, setCardsImportados] = useState(new Set());
 
-  // Dados do usuário atual
+  // Dados do usuário atual (sincronizado com API /perfil)
   const [usuarioAtual, setUsuarioAtual] = useState(() => {
     try {
-      const u = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
-      return { nome: u.nome || 'Estudante', email: u.email || '' };
+      const u = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+      return {
+        id: u.id_usuario || u.id || null,
+        nome: limparNomeMembro(u.nome) || 'Estudante',
+        email: (u.email || '').trim()
+      };
     } catch (e) {
-      return { nome: 'Estudante', email: '' };
+      return { id: null, nome: 'Estudante', email: '' };
     }
   });
 
-  // Carregar grupos da API
-  const carregarGrupos = useCallback(async () => {
-    const salvos = localStorage.getItem('grupos_estudo_sistema');
-    if (salvos) {
-      try {
-        const parsed = JSON.parse(salvos);
-        if (Array.isArray(parsed)) setGrupos(parsed);
-      } catch (e) {}
-    }
+  useEffect(() => {
+    grupoSelecionadoIdRef.current = grupoSelecionado ? (grupoSelecionado.id_grupo || grupoSelecionado.id) : null;
+  }, [grupoSelecionado]);
 
+  // Busca sempre o perfil atualizado do token logado
+  const carregarPerfilUsuario = useCallback(async () => {
+    try {
+      const res = await apiFetch('perfil');
+      if (res.ok) {
+        const data = await res.json();
+        const userObj = {
+          id: data.id_usuario || data.id || null,
+          nome: limparNomeMembro(data.nome) || 'Estudante',
+          email: (data.email || '').trim()
+        };
+        setUsuarioAtual(userObj);
+        const userStorage = JSON.parse(localStorage.getItem('user') || '{}');
+        const merged = { ...userStorage, ...data };
+        localStorage.setItem('user', JSON.stringify(merged));
+        sessionStorage.setItem('user', JSON.stringify(merged));
+      }
+    } catch (e) {
+      console.error('Erro ao carregar perfil em Grupos de Estudo:', e);
+    }
+  }, []);
+
+  // Verifica se um objeto membro corresponde ao usuário logado
+  const ehUsuarioAtual = useCallback((membro) => {
+    if (!membro) return false;
+    if (usuarioAtual.id && membro.id_usuario && Number(membro.id_usuario) === Number(usuarioAtual.id)) {
+      return true;
+    }
+    const emailUser = (usuarioAtual.email || '').trim().toLowerCase();
+    const emailMembro = (membro.email || '').trim().toLowerCase();
+    if (emailUser && emailMembro && emailUser === emailMembro) {
+      return true;
+    }
+    const nomeUser = limparNomeMembro(usuarioAtual.nome).toLowerCase();
+    const nomeMembro = limparNomeMembro(membro.nome).toLowerCase();
+    if (nomeUser && nomeUser !== 'estudante' && nomeMembro && nomeUser === nomeMembro) {
+      return true;
+    }
+    return false;
+  }, [usuarioAtual]);
+
+  // Verifica se o usuário atual é o líder / criador do grupo selecionado
+  const souLiderDoGrupo = useCallback((grupo = grupoSelecionado) => {
+    if (!grupo) return false;
+    if (usuarioAtual.id && grupo.id_usuario && Number(grupo.id_usuario) === Number(usuarioAtual.id)) {
+      return true;
+    }
+    const lider = (grupo.membros || []).find(m => m.papel === 'Líder') || (grupo.membros || [])[0];
+    return ehUsuarioAtual(lider);
+  }, [grupoSelecionado, usuarioAtual, ehUsuarioAtual]);
+
+  // Carregar grupos da API (sem loop infinito!)
+  const carregarGrupos = useCallback(async (atualizarNotasSeAberto = false) => {
     try {
       setCarregando(true);
       const res = await apiFetch('gruposestudo');
@@ -56,12 +113,15 @@ export default function GruposEstudo() {
         if (Array.isArray(data)) {
           setGrupos(data);
           localStorage.setItem('grupos_estudo_sistema', JSON.stringify(data));
-          // Atualiza grupo selecionado se estiver aberto
-          if (grupoSelecionado) {
-            const atualizado = data.find(g => String(g.id) === String(grupoSelecionado.id));
+
+          const idAberto = grupoSelecionadoIdRef.current;
+          if (idAberto) {
+            const atualizado = data.find(g => String(g.id_grupo || g.id) === String(idAberto));
             if (atualizado) {
               setGrupoSelecionado(atualizado);
-              setNotasTexto(atualizado.notas || '');
+              if (atualizarNotasSeAberto) {
+                setNotasTexto(atualizado.notas || '');
+              }
             }
           }
         }
@@ -71,18 +131,11 @@ export default function GruposEstudo() {
     } finally {
       setCarregando(false);
     }
-  }, [grupoSelecionado]);
+  }, []);
 
   // Carregar matérias e flashcards do usuário logado
   const carregarMeusCardsEMaterias = useCallback(async () => {
     let mats = [];
-    const matsSalvas = localStorage.getItem('materias');
-    if (matsSalvas) {
-      try {
-        mats = JSON.parse(matsSalvas);
-        if (Array.isArray(mats)) setMinhasMaterias(mats);
-      } catch (e) {}
-    }
     try {
       const resMat = await apiFetch('materias');
       if (resMat.ok) {
@@ -94,15 +147,6 @@ export default function GruposEstudo() {
         }
       }
     } catch (e) {}
-
-    let cards = [];
-    const cardsSalvos = localStorage.getItem('flashcards_sistema');
-    if (cardsSalvos) {
-      try {
-        cards = JSON.parse(cardsSalvos);
-        if (Array.isArray(cards)) setMeusCards(cards);
-      } catch (e) {}
-    }
 
     try {
       setCarregandoMeusCards(true);
@@ -143,20 +187,23 @@ export default function GruposEstudo() {
   }, []);
 
   useEffect(() => {
-    carregarGrupos();
+    carregarPerfilUsuario();
+    carregarGrupos(true);
     carregarMeusCardsEMaterias();
-  }, [carregarGrupos, carregarMeusCardsEMaterias]);
+  }, [carregarPerfilUsuario, carregarGrupos, carregarMeusCardsEMaterias]);
 
   // Salvar alterações de um grupo na API e localmente
   const atualizarGrupoNoBackend = async (grupoAtualizado, mensagemSucesso = null) => {
     const groupId = grupoAtualizado.id_grupo || grupoAtualizado.id;
+    let grupoFinal = grupoAtualizado;
+
     try {
-      await apiFetch(`gruposestudo/${groupId}`, {
+      const res = await apiFetch(`gruposestudo/${groupId}`, {
         method: 'PUT',
         body: JSON.stringify({
           nome: grupoAtualizado.nome,
           materia: grupoAtualizado.materia,
-          linkMeet: grupoAtualizado.link_meet || grupoAtualizado.linkMeet || '',
+          linkMeet: grupoAtualizado.link_meet ?? grupoAtualizado.linkMeet ?? '',
           membros: grupoAtualizado.membros,
           temas: grupoAtualizado.temas,
           duvidas: grupoAtualizado.duvidas,
@@ -165,21 +212,32 @@ export default function GruposEstudo() {
           flashcardsCompartilhados: grupoAtualizado.flashcards_compartilhados || grupoAtualizado.flashcardsCompartilhados || []
         })
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.grupo) {
+          grupoFinal = data.grupo;
+        }
+      }
     } catch (err) {
       console.error('Erro ao sincronizar grupo no servidor:', err);
     }
 
-    setGrupos(prev => prev.map(g => (String(g.id) === String(groupId) ? grupoAtualizado : g)));
-    setGrupoSelecionado(grupoAtualizado);
-    localStorage.setItem('grupos_estudo_sistema', JSON.stringify(
-      grupos.map(g => (String(g.id) === String(groupId) ? grupoAtualizado : g))
-    ));
+    setGrupos(prev => {
+      const existe = prev.some(g => String(g.id_grupo || g.id) === String(groupId));
+      const novaLista = existe
+        ? prev.map(g => (String(g.id_grupo || g.id) === String(groupId) ? grupoFinal : g))
+        : [grupoFinal, ...prev];
+      localStorage.setItem('grupos_estudo_sistema', JSON.stringify(novaLista));
+      return novaLista;
+    });
+
+    setGrupoSelecionado(grupoFinal);
 
     if (mensagemSucesso) {
       Swal.fire({
         icon: 'success',
         title: mensagemSucesso,
-        timer: 1200,
+        timer: 1300,
         showConfirmButton: false,
         toast: true,
         position: 'top-end'
@@ -225,7 +283,12 @@ export default function GruposEstudo() {
       codigo: codigoGerado,
       linkMeet: '',
       membros: [
-        { nome: `${usuarioAtual.nome} (Você)`, email: usuarioAtual.email, papel: 'Líder' }
+        {
+          id_usuario: usuarioAtual.id,
+          nome: limparNomeMembro(usuarioAtual.nome) || 'Líder',
+          email: usuarioAtual.email || '',
+          papel: 'Líder'
+        }
       ],
       temas: [],
       duvidas: [],
@@ -241,13 +304,19 @@ export default function GruposEstudo() {
       });
       if (res.ok) {
         const data = await res.json();
-        const grupoCriado = {
+        const grupoCriado = data.grupo || {
           ...payload,
           id: data.id_grupo,
           id_grupo: data.id_grupo,
           flashcards_compartilhados: []
         };
-        setGrupos(prev => [grupoCriado, ...prev]);
+
+        setGrupos(prev => {
+          const novaLista = [grupoCriado, ...prev];
+          localStorage.setItem('grupos_estudo_sistema', JSON.stringify(novaLista));
+          return novaLista;
+        });
+
         setModalCriarAberto(false);
         setNovoGrupo({ nome: '', materia: '' });
 
@@ -255,11 +324,14 @@ export default function GruposEstudo() {
           icon: 'success',
           title: 'Grupo criado com sucesso!',
           html: `
-            <p>O código do seu grupo é: <strong style="font-size: 1.5rem; letter-spacing: 2px; color: var(--cor-primaria);">${codigoGerado}</strong></p>
+            <p>O código do seu grupo é: <strong style="font-size: 1.5rem; letter-spacing: 2px; color: var(--cor-primaria);">${grupoCriado.codigo || codigoGerado}</strong></p>
             <p>Envie este código para os seus colegas entrarem no grupo!</p>
           `,
           confirmButtonColor: 'var(--cor-primaria)'
         });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        Swal.fire('Erro', errData.message || 'Não foi possível criar o grupo.', 'error');
       }
     } catch (e) {
       Swal.fire('Erro', 'Não foi possível criar o grupo.', 'error');
@@ -275,42 +347,147 @@ export default function GruposEstudo() {
     }
 
     try {
-      const res = await apiFetch(`gruposestudo/${cod}`);
+      const res = await apiFetch('gruposestudo/entrar', {
+        method: 'POST',
+        body: JSON.stringify({ codigo: cod })
+      });
+
       if (!res.ok) {
-        Swal.fire({ icon: 'error', title: 'Grupo não encontrado', text: 'Verifique o código informado e tente novamente.' });
+        const errData = await res.json().catch(() => ({}));
+        Swal.fire({
+          icon: 'error',
+          title: 'Grupo não encontrado',
+          text: errData.message || 'Verifique o código informado e tente novamente.'
+        });
         return;
       }
 
-      const grupo = await res.json();
-      const membrosAtuais = grupo.membros || [];
-      const jaEhMembro = membrosAtuais.some(
-        m => (m.email && m.email === usuarioAtual.email) || (m.nome && m.nome.includes(usuarioAtual.nome))
-      );
+      const data = await res.json();
+      const grupo = data.grupo;
 
-      if (jaEhMembro) {
-        Swal.fire({ icon: 'info', title: 'Você já faz parte deste grupo!', confirmButtonColor: 'var(--cor-primaria)' });
+      if (grupo) {
+        const groupId = grupo.id_grupo || grupo.id;
+        setGrupos(prev => {
+          const existe = prev.some(g => String(g.id_grupo || g.id) === String(groupId));
+          const novaLista = existe
+            ? prev.map(g => (String(g.id_grupo || g.id) === String(groupId) ? grupo : g))
+            : [grupo, ...prev];
+          localStorage.setItem('grupos_estudo_sistema', JSON.stringify(novaLista));
+          return novaLista;
+        });
+
         setModalEntrarAberto(false);
         setCodigoEntrada('');
         setGrupoSelecionado(grupo);
-        return;
+        setNotasTexto(grupo.notas || '');
+        setAbaInterna('membros');
+
+        if (data.ja_membro) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Você já faz parte deste grupo!',
+            text: `Abrindo o grupo "${grupo.nome}".`,
+            timer: 1600,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            icon: 'success',
+            title: `Bem-vindo ao grupo ${grupo.nome}!`,
+            timer: 1800,
+            showConfirmButton: false
+          });
+        }
       }
-
-      const novosMembros = [...membrosAtuais, { nome: usuarioAtual.nome, email: usuarioAtual.email, papel: 'Membro' }];
-      const grupoAtualizado = { ...grupo, membros: novosMembros };
-
-      await atualizarGrupoNoBackend(grupoAtualizado);
-      setModalEntrarAberto(false);
-      setCodigoEntrada('');
-      setGrupoSelecionado(grupoAtualizado);
-
-      Swal.fire({
-        icon: 'success',
-        title: `Bem-vindo ao grupo ${grupo.nome}!`,
-        timer: 1800,
-        showConfirmButton: false
-      });
     } catch (e) {
       Swal.fire('Erro', 'Erro ao tentar entrar no grupo.', 'error');
+    }
+  };
+
+  // Excluir Grupo (Líder) ou Sair do Grupo (Membro)
+  const handleExcluirGrupo = async (grupoAlvo = grupoSelecionado, e = null) => {
+    if (e) e.stopPropagation();
+    if (!grupoAlvo) return;
+    const groupId = grupoAlvo.id_grupo || grupoAlvo.id;
+
+    const confirmacao = await Swal.fire({
+      title: 'Excluir grupo de estudo?',
+      html: `Tem certeza que deseja excluir o grupo <strong>${grupoAlvo.nome}</strong>? Esta ação não pode ser desfeita.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir grupo',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    });
+
+    if (!confirmacao.isConfirmed) return;
+
+    try {
+      const res = await apiFetch(`gruposestudo/${groupId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setGrupos(prev => {
+          const novaLista = prev.filter(g => String(g.id_grupo || g.id) !== String(groupId));
+          localStorage.setItem('grupos_estudo_sistema', JSON.stringify(novaLista));
+          return novaLista;
+        });
+        if (grupoSelecionado && String(grupoSelecionado.id_grupo || grupoSelecionado.id) === String(groupId)) {
+          setGrupoSelecionado(null);
+        }
+        Swal.fire({
+          icon: 'success',
+          title: 'Grupo excluído!',
+          timer: 1400,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }
+    } catch (err) {
+      Swal.fire('Erro', 'Não foi possível excluir o grupo.', 'error');
+    }
+  };
+
+  const handleSairDoGrupo = async (grupoAlvo = grupoSelecionado) => {
+    if (!grupoAlvo) return;
+    const groupId = grupoAlvo.id_grupo || grupoAlvo.id;
+
+    const confirmacao = await Swal.fire({
+      title: 'Sair deste grupo?',
+      html: `Deseja sair do grupo <strong>${grupoAlvo.nome}</strong>? Você poderá entrar novamente usando o código <strong>${grupoAlvo.codigo}</strong>.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair do grupo',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    });
+
+    if (!confirmacao.isConfirmed) return;
+
+    const novosMembros = (grupoAlvo.membros || []).filter(m => !ehUsuarioAtual(m));
+    try {
+      await apiFetch(`gruposestudo/${groupId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...grupoAlvo,
+          membros: novosMembros
+        })
+      });
+      setGrupos(prev => {
+        const novaLista = prev.filter(g => String(g.id_grupo || g.id) !== String(groupId));
+        localStorage.setItem('grupos_estudo_sistema', JSON.stringify(novaLista));
+        return novaLista;
+      });
+      setGrupoSelecionado(null);
+      Swal.fire({
+        icon: 'success',
+        title: 'Você saiu do grupo.',
+        timer: 1400,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    } catch (err) {
+      Swal.fire('Erro', 'Não foi possível sair do grupo.', 'error');
     }
   };
 
@@ -324,17 +501,47 @@ export default function GruposEstudo() {
   // Voltar para Lista
   const voltarParaLista = () => {
     setGrupoSelecionado(null);
+    carregarGrupos(false);
   };
 
-  // Iniciar Chamada de Vídeo (Meet)
+  // Iniciar Chamada de Vídeo (Meet / Jitsi)
   const iniciarChamadaVideo = () => {
     if (!grupoSelecionado) return;
-    const linkCustom = grupoSelecionado.link_meet || grupoSelecionado.linkMeet;
+    const linkCustom = (grupoSelecionado.link_meet || grupoSelecionado.linkMeet || '').trim();
     const url = linkCustom && linkCustom.startsWith('http')
       ? linkCustom
       : `https://meet.jit.si/SectioAurea_Grupo_${grupoSelecionado.codigo}`;
 
     window.open(url, '_blank');
+  };
+
+  // Configurar Link Personalizado do Meet / Zoom / Discord
+  const configurarLinkVideo = () => {
+    if (!grupoSelecionado) return;
+    const atual = grupoSelecionado.link_meet || grupoSelecionado.linkMeet || '';
+    Swal.fire({
+      title: 'Link da Sala de Vídeo',
+      html: `
+        <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 8px;">
+          Cole o link do Google Meet, Zoom ou Discord do grupo (deixe em branco para usar a sala automática Jitsi):
+        </p>
+        <input id="swalLinkMeet" class="swal2-input" style="width: 90%; margin: 8px auto;" placeholder="https://meet.google.com/..." value="${atual}">
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Salvar Link',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--cor-primaria)',
+      preConfirm: () => {
+        return document.getElementById('swalLinkMeet').value.trim();
+      }
+    }).then(res => {
+      if (res.isConfirmed) {
+        atualizarGrupoNoBackend(
+          { ...grupoSelecionado, link_meet: res.value, linkMeet: res.value },
+          'Link de chamada atualizado!'
+        );
+      }
+    });
   };
 
   // ==================== AÇÕES DE MEMBROS ====================
@@ -343,14 +550,14 @@ export default function GruposEstudo() {
       title: 'Adicionar Membro',
       html: `
         <input id="swalNomeMembro" class="swal2-input" placeholder="Nome do participante">
-        <input id="swalEmailMembro" class="swal2-input" placeholder="E-mail (opcional)">
+        <input id="swalEmailMembro" class="swal2-input" placeholder="E-mail do participante">
       `,
       showCancelButton: true,
       confirmButtonText: 'Adicionar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: 'var(--cor-primaria)',
       preConfirm: () => {
-        const nome = document.getElementById('swalNomeMembro').value.trim();
+        const nome = limparNomeMembro(document.getElementById('swalNomeMembro').value);
         const email = document.getElementById('swalEmailMembro').value.trim();
         if (!nome) {
           Swal.showValidationMessage('Digite o nome do participante!');
@@ -385,7 +592,10 @@ export default function GruposEstudo() {
   // ==================== AÇÕES DE TEMAS ====================
   const adicionarTema = () => {
     const opcoesMembros = (grupoSelecionado.membros || [])
-      .map(m => `<option value="${m.nome}">${m.nome}</option>`)
+      .map(m => {
+        const nomeLimpo = limparNomeMembro(m.nome);
+        return `<option value="${nomeLimpo}">${nomeLimpo}</option>`;
+      })
       .join('');
 
     Swal.fire({
@@ -418,6 +628,15 @@ export default function GruposEstudo() {
     });
   };
 
+  const alternarStatusTema = (index) => {
+    const novosTemas = (grupoSelecionado.temas || []).map((t, i) => {
+      if (i !== index) return t;
+      const concluido = t.status === 'Concluído';
+      return { ...t, status: concluido ? 'Em andamento' : 'Concluído' };
+    });
+    atualizarGrupoNoBackend({ ...grupoSelecionado, temas: novosTemas }, 'Status do tema atualizado!');
+  };
+
   const removerTema = (index) => {
     const novosTemas = grupoSelecionado.temas.filter((_, i) => i !== index);
     atualizarGrupoNoBackend({ ...grupoSelecionado, temas: novosTemas });
@@ -438,7 +657,7 @@ export default function GruposEstudo() {
       if (res.isConfirmed && res.value) {
         const novaDuvidaObj = {
           pergunta: res.value.trim(),
-          autor: usuarioAtual.nome,
+          autor: limparNomeMembro(usuarioAtual.nome) || 'Membro',
           resposta: null,
           data: new Date().toLocaleDateString('pt-BR')
         };
@@ -464,7 +683,9 @@ export default function GruposEstudo() {
     }).then(res => {
       if (res.isConfirmed && res.value) {
         const novasDuvidas = grupoSelecionado.duvidas.map((item, i) =>
-          i === index ? { ...item, resposta: res.value.trim(), respondidoPor: usuarioAtual.nome } : item
+          i === index
+            ? { ...item, resposta: res.value.trim(), respondidoPor: limparNomeMembro(usuarioAtual.nome) || 'Membro' }
+            : item
         );
         atualizarGrupoNoBackend({ ...grupoSelecionado, duvidas: novasDuvidas }, 'Resposta compartilhada!');
       }
@@ -517,6 +738,15 @@ export default function GruposEstudo() {
     atualizarGrupoNoBackend({ ...grupoSelecionado, reunioes: novasReunioes });
   };
 
+  const formatarDataReuniao = (dataStr) => {
+    if (!dataStr) return '';
+    const parteData = String(dataStr).split('T')[0];
+    if (parteData.includes('-')) {
+      return parteData.split('-').reverse().join('/');
+    }
+    return parteData;
+  };
+
   // ==================== AÇÕES DE FLASHCARDS ====================
   // Verifica se o flashcard já existe no grupo atual
   const isCardJaNoGrupo = useCallback((card) => {
@@ -542,6 +772,14 @@ export default function GruposEstudo() {
       (mc.resposta || '').trim().toLowerCase() === rTrim
     );
   }, [cardsImportados, meusCards]);
+
+  // Verifica se um flashcard compartilhado foi postado pelo próprio usuário
+  const ehCardDoUsuarioAtual = useCallback((card) => {
+    if (!card) return false;
+    const autorCard = limparNomeMembro(card.compartilhadoPor || card.autor || '').toLowerCase();
+    const meuNome = limparNomeMembro(usuarioAtual.nome).toLowerCase();
+    return Boolean(autorCard && meuNome && autorCard === meuNome);
+  }, [usuarioAtual]);
 
   // Abrir modal de upload de cards pessoais
   const abrirModalSubirCards = () => {
@@ -604,7 +842,7 @@ export default function GruposEstudo() {
       resposta: c.resposta,
       tema: c.tema || 'Geral',
       materiaNome: c.materiaNome || c.nome_materia || grupoSelecionado.materia || 'Geral',
-      compartilhadoPor: usuarioAtual.nome,
+      compartilhadoPor: limparNomeMembro(usuarioAtual.nome) || 'Estudante',
       data: new Date().toLocaleDateString('pt-BR')
     }));
 
@@ -726,7 +964,7 @@ export default function GruposEstudo() {
   const importarTodosCardsParaMim = async () => {
     const cardsGrupo = grupoSelecionado.flashcards_compartilhados || grupoSelecionado.flashcardsCompartilhados || [];
     const cardsParaImportar = cardsGrupo.filter(c => {
-      const ehMeu = c.compartilhadoPor === usuarioAtual.nome;
+      const ehMeu = ehCardDoUsuarioAtual(c);
       const jaImportado = isCardJaImportado(c);
       return !ehMeu && !jaImportado;
     });
@@ -825,11 +1063,11 @@ export default function GruposEstudo() {
     if (!grupoSelecionado) return 0;
     const cardsGrupo = grupoSelecionado.flashcards_compartilhados || grupoSelecionado.flashcardsCompartilhados || [];
     return cardsGrupo.filter(c => {
-      const ehMeu = c.compartilhadoPor === usuarioAtual.nome;
+      const ehMeu = ehCardDoUsuarioAtual(c);
       const jaImportado = isCardJaImportado(c);
       return !ehMeu && !jaImportado;
     }).length;
-  }, [grupoSelecionado, usuarioAtual, isCardJaImportado]);
+  }, [grupoSelecionado, ehCardDoUsuarioAtual, isCardJaImportado]);
 
   // Filtro de cards pessoais para o modal de upload
   const cardsFiltradosParaSubir = useMemo(() => {
@@ -867,7 +1105,7 @@ export default function GruposEstudo() {
           pergunta,
           resposta,
           tema: 'Geral',
-          compartilhadoPor: usuarioAtual.nome,
+          compartilhadoPor: limparNomeMembro(usuarioAtual.nome) || 'Estudante',
           materiaNome: grupoSelecionado.materia || 'Geral',
           data: new Date().toLocaleDateString('pt-BR')
         };
@@ -1003,6 +1241,7 @@ export default function GruposEstudo() {
                   const membros = g.membros || [];
                   const duvidas = g.duvidas || [];
                   const cards = g.flashcards_compartilhados || g.flashcardsCompartilhados || [];
+                  const ehLiderCard = souLiderDoGrupo(g);
 
                   return (
                     <div key={g.id || g.id_grupo} className="grupo-card" onClick={() => abrirGrupo(g)}>
@@ -1014,16 +1253,35 @@ export default function GruposEstudo() {
                               <i className="bi bi-book"></i> {g.materia || 'Geral'}
                             </span>
                           </div>
-                          <span
-                            className="grupo-codigo-pill"
-                            title="Clique para copiar o código"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copiarCodigo(g.codigo);
-                            }}
-                          >
-                            <i className="bi bi-clipboard"></i> {g.codigo}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              className="grupo-codigo-pill"
+                              title="Clique para copiar o código"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copiarCodigo(g.codigo);
+                              }}
+                            >
+                              <i className="bi bi-clipboard"></i> {g.codigo}
+                            </span>
+                            {ehLiderCard && (
+                              <button
+                                type="button"
+                                title="Excluir grupo"
+                                onClick={(e) => handleExcluirGrupo(g, e)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  fontSize: '0.95rem'
+                                }}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1044,11 +1302,14 @@ export default function GruposEstudo() {
 
                       <div className="grupo-card-footer">
                         <div className="grupo-card-membros-preview">
-                          {membros.slice(0, 3).map((m, idx) => (
-                            <div key={idx} className="grupo-avatar-circle" title={m.nome}>
-                              {m.nome ? m.nome.charAt(0).toUpperCase() : 'M'}
-                            </div>
-                          ))}
+                          {membros.slice(0, 3).map((m, idx) => {
+                            const nomeLimpo = limparNomeMembro(m.nome);
+                            return (
+                              <div key={idx} className="grupo-avatar-circle" title={nomeLimpo}>
+                                {nomeLimpo ? nomeLimpo.charAt(0).toUpperCase() : 'M'}
+                              </div>
+                            );
+                          })}
                           {membros.length > 3 && (
                             <div className="grupo-avatar-circle" style={{ background: '#64748b' }}>
                               +{membros.length - 3}
@@ -1098,9 +1359,42 @@ export default function GruposEstudo() {
                 <button className="btn-meet-video" onClick={iniciarChamadaVideo}>
                   <i className="bi bi-camera-video-fill"></i> Chamada de Vídeo (Meet)
                 </button>
+                <button
+                  className="btn-copiar-codigo"
+                  title="Configurar link do Google Meet / Zoom / Discord"
+                  onClick={configurarLinkVideo}
+                >
+                  <i className="bi bi-link-45deg"></i> Link da Sala
+                </button>
                 <button className="btn-copiar-codigo" onClick={() => copiarCodigo(grupoSelecionado.codigo)}>
                   <i className="bi bi-share-fill"></i> Convidar Colega
                 </button>
+                <button
+                  className="btn-copiar-codigo"
+                  title="Atualizar dados do grupo"
+                  onClick={() => carregarGrupos(false)}
+                >
+                  <i className={`bi bi-arrow-clockwise ${carregando ? 'spin' : ''}`}></i>
+                </button>
+                {souLiderDoGrupo(grupoSelecionado) ? (
+                  <button
+                    className="btn-copiar-codigo"
+                    style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
+                    onClick={() => handleExcluirGrupo(grupoSelecionado)}
+                    title="Excluir este grupo"
+                  >
+                    <i className="bi bi-trash"></i> Excluir Grupo
+                  </button>
+                ) : (
+                  <button
+                    className="btn-copiar-codigo"
+                    style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
+                    onClick={() => handleSairDoGrupo(grupoSelecionado)}
+                    title="Sair deste grupo"
+                  >
+                    <i className="bi bi-box-arrow-right"></i> Sair do Grupo
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1158,34 +1452,40 @@ export default function GruposEstudo() {
                   </div>
 
                   <div className="membros-list">
-                    {(grupoSelecionado.membros || []).map((m, idx) => (
-                      <div key={idx} className="membro-item">
-                        <div className="membro-info-block">
-                          <div className="grupo-avatar-circle" style={{ width: 42, height: 42, fontSize: '1rem', background: idx === 0 ? 'var(--cor-primaria)' : '#3b82f6' }}>
-                            {m.nome ? m.nome.charAt(0).toUpperCase() : 'M'}
+                    {(grupoSelecionado.membros || []).map((m, idx) => {
+                      const nomeLimpo = limparNomeMembro(m.nome);
+                      const isMe = ehUsuarioAtual(m);
+                      return (
+                        <div key={idx} className="membro-item">
+                          <div className="membro-info-block">
+                            <div className="grupo-avatar-circle" style={{ width: 42, height: 42, fontSize: '1rem', background: idx === 0 ? 'var(--cor-primaria)' : '#3b82f6' }}>
+                              {nomeLimpo ? nomeLimpo.charAt(0).toUpperCase() : 'M'}
+                            </div>
+                            <div>
+                              <strong style={{ fontSize: '0.98rem', color: '#1e293b' }}>
+                                {nomeLimpo} {isMe ? <span style={{ color: 'var(--cor-primaria)', fontWeight: 700 }}>(Você)</span> : ''}
+                              </strong>
+                              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{m.email || 'E-mail não informado'}</div>
+                            </div>
                           </div>
-                          <div>
-                            <strong style={{ fontSize: '0.98rem', color: '#1e293b' }}>{m.nome}</strong>
-                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{m.email || 'E-mail não informado'}</div>
-                          </div>
-                        </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span className={`membro-badge-role ${m.papel === 'Líder' ? 'lider' : 'membro'}`}>
-                            {m.papel || 'Membro'}
-                          </span>
-                          {idx !== 0 && (
-                            <button
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
-                              title="Remover participante"
-                              onClick={() => removerMembro(idx)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span className={`membro-badge-role ${m.papel === 'Líder' ? 'lider' : 'membro'}`}>
+                              {m.papel || 'Membro'}
+                            </span>
+                            {idx !== 0 && (
+                              <button
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
+                                title="Remover participante"
+                                onClick={() => removerMembro(idx)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1207,23 +1507,52 @@ export default function GruposEstudo() {
                     </div>
                   ) : (
                     <div style={{ display: 'grid', gap: '12px' }}>
-                      {grupoSelecionado.temas.map((t, idx) => (
-                        <div key={idx} className="membro-item">
-                          <div>
-                            <strong style={{ fontSize: '1rem', color: '#1e293b' }}>{t.titulo}</strong>
-                            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '3px' }}>
-                              <i className="bi bi-person-circle"></i> Responsável: <strong>{t.responsavel}</strong>
+                      {grupoSelecionado.temas.map((t, idx) => {
+                        const concluido = t.status === 'Concluído';
+                        return (
+                          <div key={idx} className="membro-item">
+                            <div>
+                              <strong style={{
+                                fontSize: '1rem',
+                                color: concluido ? '#10b981' : '#1e293b',
+                                textDecoration: concluido ? 'line-through' : 'none'
+                              }}>
+                                {t.titulo}
+                              </strong>
+                              <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '3px' }}>
+                                <i className="bi bi-person-circle"></i> Responsável: <strong>{limparNomeMembro(t.responsavel)}</strong>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <button
+                                type="button"
+                                onClick={() => alternarStatusTema(idx)}
+                                style={{
+                                  border: 'none',
+                                  padding: '5px 12px',
+                                  borderRadius: '20px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  background: concluido ? '#dcfce7' : '#fef3c7',
+                                  color: concluido ? '#166534' : '#92400e'
+                                }}
+                                title="Clique para alternar o status"
+                              >
+                                <i className={`bi ${concluido ? 'bi-check-circle-fill' : 'bi-hourglass-split'}`}></i>{' '}
+                                {t.status || 'Em andamento'}
+                              </button>
+                              <button
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
+                                title="Remover tema"
+                                onClick={() => removerTema(idx)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
                             </div>
                           </div>
-                          <button
-                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }}
-                            title="Remover tema"
-                            onClick={() => removerTema(idx)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1260,12 +1589,21 @@ export default function GruposEstudo() {
                           </div>
 
                           <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '8px' }}>
-                            Postado por: <strong>{d.autor || 'Membro'}</strong> {d.data ? `em ${d.data}` : ''}
+                            Postado por: <strong>{limparNomeMembro(d.autor) || 'Membro'}</strong> {d.data ? `em ${d.data}` : ''}
                           </div>
 
                           {d.resposta ? (
                             <div className="duvida-resposta-box">
-                              <strong><i className="bi bi-check2-circle"></i> Resposta {d.respondidoPor ? `(por ${d.respondidoPor})` : ''}:</strong>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong><i className="bi bi-check2-circle"></i> Resposta {d.respondidoPor ? `(por ${limparNomeMembro(d.respondidoPor)})` : ''}:</strong>
+                                <button
+                                  type="button"
+                                  style={{ background: 'none', border: 'none', color: '#166534', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                  onClick={() => responderDuvida(idx)}
+                                >
+                                  Editar resposta
+                                </button>
+                              </div>
                               <p style={{ margin: '4px 0 0 0' }}>{d.resposta}</p>
                             </div>
                           ) : (
@@ -1328,7 +1666,7 @@ export default function GruposEstudo() {
                           <div>
                             <strong style={{ fontSize: '1.05rem', color: '#1e293b' }}>{r.titulo}</strong>
                             <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
-                              <i className="bi bi-clock-fill text-primary"></i> Data: <strong>{r.data ? r.data.split('-').reverse().join('/') : ''}</strong> às <strong>{r.hora || '14:00'}</strong>
+                              <i className="bi bi-clock-fill text-primary"></i> Data: <strong>{formatarDataReuniao(r.data)}</strong> às <strong>{r.hora || '14:00'}</strong>
                             </div>
                           </div>
 
@@ -1393,9 +1731,9 @@ export default function GruposEstudo() {
                   ) : (
                     <div className="grupo-flashcards-grid">
                       {(grupoSelecionado.flashcards_compartilhados || grupoSelecionado.flashcardsCompartilhados).map((c, idx) => {
-                        const ehMeu = c.compartilhadoPor === usuarioAtual.nome;
+                        const ehMeu = ehCardDoUsuarioAtual(c);
                         const jaImportado = isCardJaImportado(c);
-                        const podeExcluir = ehMeu || (grupoSelecionado.membros && grupoSelecionado.membros[0]?.nome?.includes(usuarioAtual.nome));
+                        const podeExcluir = ehMeu || souLiderDoGrupo(grupoSelecionado);
 
                         return (
                           <div key={idx} className="grupo-flashcard-card">
@@ -1435,7 +1773,7 @@ export default function GruposEstudo() {
 
                             <div className="grupo-flashcard-footer-action">
                               <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                                <i className="bi bi-person"></i> {ehMeu ? <strong>Você</strong> : (c.compartilhadoPor || c.autor || 'Colega')}
+                                <i className="bi bi-person"></i> {ehMeu ? <strong>Você</strong> : (limparNomeMembro(c.compartilhadoPor || c.autor) || 'Colega')}
                                 {c.data ? ` • ${c.data}` : ''}
                               </div>
 
@@ -1548,6 +1886,9 @@ export default function GruposEstudo() {
                     value={codigoEntrada}
                     autoFocus
                     onChange={e => setCodigoEntrada(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleEntrarComCodigo();
+                    }}
                   />
                 </div>
               </div>

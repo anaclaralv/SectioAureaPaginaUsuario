@@ -3,32 +3,45 @@
    ========================================================================== */
 
 .feynman-container {
-  padding: 30px 40px;
-  max-width: 1300px;
+  padding: 24px 30px;
+  max-width: 1400px;
   margin: 0 auto;
   min-height: calc(100vh - 80px);
-  font-family: 'Poppins', sans-serif;
+  font-family: inherit;
   color: #1e293b;
+  animation: fadeInFeynman 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInFeynman {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Header Geral */
 .feynman-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 25px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 16px;
 }
 
 .feynman-title-group h1 {
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
   margin-bottom: 5px;
   display: flex;
   align-items: center;
   gap: 12px;
+  letter-spacing: -0.02em;
 }
 
 .feynman-title-group h1 i {
@@ -44,8 +57,8 @@
 .feynman-quote-banner {
   background: linear-gradient(135deg, rgba(159, 4, 44, 0.06), rgba(81, 112, 255, 0.06));
   border-left: 4px solid #9f042c;
-  padding: 14px 20px;
-  border-radius: 0 12px 12px 0;
+  padding: 16px 22px;
+  border-radius: 0 16px 16px 0;
   margin-bottom: 25px;
   display: flex;
   align-items: center;
@@ -69,34 +82,86 @@
   gap: 12px;
 }
 
+.btn-voltar-metodos {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 50px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-voltar-metodos:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: translateX(-2px);
+}
+
 .btn-novo-feynman {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 22px;
-  border-radius: 10px;
+  padding: 11px 24px;
+  border-radius: 50px;
   background: linear-gradient(135deg, #9f042c, #c01844);
   border: none;
   color: #ffffff;
   font-weight: 700;
+  font-size: 0.95rem;
   box-shadow: 0 4px 14px rgba(159, 4, 44, 0.35);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-novo-feynman:hover {
   transform: translateY(-2px);
+  filter: brightness(1.08);
   box-shadow: 0 6px 20px rgba(159, 4, 44, 0.45);
 }
 
 /* Filtros por Matéria */
 .feynman-filters {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
-  padding-bottom: 15px;
+  padding-bottom: 12px;
   margin-bottom: 25px;
   scrollbar-width: thin;
+}
+
+.filtro-pilula {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 50px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filtro-pilula:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.filtro-pilula.ativo {
+  background: var(--cor-primaria, #9f042c);
+  border-color: var(--cor-primaria, #9f042c);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Grid de Cards */
@@ -108,22 +173,23 @@
 
 .feynman-card {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid #e2e8f0;
+  border-top: 4px solid #9f042c;
   padding: 22px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 230px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .feynman-card:hover {
   transform: translateY(-4px);
   border-color: #9f042c;
-  box-shadow: 0 12px 24px -6px rgba(159, 4, 44, 0.15);
+  box-shadow: 0 12px 28px -6px rgba(159, 4, 44, 0.18);
 }
 
 .feynman-score-pill {
@@ -434,6 +500,49 @@ body.dark-mode .feynman-title-group h1,
   color: #f8fafc;
 }
 
+/* Dark Mode */
+body.dark .feynman-container,
+body.modo-escuro .feynman-container,
+body.dark-mode .feynman-container,
+[data-theme='dark'] .feynman-container {
+  color: #f8fafc;
+}
+
+body.dark .feynman-title-group h1,
+body.modo-escuro .feynman-title-group h1,
+body.dark-mode .feynman-title-group h1,
+[data-theme='dark'] .feynman-title-group h1 {
+  color: #f8fafc;
+}
+
+body.dark .btn-voltar-metodos,
+body.modo-escuro .btn-voltar-metodos,
+body.dark-mode .btn-voltar-metodos,
+[data-theme='dark'] .btn-voltar-metodos {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+body.dark .btn-voltar-metodos:hover,
+body.modo-escuro .btn-voltar-metodos:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+body.dark .filtro-pilula,
+body.modo-escuro .filtro-pilula,
+body.dark-mode .filtro-pilula,
+[data-theme='dark'] .filtro-pilula {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+body.dark .feynman-card,
+body.dark .feynman-studio,
+body.modo-escuro .feynman-card,
+body.modo-escuro .feynman-studio,
 body.dark-mode .feynman-card,
 body.dark-mode .feynman-studio,
 [data-theme='dark'] .feynman-card,
@@ -442,16 +551,26 @@ body.dark-mode .feynman-studio,
   border-color: #334155;
 }
 
+body.dark .feynman-card h3,
+body.modo-escuro .feynman-card h3,
 body.dark-mode .feynman-card h3,
 [data-theme='dark'] .feynman-card h3 {
   color: #f8fafc;
 }
 
+body.dark .feynman-quote-banner,
+body.modo-escuro .feynman-quote-banner,
 body.dark-mode .feynman-quote-banner,
 [data-theme='dark'] .feynman-quote-banner {
   background: rgba(159, 4, 44, 0.12);
 }
 
+body.dark .studio-top-bar,
+body.dark .steps-nav-bar,
+body.dark .studio-footer-nav,
+body.modo-escuro .studio-top-bar,
+body.modo-escuro .steps-nav-bar,
+body.modo-escuro .studio-footer-nav,
 body.dark-mode .studio-top-bar,
 body.dark-mode .steps-nav-bar,
 body.dark-mode .studio-footer-nav,
@@ -462,11 +581,17 @@ body.dark-mode .studio-footer-nav,
   border-color: #334155;
 }
 
+body.dark .step-nav-item.active,
+body.modo-escuro .step-nav-item.active,
 body.dark-mode .step-nav-item.active,
 [data-theme='dark'] .step-nav-item.active {
   background: #1e293b;
 }
 
+body.dark .recorder-box,
+body.dark .mastery-progress-box,
+body.modo-escuro .recorder-box,
+body.modo-escuro .mastery-progress-box,
 body.dark-mode .recorder-box,
 body.dark-mode .mastery-progress-box,
 [data-theme='dark'] .recorder-box,
@@ -475,6 +600,10 @@ body.dark-mode .mastery-progress-box,
   border-color: #334155;
 }
 
+body.dark .recording-timer,
+body.dark .check-card-info h4,
+body.modo-escuro .recording-timer,
+body.modo-escuro .check-card-info h4,
 body.dark-mode .recording-timer,
 body.dark-mode .check-card-info h4,
 [data-theme='dark'] .recording-timer,
@@ -482,6 +611,8 @@ body.dark-mode .check-card-info h4,
   color: #f8fafc;
 }
 
+body.dark .feynman-check-card,
+body.modo-escuro .feynman-check-card,
 body.dark-mode .feynman-check-card,
 [data-theme='dark'] .feynman-check-card {
   background: #0f172a;

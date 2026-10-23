@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api';
 import './Metodos.css';
 
 const iconesInteligencia = {
@@ -16,55 +17,55 @@ const metodosPorInteligencia = {
   linguistica: {
     nome: "Linguística",
     cor: "#9f042c",
-    descricao: "Voce aprende melhor com palavras, leitura, escrita e comunicacao. Os metodos abaixo foram selecionados para seu perfil.",
+    descricao: "Você aprende melhor com palavras, leitura, escrita e comunicação. Os métodos abaixo foram selecionados para potencializar seu perfil.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. A cada ciclo, mude o conteudo.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo", "A cada 4 ciclos, faça uma pausa longa de 15-30 minutos"],
-        beneficios: ["Mantem o foco", "Evita cansaco mental", "Aumenta a produtividade"],
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. A cada ciclo, alterne os tópicos para manter o foco máximo.",
+        passos: ["Escolha o conteúdo a ser estudado", "Estude focado por 25 minutos", "Descanse 5 minutos", "Repita o ciclo", "A cada 4 ciclos, faça uma pausa longa de 15 a 30 minutos"],
+        beneficios: ["Mantém o foco elevado", "Evita cansaço mental e procrastinação", "Aumenta o rendimento diário"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Tecnica Feynman", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Aprenda explicando o conceito em voz alta com suas proprias palavras, como se estivesse ensinando alguem.",
-        passos: ["Escolha um conceito", "Explique em voz alta com palavras simples", "Identifique as lacunas na sua explicacao", "Volte ao material original e estude novamente", "Reveja e simplifique"],
-        beneficios: ["Desenvolve a comunicacao", "Identifica pontos fracos", "Fixa o conteudo"],
+        id: 2, titulo: "Técnica Feynman", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Aprenda explicando o conceito em voz alta com suas próprias palavras, como se estivesse ensinando alguém leigo.",
+        passos: ["Escolha um conceito que acabou de estudar", "Grave ou explique em voz alta com termos simples", "Identifique as lacunas na sua explicação", "Volte ao material de apoio para sanar dúvidas", "Simplifique e crie analogias claras"],
+        beneficios: ["Desenvolve a articulação e oratória", "Identifica lacunas de aprendizado", "Fixação profunda de conceitos difíceis"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Facil",
-        descricao: "Leia devagar, intercalando com pausas para reflexao e resumos pessoais.",
-        passos: ["Escolha um texto relevante", "Leia um trecho por vez", "Pause e reflita sobre o que leu", "Anote suas reflexoes", "Faca um resumo com suas palavras"],
-        beneficios: ["Aumenta a compreensao", "Melhora o vocabulario", "Desenvolve pensamento critico"],
+        id: 3, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Fácil",
+        descricao: "Leia pausadamente, intercalando com reflexões pessoais e registros sintéticos com suas palavras.",
+        passos: ["Escolha um texto relevante", "Leia um parágrafo por vez com atenção plena", "Pause e reflita sobre a ideia central", "Anote suas reflexões no caderno digital", "Faça um resumo final com suas palavras"],
+        beneficios: ["Aumenta a absorção textual", "Amplia o vocabulário e repertório", "Desenvolve o pensamento crítico reflexivo"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Medio",
-        descricao: "Estude em grupo para trocar conhecimento, esclarecer duvidas e reforcar conceitos ao ensinar colegas.",
-        passos: ["Forme um grupo de 3-5 pessoas", "Divida os temas entre os membros", "Cada um prepara sua parte", "Revezem as explicacoes", "Tirem duvidas coletivamente"],
-        beneficios: ["Troca de conhecimento", "Desenvolve habilidades sociais", "Aprendizado colaborativo"],
+        id: 4, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Médio",
+        descricao: "Estude em grupo para trocar conhecimento, debater dúvidas e consolidar a matéria ao ensinar colegas.",
+        passos: ["Reúna seu grupo de estudos", "Defina a pauta da sessão colaborativa", "Compartilhe resumos e flashcards", "Expliquem pontos complexos mutuamente", "Pratiquem exercícios e tirem dúvidas"],
+        beneficios: ["Troca rica de perspectivas", "Desenvolve liderança e oratória", "Aprendizado ativo e colaborativo"],
         irParaRevisao: false
       },
       {
-        id: 5, titulo: "Flashcards", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Crie cartoes com perguntas de um lado e respostas do outro para revisar conceitos.",
-        passos: ["Escreva uma pergunta na frente do cartao", "Escreva a resposta no verso", "Teste-se diariamente", "Separe o que acertou do que errou", "Revise mais os que errou"],
-        beneficios: ["Memorizacao ativa", "Revisao eficiente", "Portabilidade"],
+        id: 5, titulo: "Flashcards", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Crie cartões com perguntas de um lado e respostas do outro para testar sua recuperação ativa de memória.",
+        passos: ["Crie cartões concisos com perguntas-chave", "Tente responder mentalmente antes de virar", "Classifique a dificuldade da resposta", "Revise com frequência os cartões difíceis", "Automatize a revisão periódica"],
+        beneficios: ["Recuperação ativa da memória", "Revisão rápida e objetiva", "Excelente portabilidade para rotina"],
         irParaRevisao: true, tipoRevisao: "flashcards"
       },
       {
-        id: 6, titulo: "Mnemonica com Palavras, Poemas ou Musicas", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie associacoes usando rimas, siglas, poemas ou musicas para memorizar conteudo.",
-        passos: ["Liste as informacoes a memorizar", "Crie uma sigla ou frase conectando os conceitos", "Ou transforme em uma musica/parodia", "Repita varias vezes ate fixar"],
-        beneficios: ["Memorizacao divertida", "Criacao de associacoes unicas", "Retencao de longo prazo"],
+        id: 6, titulo: "Mnemônica com Palavras ou Músicas", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Crie associações mnemônicas usando acrônimos, rimas ou paródias para reter listas e conceitos complexos.",
+        passos: ["Selecione as informações ou listas a reter", "Crie uma palavra ou frase com as iniciais", "Ou componha uma rima associativa", "Repita a mnemônica em momentos aleatórios"],
+        beneficios: ["Memorização ágil e divertida", "Cria âncoras mentais resistentes ao esquecimento", "Ideal para provas e exames"],
         irParaRevisao: true, tipoRevisao: "revisao_normal"
       },
       {
-        id: 7, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema de revisao que aumenta os intervalos conforme voce acerta as respostas.",
-        passos: ["Dia 1: Estude o conteudo", "Dia 2: Revise rapidamente", "Dia 4: Revise os pontos dificeis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisao final"],
-        beneficios: ["Revisao eficiente", "Memorizacao duradoura", "Otimizacao do tempo"],
+        id: 7, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Sistema científico que programa revisões com intervalos calculados para combater a Curva do Esquecimento de Ebbinghaus.",
+        passos: ["Estude o conteúdo no Dia 1", "Faça a 1ª revisão no Dia 2", "Faça a 2ª revisão no Dia 4", "Faça a 3ª revisão no Dia 7", "Consolide no Dia 15 e Dia 30"],
+        beneficios: ["Retenção garantida a longo prazo", "Otimiza horas de estudo eliminando revisões inúteis", "Prepara para grandes vestibulares"],
         irParaRevisao: true, tipoRevisao: "revisao_espacada"
       }
     ]
@@ -74,49 +75,49 @@ const metodosPorInteligencia = {
   intrapessoal: {
     nome: "Intrapessoal",
     cor: "#5170ff",
-    descricao: "Voce aprende melhor sozinho, com reflexao, autoanalise e estudos individuais.",
+    descricao: "Você aprende melhor sozinho, com reflexão profunda, autoavaliação e cadernos individuais de anotações.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. A cada ciclo, mude o conteudo.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo", "A cada 4 ciclos, faca uma pausa longa"],
-        beneficios: ["Mantem o foco", "Evita cansaco mental", "Aumenta a produtividade"],
+        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos, estabelecendo metas próprias para cada bloco.",
+        passos: ["Defina uma meta pessoal para o bloco", "Mantenha o ambiente silencioso por 25 minutos", "Faça 5 minutos de respiração e relaxamento", "Repita o ciclo mantendo seu ritmo"],
+        beneficios: ["Autonomia nos estudos", "Respeito ao próprio ritmo biológico", "Alta produtividade sem distrações"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Tecnica Feynman", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Aprenda explicando o conceito em voz alta com suas proprias palavras.",
-        passos: ["Escolha um conceito", "Explique em voz alta", "Identifique lacunas", "Volte ao material", "Simplifique a explicacao"],
-        beneficios: ["Desenvolve autoconhecimento", "Identifica pontos fracos", "Fixa o conteudo"],
+        id: 2, titulo: "Técnica Feynman", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Grave suas explicações em áudio e escute com espírito crítico para identificar pontos a aprimorar.",
+        passos: ["Escolha o conceito a ser dominado", "Grave sua explicação na plataforma", "Escute o áudio com espírito de autoanálise", "Sublinhe os trechos com hesitação", "Aprofunde as lacunas e regrave"],
+        beneficios: ["Autoconhecimento refinado", "Identificação precisa de fraquezas", "Domínio independente da matéria"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Metodo Cornell", tempo: "35 min", dificuldade: "Medio",
-        descricao: "Divida a pagina em duas colunas: esquerda para perguntas, direita para respostas e informacoes.",
-        passos: ["Divida a pagina em duas colunas", "Lado esquerdo: escreva perguntas", "Lado direito: anote respostas e informacoes", "Revise cobrindo o lado direito e respondendo as perguntas"],
-        beneficios: ["Organizacao visual", "Facilita autoavaliacao", "Material de revisao eficiente"],
+        id: 3, titulo: "Método Cornell", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Divida a página: notas principais, palavras-chave à esquerda e um sumário reflexivo abaixo.",
+        passos: ["Divida a página em três zonas estruturadas", "Tome notas durante os estudos na área maior", "Extraia palavras-chave e perguntas à esquerda", "Elabore um sumário com suas reflexões", "Revise cobrindo as notas e respondendo às perguntas"],
+        beneficios: ["Organização visual impecável", "Facilita autoavaliação autônoma", "Material de revisão de altíssimo valor"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Facil",
-        descricao: "Leia devagar, intercalando com pausas para reflexao e resumos pessoais.",
-        passos: ["Escolha um local tranquilo", "Leia um trecho por vez", "Pause e reflita", "Anote suas reflexoes", "Faca um resumo pessoal"],
-        beneficios: ["Conexao pessoal com o conteudo", "Desenvolvimento de empatia", "Aprendizado significativo"],
+        id: 4, titulo: "Leitura Savoring", tempo: "40 min", dificuldade: "Fácil",
+        descricao: "Leitura silenciosa reflexiva com pausas deliberadas para digerir ideias e criar notas pessoais.",
+        passos: ["Escolha um capítulo ou texto denso", "Leia com atenção plena sem pressa", "Conecte as ideias com suas experiências", "Registre suas conclusões no bloco de notas"],
+        beneficios: ["Conexão íntima com o conteúdo", "Desenvolve foco e contemplação", "Fixação duradoura de ideias"],
         irParaRevisao: false
       },
       {
-        id: 5, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema personalizado de revisao que voce gerencia conforme seu ritmo.",
-        passos: ["Dia 1: Estude o conteudo", "Dia 2: Revise rapidamente", "Dia 4: Reveja pontos dificeis", "Dia 7: Autoavaliacao", "Dia 15: Revisao final"],
-        beneficios: ["Autonomia no aprendizado", "Revisao personalizada", "Memorizacao duradoura"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
-      },
-      {
-        id: 6, titulo: "Flashcards", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie seus proprios cartoes para testar seus conhecimentos sozinho.",
-        passos: ["Crie perguntas para si mesmo", "Escreva pergunta de um lado e resposta do outro", "Teste-se sem olhar a resposta", "Separe por nivel de dificuldade"],
-        beneficios: ["Material personalizado", "Autoavaliacao honesta", "Estudo independente"],
+        id: 5, titulo: "Flashcards", tempo: "20 min", dificuldade: "Fácil",
+        descricao: "Treine autoavaliação com cartões de pergunta e resposta gerados a partir de suas anotações.",
+        passos: ["Elabore perguntas desafiadoras", "Teste-se individualmente", "Monitore sua taxa de acertos", "Ajuste os intervalos para os cartões difíceis"],
+        beneficios: ["Avaliação sincera e sem pressão externa", "Melhora contínua", "Flexibilidade total de horário"],
         irParaRevisao: true, tipoRevisao: "flashcards"
+      },
+      {
+        id: 6, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Acompanhe seu próprio progresso no cronômetro da Curva de Ebbinghaus.",
+        passos: ["Distribua seus tópicos no calendário", "Revise nos marcos de espaçamento", "Avalie a facilidade de cada resposta", "Reforce tópicos com maior taxa de erro"],
+        beneficios: ["Disciplina pessoal consistente", "Monitoramento transparente", "Consolidação na memória duradoura"],
+        irParaRevisao: true, tipoRevisao: "revisao_espacada"
       }
     ]
   },
@@ -125,55 +126,41 @@ const metodosPorInteligencia = {
   interpessoal: {
     nome: "Interpessoal",
     cor: "#ff5f00",
-    descricao: "Voce aprende melhor com outras pessoas, em grupo, discutindo e colaborando.",
+    descricao: "Você aprende melhor interagindo, dialogando, debatendo com colegas e ensinando o que aprendeu.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. Pode ser feito em grupo.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
-        beneficios: ["Mantem o foco", "Pode ser feito em grupo", "Aumenta a produtividade"],
+        id: 1, titulo: "Grupos de Estudo", tempo: "60 min", dificuldade: "Médio",
+        descricao: "Sessões dinâmicas de estudo coletivo com divisão de tópicos e debates orientados.",
+        passos: ["Organize um grupo com metas claras", "Distribua os subtópicos entre os membros", "Cada membro apresenta sua pesquisa", "Debatam os pontos divergentes e aplicações práticas", "Resolvam exercícios desafiadores em conjunto"],
+        beneficios: ["Intercâmbio de perspectivas", "Desenvolve empatia e comunicação", "Motivação mútua para manter a rotina"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Tecnica Feynman", tempo: "40 min", dificuldade: "Medio",
-        descricao: "Aprenda explicando conceitos para seus colegas como se estivessem aprendendo pela primeira vez.",
-        passos: ["Cada membro escolhe um conceito", "Explique para o grupo", "Use analogias e exemplos simples", "Peca perguntas e feedback", "Troque de papeis"],
-        beneficios: ["Desenvolve lideranca", "Aprendizado colaborativo", "Feedback em tempo real"],
+        id: 2, titulo: "Técnica Feynman para Amigos", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Explique a matéria para um colega que não domina o assunto e receba dúvidas reais.",
+        passos: ["Convide um colega para ouvir", "Apresente o assunto em 5 a 10 minutos de forma fluida", "Peça que o colega faça perguntas e aponte dúvidas", "Reestruture o raciocínio até o conceito ficar claro"],
+        beneficios: ["Didática lapidada na prática", "Feedbacks em tempo real", "Certeza absoluta de domínio do tema"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Teste Pratico", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Resolva provas anteriores e exercicios. Pode ser feito em dupla para correcao conjunta.",
-        passos: ["Escolha provas ou exercicios", "Responda individualmente", "Corrija com um colega", "Discutam os erros", "Criem um banco de questoes"],
-        beneficios: ["Avaliacao colaborativa", "Discussao enriquecedora", "Identificacao de pontos fracos"],
+        id: 3, titulo: "Gravação de Podcast", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Grave episódios curtos em formato de conversa ou programa de rádio compartilhável.",
+        passos: ["Crie uma pauta de podcast sobre a matéria", "Grave uma conversa ou monólogo informativo", "Compartilhe o áudio com seus colegas de classe", "Escute episódios de outros estudantes"],
+        beneficios: ["Desenvolve clareza de transmissão", "Estudo dinâmico e criativo", "Compartilhamento colaborativo"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Mnemonica com Poemas ou Musicas", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Criem juntos musicas, parodias ou poemas para memorizar conteudo de forma divertida.",
-        passos: ["Reunam o grupo", "Escolham um conteudo", "Selecionem uma melodia conhecida", "Criem a letra juntos", "Ensaie e apresentem"],
-        beneficios: ["Aprendizado ludico", "Criacao coletiva", "Fixacao por musica"],
-        irParaRevisao: true, tipoRevisao: "revisao_normal"
-      },
-      {
-        id: 5, titulo: "Estudo com Videos Educativos", tempo: "30 min", dificuldade: "Facil",
-        descricao: "Assistam videos educativos juntos e depois discutam os pontos principais.",
-        passos: ["Escolham um video educativo", "Assistam juntos", "Pausem para discutir", "Cada um anota um ponto principal", "Criem um resumo coletivo"],
-        beneficios: ["Aprendizado colaborativo", "Discussao enriquecedora", "Diferentes pontos de vista"],
+        id: 4, titulo: "Teste Prático em Dupla", tempo: "45 min", dificuldade: "Médio",
+        descricao: "Resolva simulados com um parceiro, justificando cada alternativa escolhida.",
+        passos: ["Definam uma lista de exercícios", "Resolvam a questão individualmente em 3 minutos", "Comparam o gabarito e justifiquem a lógica", "Identifiquem pegadinhas de banca em conjunto"],
+        beneficios: ["Argumentação lógica fortalecida", "Menos desatenção em enunciados", "Fixação de estratégias de prova"],
         irParaRevisao: false
       },
       {
-        id: 6, titulo: "Repeticao Espacada", tempo: "20 min/sessao", dificuldade: "Medio",
-        descricao: "Sistema de revisao em grupo onde cada um testa o outro em intervalos programados.",
-        passos: ["Formem um grupo de compromisso", "Dia 1: Estudo inicial", "Dia 2: Revisao rapida em duplas", "Dia 4: Testem uns aos outros", "Dia 7: Sessao de duvidas", "Dia 15: Revisao final"],
-        beneficios: ["Compromisso coletivo", "Aprendizado colaborativo", "Responsabilidade compartilhada"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
-      },
-      {
-        id: 7, titulo: "Grupos de Estudo", tempo: "60 min", dificuldade: "Medio",
-        descricao: "Estrategia para trocar conhecimento, esclarecer duvidas e reforcar conceitos ao ensinar colegas.",
-        passos: ["Definam um grupo de 3-5 pessoas", "Dividam o conteudo em partes", "Cada um prepara sua parte", "Revezem explicacoes", "Tirem duvidas coletivamente"],
-        beneficios: ["Desenvolvimento social", "Aprendizado diversificado", "Rede de apoio mutuo"],
+        id: 5, titulo: "Pomodoro Social", tempo: "50 min", dificuldade: "Fácil",
+        descricao: "Estudem no mesmo ambiente com ciclos de foco e compartilhem o progresso nos intervalos.",
+        passos: ["Iniciem o cronômetro sincronizados", "Foco total silencioso durante 25 minutos", "Nos 5 minutos de pausa, compartilhem um insight", "Repitam os blocos estimulando uns aos outros"],
+        beneficios: ["Comprometimento mútuo", "Redução de distrações individuais", "Sensação gostosa de time"],
         irParaRevisao: false
       }
     ]
@@ -183,279 +170,259 @@ const metodosPorInteligencia = {
   musical: {
     nome: "Musical",
     cor: "#8a03d2",
-    descricao: "Voce aprende melhor com ritmo, melodia, sons e musicas.",
+    descricao: "Você tem facilidade com ritmo, sonoridade, melodias e assimilação por meio de padrões sonoros.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com musicas instrumentais para manter o foco e ritmo.",
-        passos: ["Escolha uma playlist instrumental", "Configure um timer de 25 minutos", "Estude ate o timer tocar", "Descanse 5 minutos", "Repita o ciclo"],
-        beneficios: ["Ritmo constante", "Associacao musica-produtividade", "Experiencia prazerosa"],
+        id: 1, titulo: "Gravação de Podcast", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Transforme resumos de matéria em episódios de áudio dinâmicos com entonação expressiva.",
+        passos: ["Roteirize os tópicos com ritmo e cadência", "Grave no estúdio com clareza vocal", "Escute seus próprios áudios durante deslocamentos", "Aproveite a modulação vocal para fixar pontos-chave"],
+        beneficios: ["Excelente retenção auditiva", "Estudo em qualquer lugar com fones", "Facilidade de assimilação de termos"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Mnemonica com Poemas ou Musicas", tempo: "30 min", dificuldade: "Facil",
-        descricao: "Crie musicas, parodias ou rimas para memorizar conteudo de forma divertida e melodica.",
-        passos: ["Escolha uma melodia conhecida", "Adapte o conteudo para a letra", "Mantenha o ritmo e a rima", "Ensaiote cantando", "Grave sua parodia"],
-        beneficios: ["Memorizacao natural", "Desenvolvimento criativo", "Aprendizado leve"],
+        id: 2, titulo: "Mnemônica com Palavras ou Músicas", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Componha rimas e paródias musicais associando fórmulas, datas e tabelas à métrica melódica.",
+        passos: ["Escolha uma música conhecida de ritmo marcante", "Adapte a letra para incluir o conteúdo", "Cante a melodia repetidas vezes", "Grave um áudio de referência para revisões"],
+        beneficios: ["Fixação imediata de fórmulas e listas", "Associação mnemônica instantânea", "Estudo leve e memorável"],
         irParaRevisao: true, tipoRevisao: "revisao_normal"
       },
       {
-        id: 3, titulo: "Gravacao de Podcast", tempo: "40 min", dificuldade: "Medio",
-        descricao: "Grave audio da sua propria explicacao para enfatizar a memorizacao da materia.",
-        passos: ["Escolha um tema", "Escreva um roteiro simples", "Configure o gravador", "Grave explicando o conteudo", "Ouca e identifique pontos a melhorar"],
-        beneficios: ["Material de revisao auditiva", "Desenvolvimento de comunicacao", "Criacao de portfolio"],
+        id: 3, titulo: "Estudo com Vídeos Educativos", tempo: "35 min", dificuldade: "Fácil",
+        descricao: "Estude assistindo videoaulas de professores com boa didática auditiva, gravando resumos em áudio.",
+        passos: ["Suba o link do vídeo educativo no módulo", "Ouça as explicações com atenção ao tom e ênfase", "Grave um áudio resumindo a lição principal", "Salve suas anotações com timestamps"],
+        beneficios: ["Combinação rica de som e explicação", "Captação de nuances orais dos professores", "Fixação por repetição auditiva"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Estudo com Videos Educativos", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Assista videos educativos e crie trilhas sonoras ou resumos em formato de musica.",
-        passos: ["Selecione um video educativo", "Assista prestando atencao aos sons", "Pause e crie um jingle para cada topico", "Anote o conteudo", "Produza uma parodia"],
-        beneficios: ["Aprendizado multimodal", "Associacoes musicais", "Engajamento auditivo"],
+        id: 4, titulo: "Pomodoro com Trilha Sonora Binaural", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Utilize ruído marrom, sons da natureza ou batidas binaurais durante blocos de foco.",
+        passos: ["Escolha uma playlist de foco ou ruído marrom", "Inicie o Pomodoro de 25 minutos", "Mantenha o volume agradável sem vocais", "Descanse 5 minutos em silêncio absoluto"],
+        beneficios: ["Isolamento de ruídos externos", "Acelera entrada no estado de fluxo (flow)", "Relaxamento cognitivo"],
         irParaRevisao: false
-      },
-      {
-        id: 5, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema de revisao onde voce usa batidas e ritmos para marcar os intervalos.",
-        passos: ["Crie uma playlist com musicas para cada dia", "Dia 1: Estudo inicial", "Dia 2: Revisao rapida", "Dia 4: Teste cantando", "Dia 7: Crie um beatbox do conteudo", "Dia 15: Revisao final"],
-        beneficios: ["Revisao no seu ritmo", "Associacoes ritmicas", "Consistencia musical"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
       }
     ]
   },
 
   // ==================== LÓGICO-MATEMÁTICA ====================
   logico: {
-    nome: "Logico-Matematica",
+    nome: "Lógico-Matemática",
     cor: "#ffbd59",
-    descricao: "Voce tem facilidade com numeros, padroes e raciocinio abstrato.",
+    descricao: "Você aprende melhor por raciocínio dedutivo, padrões estruturados, diagramas, listas e testes práticos.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos. Ideal para manter o foco em calculos e problemas.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
-        beneficios: ["Mantem o foco", "Evita cansaco mental", "Aumenta a produtividade"],
+        id: 1, titulo: "Teste Prático & Simulados", tempo: "45 min", dificuldade: "Médio",
+        descricao: "Aprenda por meio de resolução de problemas, análise de dados e exercícios de banca.",
+        passos: ["Selecione blocos de 10 a 15 exercícios", "Cronometre o tempo médio por questão", "Resolva sem consultar respostas previamente", "Analise as razões exatas dos erros", "Documente os padrões de pegadinha"],
+        beneficios: ["Preparação para o modelo real de prova", "Raciocínio lógico aguçado", "Identificação precisa de tópicos fracos"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Metodo Cornell", tempo: "35 min", dificuldade: "Medio",
-        descricao: "Divida a pagina em duas colunas: esquerda para perguntas, direita para respostas e formulas.",
-        passos: ["Divida a pagina em duas colunas", "Lado esquerdo: escreva perguntas e formulas", "Lado direito: anote respostas e explicacoes", "Revise cobrindo o lado direito"],
-        beneficios: ["Organizacao logica", "Facilita autoavaliacao", "Material de revisao"],
+        id: 2, titulo: "Diagrama de Fluxo / Fluxograma", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Mapeie processos, condições lógicas ('se/então') e sequências passo a passo.",
+        passos: ["Identifique o processo central do assunto", "Defina o ponto de partida e o objetivo final", "Crie blocos de decisões lógicas ('se sim / se não')", "Conecte com setas direcionais coerentes", "Teste o fluxo com um caso prático"],
+        beneficios: ["Visão sistêmica impecável", "Clareza em matérias com regras e etapas", "Facilita raciocínio condicional"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Mapa Mental", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Organize o conteudo de forma grafica com foco no tema central e topicos relacionados.",
-        passos: ["Escreva o tema central no meio", "Puxe ramos para cada subtopico", "Adicione palavras-chave em cada ramo", "Use cores para diferenciar categorias", "Conecte ideias relacionadas"],
-        beneficios: ["Visualizacao geral", "Conexao entre conceitos", "Organizacao hierarquica"],
+        id: 3, titulo: "Método Cornell", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Estruture suas notas em formato de problemas, hipóteses e respostas dedutivas.",
+        passos: ["Coluna esquerda: teoremas, regras e fórmulas", "Coluna direita: deduções e exemplos de resolução", "Área inferior: síntese da regra geral", "Revise deduzindo a resposta a partir da premissa"],
+        beneficios: ["Organização algorítmica de ideias", "Ideal para exatas, economia e direito", "Consulta rápida de fórmulas e teses"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Teste Pratico", tempo: "35 min", dificuldade: "Medio",
-        descricao: "Resolver provas anteriores e exercicios e uma forma eficiente para fixar o conteudo.",
-        passos: ["Escolha provas ou exercicios", "Resolva sem consulta", "Corrija seus erros", "Refaca os exercicios que errou", "Anote o que precisa revisar"],
-        beneficios: ["Fixacao por pratica", "Identificacao de dificuldades", "Preparacao para provas"],
+        id: 4, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Quantifique sua produtividade em métricas exatas de blocos cumpridos e taxas de acerto.",
+        passos: ["Estipule número exato de questões para o bloco", "Trabalhe no ritmo máximo por 25 minutos", "Pause 5 minutos para oxigenação", "Registre as estatísticas no gráfico"],
+        beneficios: ["Métricas quantificáveis de avanço", "Gestão precisa do tempo por questão", "Foco cirúrgico"],
         irParaRevisao: false
       },
       {
-        id: 5, titulo: "Mnemonica com Numeros ou Listas Ordenadas", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie associacoes usando numeros, sequencias ou listas ordenadas para memorizar.",
-        passos: ["Liste as informacoes em ordem", "Crie uma sequencia logica ou numerica", "Associe cada item a um numero", "Repita a sequencia varias vezes"],
-        beneficios: ["Memorizacao estruturada", "Associacoes logicas", "Retencao de sequencias"],
-        irParaRevisao: false
-      },
-      {
-        id: 6, titulo: "Diagrama de Fluxos", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Representacao grafica dos passos de um processo, ideal para visualizar etapas logicas.",
-        passos: ["Identifique o processo a mapear", "Liste as etapas em ordem", "Desenhe caixas para cada etapa", "Conecte com setas indicando o fluxo", "Revise a logica do diagrama"],
-        beneficios: ["Visualizacao de processos", "Clareza nas etapas", "Identificacao de falhas"],
-        irParaRevisao: false
-      },
-      {
-        id: 7, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema de revisao que aumenta os intervalos conforme voce acerta.",
-        passos: ["Dia 1: Estude o conteudo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos dificeis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisao final"],
-        beneficios: ["Revisao eficiente", "Memorizacao duradoura", "Otimizacao do tempo"],
+        id: 5, titulo: "Repetição Espaçada", tempo: "15 min/dia", dificuldade: "Médio",
+        descricao: "Aproveite a precisão algorítmica da Curva de Ebbinghaus para calcular intervalos exatos.",
+        passos: ["Cadastre cartões com cálculos e propriedades", "Classifique os resultados com notas objetivas", "O sistema recalcula a data da próxima sessão", "Mantenha a rotina matemática de revisões"],
+        beneficios: ["Eficiência matemática de retenção", "Tempo investido com retorno mensurável", "Domínio de fórmulas complexas"],
         irParaRevisao: true, tipoRevisao: "revisao_espacada"
       }
     ]
   },
 
-  // ==================== ESPACIAL ====================
+  // ==================== ESPACIAL / VISUAL ====================
   espacial: {
     nome: "Espacial",
     cor: "#d203a4",
-    descricao: "Voce pensa em imagens e visualiza o mundo tridimensionalmente.",
+    descricao: "Você pensa em imagens, cores, mapas mentais, diagramas e representações visuais estruturadas.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos com pausas de 5 minutos.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos", "Repita o ciclo"],
-        beneficios: ["Mantem o foco", "Evita cansaco mental", "Aumenta a produtividade"],
+        id: 1, titulo: "Mapa Mental", tempo: "40 min", dificuldade: "Médio",
+        descricao: "Organize tópicos a partir de um núcleo central com ramificações coloridas, ícones e hierarquia.",
+        passos: ["Defina o tema central no meio da tela", "Crie ramos primários com as grandes categorias", "Abra sub-ramos com detalhes e exemplos", "Utilize cores contrastantes e ícones representativos", "Revise repassando a geografia do mapa"],
+        beneficios: ["Visão panorâmica imediata da matéria", "Associação espacial resistente ao esquecimento", "Excelente para matérias extensas"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Metodo Cornell", tempo: "35 min", dificuldade: "Medio",
-        descricao: "Divida a pagina em duas colunas para organizar perguntas e respostas visualmente.",
-        passos: ["Divida a pagina em duas colunas", "Lado esquerdo: perguntas", "Lado direito: respostas", "Use cores e desenhos para destacar"],
-        beneficios: ["Organizacao visual", "Facilita revisao", "Material personalizado"],
+        id: 2, titulo: "Diagrama de Fluxo / Fluxograma", tempo: "35 min", dificuldade: "Médio",
+        descricao: "Construa fluxogramas ilustrados com caixas, setas e formas geométricas intuitivas.",
+        passos: ["Desenhe a sequência do início ao fim", "Destaque pontos de decisão com cores distintas", "Agrupe fases afins em zonas visuais", "Revise acompanhando o caminho visualmente"],
+        beneficios: ["Compreensão visual instantânea", "Fixação de processos cronológicos", "Organização limpa e intuitiva"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Mapa Mental", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Organize o conteudo de forma grafica e visual com foco no tema central.",
-        passos: ["Escreva o tema central no meio", "Puxe ramos para cada subtopico", "Use imagens e cores", "Conecte ideias relacionadas", "Crie uma hierarquia visual"],
-        beneficios: ["Visualizacao geral", "Conexao entre conceitos", "Estimulo visual"],
-        irParaRevisao: false
-      },
-      {
-        id: 4, titulo: "Flashcards", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Crie cartoes visuais com perguntas de um lado e respostas do outro.",
-        passos: ["Crie cartoes com elementos visuais", "Frente: pergunta ou imagem", "Verso: resposta ou explicacao", "Teste-se diariamente"],
-        beneficios: ["Memorizacao visual", "Revisao eficiente", "Portabilidade"],
+        id: 3, titulo: "Flashcards com Imagens", tempo: "25 min", dificuldade: "Fácil",
+        descricao: "Crie cartões visuais combinando fotos, esquemas anatômicos, gráficos e mapas.",
+        passos: ["Anexe ilustrações na frente do flashcard", "Coloque a legenda ou explicação no verso", "Treine identificar a estrutura pela imagem", "Revise com foco na memória visual"],
+        beneficios: ["Ativa a memória fotográfica", "Ideal para anatomia, geografia e biologia", "Revisão visual estimulante"],
         irParaRevisao: true, tipoRevisao: "flashcards"
       },
       {
-        id: 5, titulo: "Mnemonica com Imagens e Objetos", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie associacoes visuais usando imagens, desenhos ou objetos para memorizar.",
-        passos: ["Liste as informacoes a memorizar", "Crie uma imagem mental para cada item", "Associe as imagens entre si", "Desenhe se preferir", "Revise visualizando as imagens"],
-        beneficios: ["Memorizacao visual", "Criacao de associacoes", "Retencao duradoura"],
-        irParaRevisao: true, tipoRevisao: "revisao_normal"
-      },
-      {
-        id: 6, titulo: "Diagrama de Fluxos", tempo: "30 min", dificuldade: "Medio",
-        descricao: "Representacao grafica dos passos de um processo para visualizar etapas.",
-        passos: ["Identifique o processo", "Liste as etapas em ordem", "Desenhe o fluxo com setas", "Use cores para cada etapa", "Revise a logica visual"],
-        beneficios: ["Visualizacao de processos", "Clareza nas etapas", "Organizacao grafica"],
+        id: 4, titulo: "Estudo com Vídeos Educativos", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Aproveite animações 3D, gráficos dinâmicos e ilustrações em aulas audiovisuais.",
+        passos: ["Selecione vídeos com suporte gráfico e animações", "Faça capturas de telas de diagramas importantes", "Grave um resumo no campo dedicado", "Guarde os registros visuais no seu caderno"],
+        beneficios: ["Estímulo visual contínuo", "Fixação de conceitos abstratos por modelos visuais", "Facilidade de compreensão"],
         irParaRevisao: false
-      },
-      {
-        id: 7, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema de revisao que aumenta os intervalos conforme voce acerta.",
-        passos: ["Dia 1: Estude o conteudo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos dificeis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisao final"],
-        beneficios: ["Revisao eficiente", "Memorizacao duradoura", "Otimizacao do tempo"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
       }
     ]
   },
 
   // ==================== CORPORAL-CINESTÉSICA ====================
   corporal: {
-    nome: "Corporal-Cinestesica",
+    nome: "Corporal-Cinestésica",
     cor: "#00bf63",
-    descricao: "Voce aprende melhor com movimento, pratica e experiencias hands-on.",
+    descricao: "Você aprende fazendo, escrevendo fisicamente, gesticulando, resolvendo problemas práticos e se movimentando.",
     metodos: [
       {
-        id: 1, titulo: "Pomodoro com Descanso Ativo", tempo: "25 min", dificuldade: "Facil",
-        descricao: "Estude em blocos de 25 minutos. Nos intervalos, faca caminhadas curtas ou alongamentos.",
-        passos: ["Escolha o conteudo", "Estude por 25 minutos", "Descanse 5 minutos com caminhada ou alongamento", "Repita o ciclo"],
-        beneficios: ["Mantem o foco", "Movimento no descanso", "Aumenta a produtividade"],
+        id: 1, titulo: "Pomodoro com Descanso Ativo", tempo: "30 min", dificuldade: "Fácil",
+        descricao: "Sessões de 25 minutos intercaladas com pausas ativas de alongamento e caminhada leve.",
+        passos: ["Foco intenso na tarefa por 25 minutos", "Ao tocar o alarme, levante-se imediatamente", "Caminhe, faça alongamentos ou beba água por 5 minutos", "Retorne revigorado para o próximo ciclo"],
+        beneficios: ["Evita tensão muscular e fadiga", "Mantém a circulação sanguínea ativa", "Aumenta a oxigenação cerebral"],
         irParaRevisao: false
       },
       {
-        id: 2, titulo: "Teste Pratico", tempo: "35 min", dificuldade: "Medio",
-        descricao: "Resolver provas anteriores e exercicios praticos e uma forma eficiente para fixar o conteudo.",
-        passos: ["Escolha provas ou exercicios", "Resolva sem consulta", "Corrija seus erros", "Refaca os exercicios que errou"],
-        beneficios: ["Fixacao por pratica", "Identificacao de dificuldades", "Preparacao para provas"],
+        id: 2, titulo: "Teste Prático & Exercícios", tempo: "45 min", dificuldade: "Médio",
+        descricao: "Coloque a mão na massa imediatamente resolvendo questões, experimentos e simulados práticos.",
+        passos: ["Vá direto para a resolução de casos práticos", "Escreva as resoluções e contas em rascunho", "Consulte a teoria apenas quando travar", "Repita os exercícios errados na prática"],
+        beneficios: ["Aprendizado pela ação e experiência", "Fixação mecânica e conceitual", "Alta retenção pela vivência real"],
         irParaRevisao: false
       },
       {
-        id: 3, titulo: "Grupos de Estudo", tempo: "50 min", dificuldade: "Medio",
-        descricao: "Estude em grupo para trocar conhecimento e reforcar conceitos ao ensinar colegas.",
-        passos: ["Forme um grupo de 3-5 pessoas", "Divida os temas", "Cada um prepara sua parte", "Revezem as explicacoes", "Tirem duvidas coletivamente"],
-        beneficios: ["Troca de conhecimento", "Desenvolvimento social", "Aprendizado colaborativo"],
+        id: 3, titulo: "Técnica Feynman com Gesticulação", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Explique a matéria caminhando pelo quarto e gesticulando como um professor em sala.",
+        passos: ["Fique em pé com espaço para se movimentar", "Gesticule e use o espaço físico para explicar", "Grave o áudio da sua aula ativa", "Revise ouvindo o que você produziu"],
+        beneficios: ["Libera energia corporal produtiva", "Conexão motora com o aprendizado", "Dinamismo que afasta o sono"],
         irParaRevisao: false
       },
       {
-        id: 4, titulo: "Mnemonica com Movimentos", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie associacoes usando gestos, movimentos ou dancas para memorizar conteudo.",
-        passos: ["Liste as informacoes a memorizar", "Crie um gesto ou movimento para cada item", "Repita os movimentos em sequencia", "Associe o movimento ao conteudo"],
-        beneficios: ["Memorizacao cinestesica", "Associacao movimento-conteudo", "Aprendizado ativo"],
-        irParaRevisao: true, tipoRevisao: "revisao_normal"
-      },
-      {
-        id: 5, titulo: "Estudo com Videos Educativos", tempo: "30 min", dificuldade: "Facil",
-        descricao: "Assista videos educativos para visualizar e compreender conceitos dificeis no papel.",
-        passos: ["Escolha um video educativo", "Assista fazendo anotacoes", "Pause para praticar o que aprendeu", "Reveja os trechos dificeis"],
-        beneficios: ["Visualizacao de conceitos", "Aprendizado dinamico", "Complemento ao estudo"],
+        id: 4, titulo: "Gravação de Podcast em Movimento", tempo: "30 min", dificuldade: "Médio",
+        descricao: "Grave suas conclusões e resumos falados enquanto se exercita ou passeia.",
+        passos: ["Defina mentalmente os tópicos a abordar", "Grave notas de voz durante uma caminhada", "Sintetize no app ao retornar à mesa", "Revise seus áudios sempre em movimento"],
+        beneficios: ["Combina atividade física com aprendizado", "Estimula a criatividade e fluidez mental", "Estudo prazeroso e revigorante"],
         irParaRevisao: false
-      },
-      {
-        id: 6, titulo: "Repeticao Espacada", tempo: "15 min/dia", dificuldade: "Medio",
-        descricao: "Sistema de revisao que aumenta os intervalos conforme voce acerta.",
-        passos: ["Dia 1: Estude o conteudo", "Dia 2: Revise rapidamente", "Dia 4: Revise pontos dificeis", "Dia 7: Teste seus conhecimentos", "Dia 15: Revisao final"],
-        beneficios: ["Revisao eficiente", "Memorizacao duradoura", "Otimizacao do tempo"],
-        irParaRevisao: true, tipoRevisao: "revisao_espacada"
-      },
-      {
-        id: 7, titulo: "Flashcards", tempo: "20 min", dificuldade: "Facil",
-        descricao: "Crie cartoes com perguntas de um lado e respostas do outro para revisar.",
-        passos: ["Crie cartoes de estudo", "Frente: pergunta", "Verso: resposta", "Teste-se caminhando enquanto revisa"],
-        beneficios: ["Memorizacao ativa", "Revisao em movimento", "Portabilidade"],
-        irParaRevisao: true, tipoRevisao: "flashcards"
       }
     ]
   }
 };
-const Metodos = () => {
-  const [tipoInteligencia, setTipoInteligencia] = useState(null);
-  const [metodos, setMetodos] = useState(null);
+
+const obterIconeMetodo = (titulo = '') => {
+  const t = titulo.toLowerCase();
+  if (t.includes('pomodoro')) return 'bi bi-stopwatch-fill';
+  if (t.includes('feynman')) return 'bi bi-mic-fill';
+  if (t.includes('cornell')) return 'bi bi-layout-split';
+  if (t.includes('podcast')) return 'bi bi-broadcast';
+  if (t.includes('mapa mental')) return 'bi bi-diagram-3-fill';
+  if (t.includes('fluxograma') || t.includes('diagrama')) return 'bi bi-diagram-2-fill';
+  if (t.includes('mnem')) return 'bi bi-sort-numeric-down';
+  if (t.includes('flashcard') || t.includes('cart')) return 'bi bi-card-text';
+  if (t.includes('repeti') || t.includes('espa')) return 'bi bi-arrow-repeat';
+  if (t.includes('grupo')) return 'bi bi-people-fill';
+  if (t.includes('savoring') || t.includes('leitura')) return 'bi bi-book-half';
+  if (t.includes('teste') || t.includes('simulado')) return 'bi bi-ui-checks';
+  if (t.includes('video') || t.includes('vídeo')) return 'bi bi-youtube';
+  return 'bi bi-lightbulb-fill';
+};
+
+const isCorClara = (hex = '') => {
+  if (!hex || typeof hex !== 'string') return false;
+  const c = hex.replace('#', '');
+  if (c.length !== 6) return false;
+  const r = parseInt(c.substr(0, 2), 16);
+  const g = parseInt(c.substr(2, 2), 16);
+  const b = parseInt(c.substr(4, 2), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 155;
+};
+
+export default function Metodos() {
+  const [tipoInteligencia, setTipoInteligencia] = useState('logico');
+  const [metodos, setMetodos] = useState(metodosPorInteligencia.logico);
   const [metodoSelecionado, setMetodoSelecionado] = useState(null);
+  const [busca, setBusca] = useState('');
+  const [filtroDificuldade, setFiltroDificuldade] = useState('todos');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tipoSalvo = localStorage.getItem('inteligenciaUsuario');
-    
+    const tipoSalvo = (localStorage.getItem('inteligenciaUsuario') || sessionStorage.getItem('inteligenciaUsuario') || '').toLowerCase().trim();
+    const corSalva = localStorage.getItem('corPrimaria') || sessionStorage.getItem('corPrimaria');
+
     if (tipoSalvo && metodosPorInteligencia[tipoSalvo]) {
+      const dados = { ...metodosPorInteligencia[tipoSalvo] };
+      if (corSalva && corSalva.startsWith('#')) {
+        dados.cor = corSalva;
+      }
       setTipoInteligencia(tipoSalvo);
-      setMetodos(metodosPorInteligencia[tipoSalvo]);
-      const cor = metodosPorInteligencia[tipoSalvo].cor;
-      document.documentElement.style.setProperty('--cor-primaria', cor);
+      setMetodos(dados);
+      document.documentElement.style.setProperty('--cor-primaria', dados.cor);
+      setLoading(false);
     } else {
-      setTipoInteligencia('logico');
-      setMetodos(metodosPorInteligencia.logico);
+      apiFetch('perfil')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          const intel = (data?.inteligencia || data?.tipo_dom || 'logico').toLowerCase().trim();
+          const tipoFinal = metodosPorInteligencia[intel] ? intel : 'logico';
+          const dados = { ...metodosPorInteligencia[tipoFinal] };
+          const corApi = data?.cor_dominante || data?.cor || corSalva;
+          if (corApi && corApi.startsWith('#')) {
+            dados.cor = corApi;
+          }
+          setTipoInteligencia(tipoFinal);
+          setMetodos(dados);
+          localStorage.setItem('inteligenciaUsuario', tipoFinal);
+          if (dados.cor) {
+            localStorage.setItem('corPrimaria', dados.cor);
+            document.documentElement.style.setProperty('--cor-primaria', dados.cor);
+          }
+        })
+        .catch(() => {
+          setTipoInteligencia('logico');
+          setMetodos(metodosPorInteligencia.logico);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-    
-    setLoading(false);
   }, []);
 
-  // ===== FUNÇÃO PARA NAVEGAR PARA REVISÃO =====
+  // ===== FUNÇÕES DE NAVEGAÇÃO DOS MÉTODOS =====
   const irParaRevisao = (tipoRevisao, metodoTitulo) => {
     localStorage.setItem('revisaoTipoAtivo', tipoRevisao);
     localStorage.setItem('metodoSelecionado', metodoTitulo);
-    
-    // Fecha o modal
     setMetodoSelecionado(null);
-    
-    // Navega para a tela de revisão
     if (typeof window.mostrarTela === 'function') {
       window.mostrarTela('revisao');
     }
-    
-    // Dispara evento para o menu lateral
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'revisao' }));
   };
 
-  // ===== FUNÇÃO PARA NAVEGAR PARA O RELÓGIO (POMODORO) =====
   const irParaPomodoro = () => {
-    // Fecha o modal
     setMetodoSelecionado(null);
-    
-    // Navega para a tela do relógio
     if (typeof window.mostrarTela === 'function') {
       window.mostrarTela('relogio');
     }
-    
-    // Dispara evento para o menu lateral
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'relogio' }));
-    
-    // Scroll até o card do Pomodoro
     setTimeout(() => {
       const cardPomodoro = document.getElementById('cardPomodoro');
       if (cardPomodoro) {
         cardPomodoro.scrollIntoView({ behavior: 'smooth', block: 'center' });
         cardPomodoro.classList.add('destaque-pomodoro');
-        
         setTimeout(() => {
           cardPomodoro.classList.remove('destaque-pomodoro');
         }, 3000);
@@ -463,503 +430,505 @@ const Metodos = () => {
     }, 500);
   };
 
-  // ===== FUNÇÃO PARA ABRIR O GRAVADOR (PODCAST) =====
   const abrirGravadorPodcast = () => {
-    console.log('Abrindo Gravação de Podcast...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'podcast' }));
   };
 
-  // ===== FUNÇÃO PARA ABRIR A TÉCNICA FEYNMAN =====
   const abrirGravadorFeynman = () => {
-    console.log('Abrindo Técnica Feynman...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'feynman' }));
   };
 
-     const abrirCornell = () => {
-    console.log('Abrindo Cornell...');
-    
-    // Fecha o modal
+  const abrirCornell = () => {
     setMetodoSelecionado(null);
-    
-    // Dispara o evento que o NavbarSidebar escuta para trocar a tela
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'cornell' }));
   };
 
   const abrirMnemonica = () => {
-    console.log('Abrindo Sequências Mnemônicas...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'mnemonica' }));
   };
 
   const abrirMapaMental = () => {
-    console.log('Abrindo Mapa Mental...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'mapamental' }));
   };
 
   const abrirFluxograma = () => {
-    console.log('Abrindo Diagrama de Fluxos / Fluxograma...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'fluxograma' }));
   };
 
   const abrirGruposEstudo = () => {
-    console.log('Abrindo Grupos de Estudo...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'grupos' }));
   };
 
   const abrirLeituraSavoring = () => {
-    console.log('Abrindo Leitura Savoring...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'leitura' }));
   };
 
   const abrirTestePratico = () => {
-    console.log('Abrindo Teste Prático & Simulados...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'testePratico' }));
   };
 
   const abrirVideoEducativo = () => {
-    console.log('Abrindo Estudo com Vídeos Educativos...');
     setMetodoSelecionado(null);
     window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'videoEducativo' }));
   };
 
-  // ===== FUNÇÃO PARA RENDERIZAR O BOTÃO DO MODAL =====
+  // Botão de ação inteligente para cada método
   const renderizarBotaoModal = () => {
     if (!metodoSelecionado) return null;
-    
     const titulo = metodoSelecionado.titulo;
-    const cor = metodos.cor;
+    const cor = metodos.cor || '#ffbd59';
+    const corTexto = isCorClara(cor) ? '#0f172a' : '#ffffff';
 
-    // VERIFICAÇÃO MNEMÔNICA COM NÚMEROS / LISTAS ORDENADAS
     if (titulo.includes("Mnemônica") || titulo.includes("Mnemonica") || titulo.includes("Listas Ordenadas")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirMnemonica}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-sort-numeric-down"></i> 
-          Usar Sequências Mnemônicas
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirMnemonica}>
+          <i className="bi bi-sort-numeric-down"></i> Usar Sequências Mnemônicas
         </button>
       );
     }
-
-    // VERIFICAÇÃO MAPA MENTAL
     if (titulo.includes("Mapa Mental") || titulo.includes("mapa mental")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirMapaMental}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-diagram-3"></i> 
-          Criar / Abrir Mapa Mental
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirMapaMental}>
+          <i className="bi bi-diagram-3-fill"></i> Criar / Abrir Mapa Mental
         </button>
       );
     }
-
-    // VERIFICAÇÃO DIAGRAMA DE FLUXOS / FLUXOGRAMA
     if (titulo.includes("Diagrama de Fluxo") || titulo.includes("diagrama de fluxo") || titulo.includes("Fluxograma") || titulo.includes("fluxograma")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirFluxograma}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-diagram-2"></i> 
-          Criar / Abrir Diagrama de Fluxos
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirFluxograma}>
+          <i className="bi bi-diagram-2-fill"></i> Criar / Abrir Fluxograma
         </button>
       );
     }
- 
- //VERIFICAÇÃO CORNELL
     if (titulo === "Metodo Cornell" || titulo === "Método Cornell" || titulo.includes("Cornell")) {
-      console.log('Método Cornell detectado!');
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirCornell}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-journal-text"></i> 
-          Usar Cornell com Notas
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirCornell}>
+          <i className="bi bi-layout-split"></i> Abrir Notas Cornell
         </button>
       );
     }
-
-
-    
-    // Caso: Pomodoro
-    if (titulo === "Pomodoro" || titulo === "Pomodoro com Descanso Ativo") {
+    if (titulo.toLowerCase().includes("pomodoro")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ background: cor }}
-          onClick={irParaPomodoro}
-        >
-          <i className="bi bi-play-circle-fill"></i> Usar Pomodoro
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={irParaPomodoro}>
+          <i className="bi bi-stopwatch-fill"></i> Iniciar Cronômetro Pomodoro
         </button>
       );
     }
-    
-    // Caso: Gravação de Podcast
-    if (titulo === "Gravação de Podcast" || titulo === "Gravacao de Podcast") {
+    if (titulo.toLowerCase().includes("podcast")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirGravadorPodcast}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-mic-fill"></i> Gravar Podcast
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirGravadorPodcast}>
+          <i className="bi bi-mic-fill"></i> Gravar Episódio de Podcast
         </button>
       );
     }
-    
-    // Caso: Técnica Feynman
     if (titulo.includes("Feynman") || titulo.includes("feynman")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirGravadorFeynman}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-mic-fill"></i> 
-          Praticar Técnica Feynman
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirGravadorFeynman}>
+          <i className="bi bi-megaphone-fill"></i> Praticar Técnica Feynman
         </button>
       );
     }
-
-    // Caso: Grupos de Estudo
     if (titulo.includes("Grupo") || titulo.includes("grupo")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirGruposEstudo}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-people-fill"></i> 
-          Acessar Grupos de Estudo
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirGruposEstudo}>
+          <i className="bi bi-people-fill"></i> Acessar Grupos de Estudo
         </button>
       );
     }
-
-    // Caso: Leitura Savoring
     if (titulo.includes("Savoring") || titulo.includes("savoring") || (titulo.includes("Leitura") && titulo.includes("Savoring"))) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirLeituraSavoring}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-book-half"></i> 
-          Praticar Leitura Savoring
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirLeituraSavoring}>
+          <i className="bi bi-book-half"></i> Praticar Leitura Savoring
         </button>
       );
     }
-
-    // Caso: Teste Prático / Simulados (Upload de PDFs)
     if (titulo.includes("Teste Pratico") || titulo.includes("Teste Prático") || titulo.includes("teste pratico")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirTestePratico}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-file-earmark-pdf-fill"></i> 
-          Acessar Teste Prático (Subir PDFs de Provas)
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirTestePratico}>
+          <i className="bi bi-ui-checks"></i> Realizar Teste Prático
         </button>
       );
     }
-
-    // Caso: Estudo com Vídeos Educativos
     if (titulo.includes("Video") || titulo.includes("Vídeo") || titulo.includes("Videos Educativos") || titulo.includes("Vídeos Educativos")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ 
-            background: cor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            fontSize: '16px'
-          }}
-          onClick={abrirVideoEducativo}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-        >
-          <i className="bi bi-youtube"></i> 
-          Estudar com Vídeo Educativo
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={abrirVideoEducativo}>
+          <i className="bi bi-youtube"></i> Estudar com Vídeos Educativos
         </button>
       );
     }
-    
-    // Caso: Flashcards
-    if (titulo === "Flashcards") {
+    if (titulo.toLowerCase().includes("flashcard")) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ background: cor }}
-          onClick={() => irParaRevisao("flashcards", titulo)}
-        >
-          <i className="bi bi-arrow-repeat"></i> Ir para Revisão (Criar Flashcards)
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={() => irParaRevisao("flashcards", titulo)}>
+          <i className="bi bi-card-text"></i> Abrir Meus Flashcards
         </button>
       );
     }
-    
-    // Caso: Métodos que vão para revisão
     if (metodoSelecionado.irParaRevisao) {
       return (
-        <button 
-          className="btn-aplicar"
-          style={{ background: cor }}
-          onClick={() => irParaRevisao(metodoSelecionado.tipoRevisao || "revisao_normal", titulo)}
-        >
-          <i className="bi bi-arrow-repeat"></i> Ir para Revisão
+        <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={() => irParaRevisao(metodoSelecionado.tipoRevisao || "revisao_normal", titulo)}>
+          <i className="bi bi-arrow-repeat"></i> Praticar na Revisão
         </button>
       );
     }
-    
-    // Caso: Métodos sem redirecionamento
     return (
-      <button 
-        className="btn-aplicar"
-        style={{ background: cor }}
-        onClick={() => setMetodoSelecionado(null)}
-      >
-        <i className="bi bi-check-circle-fill"></i> Entendi
+      <button className="btn-metodo-modal-action" style={{ background: cor, color: corTexto, boxShadow: `0 4px 16px ${cor}45` }} onClick={() => setMetodoSelecionado(null)}>
+        <i className="bi bi-check2"></i> Entendi o Método
       </button>
     );
   };
+
+  const listaFiltrada = (metodos?.metodos || []).filter(m => {
+    const termo = busca.toLowerCase();
+    const matchBusca =
+      (m.titulo || '').toLowerCase().includes(termo) ||
+      (m.descricao || '').toLowerCase().includes(termo) ||
+      (m.beneficios || []).some(b => b.toLowerCase().includes(termo));
+
+    if (filtroDificuldade === 'facil') return matchBusca && m.dificuldade.toLowerCase() === 'fácil';
+    if (filtroDificuldade === 'medio') return matchBusca && m.dificuldade.toLowerCase() === 'médio';
+    return matchBusca;
+  });
 
   if (loading) {
     return (
       <div className="metodos-loading">
         <div className="spinner"></div>
-        <p>Carregando métodos personalizados...</p>
+        <p>Carregando seus métodos de estudo personalizados...</p>
       </div>
     );
   }
 
   return (
-    <section id="metodosSection" className="metodos-container">
-      <div className="metodos-header">
-        <div className="inteligencia-badge" style={{ background: metodos.cor }}>
-          <img 
-            src={iconesInteligencia[tipoInteligencia]} 
-            alt={metodos.nome}
-            style={{ width: 28, height: 28, objectFit: 'contain' }}
-          />
-          <span>Inteligência {metodos.nome}</span>
-        </div>
-        
-        <h1>Métodos de Estudo para você</h1>
-        <p className="metodos-descricao">{metodos.descricao}</p>
-      </div>
+    <section id="metodosSection">
+      <div className="metodos-container-main">
+        {/* Cabeçalho com Destaque Forte da Cor da Inteligência */}
+        <div className="metodos-header-bar">
+          <div className="metodos-header-titles">
+            <h1>
+              <i className="bi bi-lightbulb-fill" style={{ color: isCorClara(metodos.cor) ? '#d97706' : metodos.cor }}></i> Métodos de Estudo
+            </h1>
+            <p className="metodos-subtitle">
+              Metodologias práticas e científicas recomendadas para o seu perfil cognitivo
+            </p>
+          </div>
 
-      <div className="metodos-grid">
-        {metodos.metodos.map((metodo) => (
-          <div 
-            key={metodo.id} 
-            className="metodo-card"
-            onClick={() => setMetodoSelecionado(metodo)}
-          >
-            <div className="metodo-card-header">
-              <h3>{metodo.titulo}</h3>
-              <div className="metodo-tags">
-                <span className="tag-tempo">
-                  <i className="bi bi-clock"></i> {metodo.tempo}
-                </span>
-                <span className={`tag-dificuldade ${metodo.dificuldade.toLowerCase()}`}>
-                  {metodo.dificuldade}
-                </span>
+          <div className="metodos-header-actions">
+            {/* Badge de Destaque Fixo da Inteligência (sem função de alterar) */}
+            <div
+              className="metodo-perfil-badge-destaque"
+              style={{
+                background: metodos.cor,
+                color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                boxShadow: `0 4px 16px ${metodos.cor}45`
+              }}
+            >
+              <img
+                src={iconesInteligencia[tipoInteligencia] || "Icones/logico.png"}
+                alt={metodos.nome}
+                className="metodo-badge-icone-img"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <div className="metodo-badge-text-group">
+                <small style={{ color: isCorClara(metodos.cor) ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)' }}>Seu Perfil Cognitivo</small>
+                <strong style={{ color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff' }}>Inteligência {metodos.nome}</strong>
               </div>
             </div>
-            <p className="metodo-descricao">{metodo.descricao}</p>
-            <button className="btn-ver-mais" style={{ color: metodos.cor }}>
-              Ver método completo <i className="bi bi-arrow-right"></i>
+          </div>
+        </div>
+
+        {/* 4 Cards de Métricas com Destaque da Cor */}
+        <div className="metodos-metricas-grid">
+          <div
+            className="met-metric-card destaque-inteligencia"
+            style={{
+              background: isCorClara(metodos.cor)
+                ? `linear-gradient(135deg, ${metodos.cor} 0%, #f59e0b 100%)`
+                : `linear-gradient(135deg, ${metodos.cor} 0%, ${metodos.cor}dd 100%)`,
+              color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+              border: `1.5px solid ${metodos.cor}`,
+              boxShadow: `0 6px 20px ${metodos.cor}35`
+            }}
+          >
+            <div
+              className="met-metric-icon"
+              style={{
+                background: isCorClara(metodos.cor) ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.22)',
+                color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff'
+              }}
+            >
+              <i className="bi bi-person-fill-check"></i>
+            </div>
+            <div className="met-metric-info">
+              <span className="met-metric-num" style={{ color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff' }}>{metodos.nome}</span>
+              <span className="met-metric-label" style={{ color: isCorClara(metodos.cor) ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.85)' }}>Seu Perfil Ativo</span>
+            </div>
+          </div>
+
+          <div className="met-metric-card" style={{ borderTop: `3px solid ${metodos.cor}` }}>
+            <div className="met-metric-icon metodos-qtd">
+              <i className="bi bi-journal-check"></i>
+            </div>
+            <div className="met-metric-info">
+              <span className="met-metric-num">{metodos.metodos.length} Técnicas</span>
+              <span className="met-metric-label">Métodos Recomendados</span>
+            </div>
+          </div>
+
+          <div className="met-metric-card" style={{ borderTop: `3px solid ${metodos.cor}` }}>
+            <div className="met-metric-icon nivel">
+              <i className="bi bi-bar-chart-fill"></i>
+            </div>
+            <div className="met-metric-info">
+              <span className="met-metric-num">Fácil a Médio</span>
+              <span className="met-metric-label">Dificuldade</span>
+            </div>
+          </div>
+
+          <div className="met-metric-card" style={{ borderTop: `3px solid ${metodos.cor}` }}>
+            <div className="met-metric-icon tempo">
+              <i className="bi bi-stopwatch-fill"></i>
+            </div>
+            <div className="met-metric-info">
+              <span className="met-metric-num">20 - 50 min</span>
+              <span className="met-metric-label">Bloco Médio</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Banner do Perfil com Forte Destaque Visual */}
+        <div
+          className="metodo-banner-perfil"
+          style={{
+            borderLeft: `6px solid ${metodos.cor}`,
+            borderTop: `1px solid ${metodos.cor}30`,
+            borderRight: `1px solid ${metodos.cor}20`,
+            borderBottom: `1px solid ${metodos.cor}20`,
+            backgroundImage: `linear-gradient(135deg, ${metodos.cor}15 0%, transparent 75%)`
+          }}
+        >
+          <div
+            className="metodo-banner-icone"
+            style={{
+              background: metodos.cor,
+              color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+              boxShadow: `0 4px 14px ${metodos.cor}50`
+            }}
+          >
+            <img
+              src={iconesInteligencia[tipoInteligencia] || "Icones/logico.png"}
+              alt={metodos.nome}
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <i className="bi bi-stars"></i>
+          </div>
+          <div className="metodo-banner-conteudo">
+            <h3 style={{ color: isCorClara(metodos.cor) ? '#b45309' : metodos.cor }}>Inteligência Predominante: {metodos.nome}</h3>
+            <p>{metodos.descricao}</p>
+          </div>
+        </div>
+
+        {/* Barra de Filtros e Busca Padronizada */}
+        <div className="metodos-toolbar-bar">
+          <div className="metodos-filtros-nav">
+            <button
+              className={`btn-met-filtro ${filtroDificuldade === 'todos' ? 'ativo' : ''}`}
+              style={filtroDificuldade === 'todos' ? {
+                background: metodos.cor,
+                color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                boxShadow: `0 3px 10px ${metodos.cor}40`
+              } : {}}
+              onClick={() => setFiltroDificuldade('todos')}
+            >
+              Todos ({metodos.metodos.length})
+            </button>
+            <button
+              className={`btn-met-filtro ${filtroDificuldade === 'facil' ? 'ativo' : ''}`}
+              style={filtroDificuldade === 'facil' ? {
+                background: metodos.cor,
+                color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                boxShadow: `0 3px 10px ${metodos.cor}40`
+              } : {}}
+              onClick={() => setFiltroDificuldade('facil')}
+            >
+              Fáceis
+            </button>
+            <button
+              className={`btn-met-filtro ${filtroDificuldade === 'medio' ? 'ativo' : ''}`}
+              style={filtroDificuldade === 'medio' ? {
+                background: metodos.cor,
+                color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                boxShadow: `0 3px 10px ${metodos.cor}40`
+              } : {}}
+              onClick={() => setFiltroDificuldade('medio')}
+            >
+              Médios
             </button>
           </div>
-        ))}
+
+          <div className="metodos-search-box">
+            <i className="bi bi-search"></i>
+            <input
+              type="text"
+              placeholder="Buscar por método ou benefício..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            {busca && (
+              <button className="btn-limpar-busca-met" onClick={() => setBusca('')}>
+                <i className="bi bi-x"></i>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Grade de Cards de Métodos com Destaque Temático */}
+        {listaFiltrada.length === 0 ? (
+          <div className="metodos-vazio-card">
+            <i className="bi bi-search"></i>
+            <h4>Nenhum método encontrado</h4>
+            <p>Tente buscar por outro termo ou selecione outro nível de dificuldade.</p>
+          </div>
+        ) : (
+          <div className="metodos-grid">
+            {listaFiltrada.map((metodo) => {
+              const iconeClasse = obterIconeMetodo(metodo.titulo);
+              return (
+                <div
+                  key={metodo.id}
+                  className="metodo-card-item"
+                  style={{ borderTop: `4px solid ${metodos.cor}` }}
+                  onClick={() => setMetodoSelecionado(metodo)}
+                >
+                  <div className="metodo-card-top">
+                    <div
+                      className="metodo-card-icon-badge"
+                      style={{
+                        background: `${metodos.cor}25`,
+                        color: isCorClara(metodos.cor) ? '#b45309' : metodos.cor,
+                        border: `1.5px solid ${metodos.cor}45`
+                      }}
+                    >
+                      <i className={iconeClasse}></i>
+                    </div>
+                    <div className="metodo-tags">
+                      <span className="tag-tempo">
+                        <i className="bi bi-clock"></i> {metodo.tempo}
+                      </span>
+                      <span className={`tag-dificuldade ${metodo.dificuldade.toLowerCase()}`}>
+                        {metodo.dificuldade}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="metodo-card-content">
+                    <h3 className="metodo-card-title">{metodo.titulo}</h3>
+                    <p className="metodo-card-descricao">{metodo.descricao}</p>
+                  </div>
+
+                  <div className="metodo-card-footer">
+                    <button
+                      className="btn-acessar-metodo"
+                      style={{
+                        background: `${metodos.cor}18`,
+                        color: isCorClara(metodos.cor) ? '#b45309' : metodos.cor,
+                        border: `1px solid ${metodos.cor}55`
+                      }}
+                    >
+                      <span>Ver método completo</span>
+                      <i className="bi bi-arrow-right-circle-fill"></i>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
+      {/* Modal Moderno de Detalhes do Método com Destaque de Cor */}
       {metodoSelecionado && (
-        <div className="modal-overlay" onClick={() => setMetodoSelecionado(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setMetodoSelecionado(null)}>
-              <i className="bi bi-x-lg"></i>
-            </button>
-            
-            <div className="modal-header">
-              <h2>{metodoSelecionado.titulo}</h2>
-              <div className="modal-tags">
-                <span className="tag-tempo">
-                  <i className="bi bi-clock"></i> {metodoSelecionado.tempo}
-                </span>
-                <span className={`tag-dificuldade ${metodoSelecionado.dificuldade.toLowerCase()}`}>
-                  {metodoSelecionado.dificuldade}
-                </span>
+        <div className="metodo-modal-backdrop" onClick={() => setMetodoSelecionado(null)}>
+          <div className="metodo-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="metodo-modal-header" style={{ borderTop: `5px solid ${metodos.cor}` }}>
+              <div className="metodo-modal-header-titles">
+                <div
+                  className="metodo-modal-header-icon"
+                  style={{
+                    background: metodos.cor,
+                    color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                    boxShadow: `0 4px 12px ${metodos.cor}40`
+                  }}
+                >
+                  <i className={obterIconeMetodo(metodoSelecionado.titulo)}></i>
+                </div>
+                <div>
+                  <h2>{metodoSelecionado.titulo}</h2>
+                  <div className="metodo-tags mt-1">
+                    <span className="tag-tempo">
+                      <i className="bi bi-clock"></i> {metodoSelecionado.tempo}
+                    </span>
+                    <span className={`tag-dificuldade ${metodoSelecionado.dificuldade.toLowerCase()}`}>
+                      {metodoSelecionado.dificuldade}
+                    </span>
+                  </div>
+                </div>
               </div>
+              <button
+                className="btn-metodo-modal-close"
+                onClick={() => setMetodoSelecionado(null)}
+                title="Fechar"
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
             </div>
 
-            <div className="modal-body">
-              <h4>Passo a Passo:</h4>
-              <ol className="modal-passos">
-                {metodoSelecionado.passos.map((passo, index) => (
-                  <li key={index}>{passo}</li>
-                ))}
-              </ol>
+            <div className="metodo-modal-body">
+              {/* Descrição Sintética */}
+              <p
+                className="metodo-modal-resumo"
+                style={{ borderLeft: `4px solid ${metodos.cor}`, background: `${metodos.cor}08` }}
+              >
+                {metodoSelecionado.descricao}
+              </p>
 
+              {/* Passo a Passo com Números na Cor da Inteligência */}
+              <div className="metodo-secao-modal">
+                <h4 className="metodo-secao-titulo">
+                  <i className="bi bi-list-ol" style={{ color: isCorClara(metodos.cor) ? '#d97706' : metodos.cor }}></i> Passo a Passo da Aplicação:
+                </h4>
+                <ol className="metodo-passos-list">
+                  {metodoSelecionado.passos.map((passo, index) => (
+                    <li key={index}>
+                      <span
+                        className="passo-numero"
+                        style={{
+                          background: metodos.cor,
+                          color: isCorClara(metodos.cor) ? '#0f172a' : '#ffffff',
+                          boxShadow: `0 2px 6px ${metodos.cor}40`
+                        }}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="passo-texto">{passo}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {/* Benefícios */}
               {metodoSelecionado.beneficios && (
-                <div className="modal-beneficios">
-                  <strong>Benefícios:</strong>
+                <div className="metodo-beneficios-box">
+                  <strong className="beneficios-header">
+                    <i className="bi bi-check-circle-fill"></i> Principais Benefícios:
+                  </strong>
                   <ul>
                     {metodoSelecionado.beneficios.map((b, idx) => (
                       <li key={idx}>{b}</li>
@@ -968,13 +937,26 @@ const Metodos = () => {
                 </div>
               )}
 
-              <div className="modal-dica">
-                <i className="bi bi-lightbulb-fill"></i>
-                <span>Dica: Adapte esse método ao seu estilo pessoal e combine com outras técnicas.</span>
+              {/* Dica de Especialista */}
+              <div className="metodo-dica-box">
+                <div className="dica-icon">
+                  <i className="bi bi-lightbulb-fill"></i>
+                </div>
+                <div>
+                  <strong>Dica de Especialista:</strong>
+                  <p>Adapte o método ao seu ritmo de estudo e combine com testes práticos semanais para máxima fixação.</p>
+                </div>
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="metodo-modal-footer">
+              <button
+                type="button"
+                className="btn-metodo-modal-cancel"
+                onClick={() => setMetodoSelecionado(null)}
+              >
+                Fechar
+              </button>
               {renderizarBotaoModal()}
             </div>
           </div>
@@ -982,6 +964,4 @@ const Metodos = () => {
       )}
     </section>
   );
-};
-
-export default Metodos;
+}

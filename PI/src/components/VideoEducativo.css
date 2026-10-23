@@ -3,19 +3,31 @@
 /* ============================================================== */
 
 .video-educativo-container {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 30px;
   min-height: calc(100vh - 80px);
   font-family: inherit;
   color: #1f2937;
+  animation: fadeInVideo 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInVideo {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ================= HEADER BAR ================= */
 .video-header-bar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 26px;
   gap: 20px;
   flex-wrap: wrap;
@@ -24,16 +36,16 @@
 .btn-voltar-metodos {
   align-self: flex-start;
   background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  border: 1px solid #cbd5e1;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #475569;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 12px;
   transition: all 0.2s ease;
 }
@@ -41,7 +53,7 @@
 .btn-voltar-metodos:hover {
   background: #e2e8f0;
   color: #0f172a;
-  transform: translateX(-3px);
+  transform: translateX(-2px);
 }
 
 .video-header-title {
@@ -67,8 +79,8 @@
   background: #ef4444;
   color: #ffffff;
   border: none;
-  padding: 12px 22px;
-  border-radius: 12px;
+  padding: 11px 24px;
+  border-radius: 50px;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
@@ -96,18 +108,18 @@
 .video-metric-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 18px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .video-metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
 }
 
 .video-metric-icon {
@@ -309,18 +321,19 @@
 .video-card-item {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 20px;
+  border-top: 4px solid #ef4444;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .video-card-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
   border-color: #cbd5e1;
 }
 
@@ -1560,4 +1573,171 @@ body.dark .video-audio-player-wrapper {
 body.modo-escuro .video-audio-player-meta,
 body.dark .video-audio-player-meta {
   color: #e2e8f0;
+}
+
+
+/* ============================================================== */
+/* QUICK START CARD & MODO INTEGRADO RESUMO + ÁUDIO               */
+/* ============================================================== */
+
+.video-quick-start-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  margin-bottom: 26px;
+  background: linear-gradient(135deg, #ffffff 0%, #fff7f7 100%);
+  animation: fadeInMetodos 0.25s ease-out;
+}
+
+.video-quick-start-info h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 6px 0 4px 0;
+}
+
+.video-quick-start-info p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.video-quick-start-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.video-quick-start-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 320px;
+  max-width: 620px;
+}
+
+.video-quick-start-input-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  gap: 10px;
+  flex: 1;
+  transition: all 0.2s ease;
+}
+
+.video-quick-start-input-box:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.video-quick-start-input-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.92rem;
+  color: #1e293b;
+}
+
+.btn-limpar-quick {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 1.1rem;
+}
+
+.btn-limpar-quick:hover {
+  color: #ef4444;
+}
+
+/* Modo Integrado Ambos (Áudio + Resumo) */
+.video-ambos-tab-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.video-audio-compact-box {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 18px;
+  transition: all 0.2s ease;
+}
+
+.video-audio-compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.video-audio-compact-header strong {
+  font-size: 0.92rem;
+  color: #1e293b;
+}
+
+.video-gravador-timer-mini {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ef4444;
+  font-family: monospace;
+}
+
+/* Modo Escuro */
+body.modo-escuro .video-quick-start-card,
+body.dark .video-quick-start-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+body.modo-escuro .video-quick-start-info h3,
+body.dark .video-quick-start-info h3 {
+  color: #f8fafc;
+}
+
+body.modo-escuro .video-quick-start-info p,
+body.dark .video-quick-start-info p {
+  color: #94a3b8;
+}
+
+body.modo-escuro .video-quick-start-input-box,
+body.dark .video-quick-start-input-box {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.modo-escuro .video-quick-start-input-box input,
+body.dark .video-quick-start-input-box input {
+  color: #f8fafc;
+}
+
+body.modo-escuro .video-audio-compact-box,
+body.dark .video-audio-compact-box {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.modo-escuro .video-audio-compact-header strong,
+body.dark .video-audio-compact-header strong {
+  color: #f8fafc;
 }

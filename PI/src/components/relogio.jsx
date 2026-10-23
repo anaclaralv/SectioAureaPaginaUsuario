@@ -1018,38 +1018,87 @@ export default function Relogio() {
 
   return (
     <section id="relogioSection">
-      <h1>Relógio de Estudos</h1>
-
-      {/* ==================== ESTUDO POR MATÉRIA ==================== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-        <h3 className="titulo-materia" style={{ margin: 0 }}>Estudo por Matéria</h3>
-        <button
-          onClick={() => {
-            setCriandoMateriaTabela(!criandoMateriaTabela);
-            setNomeNovaMateria('');
-          }}
-          style={{
-            background: criandoMateriaTabela ? '#64748b' : 'var(--cor-primaria)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '7px 14px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-          title={criandoMateriaTabela ? 'Fechar formulário' : 'Cadastrar nova matéria'}
-        >
-          {criandoMateriaTabela ? (
-            <>✕ Cancelar</>
-          ) : (
-            <><i className="bi bi-plus-lg"></i> Adicionar Matéria</>
-          )}
+      {/* Cabeçalho Superior Padronizado (estilo Calendário) */}
+      <div className="relogio-header-bar">
+        <div className="relogio-header-titles">
+          <h1><i className="bi bi-clock-fill"></i> Relógio de Estudos</h1>
+          <p className="relogio-subtitle">Gerencie suas sessões de estudo, cronômetro, técnica Pomodoro e metas diárias</p>
+        </div>
+        <button className="btn-novo-relogio-main" onClick={() => abrirModalPomodoro()}>
+          <i className="bi bi-play-circle-fill"></i> Iniciar Pomodoro
         </button>
       </div>
+
+      {/* Painel de Métricas Padronizado (estilo Calendário) */}
+      <div className="relogio-metricas-grid">
+        <div className="rel-metric-card">
+          <div className="rel-metric-icon tempo">
+            <i className="bi bi-stopwatch-fill"></i>
+          </div>
+          <div className="rel-metric-info">
+            <span className="rel-metric-num">{totalHoras >= 1 ? `${totalHoras.toFixed(1)}h` : formatarTempo(totalHoras * 3600)}</span>
+            <span className="rel-metric-label">Tempo Estudado</span>
+          </div>
+        </div>
+
+        <div className="rel-metric-card">
+          <div className="rel-metric-icon sessoes">
+            <i className="bi bi-check2-circle"></i>
+          </div>
+          <div className="rel-metric-info">
+            <span className="rel-metric-num">{historicoCronometro.length}</span>
+            <span className="rel-metric-label">Sessões Realizadas</span>
+          </div>
+        </div>
+
+        <div className="rel-metric-card">
+          <div className="rel-metric-icon materias">
+            <i className="bi bi-journal-bookmark-fill"></i>
+          </div>
+          <div className="rel-metric-info">
+            <span className="rel-metric-num">{materias.length}</span>
+            <span className="rel-metric-label">Matérias Ativas</span>
+          </div>
+        </div>
+
+        <div className="rel-metric-card">
+          <div className="rel-metric-icon meta">
+            <i className="bi bi-trophy-fill"></i>
+          </div>
+          <div className="rel-metric-info">
+            <span className="rel-metric-num">{Math.round(progresso)}%</span>
+            <span className="rel-metric-label">Meta {metaAtiva}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ==================== ESTUDO POR MATÉRIA ==================== */}
+      <div className="relogio-card-main mb-4">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <div>
+            <h3 className="titulo-materia" style={{ margin: 0, border: 'none', padding: 0 }}>
+              <i className="bi bi-book-half" style={{ color: 'var(--cor-primaria)', marginRight: '8px' }}></i>
+              Estudo por Matéria
+            </h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem', color: '#64748b' }}>
+              Inicie o cronômetro individual de cada disciplina para contabilizar seu tempo
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setCriandoMateriaTabela(!criandoMateriaTabela);
+              setNomeNovaMateria('');
+            }}
+            className="btn-add-materia-modern"
+            title={criandoMateriaTabela ? 'Fechar formulário' : 'Cadastrar nova matéria'}
+          >
+            {criandoMateriaTabela ? (
+              <>✕ Cancelar</>
+            ) : (
+              <><i className="bi bi-plus-lg"></i> Adicionar Matéria</>
+            )}
+          </button>
+        </div>
 
       {/* Formulário Inline de Nova Matéria na Tabela */}
       {criandoMateriaTabela && (
@@ -1256,6 +1305,7 @@ export default function Relogio() {
           )}
         </tbody>
       </table>
+      </div>
 
       {/* ==================== 4 CARDS PRINCIPAIS ==================== */}
       <div

@@ -542,68 +542,105 @@ export default function Estatisticas() {
 
   return (
     <section id="estatisticaSection">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <h1 style={{ margin: 0 }}>Estatísticas</h1>
-        <button
-          onClick={carregarDadosAPI}
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            padding: '8px 14px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            color: '#374151',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-          }}
-          title="Recarregar dados do banco de dados"
-        >
-          <i className="bi bi-arrow-clockwise"></i> Atualizar
-        </button>
-      </div>
+      <div className="estatisticas-container-main">
+        {/* Cabeçalho Padronizado (estilo Calendário) */}
+        <div className="estatisticas-header-bar">
+          <div className="estatisticas-header-titles">
+            <h1><i className="bi bi-graph-up-arrow"></i> Estatísticas de Desempenho</h1>
+            <p className="estatisticas-subtitle">Acompanhe seu histórico de estudo, metas diárias, streak e evolução contínua</p>
+          </div>
+          <button
+            className="btn-novo-estatisticas-main"
+            onClick={carregarDadosAPI}
+            title="Recarregar dados do banco de dados"
+          >
+            <i className="bi bi-arrow-clockwise"></i> Atualizar Dados
+          </button>
+        </div>
 
-      {carregando && (
-        <div style={{ textAlign: 'center', padding: '10px', color: '#9f042c', fontSize: '0.9rem' }}>
-          <span className="spinner-border spinner-border-sm" role="status" style={{ marginRight: '8px' }}></span>
-          <span>Sincronizando com o banco de dados...</span>
-        </div>
-      )}
+        {carregando && (
+          <div className="estatisticas-loading-badge">
+            <span className="spinner-border spinner-border-sm" role="status"></span>
+            <span>Sincronizando com o banco de dados...</span>
+          </div>
+        )}
 
-      {/* Cards de Resumo Rápido */}
-      <div className="stats-cards">
-        <div className="stat-card">
-          <i className="bi bi-clock-history"></i>
-          <span>Total Geral</span>
-          <strong>{totais.totalHoras > 0 && totais.totalHoras < 1 ? formatarMeta(totais.totalHoras) : `${totais.totalHoras.toFixed(1)}h`}</strong>
-        </div>
-        <div className="stat-card">
-          <i className="bi bi-calendar-check"></i>
-          <span>Dias Estudados</span>
-          <strong>{totais.dias}</strong>
-        </div>
-        <div className="stat-card">
-          <i className="bi bi-fire"></i>
-          <span>Maior Streak</span>
-          <strong>{totais.maiorStreak}</strong>
-        </div>
-        <div className="stat-card">
-          <i className="bi bi-graph-up"></i>
-          <span>Média Diária</span>
-          <strong>{totais.mediaDiaria > 0 && totais.mediaDiaria < 1 ? formatarMeta(totais.mediaDiaria) : `${totais.mediaDiaria.toFixed(1)}h`}</strong>
-        </div>
-      </div>
+        {/* Cards de Resumo Padronizados (estilo Calendário) */}
+        <div className="estatisticas-metricas-grid">
+          <div className="est-metric-card">
+            <div className="est-metric-icon tempo">
+              <i className="bi bi-clock-history"></i>
+            </div>
+            <div className="est-metric-info">
+              <span className="est-metric-num">
+                {totais.totalHoras > 0 && totais.totalHoras < 1 ? formatarMeta(totais.totalHoras) : `${totais.totalHoras.toFixed(1)}h`}
+              </span>
+              <span className="est-metric-label">Total Geral</span>
+            </div>
+          </div>
 
-      {/* Seletor de Período */}
-      <div className="periodo-selector">
-        <button className={`periodo-btn ${periodoAtual === 'semana' ? 'active' : ''}`} onClick={() => setPeriodoAtual('semana')}>Por Dia da Semana</button>
-        <button className={`periodo-btn ${periodoAtual === 'hoje' ? 'active' : ''}`} onClick={() => setPeriodoAtual('hoje')}>Estudo de Hoje</button>
-        <button className={`periodo-btn ${periodoAtual === 'semanal' ? 'active' : ''}`} onClick={() => setPeriodoAtual('semanal')}>Estudo Semanal</button>
-        <button className={`periodo-btn ${periodoAtual === 'mensal' ? 'active' : ''}`} onClick={() => setPeriodoAtual('mensal')}>Estudo Mensal</button>
-      </div>
+          <div className="est-metric-card">
+            <div className="est-metric-icon dias">
+              <i className="bi bi-calendar-check-fill"></i>
+            </div>
+            <div className="est-metric-info">
+              <span className="est-metric-num">{totais.dias}</span>
+              <span className="est-metric-label">Dias Estudados</span>
+            </div>
+          </div>
+
+          <div className="est-metric-card">
+            <div className="est-metric-icon streak">
+              <i className="bi bi-fire"></i>
+            </div>
+            <div className="est-metric-info">
+              <span className="est-metric-num">{totais.maiorStreak} dias</span>
+              <span className="est-metric-label">Maior Streak</span>
+            </div>
+          </div>
+
+          <div className="est-metric-card">
+            <div className="est-metric-icon media">
+              <i className="bi bi-speedometer2"></i>
+            </div>
+            <div className="est-metric-info">
+              <span className="est-metric-num">
+                {totais.mediaDiaria > 0 && totais.mediaDiaria < 1 ? formatarMeta(totais.mediaDiaria) : `${totais.mediaDiaria.toFixed(1)}h`}
+              </span>
+              <span className="est-metric-label">Média Diária</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Seletor de Período Padronizado */}
+        <div className="estatisticas-toolbar-bar mb-4">
+          <div className="estatisticas-filtros-nav">
+            <button
+              className={`btn-est-filtro ${periodoAtual === 'semana' ? 'ativo' : ''}`}
+              onClick={() => setPeriodoAtual('semana')}
+            >
+              Por Dia da Semana
+            </button>
+            <button
+              className={`btn-est-filtro ${periodoAtual === 'hoje' ? 'ativo' : ''}`}
+              onClick={() => setPeriodoAtual('hoje')}
+            >
+              Estudo de Hoje
+            </button>
+            <button
+              className={`btn-est-filtro ${periodoAtual === 'semanal' ? 'ativo' : ''}`}
+              onClick={() => setPeriodoAtual('semanal')}
+            >
+              Estudo Semanal
+            </button>
+            <button
+              className={`btn-est-filtro ${periodoAtual === 'mensal' ? 'ativo' : ''}`}
+              onClick={() => setPeriodoAtual('mensal')}
+            >
+              Estudo Mensal
+            </button>
+          </div>
+        </div>
 
       {/* Gráficos Lado a Lado */}
       <div className="graficos-lado-a-lado">
@@ -696,6 +733,7 @@ export default function Estatisticas() {
         <button className="btn-exportar" onClick={exportarDados}>
           <i className="bi bi-download"></i> Exportar Relatório (JSON)
         </button>
+      </div>
       </div>
     </section>
   );

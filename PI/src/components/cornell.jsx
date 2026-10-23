@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import './notas.css'; 
+import './cornell.css';
 import { apiFetch } from '../api';
 
 export default function Cornell() {
@@ -55,7 +55,8 @@ export default function Cornell() {
     try {
       const response = await apiFetch('cornell');
       if (response.ok) {
-        setNotasCornell(await response.json());
+        const data = await response.json();
+        setNotasCornell(Array.isArray(data) ? data : []);
       }
     } catch (err) { console.error(err); }
   };
@@ -130,7 +131,12 @@ export default function Cornell() {
 
   const excluirCornell = (id) => {
     Swal.fire({
-      title: 'Excluir anotação?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Sim'
+      title: 'Excluir anotação?', 
+      icon: 'warning', 
+      showCancelButton: true, 
+      confirmButtonText: 'Sim, excluir',
+      confirmButtonColor: '#dc2626',
+      cancelButtonText: 'Cancelar'
     }).then(async (result) => {
       if (result.isConfirmed) {
         await apiFetch(`cornell/${id}`, { method: 'DELETE' });
@@ -156,34 +162,81 @@ export default function Cornell() {
     return String(nota.id_materia) === String(materiaFiltro);
   });
 
+  const materiasComNotas = [...new Set(notasCornell.map(n => n.id_materia).filter(Boolean))];
+
   return (
     <section id="cornellSection">
-      <h1 className="mb-3">
-        <i className="bi bi-journal-text" style={{ color: cores.primaria }}></i> Método Cornell
-        <span style={{ background: cores.primaria, marginLeft: '12px', fontSize: '14px', padding: '4px 12px', borderRadius: '20px', color: '#fff' }}>
-          {nomeInteligencia[inteligenciaAtual] || nomeInteligencia.logico}
-        </span>
-      </h1>
+      <div className="cornell-container-main">
+        {/* Cabeçalho Padronizado */}
+        <div className="cornell-header-bar">
+          <div className="cornell-header-titles">
+            <h1>
+              <i className="bi bi-layout-split"></i> Método Cornell
+            </h1>
+            <p className="cornell-subtitle">
+              Organize seus estudos em duas colunas: pistas e perguntas à esquerda, resumos e respostas à direita
+            </p>
+          </div>
 
-      <div className="cornell-container">
-        {/* CABEÇALHO EXPLICATIVO */}
-        <div className="cornell-info" style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', marginBottom: '20px', borderLeft: `4px solid ${cores.primaria}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <p style={{ margin: 0 }}><strong>📝 Método Cornell por Matérias:</strong> Organize perguntas e respostas associando a cada disciplina:</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '12px' }}>
-                <div style={{ padding: '10px', background: '#fff3f3', borderLeft: '4px solid #dc3545', borderRadius: '4px' }}>
-                  <strong style={{ color: '#dc3545' }}>❓ Esquerda:</strong> Perguntas e Fórmulas
-                </div>
-                <div style={{ padding: '10px', background: '#f0fff4', borderLeft: '4px solid #28a745', borderRadius: '4px' }}>
-                  <strong style={{ color: '#28a745' }}>💡 Direita:</strong> Respostas e Explicações
-                </div>
-              </div>
+          <div className="cornell-perfil-badge-destaque" style={{ background: cores.primaria }}>
+            <span>{nomeInteligencia[inteligenciaAtual] || nomeInteligencia.logico}</span>
+          </div>
+        </div>
+
+        {/* 4 Cards de Métricas */}
+        <div className="cornell-metricas-grid">
+          <div className="cor-metric-card">
+            <div className="cor-metric-icon total">
+              <i className="bi bi-journal-text"></i>
             </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="cor-metric-info">
+              <span className="cor-metric-num">{notasCornell.length}</span>
+              <span className="cor-metric-label">Notas no Caderno</span>
+            </div>
+          </div>
+
+          <div className="cor-metric-card">
+            <div className="cor-metric-icon materias">
+              <i className="bi bi-collection-fill"></i>
+            </div>
+            <div className="cor-metric-info">
+              <span className="cor-metric-num">{materiasComNotas.length}</span>
+              <span className="cor-metric-label">Disciplinas Ativas</span>
+            </div>
+          </div>
+
+          <div className="cor-metric-card">
+            <div className="cor-metric-icon revisao">
+              <i className={`bi ${modoRevisao ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+            </div>
+            <div className="cor-metric-info">
+              <span className="cor-metric-num">{modoRevisao ? 'Ativo' : 'Padrão'}</span>
+              <span className="cor-metric-label">Modo Revisão</span>
+            </div>
+          </div>
+
+          <div className="cor-metric-card">
+            <div className="cor-metric-icon perguntas">
+              <i className="bi bi-question-circle-fill"></i>
+            </div>
+            <div className="cor-metric-info">
+              <span className="cor-metric-num">{notasCornell.length}</span>
+              <span className="cor-metric-label">Perguntas-Chave</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Banner Explicativo */}
+        <div className="cornell-banner-explicativo">
+          <div className="cornell-banner-topo">
+            <h3 className="cornell-banner-titulo">
+              <i className="bi bi-info-circle-fill" style={{ color: cores.primaria }}></i> Dinâmica do Método Cornell
+            </h3>
+            <div className="cornell-banner-acoes">
               {modoRevisao && notasFiltradas.length > 0 && (
                 <button
                   type="button"
+                  className="btn-desborrar-todas"
                   onClick={() => {
                     const todosRevelados = notasFiltradas.every(n => respostasReveladas[n.id_cornell]);
                     if (todosRevelados) {
@@ -194,66 +247,64 @@ export default function Cornell() {
                       setRespostasReveladas(novo);
                     }
                   }}
-                  style={{
-                    background: '#e2e8f0',
-                    color: '#334155',
-                    border: 'none',
-                    padding: '8px 14px',
-                    borderRadius: '30px',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '13px'
-                  }}
                 >
-                  {notasFiltradas.every(n => respostasReveladas[n.id_cornell]) ? '🔒 Borrar Todas' : '👁️ Desborrar Todas'}
+                  <i className={`bi ${notasFiltradas.every(n => respostasReveladas[n.id_cornell]) ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                  {notasFiltradas.every(n => respostasReveladas[n.id_cornell]) ? 'Borrar Todas' : 'Desborrar Todas'}
                 </button>
               )}
               <button 
                 type="button"
-                className={`btn-revisao ${modoRevisao ? 'ativo' : ''}`} 
-                onClick={toggleModoRevisao} 
-                style={{ background: modoRevisao ? cores.primaria : 'transparent', color: modoRevisao ? '#fff' : cores.primaria, border: `2px solid ${cores.primaria}`, padding: '8px 16px', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold' }}
+                className={`btn-toggle-revisao ${modoRevisao ? 'ativo' : ''}`} 
+                onClick={toggleModoRevisao}
               >
-                <i className={`bi ${modoRevisao ? 'bi-eye-slash' : 'bi-eye'}`}></i> {modoRevisao ? 'Desativar' : 'Ativar'} Revisão
+                <i className={`bi ${modoRevisao ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+                {modoRevisao ? 'Desativar Revisão' : 'Ativar Modo Revisão'}
               </button>
+            </div>
+          </div>
+
+          <div className="cornell-metodologia-grid">
+            <div className="metodologia-bloco esquerda">
+              <strong><i className="bi bi-question-circle-fill"></i> Coluna da Esquerda (Pistas e Perguntas)</strong>
+              <span>Anote fórmulas, palavras-chave, dúvidas e conceitos essenciais que servem como gatilhos mentais.</span>
+            </div>
+            <div className="metodologia-bloco direita">
+              <strong><i className="bi bi-lightbulb-fill"></i> Coluna da Direita (Respostas e Explicações)</strong>
+              <span>Desenvolva a resolução detalhada, deduções e sínteses com suas próprias palavras.</span>
             </div>
           </div>
         </div>
 
-        {/* FORMULÁRIO DE DUAS COLUNAS */}
-        <div className="cornell-input" style={{ marginBottom: '30px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          
-          {/* SELETOR DE MATÉRIA */}
-          <div style={{ marginBottom: '18px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontWeight: 'bold', color: '#374151', margin: 0, fontSize: '0.95rem' }}>
-                📚 Matéria:
-              </label>
-              <button
-                type="button"
-                onClick={() => setCriandoMateria(!criandoMateria)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: criandoMateria ? '#6b7280' : cores.primaria,
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-              >
-                {criandoMateria ? '✕ Escolher existente' : '+ Nova Matéria'}
-              </button>
-            </div>
+        {/* Formulário de Criação Cornell */}
+        <div className="cornell-form-card">
+          <div className="cornell-form-header">
+            <h3><i className="bi bi-pencil-square" style={{ color: cores.primaria }}></i> Nova Anotação Cornell</h3>
+            <button
+              type="button"
+              className="btn-add-materia-inline"
+              onClick={() => setCriandoMateria(!criandoMateria)}
+              title={criandoMateria ? 'Escolher existente' : 'Criar nova matéria'}
+              style={{ width: 'auto', padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600 }}
+            >
+              <i className={`bi ${criandoMateria ? 'bi-x-lg' : 'bi-plus-lg'} me-1`}></i>
+              {criandoMateria ? 'Selecionar Existente' : 'Nova Matéria'}
+            </button>
+          </div>
 
+          {/* Seletor ou Criação Inline */}
+          <div className="cornell-materia-linha">
+            <label><i className="bi bi-journal-bookmark-fill"></i> Disciplina Associada:</label>
             {criandoMateria ? (
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="box-nova-materia-inline">
+                <div className="nova-materia-header">
+                  <h6><i className="bi bi-stars"></i> Cadastrar Nova Disciplina</h6>
+                </div>
+                <div className="d-flex gap-2 mb-2 flex-wrap">
                   <input
                     type="text"
-                    className="form-control form-control-sm"
-                    style={{ flex: '1 1 200px' }}
-                    placeholder="Nome da matéria (ex: Biologia, Química)"
+                    className="input-flashcard"
+                    style={{ flex: '1 1 220px' }}
+                    placeholder="Nome da disciplina (ex: Biologia Molecular)"
                     value={novaMateriaNome}
                     onChange={(e) => setNovaMateriaNome(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') salvarNovaMateria(); }}
@@ -261,23 +312,22 @@ export default function Cornell() {
                   />
                   <input
                     type="color"
+                    className="color-picker-flashcard"
                     value={novaMateriaCor}
                     onChange={(e) => setNovaMateriaCor(e.target.value)}
-                    style={{ width: '40px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
-                    title="Escolha a cor da matéria"
+                    title="Escolha a cor da disciplina"
                   />
                   <button
                     type="button"
-                    className="btn btn-sm"
+                    className="btn-salvar-materia-inline"
                     disabled={salvandoMateria}
                     onClick={salvarNovaMateria}
-                    style={{ background: cores.primaria, color: '#fff', fontWeight: '600' }}
                   >
-                    {salvandoMateria ? 'Salvando...' : 'Salvar Matéria'}
+                    {salvandoMateria ? 'Salvando...' : 'Salvar Disciplina'}
                   </button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn-cancelar-materia-inline"
                     onClick={() => setCriandoMateria(false)}
                   >
                     Cancelar
@@ -286,12 +336,12 @@ export default function Cornell() {
               </div>
             ) : (
               <select
-                className="form-select"
+                className="input-flashcard"
                 value={form.id_materia}
                 onChange={(e) => setForm({ ...form, id_materia: e.target.value })}
-                style={{ maxWidth: '400px' }}
+                style={{ maxWidth: '420px' }}
               >
-                <option value="">Nenhuma matéria (Geral)</option>
+                <option value="">Nenhuma disciplina (Caderno Geral)</option>
                 {materias.map((m) => (
                   <option key={m.id_materia} value={m.id_materia}>
                     {m.nome}
@@ -301,27 +351,26 @@ export default function Cornell() {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <label style={{ fontWeight: 'bold', color: '#dc3545', display: 'block', marginBottom: '6px' }}>❓ Perguntas e Fórmulas</label>
+          {/* Grid de 2 Colunas de Inputs */}
+          <div className="cornell-duas-colunas-grid">
+            <div className="cornell-coluna-campo esquerda">
+              <label><i className="bi bi-question-circle-fill"></i> Perguntas, Fórmulas e Gatilhos</label>
               <textarea 
                 value={form.pergunta} 
                 onChange={(e) => setForm({ ...form, pergunta: e.target.value })} 
-                rows="5" 
-                className="form-control" 
-                style={{ borderColor: '#dc3545', resize: 'vertical' }} 
-                placeholder="Ex: Qual a fórmula de Bhaskara?" 
+                rows="4" 
+                className="cornell-textarea" 
+                placeholder="Ex: Como funciona o ciclo de Krebs? Qual a fórmula da velocidade média?" 
               />
             </div>
-            <div>
-              <label style={{ fontWeight: 'bold', color: '#28a745', display: 'block', marginBottom: '6px' }}>💡 Respostas e Explicações</label>
+            <div className="cornell-coluna-campo direita">
+              <label><i className="bi bi-lightbulb-fill"></i> Respostas, Resoluções e Explicações</label>
               <textarea 
                 value={form.resposta} 
                 onChange={(e) => setForm({ ...form, resposta: e.target.value })} 
-                rows="5" 
-                className="form-control" 
-                style={{ borderColor: '#28a745', resize: 'vertical' }} 
-                placeholder="Ex: x = (-b ± √(b²-4ac)) / 2a" 
+                rows="4" 
+                className="cornell-textarea" 
+                placeholder="Ex: Ocorre na matriz mitocondrial e produz NADH e FADH2. Vm = ΔS / Δt..." 
               />
             </div>
           </div>
@@ -329,270 +378,152 @@ export default function Cornell() {
           <button 
             type="button"
             onClick={salvarCornell} 
-            style={{ background: cores.primaria, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', marginTop: '20px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            className="btn-salvar-cornell"
           >
-            <i className="bi bi-plus-lg"></i> Adicionar ao Caderno
+            <i className="bi bi-plus-circle-fill"></i> Adicionar ao Caderno Cornell
           </button>
         </div>
 
-        {/* LISTA DE NOTAS COM FILTROS DE MATÉRIA */}
-        <div className="notas-lista">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
-              📒 Caderno Cornell
-              <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: 'normal', marginLeft: '10px' }}>
-                ({notasFiltradas.length} {notasFiltradas.length === 1 ? 'anotação' : 'anotações'}
-                {materiaFiltro !== 'todas' && ` de ${notasCornell.length}`})
-              </span>
-            </h3>
+        {/* Toolbar com Filtros */}
+        <div className="cornell-toolbar-bar">
+          <h3 className="cornell-toolbar-titulo">
+            <i className="bi bi-journal-bookmark-fill" style={{ color: cores.primaria }}></i>
+            Suas Anotações
+            <span>({notasFiltradas.length} {notasFiltradas.length === 1 ? 'registro' : 'registros'})</span>
+          </h3>
 
-            {/* ABAS / FILTROS POR MATÉRIA */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="cornell-filtros-nav">
+            <button
+              type="button"
+              className={`btn-cor-filtro ${materiaFiltro === 'todas' ? 'ativo' : ''}`}
+              onClick={() => setMateriaFiltro('todas')}
+            >
+              Todas ({notasCornell.length})
+            </button>
+            {materias.map((m) => {
+              const count = notasCornell.filter(n => String(n.id_materia) === String(m.id_materia)).length;
+              if (count === 0) return null;
+              const isSelected = String(materiaFiltro) === String(m.id_materia);
+              return (
+                <button
+                  key={m.id_materia}
+                  type="button"
+                  className={`btn-cor-filtro ${isSelected ? 'ativo' : ''}`}
+                  onClick={() => setMateriaFiltro(String(m.id_materia))}
+                >
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: m.cor || cores.primaria, display: 'inline-block' }}></span>
+                  {m.nome} ({count})
+                </button>
+              );
+            })}
+            {notasCornell.some(n => !n.id_materia) && (
               <button
                 type="button"
-                onClick={() => setMateriaFiltro('todas')}
-                style={{
-                  background: materiaFiltro === 'todas' ? cores.primaria : '#f1f5f9',
-                  color: materiaFiltro === 'todas' ? '#fff' : '#475569',
-                  border: 'none',
-                  padding: '5px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className={`btn-cor-filtro ${materiaFiltro === 'sem_materia' ? 'ativo' : ''}`}
+                onClick={() => setMateriaFiltro('sem_materia')}
               >
-                Todas ({notasCornell.length})
+                Geral ({notasCornell.filter(n => !n.id_materia).length})
               </button>
-
-              {materias.map((m) => {
-                const count = notasCornell.filter(n => String(n.id_materia) === String(m.id_materia)).length;
-                if (count === 0) return null;
-                const isSelected = String(materiaFiltro) === String(m.id_materia);
-                return (
-                  <button
-                    key={m.id_materia}
-                    type="button"
-                    onClick={() => setMateriaFiltro(String(m.id_materia))}
-                    style={{
-                      background: isSelected ? (m.cor || cores.primaria) : '#f1f5f9',
-                      color: isSelected ? '#fff' : '#475569',
-                      border: 'none',
-                      padding: '5px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
-                  >
-                    {!isSelected && (
-                      <span
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: m.cor || cores.primaria
-                        }}
-                      />
-                    )}
-                    {m.nome} ({count})
-                  </button>
-                );
-              })}
-
-              {notasCornell.some(n => !n.id_materia) && (
-                <button
-                  type="button"
-                  onClick={() => setMateriaFiltro('sem_materia')}
-                  style={{
-                    background: materiaFiltro === 'sem_materia' ? '#64748b' : '#f1f5f9',
-                    color: materiaFiltro === 'sem_materia' ? '#fff' : '#475569',
-                    border: 'none',
-                    padding: '5px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Geral ({notasCornell.filter(n => !n.id_materia).length})
-                </button>
-              )}
-            </div>
+            )}
           </div>
-          
-          {notasFiltradas.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-              <i className="bi bi-journal-text" style={{ fontSize: '48px', color: '#94a3b8' }}></i>
-              <p style={{ color: '#64748b', margin: '10px 0 0 0', fontWeight: '500' }}>
-                {notasCornell.length === 0
-                  ? 'Nenhuma anotação cadastrada ainda. Crie a primeira acima!'
-                  : 'Nenhuma anotação encontrada para o filtro selecionado.'}
-              </p>
-              {materiaFiltro !== 'todas' && notasCornell.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setMateriaFiltro('todas')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: cores.primaria,
-                    fontWeight: '600',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    marginTop: '8px',
-                    textDecoration: 'underline'
-                  }}
+        </div>
+
+        {/* Grade de Cards Cornell */}
+        {notasFiltradas.length === 0 ? (
+          <div className="cornell-vazio-card">
+            <i className="bi bi-journal-text"></i>
+            <h4>Nenhuma anotação encontrada</h4>
+            <p>
+              {notasCornell.length === 0
+                ? 'Seu caderno Cornell está vazio. Crie sua primeira pergunta e resposta acima!'
+                : 'Nenhuma anotação corresponde ao filtro selecionado.'}
+            </p>
+          </div>
+        ) : (
+          <div className="cornell-notas-grid">
+            {notasFiltradas.map((nota) => {
+              const estaRevelada = Boolean(respostasReveladas[nota.id_cornell]);
+              const estaBorrada = modoRevisao && !estaRevelada;
+              const corCartao = nota.cor_materia || cores.primaria;
+
+              return (
+                <div
+                  key={nota.id_cornell}
+                  className="cornell-card-item"
+                  style={{ borderTop: `4px solid ${corCartao}` }}
                 >
-                  Ver todas as anotações
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={`row g-3 ${modoRevisao ? 'modo-revisao' : ''}`}>
-              {notasFiltradas.map((nota) => {
-                const estaRevelada = Boolean(respostasReveladas[nota.id_cornell]);
-                const estaBorrada = modoRevisao && !estaRevelada;
-                const corCartao = nota.cor_materia || cores.primaria;
+                  <div className="cornell-card-top">
+                    <span
+                      className="badge-materia-cornell"
+                      style={{
+                        background: `${corCartao}18`,
+                        color: corCartao,
+                        border: `1px solid ${corCartao}35`
+                      }}
+                    >
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: corCartao, display: 'inline-block' }}></span>
+                      {nota.nome_materia || 'Geral'}
+                    </span>
+                    <span className="cornell-card-data">
+                      <i className="bi bi-clock"></i> {new Date(nota.data_criacao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
 
-                return (
-                  <div key={nota.id_cornell} className="col-md-6">
-                    <div className="card-nota" style={{ background: '#fff', border: `2px solid ${corCartao}`, borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                      
-                      {/* HEADER DO CARD COM MATÉRIA E DATA */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #f3f4f6' }}>
-                        <div>
-                          {nota.nome_materia ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: `${corCartao}15`,
-                                color: corCartao,
-                                border: `1px solid ${corCartao}40`,
-                                padding: '3px 10px',
-                                borderRadius: '20px',
-                                fontSize: '12px',
-                                fontWeight: '700'
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: '8px',
-                                  height: '8px',
-                                  borderRadius: '50%',
-                                  background: corCartao
-                                }}
-                              />
-                              {nota.nome_materia}
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: '#f1f5f9',
-                                color: '#64748b',
-                                padding: '3px 10px',
-                                borderRadius: '20px',
-                                fontSize: '11px',
-                                fontWeight: '600'
-                              }}
-                            >
-                              Geral
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                          📅 {new Date(nota.data_criacao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                        </span>
+                  <div className="cornell-card-duas-colunas">
+                    {/* Esquerda: Pergunta */}
+                    <div className="cornell-card-coluna esquerda">
+                      <div className="cornell-col-header esquerda">
+                        <span><i className="bi bi-question-circle"></i> Pergunta</span>
                       </div>
+                      <p className="cornell-texto-pergunta">{nota.pergunta}</p>
+                    </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                        
-                        {/* COLUNA ESQUERDA: PERGUNTA */}
-                        <div style={{ borderRight: '2px solid #e0e0e0', paddingRight: '15px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc3545' }}>❓ PERGUNTA:</span>
-                          <p style={{ color: '#dc3545', fontWeight: '500', marginTop: '5px', whiteSpace: 'pre-wrap' }}>{nota.pergunta}</p>
-                          {modoRevisao && (
-                            <button
-                              type="button"
-                              onClick={() => toggleRevelarResposta(nota.id_cornell)}
-                              style={{
-                                background: estaRevelada ? '#e2e8f0' : corCartao,
-                                color: estaRevelada ? '#334155' : '#fff',
-                                border: 'none',
-                                padding: '5px 12px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                marginTop: '8px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
-                              }}
-                              title={estaRevelada ? 'Clique para borrar novamente' : 'Clique para desborrar a resposta'}
-                            >
-                              <i className={`bi ${estaRevelada ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-                              {estaRevelada ? 'Borrar Resposta' : 'Desborrar Resposta'}
-                            </button>
-                          )}
-                        </div>
-
-                        {/* COLUNA DIREITA: RESPOSTA */}
-                        <div
-                          onClick={() => { if (modoRevisao) toggleRevelarResposta(nota.id_cornell); }}
-                          style={{ cursor: modoRevisao ? 'pointer' : 'default', position: 'relative' }}
-                          title={modoRevisao ? (estaRevelada ? 'Clique para borrar a resposta' : 'Clique para desborrar a resposta') : undefined}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#28a745' }}>💡 RESPOSTA:</span>
-                            {modoRevisao && (
-                              <span style={{ fontSize: '11px', color: estaRevelada ? '#64748b' : '#16a34a', fontWeight: '600' }}>
-                                {estaRevelada ? '👁️ Revelada' : '👆 Clique p/ desborrar'}
-                              </span>
-                            )}
-                          </div>
-                          <p
-                            className={`texto-resposta ${estaBorrada ? 'revisao-oculta' : ''}`}
-                            style={{
-                              color: '#28a745',
-                              fontWeight: '500',
-                              marginTop: '5px',
-                              whiteSpace: 'pre-wrap',
-                              filter: estaBorrada ? 'blur(8px)' : 'none',
-                              transition: 'filter 0.25s ease',
-                              userSelect: estaBorrada ? 'none' : 'text'
-                            }}
-                          >
-                            {nota.resposta}
-                          </p>
-                        </div>
+                    {/* Direita: Resposta */}
+                    <div
+                      className="cornell-card-coluna direita"
+                      onClick={() => { if (modoRevisao) toggleRevelarResposta(nota.id_cornell); }}
+                      style={{ cursor: modoRevisao ? 'pointer' : 'default' }}
+                    >
+                      <div className="cornell-col-header direita">
+                        <span><i className="bi bi-lightbulb"></i> Resposta</span>
+                        {modoRevisao && (
+                          <span style={{ fontSize: '0.74rem', textTransform: 'none', color: estaRevelada ? '#64748b' : '#059669', fontWeight: 600 }}>
+                            {estaRevelada ? 'Visível' : 'Toque p/ ver'}
+                          </span>
+                        )}
                       </div>
-
-                      {/* FOOTER DO CARD */}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f0f0f0' }}>
-                        <button
-                          type="button"
-                          onClick={() => excluirCornell(nota.id_cornell)}
-                          style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                        >
-                          <i className="bi bi-trash"></i> Excluir
-                        </button>
-                      </div>
+                      <p className={`cornell-texto-resposta ${estaBorrada ? 'borrada' : ''}`}>
+                        {nota.resposta}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+
+                  <div className="cornell-card-footer">
+                    {modoRevisao ? (
+                      <button
+                        type="button"
+                        className="btn-toggle-revelar-card"
+                        onClick={() => toggleRevelarResposta(nota.id_cornell)}
+                      >
+                        <i className={`bi ${estaRevelada ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                        {estaRevelada ? 'Ocultar Resposta' : 'Revelar Resposta'}
+                      </button>
+                    ) : <span />}
+
+                    <button
+                      type="button"
+                      className="btn-excluir-cornell"
+                      onClick={() => excluirCornell(nota.id_cornell)}
+                      title="Excluir anotação"
+                    >
+                      <i className="bi bi-trash3-fill"></i> Excluir
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

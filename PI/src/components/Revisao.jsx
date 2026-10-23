@@ -592,101 +592,114 @@ export default function Revisao() {
 
   return (
     <section id="revisaoSection">
-      {/* Abas Superiores de Navegação */}
-      <div className="revisao-abas-nav">
-        <button
-          className={`btn-aba ${abaAtiva === 'baralhos' ? 'ativo' : ''}`}
-          onClick={() => {
-            setAbaAtiva('baralhos');
-            localStorage.setItem('revisaoTipoAtivo', 'baralhos');
-          }}
-        >
-          <i className="bi bi-collection-fill"></i> Baralhos por Matéria
-        </button>
-        <button
-          className={`btn-aba ${abaAtiva === 'espacada' ? 'ativo' : ''}`}
-          onClick={() => {
-            setAbaAtiva('espacada');
-            localStorage.setItem('revisaoTipoAtivo', 'revisao_espacada');
-          }}
-        >
-          <i className="bi bi-hourglass-split"></i> Fila de Repetição Espaçada
-          {totalAtrasadosHoje > 0 && (
-            <span className="badge-urgencia-header">{totalAtrasadosHoje}</span>
-          )}
-        </button>
-      </div>
+      <div className="revisao-container-main">
+        {/* Cabeçalho Padronizado (estilo Calendário) */}
+        <div className="revisao-header-bar">
+          <div className="revisao-header-titles">
+            <h1><i className="bi bi-card-checklist"></i> Revisão Ativa & Flashcards</h1>
+            <p className="revisao-subtitle">Repetição espaçada com algoritmo Anki e organização por baralhos temáticos</p>
+          </div>
+          <button className="btn-novo-revisao-main" onClick={() => abrirModalFlashcard()}>
+            <i className="bi bi-plus-lg"></i> Novo Flashcard
+          </button>
+        </div>
 
-      {/* ==================== VISTA 1: BARALHOS POR MATÉRIA ==================== */}
-      {abaAtiva === 'baralhos' && (
-        <>
-          <div className="revisao-header">
-            <div>
-              <h1>Meus Baralhos</h1>
-              <p className="revisao-subtitle">Organize seus flashcards por matéria e tema</p>
+        {/* Cards de Métricas Padronizados (estilo Calendário) */}
+        <div className="revisao-metricas-grid">
+          <div className="rev-metric-card">
+            <div className="rev-metric-icon total">
+              <i className="bi bi-collection-fill"></i>
             </div>
-            <button className="btn-add-revisao" onClick={() => abrirModalFlashcard()}>
-              <i className="bi bi-plus-lg"></i> Novo Flashcard
-            </button>
+            <div className="rev-metric-info">
+              <span className="rev-metric-num">{flashcards.length}</span>
+              <span className="rev-metric-label">Total de Cards</span>
+            </div>
           </div>
 
-          {/* Botão de Revisão Geral */}
-          <div style={{ 
-            marginBottom: '30px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <button 
+          <div className="rev-metric-card">
+            <div className="rev-metric-icon hoje">
+              <i className="bi bi-alarm-fill"></i>
+            </div>
+            <div className="rev-metric-info">
+              <span className="rev-metric-num">{totalAtrasadosHoje}</span>
+              <span className="rev-metric-label">Para Revisar Hoje</span>
+            </div>
+          </div>
+
+          <div className="rev-metric-card">
+            <div className="rev-metric-icon baralhos">
+              <i className="bi bi-journal-bookmark-fill"></i>
+            </div>
+            <div className="rev-metric-info">
+              <span className="rev-metric-num">{baralhos.length}</span>
+              <span className="rev-metric-label">Baralhos Ativos</span>
+            </div>
+          </div>
+
+          <div className="rev-metric-card">
+            <div className="rev-metric-icon memoria">
+              <i className="bi bi-shield-check"></i>
+            </div>
+            <div className="rev-metric-info">
+              <span className="rev-metric-num">{totalFuturos}</span>
+              <span className="rev-metric-label">Em Memória</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Abas Superiores de Navegação (Padrão Filtros Pill) */}
+        <div className="revisao-toolbar-bar mb-4">
+          <div className="revisao-filtros-nav">
+            <button
+              className={`btn-rev-filtro ${abaAtiva === 'baralhos' ? 'ativo' : ''}`}
               onClick={() => {
-                if (flashcards.length === 0) {
-                  Swal.fire({
-                    icon: 'warning',
-                    title: 'Nenhum card!',
-                    text: 'Crie alguns flashcards primeiro!',
-                    confirmButtonColor: 'var(--cor-primaria)'
-                  });
-                  return;
-                }
-                iniciarRevisao([...flashcards], "Revisão Geral", `${flashcards.length} cards`);
-              }}
-              className="btn-revisao-principal"
-              style={{
-                background: 'var(--cor-primaria)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50px',
-                padding: '12px 28px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-                fontSize: '0.95rem',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                setAbaAtiva('baralhos');
+                localStorage.setItem('revisaoTipoAtivo', 'baralhos');
               }}
             >
-              <i className="bi bi-play-fill" style={{ fontSize: '1.1rem' }}></i>
-              Iniciar Revisão Geral
-              <span style={{
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: '30px',
-                padding: '2px 10px',
-                fontSize: '0.75rem',
-                fontWeight: '500'
-              }}>
-                {flashcards.length} cards
-              </span>
+              <i className="bi bi-collection-fill me-1"></i> Baralhos por Matéria
+            </button>
+            <button
+              className={`btn-rev-filtro ${abaAtiva === 'espacada' ? 'ativo' : ''}`}
+              onClick={() => {
+                setAbaAtiva('espacada');
+                localStorage.setItem('revisaoTipoAtivo', 'revisao_espacada');
+              }}
+            >
+              <i className="bi bi-hourglass-split me-1"></i> Fila de Repetição Espaçada
+              {totalAtrasadosHoje > 0 && (
+                <span className="badge-urgencia-header ms-2">{totalAtrasadosHoje}</span>
+              )}
             </button>
           </div>
+        </div>
+
+        {/* ==================== VISTA 1: BARALHOS POR MATÉRIA ==================== */}
+        {abaAtiva === 'baralhos' && (
+          <div className="revisao-card-main">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+              <div>
+                <h3 className="m-0" style={{ fontWeight: 700, color: '#1e293b' }}>Meus Baralhos</h3>
+                <p className="text-muted m-0" style={{ fontSize: '0.9rem' }}>Organize seus flashcards por disciplina e tema</p>
+              </div>
+              <button 
+                onClick={() => {
+                  if (flashcards.length === 0) {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Nenhum card!',
+                      text: 'Crie alguns flashcards primeiro!',
+                      confirmButtonColor: 'var(--cor-primaria)'
+                    });
+                    return;
+                  }
+                  iniciarRevisao([...flashcards], "Revisão Geral", `${flashcards.length} cards`);
+                }}
+                className="btn-revisao-principal-modern"
+              >
+                <i className="bi bi-play-fill"></i> Iniciar Revisão Geral ({flashcards.length} cards)
+              </button>
+            </div>
 
           {/* Tabela de baralhos */}
           <div className="anki-table-container">
@@ -785,37 +798,34 @@ export default function Revisao() {
               <i className="bi bi-journal-bookmark-fill"></i>
               <p>Nenhum baralho criado ainda</p>
               <button className="btn-add-revisao" onClick={() => abrirModalFlashcard()}>
-                Criar meu primeiro flashcard
+                <i className="bi bi-plus-lg"></i> Criar meu primeiro flashcard
               </button>
             </div>
           )}
-        </>
-      )}
+          </div>
+        )}
 
-      {/* ==================== VISTA 2: FILA DE REPETIÇÃO ESPAÇADA ==================== */}
-      {abaAtiva === 'espacada' && (
-        <>
-          <div className="revisao-header">
-            <div>
-              <h1>
-                <i className="bi bi-hourglass-split text-primary me-2"></i>
-                Fila de Repetição Espaçada
-              </h1>
-              <p className="revisao-subtitle">
-                Ordem inteligente de conceitos para relembrar de acordo com sua última revisão (Curva de Ebbinghaus)
-              </p>
+        {/* ==================== VISTA 2: FILA DE REPETIÇÃO ESPAÇADA ==================== */}
+        {abaAtiva === 'espacada' && (
+          <div className="revisao-card-main">
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div>
+                <h3 className="m-0" style={{ fontWeight: 700, color: '#1e293b' }}>
+                  <i className="bi bi-hourglass-split text-primary me-2"></i>
+                  Fila de Repetição Espaçada
+                </h3>
+                <p className="text-muted m-0" style={{ fontSize: '0.9rem' }}>
+                  Ordem inteligente baseada na Curva de Ebbinghaus (revisão de cards em risco de esquecimento)
+                </p>
+              </div>
             </div>
-            <button className="btn-add-revisao" onClick={() => abrirModalFlashcard()}>
-              <i className="bi bi-plus-lg"></i> Novo Conceito
-            </button>
-          </div>
 
-          <div className="espacada-banner-info">
-            <i className="bi bi-info-circle-fill"></i>
-            <span>
-              <strong>Como funciona a ordem:</strong> O sistema prioriza conceitos com <em>risco imediato de esquecimento</em> (atrasados há mais tempo), depois os que vencem <em>hoje</em>, seguidos por <em>novos conceitos</em> e agendamentos futuros.
-            </span>
-          </div>
+            <div className="espacada-banner-info">
+              <i className="bi bi-info-circle-fill"></i>
+              <span>
+                <strong>Como funciona a ordem:</strong> O sistema prioriza conceitos com <em>risco imediato de esquecimento</em> (atrasados há mais tempo), depois os que vencem <em>hoje</em>, seguidos por <em>novos conceitos</em> e agendamentos futuros.
+              </span>
+            </div>
 
           {/* Cards de Métricas */}
           <div className="espacada-metricas-grid">
@@ -913,7 +923,7 @@ export default function Revisao() {
               <i className="bi bi-hourglass-split"></i>
               <p>Nenhum conceito encontrado na fila.</p>
               <button className="btn-add-revisao" onClick={() => abrirModalFlashcard()}>
-                Criar primeiro conceito
+                <i className="bi bi-plus-lg"></i> Criar primeiro conceito
               </button>
             </div>
           ) : (
@@ -1016,24 +1026,37 @@ export default function Revisao() {
               </table>
             </div>
           )}
-        </>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Modal Flashcard */}
-      <div className="modal fade" id="modalRevisao" tabIndex="-1" aria-hidden="true">
+      {/* Modal Flashcard Moderno */}
+      <div className="modal fade modal-revisao-custom" id="modalRevisao" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header" style={{ background: 'var(--cor-primaria)', color: 'white' }}>
-              <h5 className="modal-title"><i className="bi bi-plus-lg"></i> Novo Flashcard</h5>
-              <button type="button" className="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          <div className="modal-content modal-flashcard-card">
+            <div className="modal-header modal-flashcard-header">
+              <div className="d-flex align-items-center gap-3">
+                <div className="modal-flashcard-icon-badge">
+                  <i className="bi bi-card-text"></i>
+                </div>
+                <div>
+                  <h5 className="modal-title modal-flashcard-title m-0">Novo Flashcard</h5>
+                  <p className="modal-flashcard-subtitle m-0">Crie um card de memorização para suas revisões</p>
+                </div>
+              </div>
+              <button type="button" className="btn-close-flashcard" data-bs-dismiss="modal" aria-label="Fechar">
+                <i className="bi bi-x-lg"></i>
+              </button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body modal-flashcard-body">
               {/* Seleção e Adição de Matéria */}
-              <div className="mb-3">
-                <label className="form-label fw-bold"> Matéria</label>
+              <div className="form-group-flashcard mb-3">
+                <label className="label-flashcard">
+                  <i className="bi bi-journal-bookmark-fill"></i> Matéria / Baralho
+                </label>
                 <div className="d-flex gap-2">
                   <select 
-                    className="form-select" 
+                    className="input-flashcard form-select-flashcard" 
                     value={novoFlashcard.materiaId} 
                     onChange={(e) => {
                       if (e.target.value === '__NOVA__') {
@@ -1054,22 +1077,24 @@ export default function Revisao() {
                   </select>
                   <button
                     type="button"
-                    className="btn btn-outline-secondary"
+                    className="btn-add-materia-inline"
                     title="Adicionar nova matéria"
                     onClick={() => setMostrarNovaMateria(!mostrarNovaMateria)}
                   >
-                    <i className="bi bi-plus-lg"></i>
+                    <i className={`bi ${mostrarNovaMateria ? 'bi-dash-lg' : 'bi-plus-lg'}`}></i>
                   </button>
                 </div>
 
                 {/* Formulário inline para nova matéria */}
                 {mostrarNovaMateria && (
-                  <div className="card p-3 mt-2 border-primary-subtle" style={{ backgroundColor: '#f8f9fa' }}>
-                    <h6 className="fw-bold mb-2 text-primary">Adicionar Nova Matéria</h6>
+                  <div className="box-nova-materia-inline mt-2">
+                    <div className="nova-materia-header">
+                      <h6><i className="bi bi-stars"></i> Nova Disciplina</h6>
+                    </div>
                     <div className="d-flex gap-2 mb-2">
                       <input
                         type="text"
-                        className="form-control"
+                        className="input-flashcard"
                         placeholder="Nome da matéria (ex: História)"
                         value={novaMateriaNome}
                         onChange={(e) => setNovaMateriaNome(e.target.value)}
@@ -1077,17 +1102,16 @@ export default function Revisao() {
                       />
                       <input
                         type="color"
-                        className="form-control form-control-color"
+                        className="color-picker-flashcard"
                         value={novaMateriaCor}
                         onChange={(e) => setNovaMateriaCor(e.target.value)}
                         title="Escolha a cor da matéria"
-                        style={{ minWidth: '45px' }}
                       />
                     </div>
                     <div className="d-flex justify-content-end gap-2">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-secondary"
+                        className="btn-cancelar-materia-inline"
                         onClick={() => {
                           setMostrarNovaMateria(false);
                           setNovaMateriaNome('');
@@ -1097,8 +1121,7 @@ export default function Revisao() {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-primary"
-                        style={{ background: 'var(--cor-primaria)', borderColor: 'var(--cor-primaria)' }}
+                        className="btn-salvar-materia-inline"
                         onClick={handleCriarMateria}
                         disabled={salvandoMateria}
                       >
@@ -1109,30 +1132,36 @@ export default function Revisao() {
                 )}
               </div>
 
-              <div className="mb-3">
-                <label className="form-label fw-bold"> Tema / Tópico</label>
+              <div className="form-group-flashcard mb-3">
+                <label className="label-flashcard">
+                  <i className="bi bi-tag-fill"></i> Tema / Tópico
+                </label>
                 <input 
                   type="text" 
-                  className="form-control" 
+                  className="input-flashcard" 
                   placeholder="Ex: Geometria Analítica, Citologia, etc." 
                   value={novoFlashcard.tema} 
                   onChange={(e) => setNovoFlashcard({...novoFlashcard, tema: e.target.value})} 
                 />
               </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold"> Pergunta (Frente do Card)</label>
+              <div className="form-group-flashcard mb-3">
+                <label className="label-flashcard">
+                  <i className="bi bi-question-circle-fill"></i> Pergunta (Frente do Card)
+                </label>
                 <textarea 
-                  className="form-control" 
+                  className="input-flashcard textarea-flashcard" 
                   rows="3" 
                   placeholder="Digite a pergunta ou conceito a lembrar..." 
                   value={novoFlashcard.pergunta} 
                   onChange={(e) => setNovoFlashcard({...novoFlashcard, pergunta: e.target.value})} 
                 />
               </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold"> Resposta (Verso do Card)</label>
+              <div className="form-group-flashcard mb-3">
+                <label className="label-flashcard">
+                  <i className="bi bi-lightbulb-fill"></i> Resposta (Verso do Card)
+                </label>
                 <textarea 
-                  className="form-control" 
+                  className="input-flashcard textarea-flashcard" 
                   rows="4" 
                   placeholder="Digite a resposta ou explicação detalhada..." 
                   value={novoFlashcard.resposta} 
@@ -1140,9 +1169,13 @@ export default function Revisao() {
                 />
               </div>
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" className="btn btn-primary" onClick={salvarFlashcard} style={{ background: 'var(--cor-primaria)', border: 'none' }}>Salvar Flashcard</button>
+            <div className="modal-footer modal-flashcard-footer">
+              <button type="button" className="btn-cancelar-flashcard" data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="button" className="btn-salvar-flashcard" onClick={salvarFlashcard}>
+                <i className="bi bi-check2-circle"></i> Salvar Flashcard
+              </button>
             </div>
           </div>
         </div>

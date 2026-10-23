@@ -6,7 +6,16 @@ const params = new URLSearchParams(window.location.search);
 const tokenURL = params.get('token');
 
 if (tokenURL && tokenURL !== 'undefined' && tokenURL !== 'null') {
+  const tokenAntigo = localStorage.getItem('token');
+  if (tokenAntigo !== tokenURL) {
+    localStorage.removeItem('user');
+    localStorage.removeItem('grupos_estudo_sistema');
+    localStorage.removeItem('flashcards_sistema');
+    localStorage.removeItem('materias');
+    sessionStorage.removeItem('user');
+  }
   localStorage.setItem('token', tokenURL);
+  sessionStorage.setItem('token', tokenURL);
   // Limpa a URL pra não ficar feia nem vazar o token
   window.history.replaceState({}, '', '/'); 
 }

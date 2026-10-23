@@ -49,8 +49,9 @@ export default function VideoEducativo() {
   const [audioDuracao, setAudioDuracao] = useState('00:00');
   const [audioBlob, setAudioBlob] = useState(null);
 
-  // Aba ativa do bloco lateral no estúdio ('resumo' ou 'audio')
-  const [abaCaderno, setAbaCaderno] = useState('resumo');
+  // Aba ativa do bloco lateral no estúdio ('ambos', 'resumo' ou 'audio')
+  const [abaCaderno, setAbaCaderno] = useState('ambos');
+  const [quickUrl, setQuickUrl] = useState('');
 
   // Nova Matéria Inline
   const [mostrarNovaMateria, setMostrarNovaMateria] = useState(false);
@@ -275,6 +276,38 @@ export default function VideoEducativo() {
     }
   };
 
+  // Iniciar estudo rápido direto pelo link
+  const handleIniciarEstudoRapido = (urlOpcional) => {
+    const url = (typeof urlOpcional === 'string' ? urlOpcional : quickUrl).trim();
+    if (!url) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Cole um link do YouTube',
+        text: 'Insira a URL de uma videoaula para começar seu estudo.',
+        confirmButtonColor: 'var(--cor-primaria)'
+      });
+      return;
+    }
+
+    const id = extrairYouTubeId(url);
+    if (!id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Link inválido',
+        text: 'Não foi possível reconhecer o link do YouTube. Cole um link como https://www.youtube.com/watch?v=... ou https://youtu.be/...',
+        confirmButtonColor: 'var(--cor-primaria)'
+      });
+      return;
+    }
+
+    abrirEstudioNovo();
+    setUrlInput(url);
+    setVideoId(id);
+    setTitulo(`Estudo com Vídeo (${id})`);
+    setQuickUrl('');
+    setAbaCaderno('ambos');
+  };
+
   // ==================== ESTÚDIO: NOVO & EDIÇÃO ====================
 
   const abrirEstudioNovo = () => {
@@ -291,7 +324,7 @@ export default function VideoEducativo() {
     setTempoGravacao(0);
     setAssistido(false);
     setNota(0);
-    setAbaCaderno('resumo');
+    setAbaCaderno('ambos');
     setModo('estudio');
   };
 
@@ -309,7 +342,7 @@ export default function VideoEducativo() {
     setTempoGravacao(0);
     setAssistido(Boolean(v.assistido));
     setNota(v.nota || 0);
-    setAbaCaderno(v.audioUrl || v.audio_url ? 'audio' : 'resumo');
+    setAbaCaderno('ambos');
     setModo('estudio');
   };
 
@@ -339,18 +372,24 @@ export default function VideoEducativo() {
   // ==================== SALVAMENTO DO ESTUDO ====================
 
   const salvarEstudo = async () => {
-    if (!videoId) {
+    let idFinal = videoId;
+    if (!idFinal && urlInput.trim()) {
+      idFinal = extrairYouTubeId(urlInput.trim());
+      if (idFinal) setVideoId(idFinal);
+    }
+
+    if (!idFinal) {
       Swal.fire({
         icon: 'warning',
-        title: 'Vídeo não carregado',
-        text: 'Insira e carregue um link válido do YouTube antes de salvar.',
+        title: 'Vídeo não inserido',
+        text: 'Insira um link válido do YouTube antes de salvar.',
         confirmButtonColor: 'var(--cor-primaria)'
       });
       return;
     }
 
-    const tituloFinal = titulo.trim() || `Vídeo ${videoId}`;
-    const thumbFinal = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    const tituloFinal = titulo.trim() || `Vídeo ${idFinal}`;
+    const thumbFinal = `https://img.youtube.com/vi/${idFinal}/hqdefault.jpg`;
 
     let finalAudioUrl = audioUrl;
 
@@ -599,6 +638,44 @@ export default function VideoEducativo() {
               </div>
             </div>
 
+            {/* Caixa Rápida: Cole e Comece Imediatamente */}
+            <div className="video-quick-start-card">
+              <div className="video-quick-start-info">
+                <div className="video-quick-start-badge">
+                  <i className="bi bi-lightning-charge-fill"></i> Início Rápido
+                </div>
+                <h3>Cole o link do YouTube e comece a estudar</h3>
+                <p>Abra o player com tela de resumo e gravador de áudio em um clique.</p>
+              </div>
+
+              <div className="video-quick-start-form">
+                <div className="video-quick-start-input-box">
+                  <i className="bi bi-youtube text-danger"></i>
+                  <input
+                    type="text"
+                    placeholder="Cole aqui o link do YouTube (ex: https://www.youtube.com/watch?v=...)"
+                    value={quickUrl}
+                    onChange={e => setQuickUrl(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleIniciarEstudoRapido();
+                    }}
+                  />
+                  {quickUrl && (
+                    <button type="button" className="btn-limpar-quick" onClick={() => setQuickUrl('')}>
+                      <i className="bi bi-x"></i>
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-video-primary"
+                  onClick={handleIniciarEstudoRapido}
+                >
+                  <i className="bi bi-play-circle-fill"></i> Iniciar Estudo
+                </button>
+              </div>
+            </div>
+
             {/* Barra de Filtros */}
             <div className="video-filtros-bar">
               <div className="video-search-box">
@@ -801,7 +878,17 @@ export default function VideoEducativo() {
                   type="text"
                   placeholder="Cole aqui o link do vídeo do YouTube (ex: https://www.youtube.com/watch?v=... ou https://youtu.be/...)"
                   value={urlInput}
-                  onChange={e => setUrlInput(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setUrlInput(val);
+                    const id = extrairYouTubeId(val);
+                    if (id) {
+                      setVideoId(id);
+                      if (!titulo.trim() || titulo.startsWith('Estudo com Vídeo (')) {
+                        setTitulo(`Estudo com Vídeo (${id})`);
+                      }
+                    }
+                  }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') carregarLinkYouTube();
                   }}
@@ -933,22 +1020,163 @@ export default function VideoEducativo() {
                 {/* Abas do Caderno */}
                 <div className="video-caderno-tabs">
                   <button
+                    className={`video-caderno-tab ${abaCaderno === 'ambos' ? 'ativo' : ''}`}
+                    onClick={() => setAbaCaderno('ambos')}
+                  >
+                    <i className="bi bi-layout-split"></i> Resumo + Áudio
+                  </button>
+                  <button
                     className={`video-caderno-tab ${abaCaderno === 'resumo' ? 'ativo' : ''}`}
                     onClick={() => setAbaCaderno('resumo')}
                   >
-                    <i className="bi bi-pencil-fill"></i> Resumo Escrito
+                    <i className="bi bi-pencil-fill"></i> Apenas Resumo
                     {resumoTexto.trim().length > 0 && <span className="tab-badge-ok">✓</span>}
                   </button>
                   <button
                     className={`video-caderno-tab ${abaCaderno === 'audio' ? 'ativo' : ''}`}
                     onClick={() => setAbaCaderno('audio')}
                   >
-                    <i className="bi bi-mic-fill"></i> Resumo em Áudio
+                    <i className="bi bi-mic-fill"></i> Apenas Áudio
                     {(audioUrl || gravando) && <span className="tab-badge-audio-rec">●</span>}
                   </button>
                 </div>
 
-                {/* ABA 1: RESUMO ESCRITO */}
+                {/* VISTA 1: AMBOS INTEGRADOS (Resumo Escrito + Gravador de Áudio Juntos) */}
+                {abaCaderno === 'ambos' && (
+                  <div className="video-ambos-tab-body">
+                    {/* Gravador Compacto no Topo */}
+                    <div className="video-audio-compact-box">
+                      <div className="video-audio-compact-header">
+                        <div className="d-flex align-items-center gap-2">
+                          <i className="bi bi-mic-fill text-danger"></i>
+                          <strong>Gravar Resumo em Voz</strong>
+                          {gravando && <span className="tab-badge-audio-rec">Gravando...</span>}
+                        </div>
+                        <span className="video-gravador-timer-mini">{formatTempo(tempoGravacao)}</span>
+                      </div>
+
+                      {!gravando && !audioUrl && (
+                        <div className="d-flex align-items-center justify-content-between gap-3 mt-2">
+                          <small className="text-muted">Explique a aula com suas próprias palavras para fixar o aprendizado.</small>
+                          <button
+                            type="button"
+                            className="btn-gravador-action gravar"
+                            style={{ padding: '8px 18px', fontSize: '0.85rem' }}
+                            onClick={iniciarGravacao}
+                          >
+                            <i className="bi bi-record-circle-fill"></i> Iniciar Gravação
+                          </button>
+                        </div>
+                      )}
+
+                      {gravando && (
+                        <div className="d-flex align-items-center justify-content-between gap-2 mt-2">
+                          <div className="video-ondas-container">
+                            <span className="onda o1"></span>
+                            <span className="onda o2"></span>
+                            <span className="onda o3"></span>
+                            <span className="onda o4"></span>
+                            <span className="onda o5"></span>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button
+                              type="button"
+                              className="btn-gravador-action pausar"
+                              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                              onClick={pausarGravacao}
+                            >
+                              <i className={`bi ${pausado ? 'bi-play-fill' : 'bi-pause-fill'}`}></i>
+                              {pausado ? 'Continuar' : 'Pausar'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-gravador-action parar"
+                              style={{ padding: '6px 16px', fontSize: '0.82rem' }}
+                              onClick={pararGravacao}
+                            >
+                              <i className="bi bi-stop-circle-fill"></i> Concluir Áudio
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {audioUrl && !gravando && (
+                        <div className="d-flex align-items-center justify-content-between gap-2 mt-2 flex-wrap">
+                          <audio controls src={audioUrl} className="video-audio-player-mini" style={{ flex: 1, minWidth: '220px' }} />
+                          <button
+                            type="button"
+                            className="btn-descartar-audio"
+                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            onClick={descartarAudio}
+                          >
+                            <i className="bi bi-trash"></i> Regravar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Resumo Escrito logo abaixo */}
+                    <div className="video-resumo-tab-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div className="video-resumo-toolbar">
+                        <span className="video-toolbar-label">Inserir rápido:</span>
+                        <button
+                          type="button"
+                          className="btn-toolbar-chip"
+                          onClick={() => inserirMarcador('💡 Ponto Chave:')}
+                        >
+                          💡 Ponto Chave
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-toolbar-chip"
+                          onClick={() => inserirMarcador('❓ Dúvida:')}
+                        >
+                          ❓ Dúvida
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-toolbar-chip"
+                          onClick={() => inserirMarcador('📌 Conclusão:')}
+                        >
+                          📌 Conclusão
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-toolbar-chip"
+                          onClick={() => inserirMarcador('•')}
+                        >
+                          • Tópico
+                        </button>
+                      </div>
+
+                      <textarea
+                        ref={textareaRef}
+                        className="video-resumo-textarea"
+                        placeholder="Escreva aqui seu resumo e anotações ativas enquanto assiste ao vídeo..."
+                        value={resumoTexto}
+                        onChange={e => setResumoTexto(e.target.value)}
+                        style={{ minHeight: '220px' }}
+                      />
+
+                      <div className="video-resumo-footer">
+                        <span className="video-char-counter">
+                          <strong>{contagemPalavras.palavras}</strong> palavras • <strong>{contagemPalavras.caracteres}</strong> caracteres
+                        </span>
+                        {resumoTexto.length > 0 && (
+                          <button
+                            type="button"
+                            className="btn-limpar-resumo"
+                            onClick={() => setResumoTexto('')}
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* VISTA 2: APENAS RESUMO ESCRITO */}
                 {abaCaderno === 'resumo' && (
                   <div className="video-resumo-tab-body">
                     <div className="video-resumo-toolbar">
@@ -1008,7 +1236,7 @@ export default function VideoEducativo() {
                   </div>
                 )}
 
-                {/* ABA 2: RESUMO EM ÁUDIO */}
+                {/* VISTA 3: APENAS RESUMO EM ÁUDIO */}
                 {abaCaderno === 'audio' && (
                   <div className="video-audio-tab-body">
                     <div className="video-audio-card-box">
