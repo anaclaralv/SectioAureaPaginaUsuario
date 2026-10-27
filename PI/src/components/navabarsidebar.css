@@ -372,3 +372,829 @@ body.dark .badge-sidebar-lock {
   background: rgba(245, 158, 11, 0.2);
   color: #fbbf24;
 }
+
+/* =========================================================
+   MODAL DE CONFIGURAÇÕES ESTILO MOBILE (HUB DO USUÁRIO)
+   ========================================================= */
+.modal-config-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeInModal 0.25s ease-out;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-config-dialog {
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-config-card {
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 90vh;
+  transition: all 0.3s ease;
+}
+
+/* HEADER DO MODAL */
+.modal-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 14px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modal-config-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.btn-fechar-modal {
+  background: #f1f5f9;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-fechar-modal:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: scale(1.05);
+}
+
+.btn-voltar-modal {
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.btn-voltar-modal:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* BODY COM SCROLL SUAVE */
+.modal-config-body {
+  padding: 20px 24px 24px 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.modal-config-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-config-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* 1. CARD PERFIL RESUMO */
+.config-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 18px;
+}
+
+.config-avatar-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.config-profile-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.config-profile-name {
+  margin: 0 0 2px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-profile-email {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-badges-wrapper {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge-inteligencia-tag {
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.badge-plano-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.badge-plano-gratuito {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.badge-plano-basico {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-plano-pro {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* 2. TOGGLE MODO ESCURO */
+.config-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.config-toggle-row:hover {
+  background: #f1f5f9;
+}
+
+.config-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  font-size: 1.2rem;
+}
+
+.config-row-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.config-row-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* SWITCH CAPSULE */
+.custom-switch-track {
+  width: 52px;
+  height: 28px;
+  background-color: #cbd5e1;
+  border-radius: 28px;
+  padding: 2px;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.custom-switch-track.active {
+  background-color: #0f172a;
+}
+
+.custom-switch-thumb {
+  width: 24px;
+  height: 24px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0px);
+}
+
+.custom-switch-track.active .custom-switch-thumb {
+  transform: translateX(24px);
+}
+
+/* 3. LISTA DE CARDS DE CONFIGURAÇÃO (ESTILO MOBILE) */
+.config-buttons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.config-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.config-item-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.config-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.config-item-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.icon-planos { background: #fef3c7; color: #d97706; }
+.icon-perfil { background: #e0f2fe; color: #0284c7; }
+.icon-metodos { background: #fdf4ff; color: #c026d3; }
+.icon-projeto { background: #ede9fe; color: #7c3aed; }
+.icon-sobre { background: #ecfdf5; color: #059669; }
+.icon-sair { background: #fee2e2; color: #dc2626; }
+
+.config-item-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.config-item-sub {
+  font-size: 0.77rem;
+  color: #64748b;
+}
+
+.config-item-arrow {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  transition: transform 0.2s;
+}
+
+.config-item-card:hover .config-item-arrow {
+  transform: translateX(3px);
+  color: #0f172a;
+}
+
+.badge-status-plano {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.badge-status-plano.plano-gratuito { background: #f1f5f9; color: #475569; }
+.badge-status-plano.plano-basico { background: #fef3c7; color: #b45309; }
+.badge-status-plano.plano-pro { background: #fee2e2; color: #b91c1c; }
+
+.config-item-sair {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.config-item-sair:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.btn-sair-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  background: #ffffff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.config-item-sair:hover .btn-sair-pill {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.modal-config-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+.btn-ok-config {
+  background: #0f172a;
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 9px 28px;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ok-config:hover {
+  background: #334155;
+  transform: scale(1.02);
+}
+
+/* 4. VISÃO DE PLANOS (IDÊNTICA À FOTO DE REFERÊNCIA) */
+.config-planos-view {
+  animation: fadeInModal 0.2s ease-in-out;
+}
+
+.planos-section-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.planos-section-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.planos-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.card-plano-item {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 16px 18px;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.card-plano-item.ativo {
+  border-color: #00bf63 !important;
+  background: #f0fdf4 !important;
+  box-shadow: 0 4px 15px rgba(0, 191, 99, 0.12);
+}
+
+.card-plano-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.card-plano-tipo {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  color: #1e293b;
+}
+
+.badge-plano-atual-pill {
+  background: #00bf63;
+  color: white;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+}
+
+.card-plano-preco {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.card-plano-preco.preco-verde {
+  color: #00bf63;
+}
+
+.card-plano-periodo {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.card-plano-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.card-plano-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-plano-action {
+  text-align: right;
+}
+
+.btn-plano-btn {
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-plano-selecionado {
+  background: #00bf63;
+  color: white;
+  cursor: default;
+}
+
+.btn-plano-trocar {
+  background: #0f172a;
+  color: white;
+}
+
+.btn-plano-trocar:hover {
+  background: #334155;
+  transform: scale(1.03);
+}
+
+/* 5. VISÃO DE EDITAR PERFIL */
+.config-perfil-view {
+  animation: fadeInModal 0.2s ease;
+}
+
+.perfil-avatar-uploader {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.perfil-avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #ffffff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.btn-upload-avatar {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #0f172a;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  transition: transform 0.2s;
+}
+
+.btn-upload-avatar:hover {
+  transform: scale(1.1);
+}
+
+.config-input {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  border: 1px solid #cbd5e1;
+}
+
+.config-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* 6. VISÃO DE MÉTODOS DE ESTUDO & SOBRE */
+.config-info-view {
+  animation: fadeInModal 0.2s ease;
+}
+
+.info-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.info-intro {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.metodos-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metodo-info-card {
+  display: flex;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.metodo-badge-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.icon-feynman { background: #fee2e2; color: #dc2626; }
+.icon-cornell { background: #e0f2fe; color: #0284c7; }
+.icon-mapas { background: #fef3c7; color: #d97706; }
+.icon-flashcards { background: #fdf4ff; color: #c026d3; }
+.icon-pomodoro { background: #ede9fe; color: #7c3aed; }
+.icon-savoring { background: #ecfdf5; color: #059669; }
+
+.metodo-info-content h6 {
+  margin: 0 0 3px 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.metodo-info-content p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.projeto-card-destaque {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px 18px;
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.projeto-destaque-header {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+}
+
+.gardner-lista {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+/* =========================================================
+   DARK THEME COMPLETO PARA O MODAL E PÁGINA
+   ========================================================= */
+body.dark,
+body.modo-escuro {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+body.dark .modal-config-card,
+body.modo-escuro .modal-config-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark .modal-config-header,
+body.modo-escuro .modal-config-header {
+  border-color: #334155 !important;
+}
+
+body.dark .modal-config-title,
+body.modo-escuro .modal-config-title,
+body.dark .planos-section-title,
+body.modo-escuro .planos-section-title,
+body.dark .info-title,
+body.modo-escuro .info-title,
+body.dark .config-profile-name,
+body.modo-escuro .config-profile-name,
+body.dark .config-row-title,
+body.modo-escuro .config-row-title,
+body.dark .config-item-title,
+body.modo-escuro .config-item-title,
+body.dark .card-plano-tipo,
+body.modo-escuro .card-plano-tipo,
+body.dark .card-plano-preco,
+body.modo-escuro .card-plano-preco,
+body.dark .metodo-info-content h6,
+body.modo-escuro .metodo-info-content h6,
+body.dark .projeto-destaque-header,
+body.modo-escuro .projeto-destaque-header {
+  color: #ffffff !important;
+}
+
+body.dark .btn-fechar-modal,
+body.modo-escuro .btn-fechar-modal {
+  background: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark .btn-fechar-modal:hover,
+body.modo-escuro .btn-fechar-modal:hover {
+  background: #475569 !important;
+  color: #ffffff !important;
+}
+
+body.dark .config-profile-card,
+body.modo-escuro .config-profile-card {
+  background: linear-gradient(135deg, #273549 0%, #1e293b 100%) !important;
+  border-color: #334155 !important;
+}
+
+body.dark .config-toggle-row,
+body.modo-escuro .config-toggle-row {
+  background: #273549 !important;
+  border-color: #334155 !important;
+}
+
+body.dark .config-icon-circle,
+body.modo-escuro .config-icon-circle {
+  background: #334155 !important;
+  color: #fbbf24 !important;
+}
+
+body.dark .config-item-card,
+body.modo-escuro .config-item-card {
+  background: #243042 !important;
+  border-color: #334155 !important;
+}
+
+body.dark .config-item-card:hover,
+body.modo-escuro .config-item-card:hover {
+  background: #2c3b52 !important;
+  border-color: #475569 !important;
+}
+
+body.dark .config-item-sair,
+body.modo-escuro .config-item-sair {
+  background: #3c1e24 !important;
+  border-color: #7f1d1d !important;
+}
+
+body.dark .btn-sair-pill,
+body.modo-escuro .btn-sair-pill {
+  background: #1e293b !important;
+  border-color: #dc2626 !important;
+  color: #f87171 !important;
+}
+
+body.dark .card-plano-item,
+body.modo-escuro .card-plano-item {
+  background: #243042 !important;
+  border-color: #334155 !important;
+}
+
+body.dark .card-plano-item.ativo,
+body.modo-escuro .card-plano-item.ativo {
+  background: #0f2d1e !important;
+  border-color: #00bf63 !important;
+}
+
+body.dark .card-plano-features,
+body.modo-escuro .card-plano-features,
+body.dark .metodo-info-content p,
+body.modo-escuro .metodo-info-content p,
+body.dark .projeto-card-destaque,
+body.modo-escuro .projeto-card-destaque {
+  color: #cbd5e1 !important;
+}
+
+body.dark .metodo-info-card,
+body.modo-escuro .metodo-info-card,
+body.dark .projeto-card-destaque,
+body.modo-escuro .projeto-card-destaque {
+  background: #243042 !important;
+  border-color: #334155 !important;
+}
+
+body.dark .config-input,
+body.modo-escuro .config-input {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+body.dark .btn-ok-config,
+body.modo-escuro .btn-ok-config {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+body.dark .btn-ok-config:hover,
+body.modo-escuro .btn-ok-config:hover {
+  background: #2563eb !important;
+}
