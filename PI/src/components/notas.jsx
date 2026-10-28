@@ -8,7 +8,7 @@ export default function Notas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroAba, setFiltroAba] = useState('todas');
 
-  // Estado do Modal de Nova / Editar Nota (React Overlay Padrão Calendário)
+
   const [modalAberto, setModalAberto] = useState(false);
   const [notaEditando, setNotaEditando] = useState(null);
   const [formTitulo, setFormTitulo] = useState('');
@@ -62,7 +62,7 @@ export default function Notas() {
     carregarNotas();
   }, [carregarNotas]);
 
-  // Sincroniza o editor de texto quando o modal abre
+
   useEffect(() => {
     if (modalAberto && textoDivRef.current) {
       textoDivRef.current.innerHTML = formTexto || '';
@@ -276,7 +276,7 @@ export default function Notas() {
   return (
     <section id="notasSection">
       <div className="notas-container-main">
-        {/* Cabeçalho Padronizado (estilo Calendário) */}
+        {}
         <div className="notas-header-bar">
           <div className="notas-header-titles">
             <h1><i className="bi bi-journal-bookmark-fill"></i> Minhas Notas</h1>

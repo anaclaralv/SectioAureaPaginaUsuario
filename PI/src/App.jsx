@@ -16,7 +16,6 @@ if (tokenURL && tokenURL !== 'undefined' && tokenURL !== 'null') {
   }
   localStorage.setItem('token', tokenURL);
   sessionStorage.setItem('token', tokenURL);
-  // Limpa a URL pra não ficar feia nem vazar o token
   window.history.replaceState({}, '', '/'); 
 }
 
@@ -46,7 +45,7 @@ function App() {
       if (tipoSalvo) setTipoInteligencia(tipoSalvo);
     }
 
-    // 2. Verifica o login (agora o token com certeza tá aqui)
+    // 2. Verifica o login
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token && token !== 'undefined' && token !== 'null' && token.trim() !== '') {
       setLogado(true);

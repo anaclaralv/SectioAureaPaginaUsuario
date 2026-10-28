@@ -1,4 +1,4 @@
-// Fallback local caso api.js não seja carregado
+
 if (typeof apiFetch === 'undefined') {
   const API_BASE_URL = (window.location.origin && window.location.origin !== 'null' && !window.location.href.startsWith('file:'))
     ? window.location.origin + '/api_sectio_aurea'
@@ -2744,7 +2744,7 @@ function allowDrop(ev) {
   ev.preventDefault();
 }
 
-// ===== FORMATAÇÃO DE TEXTO DAS NOTAS (SUBSTITUI document.execCommand) =====
+// ===== FORMATAÇÃO DE TEXTO DAS NOTAS  =====
 function setupNotaTextFormatting() {
   const textoDiv = document.getElementById("notaTexto");
   if (!textoDiv) return;
@@ -2973,7 +2973,7 @@ function renderMaterias() {
   });
 }
 
-// ===== RENDERIZAR CRONOGRAMA (NOVA) =====
+// ===== RENDERIZAR CRONOGRAMA =====
 function renderCronogramaNovo() {
   const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
 
@@ -3062,7 +3062,6 @@ function renderCronogramaNovo() {
   });
 }
 
-// ===== DROP (NOVO) =====
 function drop(ev) {
   ev.preventDefault();
 
@@ -3588,8 +3587,7 @@ function renderTabelaMaterias() {
     tabela.appendChild(tr);
   });
 }
-/* ================= POMODORO CORRIGIDO (APENAS ESTE BLOCO) ================= */
-/* ================= POMODORO SEM STATUS ================= */
+/* ================= POMODORO ================= */
 let pomodoroTempo = 1500;
 let pomodoroInterval = null;
 let pomodoroRodando = false;
@@ -4263,7 +4261,6 @@ function salvarMeta() {
 }
 /* ================= STREAK ================= */
 function atualizarStreak() {
-  // Streak agora é calculado dinamicamente no banco a partir das sessões de estudo
   if (typeof carregarEstatisticas === 'function') {
     carregarEstatisticas();
   }
@@ -4705,8 +4702,6 @@ function handleSidebarLinkClick() {
   }
 }
 
-// ===== EVENT DELEGATION (MAIS ROBUSTO) =====
-// Esta abordagem funciona mesmo se os links forem criados dinamicamente
 document.addEventListener('click', function (e) {
   // Verifica se o clique foi em um link do menu lateral
   const sidebarLink = e.target.closest('#menuLateral .nav-link, .sidebar .nav-link, .sidebar a');
@@ -4755,13 +4750,13 @@ window.addEventListener('resize', function () {
   }
 });
 
-/* ==================== ESTATÍSTICAS (VERSÃO CORRIGIDA) ==================== */
+/* ==================== ESTATÍSTICAS  ==================== */
 
 let graficoPrincipalAtual = null;
 let graficoMateriasAtual = null;
 let periodoAtual = "semana";
 let estatisticasAtualizando = false;
-// ==================== CALCULAR TOTAIS (UNIFICADO) ====================
+// ==================== CALCULAR TOTAIS  ====================
 function calcularTotais() {
   let totalSegundos = 0;
   const diasEstudados = new Set();

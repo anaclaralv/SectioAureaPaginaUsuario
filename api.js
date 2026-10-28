@@ -1,11 +1,11 @@
-// 👇 APONTANDO PARA A API NOVA
+
 const API_BASE_URL = 'http://localhost/api_sectio_aurea';
 
 async function apiFetch(endpoint, options = {}) {
-   // Troque a linha do token por essa:
+
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     
-    // Fallback para convidado (mantido por segurança)
+
     if (token === 'guest_session') {
         if (endpoint === 'perfil') {
             const u = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -29,7 +29,7 @@ const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, config);
     
     if (response.status === 401) {
-        // Token inválido ou expirado
+
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
         localStorage.removeItem('token');
